@@ -59,12 +59,12 @@
 
 #define BOOT_FLASH_START_ADDR           (0x000800)
 #define BOOT_FLASH_END_ADDR             (0x000fff)
-#define DEV_CONFIG_REG_BASE_ADDRESS 	(0x02AFEC)
-#define DEV_CONFIG_REG_END_ADDRESS   	(0x02AFFE)
+#define DEV_CONFIG_REG_BASE_ADDRESS 	(0x0557EC)
+#define DEV_CONFIG_REG_END_ADDRESS   	(0x0557FE)
 #define USER_APP_RESET_ADDRESS          (0x001000)
 
 #define PAGE_SIZE                       (1024)
-#define TOTAL_PAGES                     (85)
+#define TOTAL_PAGES                     (170)
 
 /* intel hex record types */
 #define DATA_RECORD                     0x00
@@ -360,6 +360,7 @@ int main(void)
 
     ANSELA = 0;
     ANSELB = 0;
+    ANSELC = 0;
 
     TRIS_LED1 = 0;
     LED1 = 0;
