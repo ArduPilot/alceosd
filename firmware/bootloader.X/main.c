@@ -44,7 +44,6 @@
 
 // FOSCSEL
 #pragma config FNOSC = FRC
-#pragma config PWMLOCK = OFF
 #pragma config IESO = OFF
 
 // FGS
@@ -74,15 +73,15 @@
 #define EXT_LIN_ADRS_RECORD             0x04
 
 /* board config */
-#define TRIS_LED1                       TRISAbits.TRISA4
-#define LED1                            LATAbits.LATA4
+#define TRIS_LED1                       TRISAbits.TRISA10
+#define LED1                            LATAbits.LATA10
 
 #define MAX_IHEX_LINE_LEN               50
 
 
 typedef union {
     unsigned long l;
-	unsigned int  w[2];
+    unsigned int  w[2];
     unsigned char b[4];
 } u32union;
 
@@ -108,7 +107,7 @@ const char msg[] = "\r\nAlceOSD bootloader v0.1\r\nWaiting for intel hex...";
 int get_char(char *c)
 {
     int ret = 0;
-    
+
     while (1) {
         if (IFS0bits.T3IF == 1) {
             /* boot timer expired */
@@ -152,46 +151,46 @@ void put_str(char *c)
 
 int erase_page(unsigned long erase_address)
 {
-	u32union addr;
-	addr.l = erase_address & 0xfff800;
-	
-	NVMADRU = addr.w[1];
+    u32union addr;
+    addr.l = erase_address & 0xfff800;
+
+    NVMADRU = addr.w[1];
     NVMADR = addr.w[0];
-	NVMCON = 0x4003;
+    NVMCON = 0x4003;
 
-	INTCON2bits.GIE = 0;
-	__builtin_write_NVM();
+    INTCON2bits.GIE = 0;
+    __builtin_write_NVM();
     while (NVMCONbits.WR == 1) {}
-	INTCON2bits.GIE = 1;
+    INTCON2bits.GIE = 1;
 
-	return NVMCONbits.WRERR;
+    return NVMCONbits.WRERR;
 }
 
 int write_dword(unsigned long addr, unsigned long data0, unsigned long data1)
 {
-   	u32union wr_addr;
-   	u32union wr_data0, wr_data1;
+    u32union wr_addr;
+    u32union wr_data0, wr_data1;
 
-   	wr_addr.l = addr;
-   	wr_data0.l = data0;
-   	wr_data1.l = data1;
+    wr_addr.l = addr;
+    wr_data0.l = data0;
+    wr_data1.l = data1;
 
     NVMCON = 0x4001;
     NVMADRU = wr_addr.w[1];
     NVMADR = wr_addr.w[0];
 
-	TBLPAG = 0xFA;
+    TBLPAG = 0xFA;
     __builtin_tblwtl(0, wr_data0.w[0]);
     __builtin_tblwth(1, wr_data0.w[1]);
     __builtin_tblwtl(2, wr_data1.w[0]);
     __builtin_tblwth(3, wr_data1.w[1]);
 
-	INTCON2bits.GIE = 0;
-	__builtin_write_NVM();
+    INTCON2bits.GIE = 0;
+    __builtin_write_NVM();
     while(NVMCONbits.WR == 1);
-	INTCON2bits.GIE = 1;
+    INTCON2bits.GIE = 1;
 
-	return NVMCONbits.WRERR;
+    return NVMCONbits.WRERR;
 }
 
 int erase_addr(unsigned long addr)
@@ -232,32 +231,33 @@ void ascii2hex(unsigned char *buf)
 
 void goto_usercode(void)
 {	
-	void (*fptr)(void);
-	fptr = (void (*)(void))USER_APP_RESET_ADDRESS;
-	fptr();
+    void (*fptr)(void);
+    LED1 = 1;
+    fptr = (void (*)(void))USER_APP_RESET_ADDRESS;
+    fptr();
 }	
 
 unsigned char write_ihex2flash(char *buf)
 {
-	static struct ihex_record ihex_rec;
-	unsigned char crc = 0;
-	unsigned int i;
-	unsigned long wr_data0, wr_data1;
-	unsigned long prog_addr;
-	unsigned int ret;
+    static struct ihex_record ihex_rec;
+    unsigned char crc = 0;
+    unsigned int i;
+    unsigned long wr_data0, wr_data1;
+    unsigned long prog_addr;
+    unsigned int ret;
 
-	ihex_rec.len = buf[0];
-	ihex_rec.type = buf[3];	
-	ihex_rec.data = &buf[4];
-		
-	/* validate crc */
-	for (i = 0; i < ihex_rec.len + 5; i++)
-		crc += buf[i];
-	
+    ihex_rec.len = buf[0];
+    ihex_rec.type = buf[3];
+    ihex_rec.data = &buf[4];
+
+    /* validate crc */
+    for (i = 0; i < ihex_rec.len + 5; i++)
+        crc += buf[i];
+
     if(crc != 0) {
         put_char('x');
-	    return 0xff;
-	}
+        return 0xff;
+    }
 
     switch(ihex_rec.type) {
         case DATA_RECORD:
@@ -348,7 +348,7 @@ int main(void)
     CLKDIVbits.PLLPRE = 0;
     PLLFBDbits.PLLDIV = 74;
     CLKDIVbits.PLLPOST = 0;
-    
+
     /* switch clock to FRC oscillator with PLL */
     __builtin_write_OSCCONH(1);
     __builtin_write_OSCCONL(OSCCON | 1);
@@ -360,10 +360,10 @@ int main(void)
 
     ANSELA = 0;
     ANSELB = 0;
-    
+
     TRIS_LED1 = 0;
     LED1 = 0;
-  
+
     delay.l = BOOT_DELAY;
 
     if (delay.b[0] == 0)
@@ -385,9 +385,9 @@ int main(void)
     T2CONbits.TON = 1;
 
     /* uart setup */
-    TRISBbits.TRISB11 = 0;
-    _RP43R = 3;
-    _U2RXR = 42;
+    TRISBbits.TRISB5 = 0;
+    _RP37R = 3;
+    _U2RXR = 38;
     /* set baudrate  */
     U2BRG = BRGVAL;
     U2MODE = 0x8000;
@@ -405,7 +405,7 @@ int main(void)
         }
     }
     put_str((char*) msg);
-    
+
     i = 0;
     while (1) {
         ret = get_char(&c);
@@ -413,19 +413,21 @@ int main(void)
             put_char('0' + ret);
             continue;
         }
-        
+
         if (c == ':') {
             i = 0;
             continue;
         }
-        
+
         if (i < MAX_IHEX_LINE_LEN)
             buf[i++] = c;
-        
+
         if (c == '\n') {
+            LED1 = 1;
             ascii2hex((unsigned char *) buf);
             c = write_ihex2flash(buf);
-            
+            LED1 = 0;
+
             if (c == END_OF_FILE_RECORD)
                 goto_usercode();
         }
