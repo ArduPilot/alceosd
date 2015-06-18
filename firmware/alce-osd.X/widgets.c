@@ -32,6 +32,7 @@ extern struct widget gps_info_widget;
 extern struct widget flightmode_widget;
 extern struct widget throttle_widget;
 extern struct widget rssi_widget;
+extern struct widget rc_channels_widget;
 
 const struct widget *all_widgets[] = {
     &altitude_widget,
@@ -44,6 +45,7 @@ const struct widget *all_widgets[] = {
     &speed_widget,
     &throttle_widget,
     &vario_graph_widget,
+    &rc_channels_widget,
     NULL,
 };
 
