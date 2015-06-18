@@ -84,14 +84,16 @@ void set_mavlink_callback_type(unsigned char ctype, void *cbk)
 
 void del_mavlink_callbacks(unsigned char ctype)
 {
-    struct mavlink_callback *c;
-    unsigned char i;
+    struct mavlink_callback *c = callbacks;
+    unsigned char i = 0;
 
-    for (i = 0; i < nr_callbacks; i++) {
-        c = &callbacks[i];
+    while (i < nr_callbacks) {
         if (c->type == ctype) {
             memcpy(c, c + 1, sizeof(struct mavlink_callback) * (nr_callbacks - i - 1));
             nr_callbacks--;
+        } else {
+            c++;
+            i++;
         }
     }
 }
