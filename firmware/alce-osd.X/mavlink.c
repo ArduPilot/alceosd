@@ -19,9 +19,11 @@
 #include "alce-osd.h"
 
 #define MAX_MAVLINK_CALLBACKS 50
+#define MAX_MAVLINK_PERSISTENT_CALLBACKS 10
 
 struct mavlink_callback {
     unsigned char msgid;
+    unsigned char type;
     void (*cbk) (mavlink_message_t *msg, mavlink_status_t *status);
 };
 
@@ -67,7 +69,33 @@ void add_mavlink_callback(unsigned char msgid, void *cbk)
     c->cbk = cbk;
 }
 
-void del_mavlink_callbacks(void)
+void set_mavlink_callback_type(unsigned char ctype, void *cbk)
 {
+    struct mavlink_callback *c;
+    unsigned char i;
+
+    for (i = 0; i < nr_callbacks; i++) {
+        c = &callbacks[i];
+        if (c->cbk == cbk)
+            c->type = ctype;
+    }
+}
+
+void del_mavlink_callbacks(unsigned char ctype)
+{
+    struct mavlink_callback *c;
+    unsigned char i;
+
+    for (i = 0; i < nr_callbacks; i++) {
+        c = &callbacks[i];
+        if (c->type == ctype) {
+            memcpy(&callbacks[i], &callbacks[i+1],
+                    sizeof(struct mavlink_callback) * (nr_callbacks - i - 1));
+            nr_callbacks--;
+        }
+    }
+
+
     nr_callbacks = 0;
 }
+
