@@ -61,6 +61,8 @@ struct widget {
 };
 
 
+void widgets_init(void);
+void build_tab_list(void);
 void load_tab(unsigned char tab);
 void widgets_process(void);
 void schedule_widget(const struct widget *w);

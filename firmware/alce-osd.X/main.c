@@ -169,8 +169,8 @@ int main(void) {
     /* video driver config */
     video_apply_config(&config.video);
 
-    /* load widget tab 1 */
-    load_tab(1);
+    /* init widgets */
+    widgets_init();
 
     /* enable all interrupts */
     SRbits.IPL = 0;
@@ -197,6 +197,9 @@ int main(void) {
             ClrWdt();
         }
     }
+
+    /* re-build tab list */
+    build_tab_list();
 
     uart_set_baudrate2(config.baudrate);
 

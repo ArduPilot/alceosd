@@ -64,6 +64,7 @@ volatile unsigned char sram_busy = 0;
 volatile unsigned int line, last_line = 200, last_line_cnt = 0;
 volatile unsigned int ticks = 0;
 volatile unsigned char odd = 0;
+static unsigned char render_state = 0;
 
 extern volatile struct alceosd_config config;
 
@@ -335,6 +336,8 @@ void video_apply_config(struct video_config *cfg)
 void free_mem(void)
 {
     alloc_size = 0;
+    canvas_pipe.prd = canvas_pipe.pwr = 0;
+    render_state = 0;
 }
 
 void video_get_size(unsigned int *xsize, unsigned int *ysize)
@@ -419,7 +422,6 @@ void schedule_canvas(struct canvas *ca)
 
 void render_process(void)
 {
-    static unsigned char state = 0;
     static struct canvas *ca;
     static unsigned int y1, y;
     static unsigned char *b;
@@ -429,7 +431,7 @@ void render_process(void)
     unsigned int x;
 
     for (;;) {
-        if (state == 0) {
+        if (render_state == 0) {
             if (canvas_pipe.prd == canvas_pipe.pwr)
                 return;
 
@@ -442,9 +444,9 @@ void render_process(void)
 
             xsize = (video_xsizes[config.video.x_size].xsize) >> 2;
             addr.l = x + ((unsigned long) xsize *  y);
-            state = 1;
+            render_state = 1;
         }
-        if (state == 1) {
+        if (render_state == 1) {
             /* render */
             for (;;) {
                 if (sram_busy)
@@ -467,7 +469,7 @@ void render_process(void)
             //U1TXREG = 'U';
             canvas_pipe.prd++;
             canvas_pipe.prd &= MAX_CANVAS_PIPE_MASK;
-            state = 0;
+            render_state = 0;
         }
     }
 }
