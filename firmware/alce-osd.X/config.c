@@ -43,6 +43,10 @@ struct alceosd_config config = {
     .video.x_size = VIDEO_XSIZE_480,
     .video.y_size = 260,
 
+    .tab_change_ch = 7,
+    .tab_change_ch_min = 1000,
+    .tab_change_ch_max = 2000,
+
     .widgets = {
         { 1, WIDGET_ALTITUDE_ID,        0,   0, JUST_VCENTER | JUST_RIGHT},
         { 1, WIDGET_BATTERY_INFO_ID,    0,   0, JUST_TOP     | JUST_LEFT},

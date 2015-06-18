@@ -34,10 +34,12 @@ struct alceosd_config {
     struct video_config video;
 
     /* tab change channel */
-    unsigned int tab_change_ch;
+    unsigned int tab_change_ch_min;
+    unsigned int tab_change_ch_max;
+    unsigned char tab_change_ch;
 
     /* vehicle type */
-    unsigned int vehicle;
+    unsigned char vehicle;
 
     /* widgets config */
     struct widget_config widgets[CONFIG_MAX_WIDGETS];
