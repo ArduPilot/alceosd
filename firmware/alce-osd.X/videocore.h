@@ -105,6 +105,7 @@ void free_mem(void);
 
 /* clear up display */
 void clear_video(void);
+void clear_sram(void);
 
 
 void video_apply_config(struct video_config *cfg);

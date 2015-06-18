@@ -160,13 +160,10 @@ void sram_byteo_sdi(unsigned char b)
     CLK_LOW;
 }
 
-void clear_video(void)
+
+void clear_sram(void)
 {
     unsigned long i;
-    int ipl;
-
-    while (sram_busy);
-    SET_AND_SAVE_CPU_IPL(ipl, 7);
 
     CS_LOW;
     sram_byteo_sqi(SRAM_WRITE);
@@ -177,8 +174,18 @@ void clear_video(void)
         sram_byteo_sqi(0x00);
     }
     CS_HIGH;
+}
+
+void clear_video(void)
+{
+    int ipl;
+
+    while (sram_busy);
+    SET_AND_SAVE_CPU_IPL(ipl, 7);
+    clear_sram();
     RESTORE_CPU_IPL(ipl);
 }
+
 
 static void video_init_sram(void)
 {
@@ -203,7 +210,7 @@ static void video_init_sram(void)
     SRAM_OUTQ;
 
     /* set ram to zeros */
-    clear_video();
+    clear_sram();
 
 #if 0
     unsigned long i, k;
