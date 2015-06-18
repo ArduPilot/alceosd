@@ -285,7 +285,7 @@ const char menu_tabs[] = "\n\nAlceOSD :: TAB config\n\n"
                          "x - Go back\n";
 
 const char menu_tab_widgets[] = "\n\nAlceOSD :: TAB %d widgets config\n\n"
-                                "a - Add widget\n"
+                                "0 - Add widget\n"
                                 "x - Go Back\n\n";
 
 const char menu_add_widgets[] = "\n\nAlceOSD :: Add widget\n\n"
@@ -339,7 +339,7 @@ int config_osd(void)
                 break;
             case MENU_TABS:
                 printf(menu_tabs,
-                        config.tab_change_ch,
+                        config.tab_change_ch + 1,
                         current_tab);
                 break;
             case MENU_TAB_WIDGETS: {
@@ -525,8 +525,12 @@ int config_osd(void)
         case MENU_TABS:
             switch (c) {
                 case '1':
+                    if (config.tab_change_ch > 0)
+                        config.tab_change_ch--;
                     break;
                 case '2':
+                    if (config.tab_change_ch < 7)
+                        config.tab_change_ch++;
                     break;
                 case '3':
                     current_tab--;
@@ -548,16 +552,17 @@ int config_osd(void)
             break;
         case MENU_TAB_WIDGETS:
             switch (c) {
-                case 'a':
+                case '0':
                     state = MENU_ADD_WIDGET;
                     break;
                 case 'x':
                     state = MENU_TABS;
                     break;
                 default:
-                    c -= '1';
-                    if (c > 9)
-                        c -= ('a' + 10);
+                    if (c > '9')
+                        c -= ('a' - 9);
+                    else
+                        c -= '1';
                     if (c > nr_opt)
                         break;
                     nr_opt = c;
@@ -570,9 +575,10 @@ int config_osd(void)
                     state = MENU_TAB_WIDGETS;
                     break;
                 default:
-                    c -= '1';
-                    if (c > 9)
-                        c -= ('a' + 10);
+                    if (c > '9')
+                        c -= ('a' - 9);
+                    else
+                        c -= '1';
                     if (c > nr_opt)
                         break;
                     nr_opt = c;
