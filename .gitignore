@@ -3,4 +3,9 @@
 /firmware/bootloader.X/nbproject/Package-*
 /firmware/bootloader.X/build/default/
 /firmware/bootloader.X/dist/default/
+/firmware/alce-osd.X/nbproject/private/
+/firmware/alce-osd.X/nbproject/Makefile-*
+/firmware/alce-osd.X/nbproject/Package-*
+/firmware/alce-osd.X/build/default/
+/firmware/alce-osd.X/dist/default/
 
