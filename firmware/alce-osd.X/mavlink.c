@@ -18,8 +18,7 @@
 
 #include "alce-osd.h"
 
-#define MAX_MAVLINK_CALLBACKS 50
-#define MAX_MAVLINK_PERSISTENT_CALLBACKS 10
+#define MAX_MAVLINK_CALLBACKS 100
 
 struct mavlink_callback {
     unsigned char msgid;
