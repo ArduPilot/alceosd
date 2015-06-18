@@ -44,6 +44,9 @@
 
 // FOSCSEL
 #pragma config FNOSC = FRC
+#if defined(__dsPIC33EP512MC504__)
+#pragma config PWMLOCK = OFF
+#endif
 #pragma config IESO = OFF
 
 // FGS
@@ -60,8 +63,8 @@
 #define BOOT_FLASH_START_ADDR           (0x000800)
 #define BOOT_FLASH_END_ADDR             (0x000fff)
 #define DEV_CONFIG_REG_BASE_ADDRESS 	(0x0557EC)
-#define DEV_CONFIG_REG_END_ADDRESS   	(0x0557FE)
-#define USER_APP_RESET_ADDRESS          (0x001000)
+//#define DEV_CONFIG_REG_END_ADDRESS   	(0x0557FE)
+#define USER_APP_RESET_ADDRESS          (0x004000)
 
 #define PAGE_SIZE                       (1024)
 #define TOTAL_PAGES                     (170)
@@ -73,8 +76,8 @@
 #define EXT_LIN_ADRS_RECORD             0x04
 
 /* board config */
-#define TRIS_LED1                       TRISAbits.TRISA10
-#define LED1                            LATAbits.LATA10
+#define TRIS_LED                        TRISAbits.TRISA10
+#define LED                             LATAbits.LATA10
 
 #define MAX_IHEX_LINE_LEN               50
 
@@ -102,7 +105,6 @@ static unsigned long erased_page[TOTAL_PAGES];
 
 const char magic_word[] = "alceosd";
 const char msg[] = "\r\nAlceOSD bootloader v0.1\r\nWaiting for intel hex...";
-
 
 int get_char(char *c)
 {
@@ -232,8 +234,8 @@ void ascii2hex(unsigned char *buf)
 void goto_usercode(void)
 {	
     void (*fptr)(void);
-    LED1 = 1;
-    fptr = (void (*)(void))USER_APP_RESET_ADDRESS;
+    LED = 1;
+    fptr = (void (*)(void)) USER_APP_RESET_ADDRESS;
     fptr();
 }	
 
@@ -287,8 +289,7 @@ unsigned char write_ihex2flash(char *buf)
 
                 /* protect bootloader, reset vector and config bits */
                 if((( (prog_addr + (i>>1) - 1) < BOOT_FLASH_START_ADDR) || (prog_addr > BOOT_FLASH_END_ADDR))
-                   && (((prog_addr + (i>>1) - 1) < DEV_CONFIG_REG_BASE_ADDRESS) || (prog_addr > DEV_CONFIG_REG_END_ADDRESS))
-                   && (prog_addr > 3)) {
+                   && (((prog_addr + (i>>1) - 1) < DEV_CONFIG_REG_BASE_ADDRESS)) && (prog_addr > 3)) {
 
                     ret = erase_addr(prog_addr);
                     ret += write_dword(prog_addr, wr_data0, wr_data1);
@@ -300,13 +301,10 @@ unsigned char write_ihex2flash(char *buf)
                     put_char('p');                        
                 }
 
-                ihex_rec.addr.l += 4;
-                ihex_rec.data += 4;
+                ihex_rec.addr.l += i;
+                ihex_rec.data += i;
 
-                if(ihex_rec.len > 3)
-                    ihex_rec.len -= 4;
-                else
-                    ihex_rec.len = 0;
+                ihex_rec.len -= i;
             }
             break;
 
@@ -315,14 +313,14 @@ unsigned char write_ihex2flash(char *buf)
             ihex_rec.e_addr.b[2] = ihex_rec.data[0];
             ihex_rec.e_addr.b[1] = ihex_rec.data[1];
             ihex_rec.e_addr.b[0] = 0;
-            put_char('S');
+            //put_char('S');
             break;
 
         case EXT_LIN_ADRS_RECORD:
             ihex_rec.e_addr.b[3] = ihex_rec.data[0];
             ihex_rec.e_addr.b[2] = ihex_rec.data[1];
             ihex_rec.e_addr.w[0] = 0;
-            put_char('L');
+            //put_char('L');
             break;
 
         case END_OF_FILE_RECORD:
@@ -362,8 +360,8 @@ int main(void)
     ANSELB = 0;
     ANSELC = 0;
 
-    TRIS_LED1 = 0;
-    LED1 = 0;
+    TRIS_LED = 0;
+    LED = 0;
 
     delay.l = BOOT_DELAY;
 
@@ -424,10 +422,10 @@ int main(void)
             buf[i++] = c;
 
         if (c == '\n') {
-            LED1 = 1;
+            LED = 1;
             ascii2hex((unsigned char *) buf);
             c = write_ihex2flash(buf);
-            LED1 = 0;
+            LED = 0;
 
             if (c == END_OF_FILE_RECORD)
                 goto_usercode();

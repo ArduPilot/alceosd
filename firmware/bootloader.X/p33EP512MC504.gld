@@ -1,5 +1,5 @@
 /*
- * Linker script for PIC33EP512GP504
+ * Linker script for PIC33EP512MC504
  * (c) Copyright 2013 Microchip Technology, Inc
  * Part support version v1.24.A(02-Jan-2015)
  *
@@ -34,11 +34,11 @@
  */
 
 
-OUTPUT_ARCH("33EP512GP504")
+OUTPUT_ARCH("33EP512MC504")
 CRT0_STARTUP(crt0_extendedep.o)
 CRT1_STARTUP(crt1_extendedep.o)
 
-OPTIONAL(-lp33EP512GP504)
+OPTIONAL(-lp33EP512MC504)
 OPTIONAL(-lfx)
 
 /*
@@ -403,9 +403,9 @@ SECTIONS
          ABSOLUTE(__DefaultInterrupt));
     LONG( DEFINED(__Interrupt56)    ? ABSOLUTE(__Interrupt56)    :
          ABSOLUTE(__DefaultInterrupt));
-    LONG( DEFINED(__Interrupt57)    ? ABSOLUTE(__Interrupt57)    :
+    LONG( DEFINED(__PWMSpEventMatchInterrupt)    ? ABSOLUTE(__PWMSpEventMatchInterrupt)    :
          ABSOLUTE(__DefaultInterrupt));
-    LONG( DEFINED(__Interrupt58)    ? ABSOLUTE(__Interrupt58)    :
+    LONG( DEFINED(__QEI1Interrupt)    ? ABSOLUTE(__QEI1Interrupt)    :
          ABSOLUTE(__DefaultInterrupt));
     LONG( DEFINED(__Interrupt59)    ? ABSOLUTE(__Interrupt59)    :
          ABSOLUTE(__DefaultInterrupt));
@@ -477,11 +477,11 @@ SECTIONS
          ABSOLUTE(__DefaultInterrupt));
     LONG( DEFINED(__Interrupt93)    ? ABSOLUTE(__Interrupt93)    :
          ABSOLUTE(__DefaultInterrupt));
-    LONG( DEFINED(__Interrupt94)    ? ABSOLUTE(__Interrupt94)    :
+    LONG( DEFINED(__PWM1Interrupt)    ? ABSOLUTE(__PWM1Interrupt)    :
          ABSOLUTE(__DefaultInterrupt));
-    LONG( DEFINED(__Interrupt95)    ? ABSOLUTE(__Interrupt95)    :
+    LONG( DEFINED(__PWM2Interrupt)    ? ABSOLUTE(__PWM2Interrupt)    :
          ABSOLUTE(__DefaultInterrupt));
-    LONG( DEFINED(__Interrupt96)    ? ABSOLUTE(__Interrupt96)    :
+    LONG( DEFINED(__PWM3Interrupt)    ? ABSOLUTE(__PWM3Interrupt)    :
          ABSOLUTE(__DefaultInterrupt));
     LONG( DEFINED(__Interrupt97)    ? ABSOLUTE(__Interrupt97)    :
          ABSOLUTE(__DefaultInterrupt));
@@ -773,6 +773,49 @@ _IC4CON2bits  = 0x15A;
 _IC4BUF       = 0x15C;
  IC4TMR       = 0x15E;
 _IC4TMR       = 0x15E;
+ QEI1CON      = 0x1C0;
+_QEI1CON      = 0x1C0;
+_QEI1CONbits  = 0x1C0;
+ QEI1IOC      = 0x1C2;
+_QEI1IOC      = 0x1C2;
+_QEI1IOCbits  = 0x1C2;
+ QEI1STAT     = 0x1C4;
+_QEI1STAT     = 0x1C4;
+_QEI1STATbits = 0x1C4;
+ POS1CNTL     = 0x1C6;
+_POS1CNTL     = 0x1C6;
+ POS1CNTH     = 0x1C8;
+_POS1CNTH     = 0x1C8;
+ POS1HLD      = 0x1CA;
+_POS1HLD      = 0x1CA;
+ VEL1CNT      = 0x1CC;
+_VEL1CNT      = 0x1CC;
+ INT1TMRL     = 0x1CE;
+_INT1TMRL     = 0x1CE;
+ INT1TMRH     = 0x1D0;
+_INT1TMRH     = 0x1D0;
+ INT1HLDL     = 0x1D2;
+_INT1HLDL     = 0x1D2;
+ INT1HLDH     = 0x1D4;
+_INT1HLDH     = 0x1D4;
+ INDX1CNTL    = 0x1D6;
+_INDX1CNTL    = 0x1D6;
+ INDX1CNTH    = 0x1D8;
+_INDX1CNTH    = 0x1D8;
+ INDX1HLD     = 0x1DA;
+_INDX1HLD     = 0x1DA;
+ QEI1GECL     = 0x1DC;
+_QEI1GECL     = 0x1DC;
+ QEI1ICL      = 0x1DC;
+_QEI1ICL      = 0x1DC;
+ QEI1GECH     = 0x1DE;
+_QEI1GECH     = 0x1DE;
+ QEI1ICH      = 0x1DE;
+_QEI1ICH      = 0x1DE;
+ QEI1LECL     = 0x1E0;
+_QEI1LECL     = 0x1E0;
+ QEI1LECH     = 0x1E2;
+_QEI1LECH     = 0x1E2;
  I2C1RCV      = 0x200;
 _I2C1RCV      = 0x200;
  I2C1TRN      = 0x202;
@@ -1177,6 +1220,15 @@ _RPINR8bits   = 0x6B0;
  RPINR11      = 0x6B6;
 _RPINR11      = 0x6B6;
 _RPINR11bits  = 0x6B6;
+ RPINR12      = 0x6B8;
+_RPINR12      = 0x6B8;
+_RPINR12bits  = 0x6B8;
+ RPINR14      = 0x6BC;
+_RPINR14      = 0x6BC;
+_RPINR14bits  = 0x6BC;
+ RPINR15      = 0x6BE;
+_RPINR15      = 0x6BE;
+_RPINR15bits  = 0x6BE;
  RPINR18      = 0x6C4;
 _RPINR18      = 0x6C4;
 _RPINR18bits  = 0x6C4;
@@ -1192,6 +1244,15 @@ _RPINR23bits  = 0x6CE;
  RPINR26      = 0x6D4;
 _RPINR26      = 0x6D4;
 _RPINR26bits  = 0x6D4;
+ RPINR37      = 0x6EA;
+_RPINR37      = 0x6EA;
+_RPINR37bits  = 0x6EA;
+ RPINR38      = 0x6EC;
+_RPINR38      = 0x6EC;
+_RPINR38bits  = 0x6EC;
+ RPINR39      = 0x6EE;
+_RPINR39      = 0x6EE;
+_RPINR39bits  = 0x6EE;
  NVMCON       = 0x728;
 _NVMCON       = 0x728;
 _NVMCONbits   = 0x728;
@@ -1238,6 +1299,7 @@ _PMD4         = 0x766;
 _PMD4bits     = 0x766;
  PMD6         = 0x76A;
 _PMD6         = 0x76A;
+_PMD6bits     = 0x76A;
  PMD7         = 0x76C;
 _PMD7         = 0x76C;
 _PMD7bits     = 0x76C;
@@ -1258,8 +1320,10 @@ _IFS4         = 0x808;
 _IFS4bits     = 0x808;
  IFS5         = 0x80A;
 _IFS5         = 0x80A;
+_IFS5bits     = 0x80A;
  IFS6         = 0x80C;
 _IFS6         = 0x80C;
+_IFS6bits     = 0x80C;
  IFS8         = 0x810;
 _IFS8         = 0x810;
 _IFS8bits     = 0x810;
@@ -1281,6 +1345,12 @@ _IEC3bits     = 0x826;
  IEC4         = 0x828;
 _IEC4         = 0x828;
 _IEC4bits     = 0x828;
+ IEC5         = 0x82A;
+_IEC5         = 0x82A;
+_IEC5bits     = 0x82A;
+ IEC6         = 0x82C;
+_IEC6         = 0x82C;
+_IEC6bits     = 0x82C;
  IEC8         = 0x830;
 _IEC8         = 0x830;
 _IEC8bits     = 0x830;
@@ -1320,6 +1390,9 @@ _IPC9bits     = 0x852;
  IPC12        = 0x858;
 _IPC12        = 0x858;
 _IPC12bits    = 0x858;
+ IPC14        = 0x85C;
+_IPC14        = 0x85C;
+_IPC14bits    = 0x85C;
  IPC16        = 0x860;
 _IPC16        = 0x860;
 _IPC16bits    = 0x860;
@@ -1329,6 +1402,12 @@ _IPC17bits    = 0x862;
  IPC19        = 0x866;
 _IPC19        = 0x866;
 _IPC19bits    = 0x866;
+ IPC23        = 0x86E;
+_IPC23        = 0x86E;
+_IPC23bits    = 0x86E;
+ IPC24        = 0x870;
+_IPC24        = 0x870;
+_IPC24bits    = 0x870;
  IPC35        = 0x886;
 _IPC35        = 0x886;
 _IPC35bits    = 0x886;
@@ -1608,6 +1687,120 @@ _DSADRL       = 0xBF8;
  DSADRH       = 0xBFA;
 _DSADRH       = 0xBFA;
 _DSADRHbits   = 0xBFA;
+ PTCON        = 0xC00;
+_PTCON        = 0xC00;
+_PTCONbits    = 0xC00;
+ PTCON2       = 0xC02;
+_PTCON2       = 0xC02;
+_PTCON2bits   = 0xC02;
+ PTPER        = 0xC04;
+_PTPER        = 0xC04;
+ SEVTCMP      = 0xC06;
+_SEVTCMP      = 0xC06;
+_SEVTCMPbits  = 0xC06;
+ MDC          = 0xC0A;
+_MDC          = 0xC0A;
+ CHOP         = 0xC1A;
+_CHOP         = 0xC1A;
+_CHOPbits     = 0xC1A;
+ PWMKEY       = 0xC1E;
+_PWMKEY       = 0xC1E;
+ PWMCON1      = 0xC20;
+_PWMCON1      = 0xC20;
+_PWMCON1bits  = 0xC20;
+ IOCON1       = 0xC22;
+_IOCON1       = 0xC22;
+_IOCON1bits   = 0xC22;
+ FCLCON1      = 0xC24;
+_FCLCON1      = 0xC24;
+_FCLCON1bits  = 0xC24;
+ PDC1         = 0xC26;
+_PDC1         = 0xC26;
+ PHASE1       = 0xC28;
+_PHASE1       = 0xC28;
+ DTR1         = 0xC2A;
+_DTR1         = 0xC2A;
+ ALTDTR1      = 0xC2C;
+_ALTDTR1      = 0xC2C;
+ TRIG1        = 0xC32;
+_TRIG1        = 0xC32;
+_TRIG1bits    = 0xC32;
+ TRGCON1      = 0xC34;
+_TRGCON1      = 0xC34;
+_TRGCON1bits  = 0xC34;
+ LEBCON1      = 0xC3A;
+_LEBCON1      = 0xC3A;
+_LEBCON1bits  = 0xC3A;
+ LEBDLY1      = 0xC3C;
+_LEBDLY1      = 0xC3C;
+_LEBDLY1bits  = 0xC3C;
+ AUXCON1      = 0xC3E;
+_AUXCON1      = 0xC3E;
+_AUXCON1bits  = 0xC3E;
+ PWMCON2      = 0xC40;
+_PWMCON2      = 0xC40;
+_PWMCON2bits  = 0xC40;
+ IOCON2       = 0xC42;
+_IOCON2       = 0xC42;
+_IOCON2bits   = 0xC42;
+ FCLCON2      = 0xC44;
+_FCLCON2      = 0xC44;
+_FCLCON2bits  = 0xC44;
+ PDC2         = 0xC46;
+_PDC2         = 0xC46;
+ PHASE2       = 0xC48;
+_PHASE2       = 0xC48;
+ DTR2         = 0xC4A;
+_DTR2         = 0xC4A;
+ ALTDTR2      = 0xC4C;
+_ALTDTR2      = 0xC4C;
+ TRIG2        = 0xC52;
+_TRIG2        = 0xC52;
+_TRIG2bits    = 0xC52;
+ TRGCON2      = 0xC54;
+_TRGCON2      = 0xC54;
+_TRGCON2bits  = 0xC54;
+ LEBCON2      = 0xC5A;
+_LEBCON2      = 0xC5A;
+_LEBCON2bits  = 0xC5A;
+ LEBDLY2      = 0xC5C;
+_LEBDLY2      = 0xC5C;
+_LEBDLY2bits  = 0xC5C;
+ AUXCON2      = 0xC5E;
+_AUXCON2      = 0xC5E;
+_AUXCON2bits  = 0xC5E;
+ PWMCON3      = 0xC60;
+_PWMCON3      = 0xC60;
+_PWMCON3bits  = 0xC60;
+ IOCON3       = 0xC62;
+_IOCON3       = 0xC62;
+_IOCON3bits   = 0xC62;
+ FCLCON3      = 0xC64;
+_FCLCON3      = 0xC64;
+_FCLCON3bits  = 0xC64;
+ PDC3         = 0xC66;
+_PDC3         = 0xC66;
+ PHASE3       = 0xC68;
+_PHASE3       = 0xC68;
+ DTR3         = 0xC6A;
+_DTR3         = 0xC6A;
+ ALTDTR3      = 0xC6C;
+_ALTDTR3      = 0xC6C;
+ TRIG3        = 0xC72;
+_TRIG3        = 0xC72;
+_TRIG3bits    = 0xC72;
+ TRGCON3      = 0xC74;
+_TRGCON3      = 0xC74;
+_TRGCON3bits  = 0xC74;
+ LEBCON3      = 0xC7A;
+_LEBCON3      = 0xC7A;
+_LEBCON3bits  = 0xC7A;
+ LEBDLY3      = 0xC7C;
+_LEBDLY3      = 0xC7C;
+_LEBDLY3bits  = 0xC7C;
+ AUXCON3      = 0xC7E;
+_AUXCON3      = 0xC7E;
+_AUXCON3bits  = 0xC7E;
  TRISA        = 0xE00;
 _TRISA        = 0xE00;
 _TRISAbits    = 0xE00;
