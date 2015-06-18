@@ -67,6 +67,7 @@ void add_mavlink_callback(unsigned char msgid, void *cbk)
     c = &callbacks[nr_callbacks++];
     c->msgid = msgid;
     c->cbk = cbk;
+    c->type = CALLBACK_WIDGET;
 }
 
 void set_mavlink_callback_type(unsigned char ctype, void *cbk)
@@ -89,13 +90,9 @@ void del_mavlink_callbacks(unsigned char ctype)
     for (i = 0; i < nr_callbacks; i++) {
         c = &callbacks[i];
         if (c->type == ctype) {
-            memcpy(&callbacks[i], &callbacks[i+1],
-                    sizeof(struct mavlink_callback) * (nr_callbacks - i - 1));
+            memcpy(c, c + 1, sizeof(struct mavlink_callback) * (nr_callbacks - i - 1));
             nr_callbacks--;
         }
     }
-
-
-    nr_callbacks = 0;
 }
 
