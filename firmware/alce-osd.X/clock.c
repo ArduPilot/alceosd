@@ -18,7 +18,54 @@
 
 #include "alce-osd.h"
 
+#define MAX_TIMERS  (50)
+
 volatile unsigned long millis = 0;
+volatile unsigned int ms100 = 0;
+
+
+struct timer {
+    unsigned int time;
+    unsigned int last_time;
+    unsigned char type;
+    unsigned char active;
+    void (*cbk)(void *data);
+    void *data;
+};
+
+static struct timer timers[MAX_TIMERS];
+static unsigned char nr_timers = 0;
+
+struct timer* add_timer(unsigned char type, unsigned long time, void *cbk, void *data)
+{
+    struct timer *t = NULL;
+    if (nr_timers < MAX_TIMERS) {
+        t = &timers[nr_timers++];
+        t->cbk = cbk;
+        t->data = data;
+        t->time = time;
+        t->type = type;
+        t->active = 1;
+        t->last_time = ms100;
+    }
+    return t;
+}
+
+void clock_process(void)
+{
+    unsigned char i;
+    struct timer *t;
+
+    while (i < nr_timers) {
+        t = &timers[i];
+        if ((t->active) && ((ms100 - t->last_time) > t->time )) {
+            t->last_time += t->time;
+            t->cbk(t->data);
+            if (t->type == TIMER_ONCE)
+                t->active = 0;
+        }
+    }
+}
 
 unsigned long get_millis(void)
 {
@@ -41,6 +88,12 @@ void clock_init(void)
 
 void __attribute__((__interrupt__, no_auto_psv )) _T1Interrupt()
 {
+    static unsigned int j = 0;
     millis++;
+
+    if (++j == 100) {
+        j = 0;
+        ms100++;
+    }
     IFS0bits.T1IF = 0;
 }

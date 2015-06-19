@@ -19,7 +19,17 @@
 #ifndef CLOCK_H
 #define	CLOCK_H
 
+#define TIMER_SEC (10)
+
+enum {
+    TIMER_ONCE = 0,
+    TIMER_ALWAYS,
+};
+
+
 void clock_init(void);
+void clock_process(void);
+struct timer* add_timer(unsigned char type, unsigned long time, void *cbk, void *data);
 unsigned long get_millis(void);
 
 #endif	/* CLOCK_H */
