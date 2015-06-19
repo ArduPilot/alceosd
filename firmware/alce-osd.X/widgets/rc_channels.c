@@ -44,7 +44,7 @@ static void init(struct widget_config *wcfg)
         priv.ch_raw[i] = 1500;
 
     alloc_canvas(ca, wcfg, X_SIZE, Y_SIZE);
-    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback);
+    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET);
 }
 
 
