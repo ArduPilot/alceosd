@@ -175,8 +175,7 @@ void widgets_init(void)
     build_tab_list();
     
     /* tab switching callback */
-    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, tab_switch_cbk);
-    set_mavlink_callback_type(CALLBACK_PERSISTENT, tab_switch_cbk);
+    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, tab_switch_cbk, CALLBACK_PERSISTENT);
 }
 
 extern volatile unsigned char sram_busy;

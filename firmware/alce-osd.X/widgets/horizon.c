@@ -61,7 +61,7 @@ static void init(struct widget_config *wcfg)
     priv.pitch = 0;
     priv.cos_roll = cos(0);
     priv.sin_roll = sin(0);
-    add_mavlink_callback(MAVLINK_MSG_ID_ATTITUDE, mav_callback);
+    add_mavlink_callback(MAVLINK_MSG_ID_ATTITUDE, mav_callback, CALLBACK_WIDGET);
 
     alloc_canvas(ca, wcfg, X_SIZE, Y_SIZE);
 }

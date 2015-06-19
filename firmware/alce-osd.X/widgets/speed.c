@@ -39,7 +39,7 @@ static void init(struct widget_config *wcfg)
     struct canvas *ca = &priv.ca;
 
     alloc_canvas(ca, wcfg, X_SIZE, Y_SIZE);
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback);
+    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET);
 }
 
 static int render(void)

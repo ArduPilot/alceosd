@@ -58,7 +58,7 @@ void mavlink_process()
     uart_discard2(count);
 }
 
-void add_mavlink_callback(unsigned char msgid, void *cbk)
+void add_mavlink_callback(unsigned char msgid, void *cbk, unsigned char ctype)
 {
     struct mavlink_callback *c;
     if (nr_callbacks == MAX_MAVLINK_CALLBACKS)
@@ -66,20 +66,9 @@ void add_mavlink_callback(unsigned char msgid, void *cbk)
     c = &callbacks[nr_callbacks++];
     c->msgid = msgid;
     c->cbk = cbk;
-    c->type = CALLBACK_WIDGET;
+    c->type = ctype;
 }
 
-void set_mavlink_callback_type(unsigned char ctype, void *cbk)
-{
-    struct mavlink_callback *c;
-    unsigned char i;
-
-    for (i = 0; i < nr_callbacks; i++) {
-        c = &callbacks[i];
-        if (c->cbk == cbk)
-            c->type = ctype;
-    }
-}
 
 void del_mavlink_callbacks(unsigned char ctype)
 {
