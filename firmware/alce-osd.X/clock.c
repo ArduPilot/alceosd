@@ -41,6 +41,6 @@ void clock_init(void)
 
 void __attribute__((__interrupt__, no_auto_psv )) _T1Interrupt()
 {
-    jiffies++;
+    millis++;
     IFS0bits.T1IF = 0;
 }
