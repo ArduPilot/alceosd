@@ -56,7 +56,7 @@ void clock_process(void)
     unsigned char i;
     struct timer *t;
 
-    while (i < nr_timers) {
+    for (i = 0; i < nr_timers; i++) {
         t = &timers[i];
         if ((t->active) && ((ms100 - t->last_time) > t->time )) {
             t->last_time += t->time;
