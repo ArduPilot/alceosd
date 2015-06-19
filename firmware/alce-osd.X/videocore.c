@@ -365,28 +365,28 @@ int alloc_canvas(struct canvas *c,
     }
 
 
-    switch (wcfg->just & JUST_VMASK) {
-        case JUST_TOP:
+    switch (wcfg->props.vjust) {
+        case VJUST_TOP:
         default:
             c->y = wcfg->y;
             break;
-        case JUST_BOT:
+        case VJUST_BOT:
             c->y = osdysize - h + wcfg->y;
             break;
-        case JUST_VCENTER:
+        case VJUST_CENTER:
             c->y = (osdysize - h)/2 + wcfg->y;
             break;
     }
 
-    switch (wcfg->just & JUST_HMASK) {
-        case JUST_LEFT:
+    switch (wcfg->props.hjust) {
+        case HJUST_LEFT:
         default:
             c->x = wcfg->x;
             break;
-        case JUST_RIGHT:
+        case HJUST_RIGHT:
             c->x = osdxsize - w + wcfg->x;
             break;
-        case JUST_HCENTER:
+        case HJUST_CENTER:
             c->x = (osdxsize - w)/2 + wcfg->x;
             break;
     }

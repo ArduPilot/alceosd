@@ -34,23 +34,43 @@ enum {
 };
 
 
-#define JUST_VMASK      0x0f
-#define JUST_HMASK      0xf0
-#define JUST_TOP        0x01
-#define JUST_BOT        0x02
-#define JUST_VCENTER    0x03
-#define JUST_LEFT       0x10
-#define JUST_RIGHT      0x20
-#define JUST_HCENTER    0x30
+#define JUST_TOP        0x0
+#define JUST_BOT        0x1
+#define JUST_VCENTER    0x2
+#define JUST_LEFT       0x0
+#define JUST_RIGHT      0x4
+#define JUST_HCENTER    0x8
 
 #define TABS_END        (0xffff)
+
+enum {
+    VJUST_TOP = 0,
+    VJUST_BOT = 1,
+    VJUST_CENTER = 2,
+};
+
+enum {
+    HJUST_LEFT = 0,
+    HJUST_RIGHT = 1,
+    HJUST_CENTER = 2,
+};
+
+typedef union {
+    unsigned int raw;
+    struct {
+        unsigned vjust:2;
+        unsigned hjust:2;
+        unsigned mode:4;
+        unsigned :8;
+    };
+} widget_props;
 
 
 struct widget_config {
     unsigned int tab;
     unsigned int widget_id;
     int x, y;
-    unsigned int just;
+    widget_props props;
 };
 
 

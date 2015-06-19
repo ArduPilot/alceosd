@@ -48,19 +48,21 @@ struct alceosd_config config = {
     .tab_change_ch_max = 2000,
 
     .widgets = {
-        { 1, WIDGET_ALTITUDE_ID,        0,   0, JUST_VCENTER | JUST_RIGHT},
-        { 1, WIDGET_BATTERY_INFO_ID,    0,   0, JUST_TOP     | JUST_LEFT},
-        { 1, WIDGET_COMPASS_ID,         0,   0, JUST_BOT     | JUST_HCENTER},
-        { 1, WIDGET_FLIGHT_MODE_ID,     0, -32, JUST_BOT     | JUST_LEFT},
-        { 1, WIDGET_GPS_INFO_ID,        0,   0, JUST_BOT     | JUST_LEFT},
-        { 1, WIDGET_HORIZON_ID,        16,   0, JUST_VCENTER | JUST_HCENTER},
-        { 1, WIDGET_RSSI_ID,            0,   0, JUST_TOP     | JUST_RIGHT},
-        { 1, WIDGET_SPEED_ID,           0,   0, JUST_VCENTER | JUST_LEFT},
+        { 1, WIDGET_ALTITUDE_ID,        0,   0, {JUST_VCENTER | JUST_RIGHT}},
+        { 1, WIDGET_BATTERY_INFO_ID,    0,   0, {JUST_TOP     | JUST_LEFT}},
+        { 1, WIDGET_COMPASS_ID,         0,   0, {JUST_BOT     | JUST_HCENTER}},
+        { 1, WIDGET_FLIGHT_MODE_ID,     0, -32, {JUST_BOT     | JUST_LEFT}},
+        { 1, WIDGET_GPS_INFO_ID,        0,   0, {JUST_BOT     | JUST_LEFT}},
+        { 1, WIDGET_HORIZON_ID,        16,   0, {JUST_VCENTER | JUST_HCENTER}},
+        { 1, WIDGET_RSSI_ID,            0,   0, {JUST_TOP     | JUST_RIGHT}},
+        { 1, WIDGET_SPEED_ID,           0,   0, {JUST_VCENTER | JUST_LEFT}},
+        { 1, WIDGET_THROTTLE_ID,       70,   0, {JUST_TOP     | JUST_LEFT}},
+        { 1, WIDGET_VARIOMETER_ID,      0,  -5, {JUST_BOT     | JUST_RIGHT}},
 
-        { 1, WIDGET_THROTTLE_ID,       70,   0, JUST_TOP     | JUST_LEFT},
-        { 1, WIDGET_VARIOMETER_ID,      0,  -5, JUST_BOT     | JUST_RIGHT},
+        { 2, WIDGET_RC_CHANNELS_ID,     0,   0, {JUST_VCENTER | JUST_LEFT}},
+        { 2, WIDGET_HORIZON_ID,        16,   0, {JUST_VCENTER | JUST_HCENTER}},
 
-        { TABS_END, 0, 0, 0},
+        { TABS_END, 0, 0, 0, {0}},
     }
 };;
 
@@ -294,6 +296,7 @@ const char menu_add_widgets[] = "\n\nAlceOSD :: Add widget\n\n"
 const char menu_edit_widget[] = "\n\nAlceOSD :: Edit widget\n\n"
                                 "1 - Horizontal justification: %d\n"
                                 "2 - Vertical justification: %d\n"
+                                "3/4 - Mode: %d\n"
                                 "w/e - X position: %d\n"
                                 "q/a - Y position: %d\n"
                                 "\nx - Go back\n";
@@ -407,8 +410,9 @@ int config_osd(void)
                 }
 
                 printf(menu_edit_widget,
-                    wcfg->just & JUST_HMASK,
-                    wcfg->just & JUST_VMASK,
+                    wcfg->props.hjust,
+                    wcfg->props.vjust,
+                    wcfg->props.mode,
                     wcfg->x,
                     wcfg->y);
                 break;
@@ -591,7 +595,7 @@ int config_osd(void)
                     wcfg->widget_id = options[nr_opt];
                     wcfg->x = 0;
                     wcfg->y = 0;
-                    wcfg->just = JUST_VCENTER | JUST_HCENTER;
+                    wcfg->props.raw = JUST_VCENTER | JUST_HCENTER;
 
                     wcfg++;
 
@@ -618,14 +622,20 @@ int config_osd(void)
                     wcfg->x+=4;
                     break;
                 case '1':
-                    wcfg->just = (wcfg->just + 0x10) & 0x33;
-                    if ((wcfg->just & 0xf0) == 0)
-                        wcfg->just = (wcfg->just & 0x0f) | 0x10;
+                    wcfg->props.hjust++;
+                    if (wcfg->props.hjust > 2)
+                        wcfg->props.hjust = 0;
                     break;
                 case '2':
-                    wcfg->just = (wcfg->just + 0x01) & 0x33;
-                    if ((wcfg->just & 0x0f) == 0)
-                        wcfg->just = (wcfg->just & 0xf0) | 0x01;
+                    wcfg->props.vjust++;
+                    if (wcfg->props.vjust > 2)
+                        wcfg->props.vjust = 0;
+                    break;
+                case '3':
+                    wcfg->props.mode--;
+                    break;
+                case '4':
+                    wcfg->props.mode++;
                     break;
                 case 'x':
                     state = MENU_TAB_WIDGETS;
