@@ -31,6 +31,8 @@
 #include "videocore.h"
 #include "mavlink.h"
 #include "uart.h"
+#include "clock.h"
+#include "alce-math.h"
 
 
 #define WITH_BOOTLOADER
