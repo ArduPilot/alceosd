@@ -27,14 +27,7 @@
 
 
 /* data that is passed to widgets */
-struct home_data_s {
-    unsigned int altitude;
-    int direction;
-    float distance;
-
-    unsigned char lock;
-    
-} home_data;
+struct home_data home;
 
 
 static struct home_priv {
@@ -42,6 +35,12 @@ static struct home_priv {
     unsigned char gps_fix_type;
     unsigned int altitude, home_altitude;
 } priv;
+
+
+struct home_data* get_home_data(void)
+{
+    return &home;
+}
 
 
 static void store_mavdata(mavlink_message_t *msg, mavlink_status_t *status)
@@ -63,9 +62,9 @@ static void store_mavdata(mavlink_message_t *msg, mavlink_status_t *status)
 
 static void calc_home(void *d)
 {
-    home_data.direction = (int) get_heading(&priv.home_coord, &priv.uav_coord);
-    home_data.distance = earth_distance(&priv.home_coord, &priv.uav_coord);
-    home_data.altitude = priv.altitude - priv.home_altitude;
+    home.direction = (int) get_heading(&priv.home_coord, &priv.uav_coord);
+    home.distance = earth_distance(&priv.home_coord, &priv.uav_coord);
+    home.altitude = priv.altitude - priv.home_altitude;
 }
 
 
@@ -84,25 +83,25 @@ void find_home(struct timer *t, void *d)
         
         /* GPD 2D fix for 5 sec */
         if (priv.gps_fix_type > 1) {
-            home_data.lock |= LOCK_FIX;
+            home.lock |= LOCK_FIX;
         } else {
-            home_data.lock &= ~LOCK_FIX;
+            home.lock &= ~LOCK_FIX;
             sec = 0;
         }
 
         /* GPS position */
-        if (home_data.distance <= 1) {
-            home_data.lock |= LOCK_POS;
+        if (home.distance <= 1) {
+            home.lock |= LOCK_POS;
         } else {
-            home_data.lock &= ~LOCK_POS;
+            home.lock &= ~LOCK_POS;
             sec = 0;
         }
 
         /* Altitude */
-        if (home_data.altitude <= 1) {
-            home_data.lock |= LOCK_ALT;
+        if (home.altitude <= 1) {
+            home.lock |= LOCK_ALT;
         } else {
-            home_data.lock &= ~LOCK_ALT;
+            home.lock &= ~LOCK_ALT;
             sec = 0;
         }
     } else {
@@ -114,7 +113,7 @@ void find_home(struct timer *t, void *d)
 
 void init_home_process(void)
 {
-    home_data.lock = 0;
+    home.lock = 0;
 
     /* do home calculations in a 500ms interval */
     add_timer(TIMER_ALWAYS, 5, calc_home, NULL);
