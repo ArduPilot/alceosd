@@ -29,7 +29,7 @@ struct timer {
     unsigned int last_time;
     unsigned char type;
     unsigned char active;
-    void (*cbk)(void *data);
+    void (*cbk)(struct timer *t, void *data);
     void *data;
 };
 
@@ -51,6 +51,15 @@ struct timer* add_timer(unsigned char type, unsigned long time, void *cbk, void 
     return t;
 }
 
+void remove_timer(struct timer *t)
+{
+    unsigned char i = t - timers;
+
+    if (i < (nr_timers - 1))
+        memcpy(&timers[i], &timers[i + 1], sizeof(struct timer) * (nr_timers - i - 1));
+    nr_timers--;
+}
+
 void clock_process(void)
 {
     unsigned char i;
@@ -60,7 +69,7 @@ void clock_process(void)
         t = &timers[i];
         if ((t->active) && ((ms100 - t->last_time) > t->time )) {
             t->last_time += t->time;
-            t->cbk(t->data);
+            t->cbk(t, t->data);
             if (t->type == TIMER_ONCE)
                 t->active = 0;
         }

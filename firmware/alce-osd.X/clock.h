@@ -30,6 +30,7 @@ enum {
 void clock_init(void);
 void clock_process(void);
 struct timer* add_timer(unsigned char type, unsigned long time, void *cbk, void *data);
+void remove_timer(struct timer *t);
 unsigned long get_millis(void);
 
 #endif	/* CLOCK_H */
