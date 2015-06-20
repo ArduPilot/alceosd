@@ -16,11 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <math.h>
-#include <stdlib.h>
-#include "graphics.h"
+#include "alce-osd.h"
 
-#define PI (3.1415926535897931)
 
 const char mfont[] __attribute__((space(auto_psv)));
 const char font1[] __attribute__((space(auto_psv)));
