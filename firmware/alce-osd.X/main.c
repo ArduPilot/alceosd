@@ -156,6 +156,9 @@ int main(void) {
 
     /* generic hw init */
     hw_init();
+    
+    /* real time clock init */
+    clock_init();
 
     /* init uart2 */
     uart_init2(UART_PORT_TELEMETRY);
@@ -203,10 +206,13 @@ int main(void) {
 
     uart_set_baudrate2(config.baudrate);
 
+    init_home_process();
+
     for (;;) {
         mavlink_process();
         widgets_process();
         render_process();
+        clock_process();
         ClrWdt();
     }
 
