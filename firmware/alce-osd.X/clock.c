@@ -60,6 +60,22 @@ void remove_timer(struct timer *t)
     nr_timers--;
 }
 
+void remove_timers(unsigned char ctype)
+{
+    struct timer *t = timers;
+    unsigned char i = 0;
+
+    while (i < nr_timers) {
+        if (t->type == ctype) {
+            memcpy(t, t + 1, sizeof(struct timer) * (nr_timers - i - 1));
+            nr_timers--;
+        } else {
+            t++;
+            i++;
+        }
+    }
+}
+
 void clock_process(void)
 {
     unsigned char i;

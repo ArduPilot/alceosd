@@ -24,6 +24,7 @@
 enum {
     TIMER_ONCE = 0,
     TIMER_ALWAYS,
+    TIMER_WIDGET,
 };
 
 
@@ -31,6 +32,7 @@ void clock_init(void);
 void clock_process(void);
 struct timer* add_timer(unsigned char type, unsigned long time, void *cbk, void *data);
 void remove_timer(struct timer *t);
+void remove_timers(unsigned char type);
 unsigned long get_millis(void);
 
 #endif	/* CLOCK_H */
