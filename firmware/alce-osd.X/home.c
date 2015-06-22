@@ -34,6 +34,7 @@ static struct home_priv {
     struct gps_coord home_coord, uav_coord;
     unsigned char gps_fix_type;
     unsigned int altitude, home_altitude;
+    int heading;
 } priv;
 
 
@@ -49,6 +50,7 @@ static void store_mavdata(mavlink_message_t *msg, mavlink_status_t *status)
     switch (msg->msgid) {
         case MAVLINK_MSG_ID_VFR_HUD:
             priv.altitude = (unsigned int) mavlink_msg_vfr_hud_get_alt(msg);
+            priv.heading = mavlink_msg_vfr_hud_get_heading(msg);
             break;
         case MAVLINK_MSG_ID_GPS_RAW_INT:
             priv.uav_coord.lat = DEG2RAD(mavlink_msg_gps_raw_int_get_lat(msg) / 10000000.0);
@@ -63,6 +65,12 @@ static void store_mavdata(mavlink_message_t *msg, mavlink_status_t *status)
 static void calc_home(void *d)
 {
     home.direction = (int) get_heading(&priv.home_coord, &priv.uav_coord);
+
+    home.direction += 180;
+    home.direction -= priv.heading;
+    if (home.direction < 0)
+        home.direction += 360;
+
     home.distance = earth_distance(&priv.home_coord, &priv.uav_coord);
     home.altitude = priv.altitude - priv.home_altitude;
 }
@@ -115,8 +123,8 @@ void init_home_process(void)
 {
     home.lock = 0;
 
-    /* do home calculations in a 500ms interval */
-    add_timer(TIMER_ALWAYS, 5, calc_home, NULL);
+    /* do home calculations in a 100ms interval */
+    add_timer(TIMER_ALWAYS, 1, calc_home, NULL);
 
     /* find home position */
     add_timer(TIMER_ALWAYS, 10, find_home, NULL);

@@ -27,6 +27,7 @@ struct home_data {
     unsigned char lock;
 };
 
+void init_home_process(void);
 struct home_data* get_home_data(void);
 
 #endif	/* HOME_H */
