@@ -38,4 +38,6 @@ void draw_chr(char c, int x, int y, struct canvas *ca);
 void draw_str(char *buf, int x, int y, struct canvas *ca);
 void draw_str3(char *buf, int x, int y, struct canvas *ca);
 
+void draw_circle(int xm, int ym, int r, unsigned char p, struct canvas *ca);
+
 #endif

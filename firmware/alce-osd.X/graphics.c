@@ -124,6 +124,19 @@ void draw_frect(int x0, int y0, int x1, int y1, unsigned char p, struct canvas *
 }
 
 
+void draw_circle(int xm, int ym, int r, unsigned char p, struct canvas *ca)
+{
+   int x = -r, y = 0, err = 2-2*r; /* II. Quadrant */
+   do {
+      set_pixel(xm-x, ym+y, p, ca); /*   I. Quadrant */
+      set_pixel(xm-y, ym-x, p, ca); /*  II. Quadrant */
+      set_pixel(xm+x, ym-y, p, ca); /* III. Quadrant */
+      set_pixel(xm+y, ym+x, p, ca); /*  IV. Quadrant */
+      r = err;
+      if (r <= y) err += ++y*2+1;           /* e_xy+e_y < 0 */
+      if (r > x || err > y) err += ++x*2+1; /* e_xy+e_x > 0 or no 2nd y-step */
+   } while (x < 0);
+}
 
 #if 0
 void draw_line_wd(int x0, int y0, int x1, int y1, unsigned char v, unsigned char wd)
@@ -151,19 +164,7 @@ void draw_line_wd(int x0, int y0, int x1, int y1, unsigned char v, unsigned char
    }
 }
 
-void draw_circle(int xm, int ym, int r, unsigned char v)
-{
-   int x = -r, y = 0, err = 2-2*r; /* II. Quadrant */
-   do {
-      set_pixel(xm-x, ym+y, v); /*   I. Quadrant */
-      set_pixel(xm-y, ym-x, v); /*  II. Quadrant */
-      set_pixel(xm+x, ym-y, v); /* III. Quadrant */
-      set_pixel(xm+y, ym+x, v); /*  IV. Quadrant */
-      r = err;
-      if (r <= y) err += ++y*2+1;           /* e_xy+e_y < 0 */
-      if (r > x || err > y) err += ++x*2+1; /* e_xy+e_x > 0 or no 2nd y-step */
-   } while (x < 0);
-}
+
 
 
 void draw_ellipse_rect(int x0, int y0, int x1, int y1, unsigned char v)
