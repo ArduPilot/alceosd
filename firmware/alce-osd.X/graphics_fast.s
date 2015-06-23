@@ -89,18 +89,24 @@ _set_pixel_fast:
 .global _draw_hline
 _draw_hline:
 ;void draw_hline(int x0, int x1, int y, unsigned char p, struct canvas *ca)
-
-    CPSGT W1, W0
+    CP W1, W0
+    BRA GEU, _no_swap_draw_hline
     EXCH W0, W1
+_no_swap_draw_hline:
 
     MOV [W4+6], W5 ; height
-    CPSGT W5, W2
-    RETURN ; y is outside canvas
+    CP W2, W5
+    BRA GEU, _exit_draw_hline ; y is outside canvas
 
     MOV [W4+4], W5 ; width
-    CPSGT W5, W1
-    MOV W5, W1 ; trim x1 with canvas width
 
+    CP W0, W5
+    BRA GEU, _exit_draw_hline
+
+    CP W1, W5
+    BRA LTU, _no_clip_x_draw_hline
+    SUB W5, #1, W1 ; trim x1 with canvas width
+_no_clip_x_draw_hline:
 
     MOV [W4+8], W6 ; rwidth
     MUL.SS W6, W2, W6 ; y addr
@@ -130,6 +136,7 @@ _draw_hline:
 _draw_hline_loop:
     INC W0, W0
 
+_exit_draw_hline:
     RETURN
 
 
@@ -139,16 +146,28 @@ _draw_hline_loop:
 .global _draw_vline
 _draw_vline:
 ; void draw_vline(int x, int y0, int y1, unsigned char p, struct canvas *ca)
-    CPSGT W2, W1
+    CP W2, W1
+    BRA GEU, _no_swap_draw_vline
     EXCH W1, W2
-
-    MOV [W4+6], W5 ; height
-    CPSGT W5, W2
-    MOV W5, W2 ; trim y1 to canvas height
+_no_swap_draw_vline:
 
     MOV [W4+4], W5 ; width
-    CPSGT W5, W0
-    RETURN ; outside canvas width
+    CP W0, W5
+    BRA GEU,_exit_draw_vline
+    ;CPSLT W0, W5
+    ;RETURN ; outside canvas width
+
+    MOV [W4+6], W5 ; height
+
+    CP W1, W5
+    BRA GEU, _exit_draw_vline
+
+    CP W2, W5 ; height
+    ;CPSLT W2, W5
+    ;SUB W5, #1, W2 ; trim y1 to canvas height
+    BRA LTU,_no_clip_y_draw_vline
+    SUB W5, #1, W2 ; trim y1 to canvas height
+_no_clip_y_draw_vline:
 
 
     MOV [W4+12], W7 ; buf
@@ -180,7 +199,7 @@ _draw_vline:
 
 _draw_vline_loop:
     ADD W7, W6, W7
-
+_exit_draw_vline:
     RETURN
 
 
