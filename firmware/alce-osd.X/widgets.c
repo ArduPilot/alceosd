@@ -33,6 +33,8 @@ extern struct widget flightmode_widget;
 extern struct widget throttle_widget;
 extern struct widget rssi_widget;
 extern struct widget rc_channels_widget;
+extern struct widget home_info_widget;
+extern struct widget radar_widget;
 
 const struct widget *all_widgets[] = {
     &altitude_widget,
@@ -46,6 +48,8 @@ const struct widget *all_widgets[] = {
     &throttle_widget,
     &vario_graph_widget,
     &rc_channels_widget,
+    &home_info_widget,
+    &radar_widget,
     NULL,
 };
 
@@ -76,7 +80,6 @@ const struct widget *get_widget(unsigned int id)
     }
     return (*w);
 }
-
 
 
 static void tab_switch_cbk(mavlink_message_t *msg, mavlink_status_t *status)
@@ -189,6 +192,7 @@ void load_tab(unsigned char tab)
     while (sram_busy);
     SET_AND_SAVE_CPU_IPL(ipl, 7);
 
+    remove_timers(TIMER_WIDGET);
     del_mavlink_callbacks(CALLBACK_WIDGET);
     wfifo.rd = wfifo.wr = 0;
 
