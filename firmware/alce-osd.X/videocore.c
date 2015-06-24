@@ -361,6 +361,7 @@ int alloc_canvas(struct canvas *c,
 
     if ((alloc_size + c->size) >= SCRATCHPAD_SIZE) {
         //U1TXREG = 'm';
+        c->lock = 1;
         return -ENOMEM;
     }
 
