@@ -76,7 +76,7 @@ static void find_launch_heading(struct timer *t, void *d)
     struct home_data *home;
 
     home = get_home_data();
-    if (home->lock != LOCKED)
+    if (home->lock != HOME_LOCKED)
         return;
 
     if ((priv.throttle > 10) &&
