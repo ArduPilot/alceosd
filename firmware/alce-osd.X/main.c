@@ -207,6 +207,7 @@ int main(void) {
     uart_set_baudrate2(config.baudrate);
 
     init_home_process();
+    init_flight_stats_process();
 
     for (;;) {
         mavlink_process();
