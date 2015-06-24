@@ -69,46 +69,47 @@ static void calc_home(void *d)
     home.altitude = priv.altitude - priv.home_altitude;
 }
 
+extern struct alceosd_config config;
+
 
 void find_home(struct timer *t, void *d)
 {
-    static unsigned char sec = 0;
-    
     /* stable timer = 15 sec */
-    if (sec < 15) {
-        if (sec == 0){
+    if (home.lock_sec < config.home_lock_sec) {
+        if (home.lock_sec == 0){
             memcpy(&priv.home_coord, &priv.uav_coord, sizeof(struct gps_coord));
             priv.home_altitude = priv.altitude;
         }
 
-        sec++;
+        home.lock_sec++;
         
         /* GPD 2D fix */
         if (priv.gps_fix_type > 1) {
-            home.lock |= LOCK_FIX;
+            home.lock |= HOME_LOCK_FIX;
         } else {
-            home.lock &= ~LOCK_FIX;
-            sec = 0;
+            home.lock &= ~HOME_LOCK_FIX;
+            home.lock_sec = 0;
         }
 
         /* GPS position */
         if (home.distance <= 1) {
-            home.lock |= LOCK_POS;
+            home.lock |= HOME_LOCK_POS;
         } else {
-            home.lock &= ~LOCK_POS;
-            sec = 0;
+            home.lock &= ~HOME_LOCK_POS;
+            home.lock_sec = 0;
         }
 
         /* Altitude */
         if (home.altitude <= 1) {
-            home.lock |= LOCK_ALT;
+            home.lock |= HOME_LOCK_ALT;
         } else {
-            home.lock &= ~LOCK_ALT;
-            sec = 0;
+            home.lock &= ~HOME_LOCK_ALT;
+            home.lock_sec = 0;
         }
     } else {
         /* locked */
         remove_timer(t);
+        home.lock |= HOME_LOCK_DONE;
     }
 }
 
@@ -116,6 +117,7 @@ void find_home(struct timer *t, void *d)
 void init_home_process(void)
 {
     home.lock = 0;
+    home.lock_sec = 0;
 
     /* do home calculations in a 100ms interval */
     add_timer(TIMER_ALWAYS, 1, calc_home, NULL);
