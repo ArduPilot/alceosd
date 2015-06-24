@@ -33,6 +33,8 @@
 #include "uart.h"
 #include "clock.h"
 #include "alce-math.h"
+#include "home.h"
+#include "flight_stats.h"
 
 
 #define WITH_BOOTLOADER
