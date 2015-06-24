@@ -138,6 +138,49 @@ void draw_circle(int xm, int ym, int r, unsigned char p, struct canvas *ca)
    } while (x < 0);
 }
 
+
+void transform_polygon(struct polygon *p, int x, int y, int rot)
+{
+    struct point *pt = p->points;
+    unsigned char i;
+    float angle = DEG2RAD(rot);
+    float cos_rot = cos(angle) * 10000;
+    float sin_rot = sin(angle) * 10000;
+    long cos_l = (long) cos_rot;
+    long sin_l = (long) sin_rot;
+
+    long xr, yr;
+
+    for (i = 0; i < p->len; i++) {
+        xr = ((cos_l * pt->x) - (sin_l * pt->y))/10000;
+        yr = ((cos_l * pt->y) + (sin_l * pt->x))/10000;
+        pt->x = (int) xr;
+        pt->y = (int) yr;
+        pt->x += x;
+        pt->y += y;
+        pt++;
+    }
+}
+
+void draw_polygon(struct polygon *p, unsigned char v, struct canvas *ca)
+{
+   unsigned char i;
+   struct point *pt1 = p->points;
+   struct point *pt2 = pt1+1;
+
+    for (i = 1; i < p->len; i++) {
+        draw_line(pt1->x, pt1->y, pt2->x, pt2->y, v, ca);
+        pt1++;
+        pt2++;
+    }
+    pt2 = p->points;
+    draw_line(pt1->x, pt1->y, pt2->x, pt2->y, v, ca);
+}
+
+
+
+
+
 #if 0
 void draw_line_wd(int x0, int y0, int x1, int y1, unsigned char v, unsigned char wd)
 {

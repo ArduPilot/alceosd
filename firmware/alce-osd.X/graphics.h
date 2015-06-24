@@ -21,6 +21,17 @@
 
 #include "videocore.h"
 
+
+struct point {
+    int x, y;
+};
+
+struct polygon {
+    struct point *points;
+    unsigned char len;
+};
+
+
 /* in assembly */
 extern void set_pixel(unsigned int x, unsigned int y, unsigned int v, struct canvas *ca);
 extern void draw_hline(int x0, int x1, int y, unsigned char p, struct canvas *ca);
@@ -39,5 +50,8 @@ void draw_str(char *buf, int x, int y, struct canvas *ca);
 void draw_str3(char *buf, int x, int y, struct canvas *ca);
 
 void draw_circle(int xm, int ym, int r, unsigned char p, struct canvas *ca);
+
+void transform_polygon(struct polygon *p, int x, int y, int rot);
+void draw_polygon(struct polygon *p, unsigned char v, struct canvas *ca);
 
 #endif
