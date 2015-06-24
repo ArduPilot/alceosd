@@ -52,6 +52,7 @@ void draw_str3(char *buf, int x, int y, struct canvas *ca);
 void draw_circle(int xm, int ym, int r, unsigned char p, struct canvas *ca);
 
 void transform_polygon(struct polygon *p, int x, int y, int rot);
+void move_polygon(struct polygon *p, int x, int y);
 void draw_polygon(struct polygon *p, unsigned char v, struct canvas *ca);
 
 #endif

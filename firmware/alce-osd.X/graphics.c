@@ -162,6 +162,18 @@ void transform_polygon(struct polygon *p, int x, int y, int rot)
     }
 }
 
+void move_polygon(struct polygon *p, int x, int y)
+{
+    struct point *pt = p->points;
+    unsigned char i;
+
+    for (i = 0; i < p->len; i++) {
+        pt->x += x;
+        pt->y += y;
+        pt++;
+    }
+}
+
 void draw_polygon(struct polygon *p, unsigned char v, struct canvas *ca)
 {
    unsigned char i;
