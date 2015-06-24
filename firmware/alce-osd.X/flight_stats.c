@@ -86,7 +86,7 @@ static void find_launch_heading(struct timer *t, void *d)
 
     if (stats.launch_heading != NO_HEADING) {
         /* found */
-        printf("found launch heading\n");
+        //printf("found launch heading\n");
         remove_timer(t);
         /* start calcs */
         start_calc_stats();
