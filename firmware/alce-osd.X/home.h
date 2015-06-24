@@ -19,6 +19,12 @@
 #ifndef HOME_H
 #define	HOME_H
 
+#define LOCK_FIX    0x01
+#define LOCK_POS    0x02
+#define LOCK_ALT    0x04
+#define LOCKED      0x07
+
+
 struct home_data {
     unsigned int altitude;
     int direction;

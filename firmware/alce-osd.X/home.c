@@ -20,12 +20,6 @@
 #include "alce-osd.h"
 
 
-#define LOCK_FIX    0x01
-#define LOCK_POS    0x02
-#define LOCK_ALT    0x04
-#define LOCKED      0x07
-
-
 /* data that is passed to widgets */
 struct home_data home;
 
@@ -89,7 +83,7 @@ void find_home(struct timer *t, void *d)
 
         sec++;
         
-        /* GPD 2D fix for 5 sec */
+        /* GPD 2D fix */
         if (priv.gps_fix_type > 1) {
             home.lock |= LOCK_FIX;
         } else {
