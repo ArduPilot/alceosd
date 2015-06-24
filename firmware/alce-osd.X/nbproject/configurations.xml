@@ -11,6 +11,10 @@
       <itemPath>graphics.h</itemPath>
       <itemPath>videocore.h</itemPath>
       <itemPath>alce-osd.h</itemPath>
+      <itemPath>alce-math.h</itemPath>
+      <itemPath>clock.h</itemPath>
+      <itemPath>home.h</itemPath>
+      <itemPath>flight_stats.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -31,6 +35,9 @@
         <itemPath>widgets/speed.c</itemPath>
         <itemPath>widgets/throttle.c</itemPath>
         <itemPath>widgets/vario_graph.c</itemPath>
+        <itemPath>widgets/rc_channels.c</itemPath>
+        <itemPath>widgets/radar.c</itemPath>
+        <itemPath>widgets/home_info.c</itemPath>
       </logicalFolder>
       <itemPath>uart.c</itemPath>
       <itemPath>main.c</itemPath>
@@ -41,6 +48,10 @@
       <itemPath>videocore.c</itemPath>
       <itemPath>config.c</itemPath>
       <itemPath>videocore_fast.s</itemPath>
+      <itemPath>alce-math.c</itemPath>
+      <itemPath>clock.c</itemPath>
+      <itemPath>home.c</itemPath>
+      <itemPath>flight_stats.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -196,7 +207,7 @@
       <C30Global>
         <property key="common-include-directories" value=""/>
         <property key="dual-boot-partition" value="0"/>
-        <property key="fast-math" value="false"/>
+        <property key="fast-math" value="true"/>
         <property key="generic-16-bit" value="false"/>
         <property key="legacy-libc" value="false"/>
         <property key="oXC16glb-macros" value=""/>
@@ -235,6 +246,7 @@
         <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
         <property key="UART 1" value="true"/>
         <property key="UART 2" value="true"/>
+        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>
