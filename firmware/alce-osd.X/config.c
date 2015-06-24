@@ -27,6 +27,8 @@
 #define CONFIG_ADDR_PAGE    (0x800)
 #define CONFIG_PAGE_SIZE    (0x400)
 
+#define CONFIG_VERSION_SIG  (0xfffefd)
+
 static unsigned long valid_config_addr = 0;
 
 
@@ -47,6 +49,8 @@ struct alceosd_config config = {
     .tab_change_ch_min = 1000,
     .tab_change_ch_max = 2000,
 
+    .home_lock_sec = 15,
+
     .widgets = {
         { 1, WIDGET_ALTITUDE_ID,        0,   0, {JUST_VCENTER | JUST_RIGHT}},
         { 1, WIDGET_BATTERY_INFO_ID,    0,   0, {JUST_TOP     | JUST_LEFT}},
@@ -59,8 +63,11 @@ struct alceosd_config config = {
         { 1, WIDGET_THROTTLE_ID,       70,   0, {JUST_TOP     | JUST_LEFT}},
         { 1, WIDGET_VARIOMETER_ID,      0,  -5, {JUST_BOT     | JUST_RIGHT}},
 
-        { 2, WIDGET_RC_CHANNELS_ID,     0,   0, {JUST_VCENTER | JUST_LEFT}},
-        { 2, WIDGET_HORIZON_ID,        16,   0, {JUST_VCENTER | JUST_HCENTER}},
+        { 1, WIDGET_HOME_INFO_ID,       80,  0, {JUST_TOP     | JUST_LEFT}},
+        { 1, WIDGET_RADAR_ID,           60,-44, {JUST_BOT     | JUST_LEFT}},
+
+        { 2, WIDGET_RC_CHANNELS_ID,      0,  0, {JUST_VCENTER | JUST_LEFT}},
+        { 2, WIDGET_RADAR_ID,            0,  0, {JUST_TOP     | JUST_HCENTER}},
 
         { TABS_END, 0, 0, 0, {0}},
     }
@@ -169,14 +176,14 @@ void load_config(void)
                  ((unsigned long) buf[1] << 8) |
                  ((unsigned long) buf[2] << 16);
         //printf("signature: %4x%4x\n", (unsigned int) (status>>16), (unsigned int) status);
-        if (status == 0xfffefe)
+        if (status == CONFIG_VERSION_SIG)
             break;
 
         addr += CONFIG_PAGE_SIZE;
     }
 
     if (addr >= CONFIG_ADDR_END) {
-        //printf("no valid config found\n");
+        printf("no valid config found\n");
         video_apply_config(&config.video);
         return;
     }
@@ -224,7 +231,7 @@ void write_config(void)
 
     /* write config */
     /* flag valid config */
-    write_word(valid_config_addr, 0xfffefe);
+    write_word(valid_config_addr, CONFIG_VERSION_SIG);
 
     b = (unsigned char*) &config;
     left = sizeof(struct alceosd_config);
@@ -299,6 +306,7 @@ const char menu_edit_widget[] = "\n\nAlceOSD :: Edit widget\n\n"
                                 "3/4 - Mode: %d\n"
                                 "w/e - X position: %d\n"
                                 "q/a - Y position: %d\n"
+                                "0 - Remove\n"
                                 "\nx - Go back\n";
 
 
@@ -640,6 +648,16 @@ int config_osd(void)
                 case 'x':
                     state = MENU_TAB_WIDGETS;
                     break;
+                case '0': {
+                    struct widget_config *wcfg2 = config.widgets;
+                    while (wcfg2 != wcfg)
+                        wcfg2++;
+                    wcfg++;
+                    while (wcfg->tab != TABS_END) {
+                        memcpy(wcfg2++, wcfg++, sizeof(struct widget_config));
+                    }
+                    state = MENU_TAB_WIDGETS;
+                }
                 default:
                     break;
             }

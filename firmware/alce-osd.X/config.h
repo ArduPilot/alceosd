@@ -41,6 +41,8 @@ struct alceosd_config {
     /* vehicle type */
     unsigned char vehicle;
 
+    unsigned char home_lock_sec;
+
     /* widgets config */
     struct widget_config widgets[CONFIG_MAX_WIDGETS];
 };
