@@ -144,7 +144,7 @@ static int render(void)
 #ifdef OSD_SMALL
     draw_str3(mode, 0, 0, ca);
 #else
-    draw_str(mode, 0, 0, ca);
+    draw_str(mode, 0, 0, ca, 0);
 #endif
 
     schedule_canvas(ca);

@@ -56,35 +56,34 @@ static int render(void)
     if (init_canvas(ca, 0))
         return 1;
 
-    sprintf(buf, "home");
-    draw_str3(buf, 0, 0, ca);
-
     if (priv.home->lock != HOME_LOCKED) {
-        sprintf(buf, "no lock");
-        draw_str3(buf, 0, 12, ca);
+        sprintf(buf, "No Home");
+        draw_str(buf, 0, 9, ca, 1);
         if (priv.home->lock & HOME_LOCK_FIX)
-            buf[0] = 'f';
+            buf[0] = 'F';
         else
             buf[0] = ' ';
         if (priv.home->lock & HOME_LOCK_POS)
-            buf[1] = 'p';
+            buf[1] = 'P';
         else
             buf[1] = ' ';
         if (priv.home->lock & HOME_LOCK_ALT)
-            buf[2] = 'a';
+            buf[2] = 'A';
         else
             buf[2] = ' ';
         buf[3] = 0;
-        draw_str3(buf, 0, 24, ca);
-        sprintf(buf, "lock %d", config.home_lock_sec - priv.home->lock_sec);
-        draw_str3(buf, 0, 12*3, ca);
+        draw_str(buf, 0, 9*2, ca, 1);
+        sprintf(buf, "Lock in %d", config.home_lock_sec - priv.home->lock_sec);
+        draw_str(buf, 0, 9*3, ca, 1);
     } else {
-        sprintf(buf, "alt %dm", priv.home->altitude);
-        draw_str3(buf, 0, 12, ca);
-        sprintf(buf, "dis %dm", (unsigned int) priv.home->distance);
-        draw_str3(buf, 0, 12*2, ca);
-        sprintf(buf, "dir %d", priv.home->direction);
-        draw_str3(buf, 0, 12*3, ca);
+        sprintf(buf, "Home");
+        draw_str(buf, 0, 0, ca, 2);
+        sprintf(buf, "Alt %dm", priv.home->altitude);
+        draw_str(buf, 0, 4+9, ca, 1);
+        sprintf(buf, "Dis %dm", (unsigned int) priv.home->distance);
+        draw_str(buf, 0, 4+9*2, ca, 1);
+        sprintf(buf, "Dir %d", priv.home->direction);
+        draw_str(buf, 0, 4+9*3, ca, 1);
     }
 
     schedule_canvas(ca);

@@ -71,7 +71,7 @@ static int render(void)
         if(j % MAJOR_TICK == 0) {
             draw_ohline(X_CENTER + 2, X_CENTER - 4, y, 1, 3, ca);
             sprintf(buf, "%4d", j);
-            draw_str(buf, X_CENTER + 10, y-3, ca);
+            draw_str(buf, X_CENTER + 10, y-3, ca, 0);
         } else if(j % MINOR_TICK == 0) {
             draw_ohline(X_CENTER + 2, X_CENTER - 2, y, 1, 3, ca);
         }
@@ -79,7 +79,7 @@ static int render(void)
 
     draw_frect(X_CENTER + 10, Y_CENTER-3, X_SIZE-2, Y_CENTER + 3, 0, ca);
     sprintf(buf, "%4d", priv.altitude_i);
-    draw_str(buf, X_CENTER + 10, Y_CENTER - 2, ca);
+    draw_str(buf, X_CENTER + 10, Y_CENTER - 2, ca, 0);
 
     draw_hline(X_CENTER + 10, X_SIZE - 1, Y_CENTER-4, 1, ca);
     draw_hline(X_CENTER + 10, X_SIZE - 1, Y_CENTER+4, 1, ca);

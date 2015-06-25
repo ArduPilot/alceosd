@@ -58,7 +58,7 @@ static int render(void)
             continue;
         if(j % MAJOR_TICK == 0) {
             sprintf(buf, "%3d", j);
-            draw_str(buf, 2, y - 2, ca);
+            draw_str(buf, 2, y - 2, ca, 0);
             draw_ohline(X_CENTER - 2, X_CENTER + 4, y, 1, 3, ca);
         } else if(j % MINOR_TICK == 0) {
             draw_ohline(X_CENTER - 2, X_CENTER + 2, y, 1, 3, ca);
@@ -67,7 +67,7 @@ static int render(void)
 
     draw_frect(1, Y_CENTER-3, X_CENTER - 10, Y_CENTER + 3, 0, ca);
     sprintf(buf, "%3d", (int) priv.speed_i);
-    draw_str(buf, 2, Y_CENTER-2, ca);
+    draw_str(buf, 2, Y_CENTER-2, ca, 0);
 
     draw_hline(0, X_CENTER - 10, Y_CENTER - 4, 1, ca);
     draw_hline(0, X_CENTER - 10, Y_CENTER + 4, 1, ca);

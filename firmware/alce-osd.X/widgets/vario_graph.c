@@ -84,7 +84,7 @@ static int render(void)
 #ifdef OSD_SMALL
     draw_str3(buf, X_SIZE - 12*4, 2, ca);
 #else
-    draw_str(buf, X_SIZE - 6*5, 2, ca);
+    draw_str(buf, X_SIZE - 6*5, 2, ca, 0);
 #endif
 
 

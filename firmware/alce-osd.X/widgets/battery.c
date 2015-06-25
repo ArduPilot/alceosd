@@ -55,10 +55,10 @@ static int render(void)
     if (init_canvas(ca, 0))
         return 1;
 
-    sprintf(buf, "%5.2fv", priv.bat_voltage);
-    draw_str3(buf, 0, BAT_BAR_Y + BAT_BAR_H + 2, ca);
-    sprintf(buf, "%5.2fa", priv.bat_current);
-    draw_str3(buf, 0, BAT_BAR_Y + BAT_BAR_H + 18, ca);
+    sprintf(buf, "%5.2fV", priv.bat_voltage);
+    draw_str(buf, 4, BAT_BAR_Y + BAT_BAR_H + 3, ca, 2);
+    sprintf(buf, "%5.2fA", priv.bat_current);
+    draw_str(buf, 4, BAT_BAR_Y + BAT_BAR_H + 17, ca, 2);
 
     draw_rect(BAT_BAR_X, BAT_BAR_Y, BAT_BAR_X + BAT_BAR_W, BAT_BAR_Y + BAT_BAR_H, 3, ca);
     draw_rect(BAT_BAR_X+1, BAT_BAR_Y+1, BAT_BAR_X + BAT_BAR_W-1, BAT_BAR_Y + BAT_BAR_H-1, 1, ca);
@@ -71,7 +71,7 @@ static int render(void)
     }
 
     sprintf(buf, "%d", priv.bat_remaining);
-    draw_str(buf, BAT_BAR_X + BAT_BAR_W/2 - 6, BAT_BAR_Y + 3, ca);
+    draw_str(buf, BAT_BAR_X + BAT_BAR_W/2 - 6, BAT_BAR_Y + 3, ca, 0);
 
     schedule_canvas(ca);
     return 0;

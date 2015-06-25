@@ -96,18 +96,10 @@ static int render(void)
         return 1;
 
     sprintf(buf, "%10.6f", priv.gps_lat);
-#ifdef OSD_SMALL
-    draw_str3(buf, 0, 0, ca);
-#else
-    draw_str(buf, 0, 0, ca);
-#endif
+    draw_str(buf, 0, 0, ca, 0);
 
     sprintf(buf, "%10.6f", priv.gps_lon);
-#ifdef OSD_SMALL
-    draw_str3(buf, 0, 14, ca);
-#else
-    draw_str(buf, 0, 7, ca);
-#endif
+    draw_str(buf, 0, 7, ca, 0);
 
 #ifdef OSD_SMALL
     for (i = 0; i < 22; i++)
@@ -116,11 +108,7 @@ static int render(void)
 #endif
 
     sprintf(buf, "%2d", priv.gps_nrsats);
-#ifdef OSD_SMALL
-    draw_str3(buf, SAT_X + 20 + 1, 0, ca);
-#else
-    draw_str(buf, SAT_X + 20 + 1, 0, ca);
-#endif
+    draw_str(buf, SAT_X + 20 + 1, 0, ca, 0);
 
     buf[1] = 'd';
     switch (priv.gps_fix_type) {
@@ -141,23 +129,15 @@ static int render(void)
     draw_chr3(buf[0], SAT_X + 20 + 1, 14, ca);
     draw_chr3(buf[1], SAT_X + 20 + 1 + 12, 14, ca);
 #else
-    draw_chr(buf[0], SAT_X + 20 + 1, 7, ca);
-    draw_chr(buf[1], SAT_X + 20 + 1 + 6, 7, ca);
+    draw_chr(buf[0], SAT_X + 20 + 1, 7, ca, 0);
+    draw_chr(buf[1], SAT_X + 20 + 1 + 6, 7, ca, 0);
 #endif
 
 
     strcpy(buf, "hdp");
-#ifdef OSD_SMALL
-    draw_str3(buf, SAT_X + 20 + 1 + 29, 0, ca);
-#else
-    draw_str(buf, SAT_X + 20 + 1 + 18, 0, ca);
-#endif
+    draw_str(buf, SAT_X + 20 + 1 + 18, 0, ca, 0);
     sprintf(buf, "%2.1f", priv.gps_eph);
-#ifdef OSD_SMALL
-    draw_str3(buf, SAT_X + 20 + 1 + 29, 14, ca);
-#else
-    draw_str(buf, SAT_X + 20 + 1 + 18, 7, ca);
-#endif
+    draw_str(buf, SAT_X + 20 + 1 + 18, 7, ca, 0);
 
     schedule_canvas(ca);
     return 0;

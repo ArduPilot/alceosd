@@ -61,7 +61,7 @@ static int render(void)
     }
 
     sprintf(buf, "%3d", (priv.rssi * 100) / RSSI_MAX);
-    draw_str3(buf, 24, 0, ca);
+    draw_str(buf, 25, 4, ca, 2);
 
     schedule_canvas(ca);
     return 0;

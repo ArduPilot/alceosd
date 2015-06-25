@@ -119,7 +119,7 @@ static int render(void)
 
             if ((j != 0) && (j % (MAJOR_TICK*SCALE) == 0)) {
                 sprintf(buf, "%d", j / SCALE);
-                draw_str(buf, x1, y1, ca);
+                draw_str(buf, x1, y1, ca, 0);
             }
 
 
@@ -195,7 +195,7 @@ static int render(void)
 
             if ((i != 0) && (i % (MAJOR_ROLL_TICK) == 0)) {
                 sprintf(buf, "%d", i);
-                draw_str(buf, x1, y1, ca);
+                draw_str(buf, x1, y1, ca, 0);
             }
         }
 

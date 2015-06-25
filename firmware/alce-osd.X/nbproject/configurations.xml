@@ -15,6 +15,7 @@
       <itemPath>clock.h</itemPath>
       <itemPath>home.h</itemPath>
       <itemPath>flight_stats.h</itemPath>
+      <itemPath>fonts.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -52,6 +53,7 @@
       <itemPath>clock.c</itemPath>
       <itemPath>home.c</itemPath>
       <itemPath>flight_stats.c</itemPath>
+      <itemPath>fonts.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

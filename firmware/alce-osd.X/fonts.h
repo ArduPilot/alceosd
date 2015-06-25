@@ -16,42 +16,21 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ALCE_OSD_H
-#define	ALCE_OSD_H
-
-#include <p33Exxxx.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-
-#include "graphics.h"
-#include "config.h"
-#include "widgets.h"
-#include "videocore.h"
-#include "mavlink.h"
-#include "uart.h"
-#include "clock.h"
-#include "alce-math.h"
-#include "home.h"
-#include "flight_stats.h"
-#include "fonts.h"
+#ifndef FONTS_H
+#define	FONTS_H
 
 
-#define WITH_BOOTLOADER
+struct font {
+    unsigned char start_chr;
+    unsigned char width, height;
+    unsigned char spacing;
+    const char *data;
+};
 
 
-/* led on the board */
-#define LED_DIR     TRISAbits.TRISA10
-#define LED         LATAbits.LATA10
+extern const char font5x5[] __attribute__((space(auto_psv)));
+extern const char font8x8[] __attribute__((space(auto_psv)));
+extern const char font8x13[] __attribute__((space(auto_psv)));
 
-
-typedef union {
-    unsigned long l;
-    unsigned int  w[2];
-    unsigned char b[4];
-} u32union;
-
-
-#endif	/* ALCE_OSD_H */
+#endif	/* FONTS_H */
 

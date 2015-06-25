@@ -107,7 +107,7 @@ static int render(void)
 
     draw_circle(x, y, r/2, 3, ca);
     sprintf(buf, "%u", (unsigned int) scale/2);
-    draw_str(buf, x, y+r/2, ca);
+    draw_str(buf, x, y+r/2, ca, 0);
 
     i = (long) d * r;
     i /= scale;

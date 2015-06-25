@@ -55,7 +55,7 @@ static int render(void)
     if (init_canvas(ca, 0))
         return 1;
 
-    draw_str3(priv.heading_s, X_CENTER-15, Y_CENTER - 2 - 17, ca);
+    draw_str(priv.heading_s, X_CENTER-12, 0, ca, 1);
     set_pixel(X_CENTER, Y_CENTER-1, 1, ca);
     draw_hline(X_CENTER-1, X_CENTER+1, Y_CENTER-2, 1, ca);
     draw_hline(X_CENTER-2, X_CENTER+2, Y_CENTER-3, 1, ca);
@@ -66,7 +66,7 @@ static int render(void)
             draw_vline(x,   Y_CENTER, Y_CENTER + 5, 1, ca);
             draw_vline(x-1, Y_CENTER, Y_CENTER + 5, 3, ca);
             draw_vline(x+1, Y_CENTER, Y_CENTER + 5, 3, ca);
-            draw_chr(cardinals[j / 90], x-2, Y_CENTER + 6, ca);
+            draw_chr(cardinals[j / 90], x-2, Y_CENTER + 6, ca, 0);
         } else if(j % MAJOR_TICK == 0) {
             draw_vline(x,   Y_CENTER, Y_CENTER + 5, 1, ca);
             draw_vline(x-1, Y_CENTER, Y_CENTER + 5, 3, ca);

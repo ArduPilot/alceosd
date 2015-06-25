@@ -94,7 +94,7 @@ static int render(void)
             sprintf(buf, "CH%u %4d", i+1, priv.ch_raw[i]);
         else
             sprintf(buf, "CH%u", i+1);
-        draw_str(buf, 0, i*8+1, ca);
+        draw_str(buf, 0, i*8+1, ca, 0);
 
         if ((priv.cfg->props.mode == 0) || (priv.cfg->props.mode == 2)) {
             x = priv.ch_raw[i] - 1000;
