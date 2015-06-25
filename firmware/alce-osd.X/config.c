@@ -183,7 +183,7 @@ void load_config(void)
     }
 
     if (addr >= CONFIG_ADDR_END) {
-        printf("no valid config found\n");
+        //printf("no valid config found\n");
         video_apply_config(&config.video);
         return;
     }
