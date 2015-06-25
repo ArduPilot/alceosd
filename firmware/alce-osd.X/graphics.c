@@ -237,7 +237,7 @@ void draw_str(char *buf, int x, int y, struct canvas *ca,
     unsigned char font_idx)
 {
     const struct font *f;
-    unsigned char k = 0;
+    int x0 = x;
 
     if (font_idx >= NUM_FONTS)
         return;
@@ -245,8 +245,14 @@ void draw_str(char *buf, int x, int y, struct canvas *ca,
     f = &fonts[font_idx];
 
     while (*buf != '\0') {
-        draw_chr0(*buf++, x, y, ca, f);
-        x += (f->width + f->spacing);
+        if (*buf == '\n') {
+            x = x0;
+            y += f->height + f->spacing;
+            buf++;
+        } else {
+            draw_chr0(*buf++, x, y, ca, f);
+            x += (f->width + f->spacing);
+        }
     }
 }
 

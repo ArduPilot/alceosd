@@ -51,7 +51,7 @@ static void init(struct widget_config *wcfg)
 static int render(void)
 {
     struct canvas *ca = &priv.ca;
-    char buf[15];
+    char buf[50];
 
     if (init_canvas(ca, 0))
         return 1;
@@ -78,12 +78,9 @@ static int render(void)
     } else {
         sprintf(buf, "Home");
         draw_str(buf, 0, 0, ca, 2);
-        sprintf(buf, "Alt %dm", priv.home->altitude);
+        sprintf(buf, "Alt %dm\nDis %dm\nDir %d",
+                priv.home->altitude, (unsigned int) priv.home->distance, priv.home->direction);
         draw_str(buf, 0, 4+9, ca, 1);
-        sprintf(buf, "Dis %dm", (unsigned int) priv.home->distance);
-        draw_str(buf, 0, 4+9*2, ca, 1);
-        sprintf(buf, "Dir %d", priv.home->direction);
-        draw_str(buf, 0, 4+9*3, ca, 1);
     }
 
     schedule_canvas(ca);
