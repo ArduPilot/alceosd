@@ -104,7 +104,7 @@ struct ihex_record {
 static unsigned long erased_page[TOTAL_PAGES];
 
 const char magic_word[] = "alceosd";
-const char msg[] = "\r\nAlceOSD bootloader v0.1\r\nWaiting for intel hex...";
+const char msg[] = "\r\nAlceOSD bootloader v0.2\r\nWaiting for intel hex...";
 
 int get_char(char *c)
 {
@@ -203,11 +203,11 @@ int erase_addr(unsigned long addr)
     if (erased_page[page])
         return ret;
 
+    put_char('e');
     ret = erase_page(addr);
     if (ret)
         return ret;
     erased_page[page] = 1;
-    put_char('e');
     if (page == 0)
         ret = write_dword(0, 0x040800, 0x000000);
     return ret;
@@ -272,7 +272,7 @@ unsigned char write_ihex2flash(char *buf)
                 prog_addr = ihex_rec.addr.l >> 1;
 
                 /* write 2 iwords */
-                if ((ihex_rec.len > 7) && ((prog_addr % 8) == 0)) {
+                if ((ihex_rec.len > 7) && ((prog_addr % 4) == 0)) {
                     i = 8;
                     memcpy(&wr_data0, ihex_rec.data, 4);
                     memcpy(&wr_data1, ihex_rec.data+4, 4);
@@ -293,12 +293,6 @@ unsigned char write_ihex2flash(char *buf)
 
                     ret = erase_addr(prog_addr);
                     ret += write_dword(prog_addr, wr_data0, wr_data1);
-                    if (ret)
-                        put_char('+');
-                    else
-                        put_char('.');
-                } else {
-                    put_char('p');                        
                 }
 
                 ihex_rec.addr.l += i;
@@ -422,10 +416,11 @@ int main(void)
             buf[i++] = c;
 
         if (c == '\n') {
-            LED = 1;
+            LED = ~LED;
             ascii2hex((unsigned char *) buf);
             c = write_ihex2flash(buf);
-            LED = 0;
+
+            put_char('.');
 
             if (c == END_OF_FILE_RECORD)
                 goto_usercode();
