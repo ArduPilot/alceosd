@@ -656,6 +656,7 @@ int config_osd(void)
                     while (wcfg->tab != TABS_END) {
                         memcpy(wcfg2++, wcfg++, sizeof(struct widget_config));
                     }
+                    wcfg2->tab = TABS_END;
                     state = MENU_TAB_WIDGETS;
                 }
                 default:
