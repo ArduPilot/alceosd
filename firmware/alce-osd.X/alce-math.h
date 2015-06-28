@@ -22,8 +22,8 @@
 
 #define EARTH_RADIUS                (6371000) /* meters */
 #define PI                          (3.1415926535897931)
-#define RAD2DEG(x)                  (x * (180.0 / PI))
-#define DEG2RAD(x)                  (x * (PI / 180.0))
+#define RAD2DEG(x)                  ((x) * (180.0 / PI))
+#define DEG2RAD(x)                  ((x) * (PI / 180.0))
 
 
 
