@@ -10,8 +10,7 @@
 
 
 #define X_SIZE  60 + 32 + 20 + 32
-#define Y_SIZE  15
-
+#define Y_SIZE  18
 
 #define SAT_X   60
 #define SAT_Y   5
@@ -87,7 +86,7 @@ static int render(void)
     draw_str(buf, 0, 0, ca, 0);
 
     sprintf(buf, "%10.6f", priv.gps_lon);
-    draw_str(buf, 0, 7, ca, 0);
+    draw_str(buf, 0, 9, ca, 0);
 
 #ifdef GPS_SAT_ICON
     for (i = 0; i < 22; i++)
@@ -98,7 +97,7 @@ static int render(void)
     sprintf(buf, "%2d", priv.gps_nrsats);
     draw_str(buf, SAT_X + 20 + 1, 0, ca, 0);
 
-    buf[1] = 'd';
+    buf[1] = 'D';
     switch (priv.gps_fix_type) {
     default:
     case 0:
@@ -113,13 +112,13 @@ static int render(void)
         buf[0] = '3';
         break;
     }
-    draw_chr(buf[0], SAT_X + 20 + 1, 7, ca, 0);
-    draw_chr(buf[1], SAT_X + 20 + 1 + 6, 7, ca, 0);
+    draw_chr(buf[0], SAT_X + 20 + 1, 9, ca, 0);
+    draw_chr(buf[1], SAT_X + 20 + 1 + 6, 9, ca, 0);
 
     strcpy(buf, "HDP");
     draw_str(buf, SAT_X + 20 + 1 + 18, 0, ca, 0);
     sprintf(buf, "%2.1f", priv.gps_eph);
-    draw_str(buf, SAT_X + 20 + 1 + 18, 7, ca, 0);
+    draw_str(buf, SAT_X + 20 + 1 + 18, 9, ca, 0);
 
     schedule_canvas(ca);
     return 0;
