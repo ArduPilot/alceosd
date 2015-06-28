@@ -52,6 +52,13 @@ static int render(void)
 {
     struct canvas *ca = &priv.ca;
     char buf[50];
+    struct point arrow_points[7] = { {-3, 0}, {-3, -6}, {3, -6}, {3, 0},
+                                     {6, 0}, {0, 6}, {-6, 0} };
+    struct polygon arrow = {
+        .len = 7,
+        .points = arrow_points,
+    };
+
 
     if (init_canvas(ca, 0))
         return 1;
@@ -78,9 +85,17 @@ static int render(void)
     } else {
         sprintf(buf, "Home");
         draw_str(buf, 0, 0, ca, 2);
-        sprintf(buf, "Alt %dm\nDis %dm\nDir %d",
+        sprintf(buf, "Alt %dm\nDis %dm",
                 priv.home->altitude, (unsigned int) priv.home->distance, priv.home->direction);
-        draw_str(buf, 0, 4+9, ca, 1);
+        draw_str(buf, 0, 15, ca, 1);
+
+
+        transform_polygon(&arrow, 4 * 12 + 6, 7, priv.home->direction + 180);
+        draw_polygon(&arrow, 3, ca);
+        move_polygon(&arrow, -1, -1);
+        draw_polygon(&arrow, 1, ca);
+
+        
     }
 
     schedule_canvas(ca);
