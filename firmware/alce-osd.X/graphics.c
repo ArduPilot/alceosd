@@ -174,8 +174,10 @@ void transform_polygon(struct polygon *p, int x, int y, int rot)
     long xr, yr;
 
     for (i = 0; i < p->len; i++) {
-        xr = ((cos_l * pt->x) - (sin_l * pt->y))/10000;
-        yr = ((cos_l * pt->y) + (sin_l * pt->x))/10000;
+        xr = ((cos_l * pt->x) - (sin_l * pt->y));
+        xr = (xr + 5000) / 10000;
+        yr = ((cos_l * pt->y) + (sin_l * pt->x));
+        yr = (yr + 5000) / 10000;
         pt->x = (int) xr;
         pt->y = (int) yr;
         pt->x += x;
