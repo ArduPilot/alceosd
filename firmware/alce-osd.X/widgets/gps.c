@@ -9,18 +9,6 @@
 
 
 
-#ifdef OSD_SMALL
-
-#define X_SIZE  104 + 32 + 20 + 32
-#define Y_SIZE  32
-#define X_POS   0
-#define Y_POS   OSD_YSIZE - Y_SIZE
-
-#define SAT_X   104
-#define SAT_Y   5
-
-#else
-
 #define X_SIZE  60 + 32 + 20 + 32
 #define Y_SIZE  15
 
@@ -28,7 +16,7 @@
 #define SAT_X   60
 #define SAT_Y   5
 
-#endif
+#ifdef GPS_SAT_ICON
 const char sat_ico[] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,3,3,0,3,3,3,3,3,3,3,0,0,0,0,0,
@@ -53,7 +41,7 @@ const char sat_ico[] = {
     0,0,0,0,0,0,0,0,3,3,3,3,3,3,3,3,3,3,3,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
-
+#endif
 
 static struct widget_priv {
     float gps_lat, gps_lon, gps_eph;
@@ -101,7 +89,7 @@ static int render(void)
     sprintf(buf, "%10.6f", priv.gps_lon);
     draw_str(buf, 0, 7, ca, 0);
 
-#ifdef OSD_SMALL
+#ifdef GPS_SAT_ICON
     for (i = 0; i < 22; i++)
         for (j = 0; j < 20; j++)
             set_pixel(SAT_X+j, SAT_Y+i, sat_ico[i * 20 + j], ca);
@@ -125,16 +113,10 @@ static int render(void)
         buf[0] = '3';
         break;
     }
-#ifdef OSD_SMALL
-    draw_chr3(buf[0], SAT_X + 20 + 1, 14, ca);
-    draw_chr3(buf[1], SAT_X + 20 + 1 + 12, 14, ca);
-#else
     draw_chr(buf[0], SAT_X + 20 + 1, 7, ca, 0);
     draw_chr(buf[1], SAT_X + 20 + 1 + 6, 7, ca, 0);
-#endif
 
-
-    strcpy(buf, "hdp");
+    strcpy(buf, "HDP");
     draw_str(buf, SAT_X + 20 + 1 + 18, 0, ca, 0);
     sprintf(buf, "%2.1f", priv.gps_eph);
     draw_str(buf, SAT_X + 20 + 1 + 18, 7, ca, 0);
