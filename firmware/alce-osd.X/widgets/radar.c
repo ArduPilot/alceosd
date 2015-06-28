@@ -18,7 +18,6 @@
 
 
 #include "alce-osd.h"
-#include "flight_stats.h"
 
 static struct widget_priv {
     struct home_data *home;
@@ -53,9 +52,13 @@ static void init(struct widget_config *wcfg)
     switch (wcfg->props.mode) {
         default:
         case 0:
+        case 2:
+        case 4:
             alloc_canvas(ca, wcfg, 84, 84);
             break;
         case 1:
+        case 3:
+        case 5:
             alloc_canvas(ca, wcfg, 84*2, 84*2);
             break;
 
@@ -81,8 +84,14 @@ static int render(void)
         .len = 5,
         .points = ils_points,
     };
+    struct point uav_points[5] = { {0, 0}, {6, 8}, {0, -8}, {-6, 8} };
+    struct polygon uav = {
+        .len = 4,
+        .points = uav_points,
+    };
 
-    
+    struct polygon *p;
+
     if (init_canvas(ca, 0))
         return 1;
 
@@ -90,8 +99,8 @@ static int render(void)
     y = (priv.ca.height/2)-1;
 
 
-    draw_vline(x, 0, r*2, 1, ca);
-    draw_hline(0, r*2, y, 1, ca);
+    draw_vline(x, 0, r*2, 2, ca);
+    draw_hline(0, r*2, y, 2, ca);
 
     draw_circle(x, y, r+1, 3, ca);
     draw_circle(x, y, r  , 1, ca);
@@ -111,16 +120,38 @@ static int render(void)
 
     i = (long) d * r;
     i /= scale;
-    
-    x += sin(DEG2RAD(priv.home->direction)) * i;
-    y -= cos(DEG2RAD(priv.home->direction)) * i;
 
+    switch (priv.cfg->props.mode) {
+        case 0:
+        case 1:
+        default:
+            /* radar fixed at uav heading, home moves */
+            x += sin(DEG2RAD(priv.home->direction)) * i;
+            y -= cos(DEG2RAD(priv.home->direction)) * i;
+            transform_polygon(&ils, x, y, priv.stats->launch_heading - priv.heading - 180);
+            p = &ils;
+            break;
+        case 2:
+        case 3:
+            /* radar always facing north, uav moves */
+            x += sin(DEG2RAD(priv.home->uav_bearing)) * i;
+            y -= cos(DEG2RAD(priv.home->uav_bearing)) * i;
+            transform_polygon(&uav, x, y, priv.heading);
+            p = &uav;
+            break;
+        case 4:
+        case 5:
+            /* radar always facing launch direction, uav moves */
+            x += sin(DEG2RAD(priv.home->uav_bearing - priv.stats->launch_heading)) * i;
+            y -= cos(DEG2RAD(priv.home->uav_bearing - priv.stats->launch_heading)) * i;
+            transform_polygon(&uav, x, y, priv.heading - priv.stats->launch_heading);
+            p = &uav;
+            break;
+    }
 
-    transform_polygon(&ils, x, y, priv.stats->launch_heading - priv.heading - 180);
-    draw_polygon(&ils, 3, ca);
-    move_polygon(&ils, -1, -1);
-    draw_polygon(&ils, 1, ca);
-
+    draw_polygon(p, 3, ca);
+    move_polygon(p, -1, -1);
+    draw_polygon(p, 1, ca);
 
     schedule_canvas(ca);
     return 0;
