@@ -21,17 +21,28 @@
 
 #define NUM_FONTS   3
 const struct font fonts[] = {
-    {   .width = 5, .height = 5,
+/*    {   .width = 5, .height = 5,
         .spacing = 1, .start_chr = 0x20,
-        .data = font5x5 },
+        .data = font5x5 },*/
+/*    {   .width = 6, .height = 8,
+        .spacing = 1, .start_chr = 0x20,
+        .data = font6x8 },*/
+    {   .width = 5, .height = 8,
+        .spacing = 1, .start_chr = 0x20,
+        .data = font5x8 },
     {   .width = 8, .height = 8,
-        .spacing = 0, .start_chr = 0x00,
+        .spacing = 0, .start_chr = 0x20,
         .data = font8x8 },
     {   .width = 8, .height = 13,
         .spacing = 1, .start_chr = 0x20,
         .data = font8x13 },
 };
 
+
+const struct font* get_font(unsigned char idx)
+{
+    return &fonts[idx];
+}
 
 
 void draw_line(int x0, int y0, int x1, int y1,
@@ -203,22 +214,30 @@ void draw_polygon(struct polygon *p, unsigned char v, struct canvas *ca)
 
 
 
-inline void draw_chr0(char c, int x, int y, struct canvas *ca, const struct font *f)
+static void draw_chr0(char c, int x, int y, struct canvas *ca, const struct font *f)
 {
     unsigned char i, j, b;
-    unsigned int idx = (c-f->start_chr) * f->height;
+    unsigned int idx = (c - f->start_chr) * f->height;
+    int x0;
 
     for (i = 0; i < f->height; i++) {
-        c = f->data[idx + i];
-        for (j = 0; j < f->width; j++) {
-            b = (c << j) & 0x80;
-            if (b) {
-                set_pixel(x + j, y + i, 1, ca);
-                set_pixel(x + j, y + i + 1, 3, ca);
-                set_pixel(x + j + 1, y + i, 3, ca);
-                set_pixel(x + j + 1, y + i + 1, 3, ca);
+        b = f->data[idx++];
+        x0 = x;
+        for (j = 0; j < ((f->width+1) >> 1); j++) {
+            if (b & 0x80) {
+                set_pixel(x0, y, 1, ca);
+                draw_hline(x0, x0+1, y+1, 3, ca);
             }
+            x0++;
+            b <<= 1;
+            if (b & 0x80) {
+                set_pixel(x0, y, 1, ca);
+                draw_hline(x0, x0+1, y+1, 3, ca);
+            }
+            x0++;
+            b <<= 1;
         }
+        y++;
     }
 }
 

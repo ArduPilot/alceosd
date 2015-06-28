@@ -28,7 +28,10 @@ struct font {
 };
 
 
-extern const char font5x5[] __attribute__((space(auto_psv)));
+/*extern const char font5x5[] __attribute__((space(auto_psv)));
+extern const char font6x8[] __attribute__((space(auto_psv)));
+extern const char font7x8[] __attribute__((space(auto_psv)));*/
+extern const char font5x8[] __attribute__((space(auto_psv)));
 extern const char font8x8[] __attribute__((space(auto_psv)));
 extern const char font8x13[] __attribute__((space(auto_psv)));
 

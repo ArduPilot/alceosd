@@ -50,6 +50,7 @@ void draw_circle(int xm, int ym, int r, unsigned char p, struct canvas *ca);
 void draw_str(char *buf, int x, int y, struct canvas *ca, unsigned char font_idx);
 void draw_chr(char c, int x, int y, struct canvas *ca, unsigned char font_idx);
 
+const struct font* get_font(unsigned char idx);
 
 void transform_polygon(struct polygon *p, int x, int y, int rot);
 void move_polygon(struct polygon *p, int x, int y);
