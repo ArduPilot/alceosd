@@ -41,7 +41,7 @@ static void init(struct widget_config *wcfg)
     priv.cfg = wcfg;
     priv.home = get_home_data();
 
-    alloc_canvas(ca, wcfg, 92, 14*4);
+    alloc_canvas(ca, wcfg, 92, 12*3);
 
     /* refresh rate of 0.5 sec */
     add_timer(TIMER_WIDGET, 5, timer_callback, NULL);
@@ -86,7 +86,7 @@ static int render(void)
         sprintf(buf, "Home");
         draw_str(buf, 0, 0, ca, 2);
         sprintf(buf, "Alt %dm\nDis %dm",
-                priv.home->altitude, (unsigned int) priv.home->distance, priv.home->direction);
+                priv.home->altitude, (unsigned int) priv.home->distance);
         draw_str(buf, 0, 15, ca, 1);
 
 
