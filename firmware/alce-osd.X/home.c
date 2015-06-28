@@ -58,9 +58,9 @@ static void store_mavdata(mavlink_message_t *msg, mavlink_status_t *status)
 
 static void calc_home(void *d)
 {
-    home.direction = (int) get_heading(&priv.home_coord, &priv.uav_coord);
+    home.uav_bearing = (int) get_bearing(&priv.home_coord, &priv.uav_coord);
 
-    home.direction += 180;
+    home.direction = home.uav_bearing + 180;
     home.direction -= priv.heading;
     if (home.direction < 0)
         home.direction += 360;

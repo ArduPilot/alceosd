@@ -32,7 +32,7 @@ struct gps_coord {
 };
 
 float earth_distance(struct gps_coord *c1, struct gps_coord *c2);
-float get_heading(struct gps_coord *c1, struct gps_coord *c2);
+float get_bearing(struct gps_coord *c1, struct gps_coord *c2);
 
 
 #endif	/* ALCE_MATH_H */

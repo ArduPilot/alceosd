@@ -35,7 +35,7 @@ float earth_distance(struct gps_coord *c1, struct gps_coord *c2) //float lat1, f
     return c;
 }
 
-float get_heading(struct gps_coord *c1, struct gps_coord *c2)
+float get_bearing(struct gps_coord *c1, struct gps_coord *c2)
 {
     float y = sin(c2->lon - c1->lon) * cos(c2->lat);
     float x = cos(c1->lat)*sin(c2->lat) - sin(c1->lat)*cos(c2->lat)*cos(c2->lon - c1->lon);

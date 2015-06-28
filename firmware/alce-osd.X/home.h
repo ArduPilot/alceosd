@@ -28,7 +28,7 @@
 
 struct home_data {
     unsigned int altitude;
-    int direction;
+    int direction, uav_bearing;
     float distance;
 
     unsigned char lock_sec;
