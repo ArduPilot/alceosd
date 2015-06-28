@@ -2,7 +2,7 @@
     <type>com.microchip.mplab.nbide.embedded.makeproject</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/make-project/1">
-            <name>bootloader</name>
+            <name>bootloader_updater</name>
             <creation-uuid>e15762e6-53e7-41a2-8df1-6d46b66c421c</creation-uuid>
             <make-project-type>0</make-project-type>
             <c-extensions>c</c-extensions>
