@@ -19,6 +19,8 @@
 
 #include "alce-osd.h"
 
+#define SCALE_INCREMENT 500
+
 static struct widget_priv {
     struct home_data *home;
     struct flight_stats *stats;
@@ -84,7 +86,7 @@ static int render(void)
         .len = 5,
         .points = ils_points,
     };
-    struct point uav_points[5] = { {0, 0}, {6, 8}, {0, -8}, {-6, 8} };
+    struct point uav_points[4] = { {0, 0}, {6, 8}, {0, -8}, {-6, 8} };
     struct polygon uav = {
         .len = 4,
         .points = uav_points,
@@ -104,19 +106,12 @@ static int render(void)
 
     draw_circle(x, y, r+1, 3, ca);
     draw_circle(x, y, r  , 1, ca);
-    draw_circle(x, y, r-1, 3, ca);
 
-
-
-    scale = 500;
-    if (d > 1000)
-        scale = 10000;
-    else if (d > 500)
-        scale = 1000;
-
-    draw_circle(x, y, r/2, 3, ca);
-    sprintf(buf, "%u", (unsigned int) scale/2);
-    draw_str(buf, x, y+r/2, ca, 0);
+    /* auto scale */
+    scale = ((d / SCALE_INCREMENT) + 1) * SCALE_INCREMENT;
+    
+    sprintf(buf, "%u", (unsigned int) scale);
+    draw_str(buf, 0, 0, ca, 0);
 
     i = (long) d * r;
     i /= scale;
