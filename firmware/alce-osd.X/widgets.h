@@ -57,13 +57,19 @@ enum {
     HJUST_CENTER = 2,
 };
 
+enum {
+    UNITS_METRIC = 0,
+    UNITS_IMPERIAL,
+};
+
 typedef union {
     unsigned int raw;
     struct {
         unsigned vjust:2;
         unsigned hjust:2;
         unsigned mode:4;
-        unsigned :8;
+        unsigned units:2;
+        unsigned :6;
     };
 } widget_props;
 
