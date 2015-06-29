@@ -19,12 +19,18 @@
 #ifndef ALCE_MATH_H
 #define	ALCE_MATH_H
 
+/* constants */
 
-#define EARTH_RADIUS                (6371000) /* meters */
+#define EARTH_RADIUS                (6367449) /* meters */
 #define PI                          (3.1415926535897931)
 #define RAD2DEG(x)                  ((x) * (180.0 / PI))
 #define DEG2RAD(x)                  ((x) * (PI / 180.0))
 
+#define M2FEET                      (3.2808399)
+#define MILE2FEET                   (5280)
+#define M2MILE                      (M2FEET / MILE2FEET)
+
+#define CELSIUS2FAHR(x)             ((x * 18)/10 + 3200)
 
 
 struct gps_coord {
