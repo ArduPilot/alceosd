@@ -20,7 +20,7 @@
 
 
 #define X_SIZE  80
-#define Y_SIZE  80
+#define Y_SIZE  50
 
 
 #define CLIMBRATE_EMA 8
