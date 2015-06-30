@@ -1,13 +1,23 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <p33Exxxx.h>
+/*
+    AlceOSD - Graphical OSD
+    Copyright (C) 2015  Luis Alves
 
-#include "mavlink.h"
-#include "graphics.h"
-#include "widgets.h"
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "alce-osd.h"
 
 #define X_SIZE  100
 #define Y_SIZE  30
@@ -59,7 +69,7 @@ static int render(void)
     set_pixel(X_CENTER, Y_CENTER-1, 1, ca);
     draw_hline(X_CENTER-1, X_CENTER+1, Y_CENTER-2, 1, ca);
     draw_hline(X_CENTER-2, X_CENTER+2, Y_CENTER-3, 1, ca);
-    for(i = -RANGE / 2; i < RANGE / 2; i++) {
+    for(i = -RANGE / 2; i <= RANGE / 2; i++) {
         x = X_CENTER + i;
         j = (priv.heading + i + 360) % 360;
         if (j == 0 || j == 90 || j == 180 || j == 270) {
