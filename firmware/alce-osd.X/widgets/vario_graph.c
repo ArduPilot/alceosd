@@ -1,20 +1,26 @@
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-#include <p33Exxxx.h>
+/*
+    AlceOSD - Graphical OSD
+    Copyright (C) 2015  Luis Alves
 
-#include "mavlink.h"
-#include "graphics.h"
-#include "widgets.h"
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "alce-osd.h"
 
 
 #define X_SIZE  80
 #define Y_SIZE  80
-
-#ifndef OSD_SMALL
-#undef Y_SIZE
-#define Y_SIZE  50
-#endif
 
 
 #define CLIMBRATE_EMA 8
@@ -81,13 +87,9 @@ static int render(void)
     }
 
     sprintf(buf, "%4d", priv.avg);
-#ifdef OSD_SMALL
-    draw_str3(buf, X_SIZE - 12*4, 2, ca);
-#else
     draw_str(buf, X_SIZE - 6*5, 2, ca, 0);
-#endif
 
-
+    
     schedule_canvas(ca);
     return 0;
 }

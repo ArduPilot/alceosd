@@ -1,24 +1,25 @@
-#include <stdio.h>
-#include <string.h>
-#include <p33Exxxx.h>
+/*
+    AlceOSD - Graphical OSD
+    Copyright (C) 2015  Luis Alves
 
-#include "mavlink.h"
-#include "graphics.h"
-#include "widgets.h"
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-#ifdef OSD_SMALL
-#define X_SIZE  12
-#define Y_SIZE  104
-#define X_POS   0
-#define Y_POS   50
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-#else
+#include "alce-osd.h"
+
 #define X_SIZE  8
 #define Y_SIZE  45
-
-#endif
-
 
 static struct widget_priv {
     unsigned char throttle, last_throttle;
@@ -30,7 +31,6 @@ const struct widget throttle_widget;
 static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
 {
     priv.throttle = (unsigned char) mavlink_msg_vfr_hud_get_throttle(msg);
-
     if (priv.throttle ==  priv.last_throttle)
         return;
 
@@ -69,7 +69,7 @@ static int render(void)
 
 
 const struct widget throttle_widget = {
-    .name = "Throttle",
+    .name = "Throttle bar",
     .id = WIDGET_THROTTLE_ID,
     .init = init,
     .render = render,
