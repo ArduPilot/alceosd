@@ -43,8 +43,8 @@ static void init(struct widget_config *wcfg)
 
     alloc_canvas(ca, wcfg, 92, 12*3);
 
-    /* refresh rate of 0.5 sec */
-    add_timer(TIMER_WIDGET, 5, timer_callback, NULL);
+    /* refresh rate of 0.2 sec */
+    add_timer(TIMER_WIDGET, 2, timer_callback, NULL);
 }
 
 
@@ -52,13 +52,13 @@ static int render(void)
 {
     struct canvas *ca = &priv.ca;
     char buf[50];
+    float d, a;
     struct point arrow_points[7] = { {-3, 0}, {-3, -6}, {3, -6}, {3, 0},
                                      {6, 0}, {0, 6}, {-6, 0} };
     struct polygon arrow = {
         .len = 7,
         .points = arrow_points,
     };
-
 
     if (init_canvas(ca, 0))
         return 1;
@@ -85,17 +85,29 @@ static int render(void)
     } else {
         sprintf(buf, "Home");
         draw_str(buf, 0, 0, ca, 2);
-        sprintf(buf, "Alt %dm\nDis %dm",
-                priv.home->altitude, (unsigned int) priv.home->distance);
-        draw_str(buf, 0, 15, ca, 1);
 
+        switch (get_units(priv.cfg)) {
+            case UNITS_METRIC:
+            default:
+                sprintf(buf, "Alt %dm\nDis %dm",
+                        priv.home->altitude,
+                        (unsigned int) priv.home->distance);
+                break;
+            case UNITS_IMPERIAL:
+                d = (float) priv.home->altitude * M2FEET;
+                a = (float) priv.home->distance * M2FEET;
+                sprintf(buf, "Alt %df\nDis %df",
+                        (unsigned int) a,
+                        (unsigned int) d);
+                break;
+        }
+
+        draw_str(buf, 0, 15, ca, 1);
 
         transform_polygon(&arrow, 4 * 12 + 6, 7, priv.home->direction + 180);
         draw_polygon(&arrow, 3, ca);
         move_polygon(&arrow, -1, -1);
         draw_polygon(&arrow, 1, ca);
-
-        
     }
 
     schedule_canvas(ca);

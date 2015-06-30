@@ -19,12 +19,9 @@
 
 #include "alce-osd.h"
 
-#define SCALE_INCREMENT 500
-
 static struct widget_priv {
     struct home_data *home;
     struct flight_stats *stats;
-    unsigned char bar_size;
     struct canvas ca;
     struct widget_config *cfg;
     int heading;
@@ -63,7 +60,6 @@ static void init(struct widget_config *wcfg)
         case 5:
             alloc_canvas(ca, wcfg, 84*2, 84*2);
             break;
-
     }
 
     add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET);
@@ -77,9 +73,10 @@ static int render(void)
 {
     struct canvas *ca = &priv.ca;
     char buf[10];
-    unsigned int d = (unsigned int) priv.home->distance;
+    unsigned long d = (unsigned long) priv.home->distance;
     unsigned int r = (priv.ca.width/2)-2;
     int x, y;
+    int min_increment;
     long i, scale;
     struct point ils_points[5] = { {-4, -6}, {-4, 6}, {0, 10}, {4, 6}, {4, -6} };
     struct polygon ils = {
@@ -107,10 +104,29 @@ static int render(void)
     draw_circle(x, y, r+1, 3, ca);
     draw_circle(x, y, r  , 1, ca);
 
+
     /* auto scale */
-    scale = ((d / SCALE_INCREMENT) + 1) * SCALE_INCREMENT;
+    switch (get_units(priv.cfg)) {
+        default:
+        case UNITS_METRIC:
+            min_increment = 500;
+            scale = ((d / min_increment) + 1) * min_increment;
+            sprintf(buf, "%um", (unsigned int) scale);
+            break;
+        case UNITS_IMPERIAL:
+            d *= M2FEET;
+            min_increment = 1000;
+            scale = ((d / min_increment) + 1) * min_increment;
+            if (d > 5000) {
+                d = (d * 1000) / MILE2FEET;
+                scale /= 1000;
+                sprintf(buf, "%umi", (unsigned int) scale);
+            } else {
+                sprintf(buf, "%uf", (unsigned int) scale);
+            }
+            break;
+    }
     
-    sprintf(buf, "%u", (unsigned int) scale);
     draw_str(buf, 0, 0, ca, 0);
 
     i = (long) d * r;
