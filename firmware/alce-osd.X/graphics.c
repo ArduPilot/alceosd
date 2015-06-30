@@ -101,17 +101,6 @@ void draw_ohline(int x0, int x1, int y, unsigned char p, unsigned char b, struct
     draw_hline(x0, x1, y-1, b, ca);
     draw_hline(x0, x1, y, p, ca);
     draw_hline(x0, x1, y+1, b, ca);
-/*    int x;
-    if (x1 < x0) {
-        x = x1;
-        x1 = x0;
-        x0 = x;
-    }
-    for (x = x0; x <= x1; x++) {
-        set_pixel(x, y, p, ca);
-        set_pixel(x, y-1, b, ca);
-        set_pixel(x, y+1, b, ca);
-    }*/
 }
 
 void draw_oline(int x0, int y0, int x1, int y1,
