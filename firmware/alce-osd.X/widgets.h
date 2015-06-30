@@ -36,32 +36,6 @@ enum {
 };
 
 
-#define JUST_TOP        0x0
-#define JUST_BOT        0x1
-#define JUST_VCENTER    0x2
-#define JUST_LEFT       0x0
-#define JUST_RIGHT      0x4
-#define JUST_HCENTER    0x8
-
-#define TABS_END        (0xffff)
-
-enum {
-    VJUST_TOP = 0,
-    VJUST_BOT = 1,
-    VJUST_CENTER = 2,
-};
-
-enum {
-    HJUST_LEFT = 0,
-    HJUST_RIGHT = 1,
-    HJUST_CENTER = 2,
-};
-
-enum {
-    UNITS_METRIC = 0,
-    UNITS_IMPERIAL,
-};
-
 typedef union {
     unsigned int raw;
     struct {
