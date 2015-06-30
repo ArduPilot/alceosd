@@ -51,7 +51,7 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
             break;
     }
 
-    if (priv.cfg->props.units == UNITS_IMPERIAL)
+    if (get_units(priv.cfg) == UNITS_IMPERIAL)
         altitude *= M2FEET;
     
     priv.altitude = (long) altitude;
@@ -67,12 +67,12 @@ static void init(struct widget_config *wcfg)
     priv.cfg = wcfg;
     priv.home = get_home_data();
 
-    switch (wcfg->props.units) {
-        case 0:
+    switch (get_units(wcfg)) {
+        case UNITS_METRIC:
         default:
             priv.range = 20*5;
             break;
-        case 1:
+        case UNITS_IMPERIAL:
             priv.range = 100*5;
             break;
     }
