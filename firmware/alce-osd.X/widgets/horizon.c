@@ -1,11 +1,22 @@
-#include <math.h>
-#include <string.h>
-#include <stdio.h>
-#include <p33Exxxx.h>
+/*
+    AlceOSD - Graphical OSD
+    Copyright (C) 2015  Luis Alves
 
-#include "mavlink.h"
-#include "graphics.h"
-#include "widgets.h"
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "alce-osd.h"
 
 
 #define X_SHIFT 32
@@ -34,9 +45,6 @@ static struct widget_priv {
     struct canvas canvas;
 } priv;
 
-
-#define RAD2DEG(x)                  (x*57.2957795131)
-#define DEG2RAD(x)                  (x*0.0174532925199)
 
 const struct widget horizon_widget;
 
@@ -118,7 +126,7 @@ static int render(void)
             draw_line(x0, y0, x1, y1, 1, ca);
 
             if ((j != 0) && (j % (MAJOR_TICK*SCALE) == 0)) {
-                sprintf(buf, "%d", j / SCALE);
+                sprintf(buf, "% d", j / SCALE);
                 draw_str(buf, x1, y1, ca, 0);
             }
 
@@ -140,21 +148,14 @@ static int render(void)
             }
             draw_line(x0-1, y0+1, x1+1, y1+1, 3, ca);
             draw_line(x0, y0, x1, y1, 1, ca);
-
-
-
         }
-
-        //get_vec(50, 50, priv.cos_roll, priv.sin_roll, cpitch + (i-1)*10, 40, &l);
-        //draw_line(&l[i], 1, &ca);
     }
 
-    draw_vline(X_CENTER+1, Y_CENTER - 3+1, Y_CENTER + 3+1, 3, ca);
-    draw_hline(X_CENTER - 4, X_CENTER + 4, Y_CENTER+1, 3, ca);
 
-    draw_vline(X_CENTER, Y_CENTER - 3, Y_CENTER + 3, 1, ca);
-    draw_hline(X_CENTER - 4, X_CENTER + 4, Y_CENTER, 1, ca);
+    draw_circle(X_CENTER, Y_CENTER, 2, 1, ca);
+    draw_circle(X_CENTER, Y_CENTER, 3, 3, ca);
 
+    
     float cos_i, sin_i;
 
     for (i = -ROLL_RANGE/2; i <= ROLL_RANGE/2; i++) {
@@ -198,13 +199,7 @@ static int render(void)
                 draw_str(buf, x1, y1, ca, 0);
             }
         }
-
-
-
-        //get_vec(50, 50, priv.cos_roll, priv.sin_roll, cpitch + (i-1)*10, 40, &l);
-        //draw_line(&l[i], 1, &ca);
     }
-
 
     cx = X_CENTER; // + (int) (gap * priv.sin_roll);
     cy = Y_CENTER ; //- (int) (gap * priv.cos_roll);
