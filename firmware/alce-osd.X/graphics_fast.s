@@ -21,7 +21,6 @@
 .global _set_pixel
 
 _set_pixel:
-
 ; void set_pixel(unsigned int x, unsigned int y, unsigned int v, struct canvas *canv)
 
     ;   if ((x >= canv->width) || (y >= canv->height))
@@ -40,7 +39,13 @@ _set_pixel:
     MUL.SS W6, W1, W6
     ADD W4, W6, W6
 
+    MOV DSWPAG, W7
+    MOV DSRPAG, W5
     MOV [W3+12], W1 ; buf
+    MOV [W3+14], W3 ; page
+    MOV W3, DSRPAG
+    MOV W3, DSWPAG
+
     ADD W1, W6, W1  ; pixel location in W1
 
     MOV #0xff3f, W3
@@ -50,6 +55,9 @@ _set_pixel:
     SL  W2, #6, W2
     LSR W2, W0, W2
     IOR.B W2, [W1], [W1]
+
+    MOV W7, DSWPAG
+    MOV W5, DSRPAG
 
 set_pixel_exit:
     RETURN
@@ -89,6 +97,9 @@ _set_pixel_fast:
 .global _draw_hline
 _draw_hline:
 ;void draw_hline(int x0, int x1, int y, unsigned char p, struct canvas *ca)
+    PUSH DSRPAG
+    PUSH DSWPAG
+
     CP W1, W0
     BRA GEU, _no_swap_draw_hline
     EXCH W0, W1
@@ -117,6 +128,10 @@ _no_clip_x_draw_hline:
 
     SUB W1, W0, W1 ; W1 contains pixel count
 
+    MOV [W4+14], W4
+    MOV W4, DSRPAG
+    MOV W4, DSWPAG
+
     DO  W1, _draw_hline_loop
 
     LSR W0, #2, W1  ; rx
@@ -137,6 +152,8 @@ _draw_hline_loop:
     INC W0, W0
 
 _exit_draw_hline:
+    POP DSWPAG
+    POP DSRPAG
     RETURN
 
 
@@ -146,6 +163,9 @@ _exit_draw_hline:
 .global _draw_vline
 _draw_vline:
 ; void draw_vline(int x, int y0, int y1, unsigned char p, struct canvas *ca)
+    PUSH DSRPAG
+    PUSH DSWPAG
+
     CP W2, W1
     BRA GEU, _no_swap_draw_vline
     EXCH W1, W2
@@ -172,6 +192,11 @@ _no_clip_y_draw_vline:
 
     MOV [W4+12], W7 ; buf
     MOV [W4+8], W6 ; rwidth
+
+    MOV [W4+14], W4
+    MOV W4, DSRPAG
+    MOV W4, DSWPAG
+
     MUL.SS W6, W1, W4 ; y addr
     ADD W4, W7, W7  ; pixel location in W1
 
@@ -185,7 +210,7 @@ _no_clip_y_draw_vline:
     AND W5, #0x6, W5
     ; W5 has the mask shifter
 
-    SUB W2, W1, W2 ; W1 contains pixel count
+    SUB W2, W1, W2 ; W2 contains pixel count
 
     DO  W2, _draw_vline_loop
 
@@ -199,7 +224,10 @@ _no_clip_y_draw_vline:
 
 _draw_vline_loop:
     ADD W7, W6, W7
+
 _exit_draw_vline:
+    POP DSWPAG
+    POP DSRPAG
     RETURN
 
 

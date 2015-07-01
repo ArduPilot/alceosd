@@ -45,28 +45,31 @@ _sram_byteo_sqi:
 
 .global _copy_line
 _copy_line:
+    MOV DSRPAG, W6
+    MOV W1, DSRPAG
+
 ;   store LATC and clear clk+data bits
-    MOV LATC, W2
+    MOV LATC, W5
     MOV #0xFEF0, W3
-    AND W2, W3, W2 ; base LATC
+    AND W5, W3, W5 ; base LATC
 
 ;   don't call this routine with W1(count) = 0
-    DEC W1,W1
-    DO  W1, copy_line_loop
+    DEC W2,W2
+    DO  W2, copy_line_loop
 
     MOV.B [W0++], W4
 
 ;   upper nibble
-    LSR W4, #4, W1
-    AND W1, #0xF, W1
-    IOR W2, W1, W1
-    MOV W1, LATC
+    LSR W4, #4, W2
+    AND W2, #0xF, W2
+    IOR W5, W2, W2
+    MOV W2, LATC
 ;   CLK_HIGH;
     BSET LATC, #8
 
-    AND W4, #0xF, W1
-    IOR W2, W1, W1
-    MOV W1, LATC
+    AND W4, #0xF, W2
+    IOR W5, W2, W2
+    MOV W2, LATC
 copy_line_loop:
 ;   CLK_HIGH;
     BSET LATC, #8
@@ -74,7 +77,23 @@ copy_line_loop:
 ;   CLK_LOW;
     BCLR LATC, #8
 
+    MOV W6, DSRPAG
     RETURN
 
 
+.global _clear_canvas
+_clear_canvas:
+    MOV DSRPAG, W6
+    MOV W1, DSRPAG
+
+;   don't call this routine with W2(count) = 0
+    DEC W2,W2
+    DO  W2, clear_canvas_loop
+
+    NOP
+clear_canvas_loop:
+    MOV.B W3, [W0++]
+
+    MOV W6, DSRPAG
+    RETURN
 

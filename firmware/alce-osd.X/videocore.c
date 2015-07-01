@@ -82,13 +82,26 @@ static struct canvas_pipe_s {
 
 
 #define SCRATCHPAD_SIZE 0x4000
-unsigned char scratchpad[SCRATCHPAD_SIZE]  __attribute__ ((far, noload));
-static unsigned int alloc_size;
+__eds__ unsigned char scratchpad1[SCRATCHPAD_SIZE]  __attribute__ ((eds, noload, address(0x4000)));
+__eds__ unsigned char scratchpad2[SCRATCHPAD_SIZE]  __attribute__ ((eds, noload, address(0x8000)));
+
+struct scratchpad_s {
+    __eds__ unsigned char *mem;
+    unsigned int alloc_size;
+};
+
+struct scratchpad_s scratchpad[2] = {
+    {   .mem = scratchpad1,
+        .alloc_size = 0,     },
+    {   .mem = scratchpad2,
+        .alloc_size = 0,     },
+};
 
 
 unsigned char sram_byte_spi(unsigned char b);
 extern void sram_byteo_sqi(unsigned char b);
-extern unsigned char* copy_line(unsigned char *buf, unsigned int count);
+extern __eds__ unsigned char* copy_line(__eds__ unsigned char *buf, unsigned int count);
+extern void clear_canvas(__eds__ unsigned char *buf, unsigned int count, unsigned char v);
 
 
 
@@ -305,8 +318,6 @@ void init_video(void)
 {
     video_init_sram();
     video_init_hw();
-
-    alloc_size = 0;
 }
 
 
@@ -326,7 +337,8 @@ void video_apply_config(struct video_config *cfg)
 
 void free_mem(void)
 {
-    alloc_size = 0;
+    scratchpad[0].alloc_size = 0;
+    scratchpad[1].alloc_size = 0;
 
     canvas_pipe.prd = canvas_pipe.pwr = 0;
     render_state = 0;
@@ -345,14 +357,18 @@ int alloc_canvas(struct canvas *c,
         struct widget_config *wcfg,
         unsigned int w, unsigned int h)
 {
-    unsigned int osdxsize, osdysize;
+    unsigned int osdxsize, osdysize, i;
     video_get_size(&osdxsize, &osdysize);
 
     c->rwidth = w >> 2;
     c->size = c->rwidth * h;
 
 
-    if ((alloc_size + c->size) >= SCRATCHPAD_SIZE) {
+    for (i = 0; i < 2; i++) {
+        if ((scratchpad[i].alloc_size + c->size) < SCRATCHPAD_SIZE)
+            break;
+    }
+    if (i == 2) {
         //U1TXREG = 'm';
         c->lock = 1;
         return -1;
@@ -386,8 +402,8 @@ int alloc_canvas(struct canvas *c,
 
     c->width = (w & 0xfffc); c->height = h;
 
-    c->buf = &scratchpad[alloc_size];
-    alloc_size += c->size;
+    c->buf = &scratchpad[i].mem[scratchpad[i].alloc_size];
+    scratchpad[i].alloc_size += c->size;
 
     c->lock = 0;
     return 0;
@@ -400,7 +416,7 @@ int init_canvas(struct canvas *ca, unsigned char b)
         //U1TXREG = 'l';
         return -1;
     }
-    memset(ca->buf, b, ca->size);
+    clear_canvas(ca->buf, ca->size, b);
     return 0;
 }
 
@@ -417,7 +433,7 @@ void render_process(void)
 {
     static struct canvas *ca;
     static unsigned int y1, y;
-    static unsigned char *b;
+    __eds__ static unsigned char *b;
     static union sram_addr addr;
     static unsigned int xsize;
 
@@ -472,7 +488,7 @@ void render_process(void)
 void render_canvas(struct canvas *ca)
 {
     unsigned int x, h;
-    unsigned char *b;
+    __eds__ unsigned char *b;
     union sram_addr addr;
     unsigned int osdxsize, osdysize;
     video_get_size(&osdxsize, &osdysize);

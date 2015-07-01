@@ -68,7 +68,7 @@ struct canvas {
     unsigned int width, height;
     unsigned int rwidth;
     unsigned int size;
-    unsigned char *buf;
+    __eds__ unsigned char *buf;
     unsigned char lock;
 };
 

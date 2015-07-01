@@ -66,22 +66,9 @@ void draw_line(int x0, int y0, int x1, int y1,
     int dy = -abs(y1-y0), sy = y0<y1 ? 1 : -1;
     int err = dx+dy, e2;
 
-    long addr;
-    unsigned char xx, bb = v << 6;
-
     for(;;){
         if (x0==x1 && y0==y1) break;
-        addr = (x0>>2) + (y0 * ca->rwidth);
-
-        //printf("addr = %d / %l / %d\n", addr, addr, (int) addr);
-        
-        if (addr >= 0 && addr < ((long) ca->size)) {
-            xx = (x0 << 1) & 0x6;
-            ca->buf[addr] &= (0xff3f >> xx);
-            ca->buf[addr] |= (bb >> xx);
-
-            //set_pixel(x0, y0, v, c);
-        }
+        set_pixel(x0, y0, v, ca);
 
         e2 = 2*err;
         
