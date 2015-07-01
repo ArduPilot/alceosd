@@ -33,6 +33,7 @@ enum {
     WIDGET_RC_CHANNELS_ID,
     WIDGET_HOME_INFO_ID,
     WIDGET_RADAR_ID,
+    WIDGET_WIND_ID,
 };
 
 
@@ -42,8 +43,8 @@ typedef union {
         unsigned vjust:2;
         unsigned hjust:2;
         unsigned mode:4;
-        unsigned units:2;
-        unsigned :6;
+        unsigned units:3;
+        unsigned :5;
     };
 } widget_props;
 

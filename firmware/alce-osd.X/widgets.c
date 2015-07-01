@@ -35,6 +35,7 @@ extern struct widget rssi_widget;
 extern struct widget rc_channels_widget;
 extern struct widget home_info_widget;
 extern struct widget radar_widget;
+extern struct widget wind_widget;
 
 const struct widget *all_widgets[] = {
     &altitude_widget,
@@ -50,6 +51,7 @@ const struct widget *all_widgets[] = {
     &rc_channels_widget,
     &home_info_widget,
     &radar_widget,
+    &wind_widget,
     NULL,
 };
 

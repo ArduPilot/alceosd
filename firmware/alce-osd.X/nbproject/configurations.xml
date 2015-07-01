@@ -40,6 +40,7 @@
         <itemPath>widgets/radar.c</itemPath>
         <itemPath>widgets/home_info.c</itemPath>
         <itemPath>widgets/template_widget.c</itemPath>
+        <itemPath>widgets/wind.c</itemPath>
       </logicalFolder>
       <itemPath>uart.c</itemPath>
       <itemPath>main.c</itemPath>

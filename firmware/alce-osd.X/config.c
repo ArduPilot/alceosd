@@ -67,6 +67,7 @@ struct alceosd_config config = {
         { 1, WIDGET_SPEED_ID,           0,   0, {JUST_VCENTER | JUST_LEFT}},
         { 1, WIDGET_THROTTLE_ID,       70,   0, {JUST_TOP     | JUST_LEFT}},
         { 1, WIDGET_VARIOMETER_ID,      0,  -5, {JUST_BOT     | JUST_RIGHT}},
+        { 1, WIDGET_WIND_ID,             0, 30, {JUST_TOP     | JUST_RIGHT}},
 
         { 1, WIDGET_HOME_INFO_ID,       80,  0, {JUST_TOP     | JUST_LEFT}},
         { 1, WIDGET_RADAR_ID,           60,-44, {JUST_BOT     | JUST_LEFT}},
@@ -311,7 +312,7 @@ const char menu_edit_widget[] = "\n\nAlceOSD :: Edit widget\n\n"
                                 "1 - Horizontal justification: %d\n"
                                 "2 - Vertical justification: %d\n"
                                 "3/4 - Mode: %d\n"
-                                "5 - Units: %d\n"
+                                "5/6 - Units: %d\n"
                                 "w/e - X position: %d\n"
                                 "q/a - Y position: %d\n"
                                 "0 - Remove\n"
@@ -674,6 +675,9 @@ int config_osd(void)
                     wcfg->props.mode++;
                     break;
                 case '5':
+                    wcfg->props.units--;
+                    break;
+                case '6':
                     wcfg->props.units++;
                     break;
                 case 'x':
