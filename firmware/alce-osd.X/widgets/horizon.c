@@ -152,8 +152,8 @@ static int render(void)
     }
 
 
-    draw_circle(X_CENTER, Y_CENTER, 2, 1, ca);
-    draw_circle(X_CENTER, Y_CENTER, 3, 3, ca);
+    draw_ohline(X_CENTER - 3, X_CENTER + 3, Y_CENTER, 1, 3, ca);
+    draw_vline(X_CENTER, Y_CENTER - 3, Y_CENTER + 3, 1, ca);
 
     
     float cos_i, sin_i;
