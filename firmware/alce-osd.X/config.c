@@ -22,6 +22,9 @@
 /* settings are stored in the program flash
  * a simple algorithm to avoid flash wear is implemented */
 
+/* WARNING: MESSING WITH THIS CODE MIGHT BRICK YOUR ALCEOSD */
+/* RECOVERY IS ONLY POSSIBLE USING A PICKIT3 TO RE-FLASH THE BOOTLOADER */
+
 #define CONFIG_ADDR_START   (0x1000)
 #define CONFIG_ADDR_END     (0x3fff)
 #define CONFIG_ADDR_PAGE    (0x800)
