@@ -16,13 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <p33Exxxx.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
-
 #include "alce-osd.h"
 
 
@@ -88,11 +81,9 @@ static struct canvas_pipe_s {
 };
 
 
-
 #define SCRATCHPAD_SIZE 0x4000
+unsigned char scratchpad[SCRATCHPAD_SIZE]  __attribute__ ((far, noload));
 static unsigned int alloc_size;
-__attribute__ ((far)) unsigned char scratchpad[SCRATCHPAD_SIZE];
-
 
 
 unsigned char sram_byte_spi(unsigned char b);
@@ -314,7 +305,7 @@ void init_video(void)
 {
     video_init_sram();
     video_init_hw();
-    
+
     alloc_size = 0;
 }
 
@@ -336,6 +327,7 @@ void video_apply_config(struct video_config *cfg)
 void free_mem(void)
 {
     alloc_size = 0;
+
     canvas_pipe.prd = canvas_pipe.pwr = 0;
     render_state = 0;
 }
@@ -359,12 +351,12 @@ int alloc_canvas(struct canvas *c,
     c->rwidth = w >> 2;
     c->size = c->rwidth * h;
 
+
     if ((alloc_size + c->size) >= SCRATCHPAD_SIZE) {
         //U1TXREG = 'm';
         c->lock = 1;
-        return -ENOMEM;
+        return -1;
     }
-
 
     switch (wcfg->props.vjust) {
         case VJUST_TOP:
@@ -406,7 +398,7 @@ int init_canvas(struct canvas *ca, unsigned char b)
 {
     if (ca->lock) {
         //U1TXREG = 'l';
-        return -EACCESS;
+        return -1;
     }
     memset(ca->buf, b, ca->size);
     return 0;
