@@ -39,6 +39,7 @@
         <itemPath>widgets/rc_channels.c</itemPath>
         <itemPath>widgets/radar.c</itemPath>
         <itemPath>widgets/home_info.c</itemPath>
+        <itemPath>widgets/template_widget.c</itemPath>
       </logicalFolder>
       <itemPath>uart.c</itemPath>
       <itemPath>main.c</itemPath>
