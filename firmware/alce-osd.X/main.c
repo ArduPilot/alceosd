@@ -116,9 +116,7 @@ void hw_init(void)
     CLKDIVbits.PLLPRE = 0;
     CLKDIVbits.PLLPOST = 0;
     PLLFBDbits.PLLDIV = 74;
-    //OSCTUN = 0;
-    /* wait for PLL to lock */
-    //while(OSCCONbits.LOCK != 1) {};
+
     /* switch clock to FRC oscillator with PLL */
     __builtin_write_OSCCONH(1);
     __builtin_write_OSCCONL(OSCCON | 1);
