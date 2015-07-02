@@ -25,18 +25,11 @@
 
 void mavlink_process(void);
 void add_mavlink_callback(unsigned char msgid, void *cbk, unsigned char ctype);
-void set_mavlink_callback_type(unsigned char ctype, void *cbk);
 void del_mavlink_callbacks(unsigned char ctype);
 
 enum {
     CALLBACK_WIDGET = 0,
     CALLBACK_PERSISTENT,
-};
-
-enum {
-    APM_PLANE = 0,
-    APM_COPTER,
-    APM_VEHICLES,
 };
 
 enum {
