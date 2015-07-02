@@ -74,9 +74,6 @@ struct alceosd_config {
     unsigned int tab_change_ch_max;
     unsigned char tab_change_ch;
 
-    /* vehicle type */
-    unsigned char vehicle;
-
     /* default unit system */
     unsigned char default_units;
     

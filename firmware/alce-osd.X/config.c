@@ -52,7 +52,6 @@ struct alceosd_config config = {
     .tab_change_ch_min = 1000,
     .tab_change_ch_max = 2000,
 
-    .vehicle = APM_PLANE,
     .default_units = UNITS_METRIC,
     .home_lock_sec = 15,
 
@@ -279,16 +278,14 @@ const char menu_main[] = "\n\n"
                          "1 - Video config\n"
                          "2 - Telemetry UART speed: %u%u\n"
                          "3 - Configure tabs\n"
-                         "4 - Vehicle type: %s\n"
-                         "5 - Units (global setting): %s\n"
+                         "4 - Units (global setting): %s\n"
                          "q/w - Decrease/increase home locking timer: %d\n"
                          "\ns - Save settings to FLASH\n"
                          "x - Exit config\n";
 
 const char menu_video[] = "\n\nAlceOSD :: VIDEO setup\n\n"
-                          "1 - Video standard: %s\n"
-                          "2 - Video scan: %s\n"
-                          "3/4 - Adjust video brightness: %u\n"
+                          "1 - Video scan: %s\n"
+                          "2/3 - Adjust video brightness: %u\n"
                           "q/a - Adjust video window vertically: %d\n"
                           "d/f - Adjust video window horizontally: %d\n"
                           "e/r - Decrease/increase video X size: %d\n"
@@ -344,13 +341,11 @@ int config_osd(void)
                 printf(menu_main,
                         (unsigned int) (uart_get_baudrate(config.baudrate) / 1000),
                         (unsigned int) (uart_get_baudrate(config.baudrate) % 1000),
-                        (config.vehicle == APM_PLANE) ? "PLANE" : "COPTER",
                         (config.default_units == UNITS_METRIC) ? "METRIC" : "IMPERIAL",
                         config.home_lock_sec);
                 break;
             case MENU_VIDEO:
                 printf(menu_video,
-                        (config.video.standard == VIDEO_STANDARD_PAL) ? "PAL" : "NTSC",
                         (config.video.scan == VIDEO_SCAN_PROGRESSIVE) ? "Progressive" : "Interlaced",
                         config.video.brightness,
                         config.video.y_offset,
@@ -462,11 +457,6 @@ int config_osd(void)
                     state = MENU_TABS;
                     break;
                 case '4':
-                    config.vehicle++;
-                    if (config.vehicle >= APM_VEHICLES)
-                            config.vehicle = 0;
-                    break;
-                case '5':
                     if (config.default_units == UNITS_METRIC)
                         config.default_units = UNITS_IMPERIAL;
                     else
@@ -497,22 +487,17 @@ int config_osd(void)
         case MENU_VIDEO:
             switch (c) {
                 case '1':
-                    config.video.standard += 1;
-                    if (config.video.standard >= VIDEO_STANDARD_END)
-                        config.video.standard = 0;
-                    break;
-                case '2':
                     config.video.scan += 1;
                     if (config.video.scan >= VIDEO_SCAN_END)
                         config.video.scan = 0;
                     load_tab(current_tab);
                     break;
-                case '3':
+                case '2':
                     if (config.video.brightness > 9)
                         config.video.brightness -= 10;
                     video_apply_config(&config.video);
                     break;
-                case '4':
+                case '3':
                     config.video.brightness += 10;
                     if (config.video.brightness > 1000)
                         config.video.brightness = 1000;

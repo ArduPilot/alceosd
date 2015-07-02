@@ -23,6 +23,7 @@ extern struct alceosd_config config;
 static struct widget_priv {
     unsigned int custom_mode, prev_custom_mode;
     unsigned char font_id;
+    unsigned char mav_type;
     struct canvas ca;
 } priv;
 
@@ -31,9 +32,10 @@ const struct widget flightmode_widget;
 static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
 {
     priv.custom_mode = mavlink_msg_heartbeat_get_custom_mode(msg);
-
     if (priv.custom_mode == priv.prev_custom_mode)
         return;
+
+    priv.mav_type = mavlink_msg_heartbeat_get_type(msg);
     priv.prev_custom_mode = priv.custom_mode;
     schedule_widget(&flightmode_widget);
 }
@@ -70,7 +72,7 @@ static int render(void)
         return 1;
 
     cust_mode = priv.custom_mode;
-    if (config.vehicle == APM_COPTER)
+    if (priv.mav_type !=  MAV_TYPE_FIXED_WING)
         cust_mode += 100;
 
     switch (cust_mode) {
