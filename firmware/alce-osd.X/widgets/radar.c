@@ -19,62 +19,77 @@
 
 #include "alce-osd.h"
 
-static struct widget_priv {
+struct widget_priv {
     struct home_data *home;
     struct flight_stats *stats;
-    struct canvas ca;
-    struct widget_config *cfg;
     int heading;
-} priv;
 
-const struct widget radar_widget;
+    int wp_target_bearing;
+    unsigned int wp_distance, wp_seq;
+};
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
 {
-    priv.heading = mavlink_msg_vfr_hud_get_heading(msg);
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    priv->heading = mavlink_msg_vfr_hud_get_heading(msg);
+}
+static void mav_callback_nav(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+{
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    priv->wp_target_bearing = mavlink_msg_nav_controller_output_get_target_bearing(msg);
+    priv->wp_distance = mavlink_msg_nav_controller_output_get_wp_dist(msg);
+}
+static void mav_callback_wp_seq(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+{
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    priv->wp_seq = mavlink_msg_mission_current_get_seq(msg);
 }
 
 static void timer_callback(struct timer *t, void *d)
 {
-    schedule_widget(&radar_widget);
+    struct widget *w = (struct widget*) d;
+    schedule_widget(w);
 }
 
-
-static void init(struct widget_config *wcfg)
+static int init(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv;
 
-    priv.cfg = wcfg;
-    priv.home = get_home_data();
-    priv.stats = get_flight_stats();
+    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (priv == NULL)
+        return -1;
+    w->priv = priv;
 
-    switch (wcfg->props.mode) {
-        default:
-        case 0:
-        case 2:
-        case 4:
-            alloc_canvas(ca, wcfg, 84, 84);
-            break;
-        case 1:
-        case 3:
-        case 5:
-            alloc_canvas(ca, wcfg, 84*2, 84*2);
-            break;
+    priv->home = get_home_data();
+    priv->stats = get_flight_stats();
+
+    if (w->cfg->props.mode & 1) {
+        w->cfg->w = 84*2;
+        w->cfg->h = 84*2;
+    } else {
+        w->cfg->w = 84;
+        w->cfg->h = 84;
     }
 
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET);
+    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET, w);
+    add_mavlink_callback(MAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT, mav_callback_nav, CALLBACK_WIDGET, w);
+    add_mavlink_callback(MAVLINK_MSG_ID_MISSION_CURRENT, mav_callback_wp_seq, CALLBACK_WIDGET, w);
 
     /* refresh rate of 0.2 sec */
-    add_timer(TIMER_WIDGET, 2, timer_callback, NULL);
+    add_timer(TIMER_WIDGET, 2, timer_callback, w);
+    return 0;
 }
 
-
-static int render(void)
+static void render(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct canvas *ca = &w->ca;
     char buf[10];
-    unsigned long d = (unsigned long) priv.home->distance;
-    unsigned int r = (priv.ca.width/2)-2;
+    unsigned long d = (unsigned long) priv->home->distance;
+    unsigned int r = (w->ca.width/2)-2;
     int x, y;
     int min_increment;
     long i, scale;
@@ -91,11 +106,8 @@ static int render(void)
 
     struct polygon *p;
 
-    if (init_canvas(ca, 0))
-        return 1;
-
-    x = (priv.ca.width/2)-1;
-    y = (priv.ca.height/2)-1;
+    x = (w->ca.width/2)-1;
+    y = (w->ca.height/2)-1;
 
 
     draw_vline(x, 0, r*2, 2, ca);
@@ -106,7 +118,7 @@ static int render(void)
 
 
     /* auto scale */
-    switch (get_units(priv.cfg)) {
+    switch (get_units(w->cfg)) {
         default:
         case UNITS_METRIC:
             min_increment = 500;
@@ -132,30 +144,44 @@ static int render(void)
     i = (long) d * r;
     i /= scale;
 
-    switch (priv.cfg->props.mode) {
+    switch (w->cfg->props.mode >> 1) {
         case 0:
-        case 1:
         default:
             /* radar fixed at uav heading, home moves */
-            x += sin(DEG2RAD(priv.home->direction)) * i;
-            y -= cos(DEG2RAD(priv.home->direction)) * i;
-            transform_polygon(&ils, x, y, priv.stats->launch_heading - priv.heading - 180);
+            x += sin(DEG2RAD(priv->home->direction)) * i;
+            y -= cos(DEG2RAD(priv->home->direction)) * i;
+            transform_polygon(&ils, x, y, priv->stats->launch_heading - priv->heading - 180);
             p = &ils;
             break;
-        case 2:
-        case 3:
+        case 1:
             /* radar always facing north, uav moves */
-            x += sin(DEG2RAD(priv.home->uav_bearing)) * i;
-            y -= cos(DEG2RAD(priv.home->uav_bearing)) * i;
-            transform_polygon(&uav, x, y, priv.heading);
+            x += sin(DEG2RAD(priv->home->uav_bearing)) * i;
+            y -= cos(DEG2RAD(priv->home->uav_bearing)) * i;
+            transform_polygon(&uav, x, y, priv->heading);
             p = &uav;
             break;
-        case 4:
-        case 5:
+        case 2:
             /* radar always facing launch direction, uav moves */
-            x += sin(DEG2RAD(priv.home->uav_bearing - priv.stats->launch_heading)) * i;
-            y -= cos(DEG2RAD(priv.home->uav_bearing - priv.stats->launch_heading)) * i;
-            transform_polygon(&uav, x, y, priv.heading - priv.stats->launch_heading);
+            x += sin(DEG2RAD(priv->home->uav_bearing - priv->stats->launch_heading)) * i;
+            y -= cos(DEG2RAD(priv->home->uav_bearing - priv->stats->launch_heading)) * i;
+            transform_polygon(&uav, x, y, priv->heading - priv->stats->launch_heading);
+            p = &uav;
+            break;
+        case 3:
+            /* testing waypoints */
+            /* radar always facing north, uav moves with waypoints */
+            if (priv->wp_seq > 0) {
+                long i_wp = (long) priv->wp_distance * r;
+                i_wp /= scale;
+                int x_wp = x, y_wp = y;
+                x_wp += sin(DEG2RAD(priv->wp_target_bearing - priv->heading)) * i_wp;
+                y_wp -= cos(DEG2RAD(priv->wp_target_bearing - priv->heading)) * i_wp;
+                sprintf(buf, "%d", priv->wp_seq);
+                draw_str(buf, x_wp, y_wp, ca, 0);
+            }
+            x += sin(DEG2RAD(priv->home->uav_bearing)) * i;
+            y -= cos(DEG2RAD(priv->home->uav_bearing)) * i;
+            transform_polygon(&uav, x, y, priv->heading);
             p = &uav;
             break;
     }
@@ -163,13 +189,10 @@ static int render(void)
     draw_polygon(p, 3, ca);
     move_polygon(p, -1, -1);
     draw_polygon(p, 1, ca);
-
-    schedule_canvas(ca);
-    return 0;
 }
 
 
-const struct widget radar_widget = {
+const struct widget_ops radar_widget_ops = {
     .name = "Radar",
     .id = WIDGET_RADAR_ID,
     .init = init,

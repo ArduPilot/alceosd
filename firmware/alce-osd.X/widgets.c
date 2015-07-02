@@ -21,48 +21,54 @@
 
 extern struct alceosd_config config;
 
+extern const struct widget_ops altitude_widget_ops;
+extern const struct widget_ops bat_info_widget_ops;
+extern const struct widget_ops compass_widget_ops;
+extern const struct widget_ops flightmode_widget_ops;
+extern const struct widget_ops gps_info_widget_ops;
+extern const struct widget_ops home_info_widget_ops;
+extern const struct widget_ops horizon_widget_ops;
+extern const struct widget_ops radar_widget_ops;
+extern const struct widget_ops rc_channels_widget_ops;
+extern const struct widget_ops rssi_widget_ops;
+extern const struct widget_ops speed_widget_ops;
+extern const struct widget_ops throttle_widget_ops;
+extern const struct widget_ops vario_graph_widget_ops;
+extern const struct widget_ops wind_widget_ops;
 
-extern struct widget altitude_widget;
-extern struct widget horizon_widget;
-extern struct widget vario_graph_widget;
-extern struct widget compass_widget;
-extern struct widget speed_widget;
-extern struct widget bat_info_widget;
-extern struct widget gps_info_widget;
-extern struct widget flightmode_widget;
-extern struct widget throttle_widget;
-extern struct widget rssi_widget;
-extern struct widget rc_channels_widget;
-extern struct widget home_info_widget;
-extern struct widget radar_widget;
-extern struct widget wind_widget;
 
-const struct widget *all_widgets[] = {
-    &altitude_widget,
-    &bat_info_widget,
-    &compass_widget,
-    &flightmode_widget,
-    &gps_info_widget,
-    &horizon_widget,
-    &rssi_widget,
-    &speed_widget,
-    &throttle_widget,
-    &vario_graph_widget,
-    &rc_channels_widget,
-    &home_info_widget,
-    &radar_widget,
-    &wind_widget,
+const struct widget_ops *all_widget_ops[] = {
+    &altitude_widget_ops,
+    &bat_info_widget_ops,
+    &compass_widget_ops,
+    &flightmode_widget_ops,
+    &gps_info_widget_ops,
+    &home_info_widget_ops,
+    &horizon_widget_ops,
+    &radar_widget_ops,
+    &rc_channels_widget_ops,
+    &rssi_widget_ops,
+    &speed_widget_ops,
+    &throttle_widget_ops,
+    &vario_graph_widget_ops,
+    &wind_widget_ops,
     NULL,
 };
 
 #define MAX_TABS 10
-#define WIDGET_FIFO_MASK    (0x1f)
+#define WIDGET_FIFO_MASK    (0x3f)
+#define MAX_WIDGET_ALLOC_MEM (0x1000)
 
 unsigned char tab_list[MAX_TABS];
 static unsigned char tidx, new_tidx;
 
+struct widgets_mem_s {
+    unsigned int mem[MAX_WIDGET_ALLOC_MEM/2];
+    unsigned int alloc_size;
+} widgets_mem;
+
 struct widget_fifo {
-    const struct widget *fifo[WIDGET_FIFO_MASK + 1];
+    struct widget *fifo[WIDGET_FIFO_MASK + 1];
     unsigned int rd;
     unsigned int wr;
 } wfifo = {
@@ -70,9 +76,30 @@ struct widget_fifo {
     .wr = 0,
 };
 
-const struct widget *get_widget(unsigned int id)
+
+/* custom memory allocator for widgets */
+void* widget_malloc(unsigned int size)
 {
-    const struct widget **w = all_widgets;
+    unsigned int *ptr;
+    size = (size + 1) & 0xfffe;
+    if ((widgets_mem.alloc_size + size) >= MAX_WIDGET_ALLOC_MEM)
+        return NULL;
+
+    ptr = &widgets_mem.mem[widgets_mem.alloc_size];
+    widgets_mem.alloc_size += size;
+    
+    return ptr;
+}
+
+static void widget_free_mem(void)
+{
+    widgets_mem.alloc_size = 0;
+}
+
+
+const struct widget_ops *get_widget_ops(unsigned int id)
+{
+    const struct widget_ops **w = all_widget_ops;
 
     while ((*w) != NULL) {
         if ((*w)->id == id)
@@ -178,17 +205,20 @@ void build_tab_list(void)
 void widgets_init(void)
 {
     build_tab_list();
+
+    widget_free_mem();
     
     /* tab switching callback */
-    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, tab_switch_cbk, CALLBACK_PERSISTENT);
+    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, tab_switch_cbk, CALLBACK_PERSISTENT, NULL);
 }
 
 extern volatile unsigned char sram_busy;
 
 void load_tab(unsigned char tab)
 {
-    struct widget_config *wcfg = &config.widgets[0];
-    const struct widget *w;
+    struct widget_config *w_cfg = &config.widgets[0];
+    const struct widget_ops *w_ops;
+    struct widget *w;
     int ipl;
 
     while (sram_busy);
@@ -198,26 +228,48 @@ void load_tab(unsigned char tab)
     del_mavlink_callbacks(CALLBACK_WIDGET);
     wfifo.rd = wfifo.wr = 0;
 
+    widget_free_mem();
     free_mem();
     clear_sram();
 
-    while (wcfg->tab != TABS_END) {
-        if (wcfg->tab == tab) {
-            w = get_widget(wcfg->widget_id);
-            if (w != NULL) {
-                w->init(wcfg);
+    while (w_cfg->tab != TABS_END) {
+        if (w_cfg->tab == tab) {
+            w_ops = get_widget_ops(w_cfg->widget_id);
+            if (w_ops != NULL) {
+                w = (struct widget*) widget_malloc(sizeof(struct widget));
+                if (w == NULL)
+                    break;
+                w->ops = w_ops;
+                w->cfg = w_cfg;
+                w->status = 0;
+                if (w_ops->init(w))
+                    break;
+                alloc_canvas(&w->ca, w->cfg->x, w->cfg->y,
+                              w->cfg->props.hjust, w->cfg->props.vjust,
+                              w->cfg->w, w->cfg->h);
                 schedule_widget(w);
             }
         }
-        wcfg++;
+        w_cfg++;
     }
     RESTORE_CPU_IPL(ipl);
 }
 
 
+static void render_widget(struct widget *w)
+{
+    if (init_canvas(&w->ca, 0) == 0) {
+        w->ops->render(w);
+        schedule_canvas(&w->ca);
+    }
+    w->status = 0;
+}
+
+extern volatile unsigned char sram_busy;
+
 void widgets_process(void)
 {
-    const struct widget *w;
+    struct widget *w;
 
     /* check for tab change */
     if (new_tidx != tidx) {
@@ -228,22 +280,19 @@ void widgets_process(void)
     while (wfifo.rd != wfifo.wr) {
         w = wfifo.fifo[wfifo.rd++];
         wfifo.rd &= WIDGET_FIFO_MASK;
-        w->render();
-        //if (w->render())
-        //    schedule_widget(w);
+        render_widget(w);
+        if (!sram_busy)
+            break;
     }
 }
 
 
-void schedule_widget(const struct widget *w)
+void schedule_widget(struct widget *w)
 {
-    unsigned int r = wfifo.rd;
+    if (w->status == WIDGET_SCHEDULED)
+        return;
 
-    while (r != wfifo.wr) {
-        if (wfifo.fifo[r++] == w)
-            return;
-        r &= WIDGET_FIFO_MASK;
-    }
+    w->status = WIDGET_SCHEDULED;
     wfifo.fifo[wfifo.wr++] = w;
     wfifo.wr &= WIDGET_FIFO_MASK;
 }

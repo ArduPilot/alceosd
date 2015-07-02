@@ -24,7 +24,7 @@
 
 
 void mavlink_process(void);
-void add_mavlink_callback(unsigned char msgid, void *cbk, unsigned char ctype);
+void add_mavlink_callback(unsigned char msgid, void *cbk, unsigned char ctype, void *data);
 void del_mavlink_callbacks(unsigned char ctype);
 
 enum {

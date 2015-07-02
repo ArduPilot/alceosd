@@ -21,53 +21,57 @@
 #define X_SIZE  64
 #define Y_SIZE  45
 
-
 #define BAT_BAR_X   3
 #define BAT_BAR_Y   0
 #define BAT_BAR_W   58
 #define BAT_BAR_H   11
 
 
-
-static struct widget_priv {
+struct widget_priv {
     float bat_voltage, bat_current;
     int bat_remaining;
-    struct canvas ca;
-} priv;
+};
 
-const struct widget bat_info_widget;
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
 {
-    priv.bat_voltage = mavlink_msg_sys_status_get_voltage_battery(msg) / 1000.0;
-    priv.bat_current = mavlink_msg_sys_status_get_current_battery(msg) / 100.0;
-    priv.bat_remaining = (int) mavlink_msg_sys_status_get_battery_remaining(msg);
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    
+    priv->bat_voltage = mavlink_msg_sys_status_get_voltage_battery(msg) / 1000.0;
+    priv->bat_current = mavlink_msg_sys_status_get_current_battery(msg) / 100.0;
+    priv->bat_remaining = (int) mavlink_msg_sys_status_get_battery_remaining(msg);
 
-    schedule_widget(&bat_info_widget);
+    schedule_widget(w);
 }
 
 
-static void init(struct widget_config *wcfg)
+static int init(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv;
 
-    add_mavlink_callback(MAVLINK_MSG_ID_SYS_STATUS, mav_callback, CALLBACK_WIDGET);
-    alloc_canvas(ca, wcfg, X_SIZE, Y_SIZE);
+    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (priv == NULL)
+        return -1;
+    w->priv = priv;
+
+    add_mavlink_callback(MAVLINK_MSG_ID_SYS_STATUS, mav_callback, CALLBACK_WIDGET, w);
+    w->cfg->w = X_SIZE;
+    w->cfg->h = Y_SIZE;
+    return 0;
 }
 
 
-static int render(void)
+static void render(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct canvas *ca = &w->ca;
     char buf[10];
     int i;
 
-    if (init_canvas(ca, 0))
-        return 1;
-
-    sprintf(buf, "%5.2fV", priv.bat_voltage);
+    sprintf(buf, "%5.2fV", priv->bat_voltage);
     draw_str(buf, 4, BAT_BAR_Y + BAT_BAR_H + 3, ca, 2);
-    sprintf(buf, "%5.2fA", priv.bat_current);
+    sprintf(buf, "%5.2fA", priv->bat_current);
     draw_str(buf, 4, BAT_BAR_Y + BAT_BAR_H + 17, ca, 2);
 
     draw_rect(BAT_BAR_X, BAT_BAR_Y, BAT_BAR_X + BAT_BAR_W, BAT_BAR_Y + BAT_BAR_H, 3, ca);
@@ -76,19 +80,16 @@ static int render(void)
     draw_vline(BAT_BAR_X - 2, BAT_BAR_Y + 4, BAT_BAR_Y + BAT_BAR_H - 4, 1, ca);
     draw_vline(BAT_BAR_X - 3, BAT_BAR_Y + 4, BAT_BAR_Y + BAT_BAR_H - 4, 3, ca);
 
-    for (i = 0; i < (priv.bat_remaining*BAT_BAR_W)/100 - 2; i++) {
+    for (i = 0; i < (priv->bat_remaining*BAT_BAR_W)/100 - 2; i++) {
         draw_vline(BAT_BAR_X + 2 + i, BAT_BAR_Y + 2, BAT_BAR_Y + BAT_BAR_H - 2, 2, ca);
     }
 
-    sprintf(buf, "%d", priv.bat_remaining);
+    sprintf(buf, "%d", priv->bat_remaining);
     draw_str(buf, BAT_BAR_X + BAT_BAR_W/2 - 6, BAT_BAR_Y + 3, ca, 0);
-
-    schedule_canvas(ca);
-    return 0;
 }
 
 
-const struct widget bat_info_widget = {
+const struct widget_ops bat_info_widget_ops = {
     .name = "Battery info",
     .id = WIDGET_BATTERY_INFO_ID,
     .init = init,

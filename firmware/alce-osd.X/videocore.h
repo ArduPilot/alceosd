@@ -19,8 +19,6 @@
 #ifndef VIDEOCORE_H
 #define	VIDEOCORE_H
 
-#include "widgets.h"
-
 
 enum {
     VIDEO_XSIZE_420 = 0,
@@ -95,8 +93,8 @@ void init_video(void);
 void render_process(void);
 
 /* canvas related functions */
-int alloc_canvas(struct canvas *c,
-        struct widget_config *wcfg,
+int alloc_canvas(struct canvas *c, int x, int y,
+        unsigned char hjust, unsigned char vjust,
         unsigned int w, unsigned int h);
 int init_canvas(struct canvas *ca, unsigned char b);
 void schedule_canvas(struct canvas *ca);

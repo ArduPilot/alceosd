@@ -125,6 +125,6 @@ void init_home_process(void)
     /* find home position */
     add_timer(TIMER_ALWAYS, 10, find_home, NULL);
 
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, store_mavdata, CALLBACK_PERSISTENT);
-    add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, store_mavdata, CALLBACK_PERSISTENT);
+    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, store_mavdata, CALLBACK_PERSISTENT, NULL);
+    add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, store_mavdata, CALLBACK_PERSISTENT, NULL);
 }

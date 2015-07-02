@@ -29,49 +29,54 @@
 #define X_CENTER    (X_SIZE/2) - 2
 #define Y_CENTER    (Y_SIZE/2) - 1
 
-static struct widget_priv {
+struct widget_priv {
     int heading;
     char heading_s[4];
-    struct canvas ca;
-} priv;
+};
 
-const struct widget compass_widget;
-
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
 {
-    priv.heading = mavlink_msg_vfr_hud_get_heading(msg);
-    priv.heading_s[0] = '0' + (priv.heading / 100);
-    priv.heading_s[1] = '0' + ((priv.heading % 100) / 10);
-    priv.heading_s[2] = '0' + (priv.heading % 10);
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    
+    priv->heading = mavlink_msg_vfr_hud_get_heading(msg);
+    priv->heading_s[0] = '0' + (priv->heading / 100);
+    priv->heading_s[1] = '0' + ((priv->heading % 100) / 10);
+    priv->heading_s[2] = '0' + (priv->heading % 10);
 
-    schedule_widget(&compass_widget);
+    schedule_widget(w);
 }
 
-static void init(struct widget_config *wcfg)
+static int init(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv;
 
-    priv.heading_s[3] = '\0';
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET);
-    alloc_canvas(ca, wcfg, X_SIZE, Y_SIZE);
+    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (priv == NULL)
+        return -1;
+    w->priv = priv;
+
+    priv->heading_s[3] = '\0';
+    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET, w);
+    w->cfg->w = X_SIZE;
+    w->cfg->h = Y_SIZE;
+    return 0;
 }
 
-static int render(void)
+static void render(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct canvas *ca = &w->ca;
     const char cardinals[] = {'N', 'E', 'S', 'W'};
     int i, j, x;
 
-    if (init_canvas(ca, 0))
-        return 1;
-
-    draw_str(priv.heading_s, X_CENTER-12, 0, ca, 1);
+    draw_str(priv->heading_s, X_CENTER-12, 0, ca, 1);
     set_pixel(X_CENTER, Y_CENTER-1, 1, ca);
     draw_hline(X_CENTER-1, X_CENTER+1, Y_CENTER-2, 1, ca);
     draw_hline(X_CENTER-2, X_CENTER+2, Y_CENTER-3, 1, ca);
     for(i = -RANGE / 2; i <= RANGE / 2; i++) {
         x = X_CENTER + i;
-        j = (priv.heading + i + 360) % 360;
+        j = (priv->heading + i + 360) % 360;
         if (j == 0 || j == 90 || j == 180 || j == 270) {
             draw_vline(x,   Y_CENTER, Y_CENTER + 5, 1, ca);
             draw_vline(x-1, Y_CENTER, Y_CENTER + 5, 3, ca);
@@ -87,13 +92,10 @@ static int render(void)
             draw_vline(x+1, Y_CENTER, Y_CENTER + 3, 3, ca);
         }
     }
-
-    schedule_canvas(ca);
-    return 0;
 }
 
 
-const struct widget compass_widget = {
+const struct widget_ops compass_widget_ops = {
     .name = "Compass",
     .id = WIDGET_COMPASS_ID,
     .init = init,

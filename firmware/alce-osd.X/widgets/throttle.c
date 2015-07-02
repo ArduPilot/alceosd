@@ -21,54 +21,55 @@
 #define X_SIZE  8
 #define Y_SIZE  45
 
-static struct widget_priv {
+struct widget_priv {
     unsigned char throttle, last_throttle;
-    struct canvas ca;
-} priv;
+};
 
-const struct widget throttle_widget;
-
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
 {
-    priv.throttle = (unsigned char) mavlink_msg_vfr_hud_get_throttle(msg);
-    if (priv.throttle ==  priv.last_throttle)
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+
+    priv->throttle = (unsigned char) mavlink_msg_vfr_hud_get_throttle(msg);
+    if (priv->throttle ==  priv->last_throttle)
         return;
 
-    schedule_widget(&throttle_widget);
-    priv.last_throttle = priv.throttle;
+    priv->last_throttle = priv->throttle;
+    schedule_widget(w);
 }
 
 
-static void init(struct widget_config *wcfg)
+static int init(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv;
 
-    priv.last_throttle = 0xff;
-    alloc_canvas(ca, wcfg, X_SIZE, Y_SIZE);
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET);
-}
+    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (priv == NULL)
+        return -1;
+    w->priv = priv;
 
-
-static int render(void)
-{
-    struct canvas *ca = &priv.ca;
-    unsigned v = priv.throttle * (Y_SIZE-4) / 100;
-    
-    if (init_canvas(ca, 0))
-        return 1;
-
-    draw_rect(0, 0, X_SIZE-1, Y_SIZE-1, 3, ca);
-    draw_rect(1, 1, X_SIZE-2, Y_SIZE-2, 1, ca);
-    if (priv.throttle > 0) {
-        draw_frect(2, Y_SIZE-3 - v, X_SIZE-3, Y_SIZE-3, 1, ca);
-    }
-
-    schedule_canvas(ca);
+    priv->last_throttle = 0xff;
+    w->cfg->w = X_SIZE;
+    w->cfg->h = Y_SIZE;
+    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET, w);
     return 0;
 }
 
+static void render(struct widget *w)
+{
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct canvas *ca = &w->ca;
+    unsigned v = priv->throttle * (Y_SIZE-4) / 100;
+    
+    draw_rect(0, 0, X_SIZE-1, Y_SIZE-1, 3, ca);
+    draw_rect(1, 1, X_SIZE-2, Y_SIZE-2, 1, ca);
+    if (priv->throttle > 0) {
+        draw_frect(2, Y_SIZE-3 - v, X_SIZE-3, Y_SIZE-3, 1, ca);
+    }
+}
 
-const struct widget throttle_widget = {
+
+const struct widget_ops throttle_widget_ops = {
     .name = "Throttle bar",
     .id = WIDGET_THROTTLE_ID,
     .init = init,

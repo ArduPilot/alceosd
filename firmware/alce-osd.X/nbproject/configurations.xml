@@ -26,20 +26,20 @@
                    displayName="Source Files"
                    projectFiles="true">
       <logicalFolder name="widgets" displayName="widgets" projectFiles="true">
+        <itemPath>widgets/rssi.c</itemPath>
         <itemPath>widgets/altitude.c</itemPath>
         <itemPath>widgets/battery.c</itemPath>
         <itemPath>widgets/compass.c</itemPath>
         <itemPath>widgets/flight_mode.c</itemPath>
         <itemPath>widgets/gps.c</itemPath>
+        <itemPath>widgets/home_info.c</itemPath>
         <itemPath>widgets/horizon.c</itemPath>
-        <itemPath>widgets/rssi.c</itemPath>
+        <itemPath>widgets/radar.c</itemPath>
+        <itemPath>widgets/rc_channels.c</itemPath>
         <itemPath>widgets/speed.c</itemPath>
+        <itemPath>widgets/template_widget.c</itemPath>
         <itemPath>widgets/throttle.c</itemPath>
         <itemPath>widgets/vario_graph.c</itemPath>
-        <itemPath>widgets/rc_channels.c</itemPath>
-        <itemPath>widgets/radar.c</itemPath>
-        <itemPath>widgets/home_info.c</itemPath>
-        <itemPath>widgets/template_widget.c</itemPath>
         <itemPath>widgets/wind.c</itemPath>
       </logicalFolder>
       <itemPath>uart.c</itemPath>

@@ -20,59 +20,60 @@
 
 extern struct alceosd_config config;
 
-static struct widget_priv {
+struct widget_priv {
     unsigned int custom_mode, prev_custom_mode;
     unsigned char font_id;
     unsigned char mav_type;
-    struct canvas ca;
-} priv;
+};
 
-const struct widget flightmode_widget;
-
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
 {
-    priv.custom_mode = mavlink_msg_heartbeat_get_custom_mode(msg);
-    if (priv.custom_mode == priv.prev_custom_mode)
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+
+    priv->custom_mode = mavlink_msg_heartbeat_get_custom_mode(msg);
+    if (priv->custom_mode == priv->prev_custom_mode)
         return;
 
-    priv.mav_type = mavlink_msg_heartbeat_get_type(msg);
-    priv.prev_custom_mode = priv.custom_mode;
-    schedule_widget(&flightmode_widget);
+    priv->mav_type = mavlink_msg_heartbeat_get_type(msg);
+    priv->prev_custom_mode = priv->custom_mode;
+    schedule_widget(w);
 }
 
-
-static void init(struct widget_config *wcfg)
+static int init(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
-    unsigned int xs = 120, ys;
-    unsigned char m = wcfg->props.mode;
+    struct widget_priv *priv;
+    unsigned char m = w->cfg->props.mode;
     const struct font *f;
+
+    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (priv == NULL)
+        return -1;
+    w->priv = priv;
 
     if (m > 2)
         m = 2;
 
-    priv.font_id = m;
+    priv->font_id = m;
 
     f = get_font(m);
-    ys = f->height + 1;
+    w->cfg->h = f->height + 1;
+    w->cfg->w = 120;
 
-    priv.prev_custom_mode = 0xff;
-    alloc_canvas(ca, wcfg, xs, ys);
-    add_mavlink_callback(MAVLINK_MSG_ID_HEARTBEAT, mav_callback, CALLBACK_WIDGET);
+    priv->prev_custom_mode = 0xff;
+    add_mavlink_callback(MAVLINK_MSG_ID_HEARTBEAT, mav_callback, CALLBACK_WIDGET, w);
+    return 0;
 }
 
-
-static int render(void)
+static void render(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct canvas *ca = &w->ca;
     char mode[17];
     unsigned int cust_mode;
 
-    if (init_canvas(ca, 0))
-        return 1;
-
-    cust_mode = priv.custom_mode;
-    if (priv.mav_type !=  MAV_TYPE_FIXED_WING)
+    cust_mode = priv->custom_mode;
+    if (priv->mav_type !=  MAV_TYPE_FIXED_WING)
         cust_mode += 100;
 
     switch (cust_mode) {
@@ -152,14 +153,11 @@ static int render(void)
         break;
     }
 
-    draw_str(mode, 0, 0, ca, priv.font_id);
-
-    schedule_canvas(ca);
-    return 0;
+    draw_str(mode, 0, 0, ca, priv->font_id);
 }
 
 
-const struct widget flightmode_widget = {
+const struct widget_ops flightmode_widget_ops = {
     .name = "Flight mode",
     .id = WIDGET_FLIGHT_MODE_ID,
     .init = init,

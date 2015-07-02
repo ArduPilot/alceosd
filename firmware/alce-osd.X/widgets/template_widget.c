@@ -22,15 +22,15 @@
 /* Creating widgets:
  *
  * 1) Make a copy of this file and give it a "<name>".
- * 2) Change all references to template_widget to "<name>_widget"
- * 3) Add an ID in widgets.h for your new widget call it "WIDGET_<NAME>_ID"
- * 4) Modify the struct at the end of this file: give it a proper name an ID
- * 4) Add your widget to widgets.c:
- *          extern struct widget <name>_widget;
- *    And add it to the list of active widgets:
+ * 2) Add an ID in widgets.h for your new widget call it "WIDGET_<NAME>_ID"
+ * 3) Change the reference to template_widget_ops to "<name>_widget_ops" at
+ *    the bottom of this file. Take the chance to give it a proper name an ID.
+ * 4) Add your widget_ops to widgets.c:
+ *          extern const struct widget <name>_widget_ops;
+ *    And add it to the list of all widgets:
  *          all_widgets[] = {
  *              ...
- *              &<name>_widget,
+ *              &<name>_widget_ops,
  *              NULL,
  *          }
  *
@@ -44,74 +44,79 @@
 
 
 /* widget private variables */
-static struct widget_priv {
+struct widget_priv {
     unsigned char var1;
-    struct canvas ca;
-} priv;
+};
 
-
-/* rename "template" to widget name */
-const struct widget template_widget;
-
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
 {
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+
     /*
        do stuff in here with the mavlink message data
      */
 
-    priv.var1++;
+    priv->var1++;
     
     /* draw the widget (as soon as possible) */
-    schedule_widget(&template_widget);
+    schedule_widget(w);
 }
 
 static void timer_callback(struct timer *t, void *d)
 {
+    struct widget *w = (struct widget*) d;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+
     /* do stuff if needed (read adc, digital i/o, ... */
 
-    priv.var1--;
+    priv->var1--;
 
-    schedule_widget(&template_widget);
+    schedule_widget(w);
 }
 
 /* called once - init the widget */
-static void init(struct widget_config *wcfg)
+/* should return 0 if the init was successeful */
+static int init(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv;
+
+    /* allocate space for private variables */
+    /* may not be needed -> check home_info.c */
+    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (priv == NULL)
+        return -1;
+    w->priv = priv;
 
     /* init private variables */
-    priv.var1 = 0;
+    priv->var1 = 0;
 
-    /* init the widget drawing area and position on screen */
-    alloc_canvas(ca, wcfg, X_SIZE, Y_SIZE);
+    /* set the widget size */
+    /* this can be left to be setup by the user */
+    /* using the config menus if needed */
+    w->cfg->w = X_SIZE;
+    w->cfg->h = Y_SIZE;
 
     /* create a callback that will trigger when a sepecific message ID arrrives */
-    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET);
+    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET, w);
 
     /* or/and trigger the widget rendering with a timer */
-    /* in this case with a refresh rate of 200 msec */
-    add_timer(TIMER_WIDGET, 2, timer_callback, NULL);
+    /* in this case with a refresh rate of 500 msec */
+    add_timer(TIMER_WIDGET, 5, timer_callback, w);
+
+    return 0;
 }
 
-
-/* renders the widget on its private canvas */
-static int render(void)
+/* renders the widget on its canvas */
+static void render(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct canvas *ca = &w->ca;
     char buf[10];
-
-    /* init the canvas */
-    /* if the canvas is still in the rendering fifo come back later */
-    if (init_canvas(ca, 0))
-        return 1;
 
     /* do stuff */
     sprintf(buf, "AlceOSD");
     draw_str(buf, 0, 0, ca, 1);
-
-    /* send the canvas to the rendering fifo */
-    schedule_canvas(ca);
-    return 0;
 }
 
 /* dummy define */
@@ -119,8 +124,7 @@ static int render(void)
 #define WIDGET_TEMPLATE_ID -1
 /* REMEMBER TO REMOVE AFTER CREATED IN the "widgets.h" file */
 
-
-const struct widget template_widget = {
+const struct widget_ops template_widget_ops = {
     .name = "Template widget",
     .id = WIDGET_TEMPLATE_ID,
     .init = init,

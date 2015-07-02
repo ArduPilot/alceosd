@@ -24,51 +24,56 @@
 #define X_CENTER    (X_SIZE/2) + 12
 #define Y_CENTER    (Y_SIZE/2) - 1
 
-static struct widget_priv {
+struct widget_priv {
     int range;
     float speed;
     int speed_i;
-    struct canvas ca;
-} priv;
+};
 
-const struct widget speed_widget;
-
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
 {
-    priv.speed = mavlink_msg_vfr_hud_get_airspeed(msg) * 3600 / 1000.0;
-    priv.speed_i = (int) priv.speed;
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
 
-    schedule_widget(&speed_widget);
+    priv->speed = mavlink_msg_vfr_hud_get_airspeed(msg) * 3600 / 1000.0;
+    priv->speed_i = (int) priv->speed;
+
+    schedule_widget(w);
 }
 
-static void init(struct widget_config *wcfg)
+static int init(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv;
 
-    priv.range = 20*5;
+    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (priv == NULL)
+        return -1;
+    w->priv = priv;
 
-    alloc_canvas(ca, wcfg, X_SIZE, Y_SIZE);
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET);
+    priv->range = 20*5;
+
+    w->cfg->w = X_SIZE;
+    w->cfg->h = Y_SIZE;
+    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET, w);
+    return 0;
 }
 
-static int render(void)
+static void render(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct canvas *ca = &w->ca;
     int i, j, y = -1;
     long yy;
     char buf[10], d = 0;
-    int major_tick = priv.range / 5;
+    int major_tick = priv->range / 5;
     int minor_tick = major_tick / 4;
     
-    if (init_canvas(ca, 0))
-        return 1;
-
-    for (i = 0; i < priv.range; i++) {
-        yy = ((long) i * Y_SIZE) / priv.range;
+    for (i = 0; i < priv->range; i++) {
+        yy = ((long) i * Y_SIZE) / priv->range;
         if ((yy == y) && (d == 1))
             continue;
         y = Y_SIZE - (int) yy;
-        j = priv.speed_i + i - priv.range/2;
+        j = priv->speed_i + i - priv->range/2;
         if(j < 0)
             continue;
         if (j % major_tick == 0) {
@@ -85,7 +90,7 @@ static int render(void)
     }
 
     draw_frect(1, Y_CENTER-4, X_CENTER - 10, Y_CENTER + 4, 0, ca);
-    sprintf(buf, "%3d", (int) priv.speed_i);
+    sprintf(buf, "%3d", (int) priv->speed_i);
     draw_str(buf, 2, Y_CENTER - 3, ca, 0);
 
     draw_hline(0, X_CENTER - 10, Y_CENTER - 5, 1, ca);
@@ -94,13 +99,10 @@ static int render(void)
 
     draw_line(X_CENTER-10, Y_CENTER-5, X_CENTER-10+5, Y_CENTER, 1, ca);
     draw_line(X_CENTER-10, Y_CENTER+5, X_CENTER-10+5, Y_CENTER, 1, ca);
-
-    schedule_canvas(ca);
-    return 0;
 }
 
 
-const struct widget speed_widget = {
+const struct widget_ops speed_widget_ops = {
     .name = "Air speed",
     .id = WIDGET_SPEED_ID,
     .init = init,

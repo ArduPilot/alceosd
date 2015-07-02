@@ -354,7 +354,8 @@ void video_get_size(unsigned int *xsize, unsigned int *ysize)
 
 
 int alloc_canvas(struct canvas *c,
-        struct widget_config *wcfg,
+        int x, int y,
+        unsigned char hjust, unsigned char vjust,
         unsigned int w, unsigned int h)
 {
     unsigned int osdxsize, osdysize, i;
@@ -374,29 +375,29 @@ int alloc_canvas(struct canvas *c,
         return -1;
     }
 
-    switch (wcfg->props.vjust) {
+    switch (vjust) {
         case VJUST_TOP:
         default:
-            c->y = wcfg->y;
+            c->y = y;
             break;
         case VJUST_BOT:
-            c->y = osdysize - h + wcfg->y;
+            c->y = osdysize - h + y;
             break;
         case VJUST_CENTER:
-            c->y = (osdysize - h)/2 + wcfg->y;
+            c->y = (osdysize - h)/2 + y;
             break;
     }
 
-    switch (wcfg->props.hjust) {
+    switch (hjust) {
         case HJUST_LEFT:
         default:
-            c->x = wcfg->x;
+            c->x = x;
             break;
         case HJUST_RIGHT:
-            c->x = osdxsize - w + wcfg->x;
+            c->x = osdxsize - w + x;
             break;
         case HJUST_CENTER:
-            c->x = (osdxsize - w)/2 + wcfg->x;
+            c->x = (osdxsize - w)/2 + x;
             break;
     }
 

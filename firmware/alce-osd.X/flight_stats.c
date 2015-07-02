@@ -101,5 +101,5 @@ void init_flight_stats_process(void)
     /* determine launch heading */
     add_timer(TIMER_ALWAYS, 10, find_launch_heading, NULL);
 
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, store_mavdata, CALLBACK_PERSISTENT);
+    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, store_mavdata, CALLBACK_PERSISTENT, NULL);
 }

@@ -52,50 +52,53 @@ const char sat_ico[] = {
 };
 #endif
 
-static struct widget_priv {
+struct widget_priv {
     float gps_lat, gps_lon, gps_eph;
     unsigned int gps_cog;
     unsigned char gps_nrsats, gps_fix_type;
+};
 
-    struct canvas ca;
-} priv;
-
-const struct widget gps_info_widget;
-
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
 {
-    priv.gps_lat = mavlink_msg_gps_raw_int_get_lat(msg) / 10000000.0;
-    priv.gps_lon = mavlink_msg_gps_raw_int_get_lon(msg) / 10000000.0;
-    priv.gps_fix_type = mavlink_msg_gps_raw_int_get_fix_type(msg);
-    priv.gps_nrsats = mavlink_msg_gps_raw_int_get_satellites_visible(msg);
-    //priv.gps_cog = mavlink_msg_gps_raw_int_get_cog(msg);
-    priv.gps_eph = (float) mavlink_msg_gps_raw_int_get_eph(msg) / 100.0;
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
 
-    schedule_widget(&gps_info_widget);
+    priv->gps_lat = mavlink_msg_gps_raw_int_get_lat(msg) / 10000000.0;
+    priv->gps_lon = mavlink_msg_gps_raw_int_get_lon(msg) / 10000000.0;
+    priv->gps_fix_type = mavlink_msg_gps_raw_int_get_fix_type(msg);
+    priv->gps_nrsats = mavlink_msg_gps_raw_int_get_satellites_visible(msg);
+    //priv->gps_cog = mavlink_msg_gps_raw_int_get_cog(msg);
+    priv->gps_eph = (float) mavlink_msg_gps_raw_int_get_eph(msg) / 100.0;
+
+    schedule_widget(w);
+}
+
+static int init(struct widget *w)
+{
+    struct widget_priv *priv;
+
+    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (priv == NULL)
+        return -1;
+    w->priv = priv;
+
+    w->cfg->w = X_SIZE;
+    w->cfg->h = Y_SIZE;
+    add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET, w);
+    return 0;
 }
 
 
-static void init(struct widget_config *wcfg)
+static void render(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
-
-    alloc_canvas(ca, wcfg, X_SIZE, Y_SIZE);
-    add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET);
-}
-
-
-static int render(void)
-{
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct canvas *ca = &w->ca;
     char buf[20], i, j;
 
-    if (init_canvas(ca, 0))
-        return 1;
-
-    sprintf(buf, "%10.6f", priv.gps_lat);
+    sprintf(buf, "%10.6f", priv->gps_lat);
     draw_str(buf, 0, 0, ca, 0);
 
-    sprintf(buf, "%10.6f", priv.gps_lon);
+    sprintf(buf, "%10.6f", priv->gps_lon);
     draw_str(buf, 0, 9, ca, 0);
 
 #ifdef GPS_SAT_ICON
@@ -104,11 +107,11 @@ static int render(void)
             set_pixel(SAT_X+j, SAT_Y+i, sat_ico[i * 20 + j], ca);
 #endif
 
-    sprintf(buf, "%2d", priv.gps_nrsats);
+    sprintf(buf, "%2d", priv->gps_nrsats);
     draw_str(buf, SAT_X + 20 + 1, 0, ca, 0);
 
     buf[1] = 'D';
-    switch (priv.gps_fix_type) {
+    switch (priv->gps_fix_type) {
     default:
     case 0:
     case 1:
@@ -127,15 +130,12 @@ static int render(void)
 
     strcpy(buf, "HDP");
     draw_str(buf, SAT_X + 20 + 1 + 18, 0, ca, 0);
-    sprintf(buf, "%2.1f", priv.gps_eph);
+    sprintf(buf, "%2.1f", priv->gps_eph);
     draw_str(buf, SAT_X + 20 + 1 + 18, 9, ca, 0);
-
-    schedule_canvas(ca);
-    return 0;
 }
 
 
-const struct widget gps_info_widget = {
+const struct widget_ops gps_info_widget_ops = {
     .name = "GPS stats",
     .id = WIDGET_GPS_INFO_ID,
     .init = init,

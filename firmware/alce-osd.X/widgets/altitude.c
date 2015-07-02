@@ -24,82 +24,85 @@
 #define Y_CENTER    (Y_SIZE/2) - 1
 
 
-static struct widget_priv {
+struct widget_priv {
     long altitude;
     int range;
-    struct canvas ca;
-    struct widget_config *cfg;
     struct home_data *home;
-} priv;
+};
 
-const struct widget altitude_widget;
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
 {
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
     float altitude;
     
-    switch (priv.cfg->props.mode) {
+    switch (w->cfg->props.mode) {
         case 0:
         default:
             altitude = mavlink_msg_gps_raw_int_get_alt(msg) / 1000.0;
             break;
         case 1:
-            if (priv.home->lock == HOME_LOCKED)
-                altitude = (long) priv.home->altitude;
+            if (priv->home->lock == HOME_LOCKED)
+                altitude = (long) priv->home->altitude;
             else
                 altitude = 0;
             break;
     }
 
-    if (get_units(priv.cfg) == UNITS_IMPERIAL)
+    if (get_units(w->cfg) == UNITS_IMPERIAL)
         altitude *= M2FEET;
     
-    priv.altitude = (long) altitude;
-
-    schedule_widget(&altitude_widget);
+    priv->altitude = (long) altitude;
+    schedule_widget(w);
 }
 
 
-static void init(struct widget_config *wcfg)
+int init(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv;
 
-    priv.cfg = wcfg;
-    priv.home = get_home_data();
+    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (priv == NULL)
+        return -1;
 
-    switch (get_units(wcfg)) {
+    w->priv = priv;
+
+    priv->home = get_home_data();
+
+    switch (get_units(w->cfg)) {
         case UNITS_METRIC:
         default:
-            priv.range = 20*5;
+            priv->range = 20*5;
             break;
         case UNITS_IMPERIAL:
-            priv.range = 100*5;
+            priv->range = 100*5;
             break;
     }
 
-    add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET);
-    alloc_canvas(ca, wcfg, X_SIZE, Y_SIZE);
+    add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET, w);
+    w->cfg->w = X_SIZE;
+    w->cfg->h = Y_SIZE;
+    return 0;
 }
 
 
-static int render(void)
+static void render(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct canvas *ca = &w->ca;
     int i, j, y = -1;
     long yy;
     char buf[10], d = 0;
-    int major_tick = priv.range / 5;
+    int major_tick = priv->range / 5;
     int minor_tick = major_tick / 4;
 
-    if (init_canvas(ca, 0))
-        return 1;
-
-    for (i = 0; i < priv.range; i++) {
-        yy = ((long) i * Y_SIZE) / priv.range;
+    for (i = 0; i < priv->range; i++) {
+        yy = ((long) i * Y_SIZE) / priv->range;
         if ((yy == y) && (d == 1))
             continue;
         y = Y_SIZE - (int) yy;
-        j = priv.altitude + i - priv.range/2;
+        j = priv->altitude + i - priv->range/2;
         if (j % major_tick == 0) {
             draw_ohline(X_CENTER + 2, X_CENTER - 4, y, 1, 3, ca);
             sprintf(buf, "%4d", j);
@@ -114,7 +117,7 @@ static int render(void)
     }
 
     draw_frect(X_CENTER + 10, Y_CENTER-4, X_SIZE-2, Y_CENTER + 4, 0, ca);
-    sprintf(buf, "%4ld", priv.altitude);
+    sprintf(buf, "%4ld", priv->altitude);
     draw_str(buf, X_CENTER + 13, Y_CENTER - 3, ca, 0);
 
     draw_hline(X_CENTER + 10, X_SIZE - 1, Y_CENTER-5, 1, ca);
@@ -124,14 +127,11 @@ static int render(void)
     /* draw arrow */
     draw_line(X_CENTER+10, Y_CENTER-5, X_CENTER+10-5, Y_CENTER, 1, ca);
     draw_line(X_CENTER+10, Y_CENTER+5, X_CENTER+10-5, Y_CENTER, 1, ca);
-
-    schedule_canvas(ca);
-    return 0;
 }
 
 
-const struct widget altitude_widget = {
-    .name = "Altitude (instrument)",
+const struct widget_ops altitude_widget_ops = {
+    .name = "Altitude",
     .id = WIDGET_ALTITUDE_ID,
     .init = init,
     .render = render,

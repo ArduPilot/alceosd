@@ -18,108 +18,105 @@
 
 #include "alce-osd.h"
 
-static struct widget_priv {
+struct widget_priv {
     unsigned int ch_raw[8];
     unsigned char bar_size;
-    struct canvas ca;
-    struct widget_config *cfg;
-} priv;
+};
 
-const struct widget rc_channels_widget;
-
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
 {
-    priv.ch_raw[0] = mavlink_msg_rc_channels_raw_get_chan1_raw(msg);
-    priv.ch_raw[1] = mavlink_msg_rc_channels_raw_get_chan2_raw(msg);
-    priv.ch_raw[2] = mavlink_msg_rc_channels_raw_get_chan3_raw(msg);
-    priv.ch_raw[3] = mavlink_msg_rc_channels_raw_get_chan4_raw(msg);
-    priv.ch_raw[4] = mavlink_msg_rc_channels_raw_get_chan5_raw(msg);
-    priv.ch_raw[5] = mavlink_msg_rc_channels_raw_get_chan6_raw(msg);
-    priv.ch_raw[6] = mavlink_msg_rc_channels_raw_get_chan7_raw(msg);
-    priv.ch_raw[7] = mavlink_msg_rc_channels_raw_get_chan8_raw(msg);
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
 
-    schedule_widget(&rc_channels_widget);
+    priv->ch_raw[0] = mavlink_msg_rc_channels_raw_get_chan1_raw(msg);
+    priv->ch_raw[1] = mavlink_msg_rc_channels_raw_get_chan2_raw(msg);
+    priv->ch_raw[2] = mavlink_msg_rc_channels_raw_get_chan3_raw(msg);
+    priv->ch_raw[3] = mavlink_msg_rc_channels_raw_get_chan4_raw(msg);
+    priv->ch_raw[4] = mavlink_msg_rc_channels_raw_get_chan5_raw(msg);
+    priv->ch_raw[5] = mavlink_msg_rc_channels_raw_get_chan6_raw(msg);
+    priv->ch_raw[6] = mavlink_msg_rc_channels_raw_get_chan7_raw(msg);
+    priv->ch_raw[7] = mavlink_msg_rc_channels_raw_get_chan8_raw(msg);
+
+    schedule_widget(w);
 }
 
 
-static void init(struct widget_config *wcfg)
+static int init(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv;
     unsigned int i;
 
-    priv.cfg = wcfg;
+    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (priv == NULL)
+        return -1;
+    w->priv = priv;
 
     /* set initial values */
     for (i = 0; i < 8; i++)
-        priv.ch_raw[i] = 1500;
+        priv->ch_raw[i] = 1500;
 
     /* setup canvas according to widget mode */
-    switch (wcfg->props.mode) {
+    switch (w->cfg->props.mode) {
         case 0:
         default:
             /* raw numbers and bars */
-            priv.bar_size = 25;
-            alloc_canvas(ca, wcfg, 84, 64);
-            wcfg->props.mode = 0;
+            priv->bar_size = 25;
+            w->cfg->w = 84;
+            w->cfg->props.mode = 0;
             break;
         case 1:
             /* only numbers */
-            alloc_canvas(ca, wcfg, 58, 64);
+            w->cfg->w = 58;
             break;
         case 2:
             /* only bars */
-            priv.bar_size = 50;
-            alloc_canvas(ca, wcfg, 80, 64);
+            priv->bar_size = 50;
+            w->cfg->w = 80;
             break;
     }
-
-    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET);
+    w->cfg->h = 64;
+    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET, w);
+    return 0;
 }
 
 
-static int render(void)
+static void render(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct canvas *ca = &w->ca;
     unsigned char i;
-    unsigned int w = priv.ca.width;
+    unsigned int width = ca->width;
     int x;
     char buf[10];
 
-
-    if (init_canvas(ca, 0))
-        return 1;
-
     for (i = 0; i < 8; i++) {
-        if ((priv.cfg->props.mode == 0) || (priv.cfg->props.mode == 1))
-            sprintf(buf, "CH%u %4d", i+1, priv.ch_raw[i]);
+        if ((w->cfg->props.mode == 0) || (w->cfg->props.mode == 1))
+            sprintf(buf, "CH%u %4d", i+1, priv->ch_raw[i]);
         else
             sprintf(buf, "CH%u", i+1);
         draw_str(buf, 0, i*8+1, ca, 0);
 
-        if ((priv.cfg->props.mode == 0) || (priv.cfg->props.mode == 2)) {
-            x = priv.ch_raw[i] - 1000;
+        if ((w->cfg->props.mode == 0) || (w->cfg->props.mode == 2)) {
+            x = priv->ch_raw[i] - 1000;
             if (x < 0)
                 x = 0;
             else if (x > 1000)
                 x = 1000;
 
-            x = (x * (unsigned int) priv.bar_size) / 1000;
+            x = (x * (unsigned int) priv->bar_size) / 1000;
 
-            draw_rect(w-priv.bar_size-1,      i*8, w-1, i*8+6, 3, ca);
-            draw_rect(w-priv.bar_size,      i*8+1, w-2, i*8+5, 1, ca);
+            draw_rect(width-priv->bar_size-1,      i*8, width-1, i*8+6, 3, ca);
+            draw_rect(width-priv->bar_size,      i*8+1, width-2, i*8+5, 1, ca);
 
-            draw_vline(w-priv.bar_size-1+x,   i*8+1, i*8+5, 1, ca);
-            draw_vline(w-priv.bar_size-1+x-1, i*8+1, i*8+5, 3, ca);
-            draw_vline(w-priv.bar_size-1+x+1, i*8+1, i*8+5, 3, ca);
+            draw_vline(width-priv->bar_size-1+x,   i*8+1, i*8+5, 1, ca);
+            draw_vline(width-priv->bar_size-1+x-1, i*8+1, i*8+5, 3, ca);
+            draw_vline(width-priv->bar_size-1+x+1, i*8+1, i*8+5, 3, ca);
         }
     }
-
-    schedule_canvas(ca);
-    return 0;
 }
 
 
-const struct widget rc_channels_widget = {
+const struct widget_ops rc_channels_widget_ops = {
     .name = "RC Channels",
     .id = WIDGET_RC_CHANNELS_ID,
     .init = init,

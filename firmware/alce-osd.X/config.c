@@ -316,13 +316,13 @@ const char menu_edit_widget[] = "\n\nAlceOSD :: Edit widget\n\n"
                                 "\nx - Go back\n";
 
 
-extern struct widget *all_widgets[];
+extern const struct widget_ops *all_widget_ops[];
 
 int config_osd(void)
 {
     static unsigned char state = MENU_MAIN, refresh_disp = 1;
     unsigned int osdxsize, osdysize;
-    static char options[30];
+    static unsigned int options[30];
     static unsigned char nr_opt = 0;
 
     video_get_size(&osdxsize, &osdysize);
@@ -361,67 +361,45 @@ int config_osd(void)
                 break;
             case MENU_TAB_WIDGETS: {
                 wcfg = &config.widgets[0];
-                const struct widget *w;
+                const struct widget_ops *w_ops;
                 char c = '1';
                 nr_opt = 0;
 
-                printf(menu_tab_widgets,
-                        current_tab);
+                printf(menu_tab_widgets, current_tab);
                 while (wcfg->tab != TABS_END) {
                     if (wcfg->tab == current_tab) {
-                        w = get_widget(wcfg->widget_id);
-                        if (w == NULL)
-                            continue;
-                        printf("%c - %s\n", c++, w->name);
-                        if (c == ('9'+1))
-                            c = 'a';
-                        options[nr_opt++] = wcfg->widget_id;
+                        w_ops = get_widget_ops(wcfg->widget_id);
+                        if (w_ops != NULL) {
+                            printf("%c - %s\n", c++, w_ops->name);
+                            if (c == ('9'+1))
+                                c = 'a';
+                            options[nr_opt++] = (int) wcfg;
+                        }
                     }
                     wcfg++;
                 }
-
-
                 break;
             }
 
             case MENU_ADD_WIDGET: {
-                struct widget **w;
+                const struct widget_ops **w_ops;
                 char c = '1';
-                char found;
                 nr_opt = 0;
 
                 printf(menu_add_widgets);
 
-                w = all_widgets;
-                while (*w != NULL) {
-                    wcfg = &config.widgets[0];
-                    found = 0;
-                    while (wcfg->tab != TABS_END) {
-                        if ((wcfg->tab == current_tab) && (wcfg->widget_id ==(*w)->id)) {
-                            found = 1;
-                            break;
-                        }
-                        wcfg++;
-                    }
-
-                    if (found == 0) {
-                        printf("%c - %s\n", c++, (*w)->name);
-                        if (c == ('9'+1))
-                            c = 'a';
-                        options[nr_opt++] = (*w)->id;
-                    }
-                    w++;
+                w_ops = all_widget_ops;
+                while (*w_ops != NULL) {
+                    printf("%c - %s\n", c++, (*w_ops)->name);
+                    if (c == ('9'+1))
+                        c = 'a';
+                    options[nr_opt++] = (*w_ops)->id;
+                    w_ops++;
                 }
                 break;
             }
             case MENU_EDIT_WIDGET: {
-                wcfg = &config.widgets[0];
-
-                while (wcfg->tab != TABS_END) {
-                    if ((wcfg->tab == current_tab) && (wcfg->widget_id == options[nr_opt]))
-                        break;
-                    wcfg++;
-                }
+                wcfg = (struct widget_config*) options[nr_opt];
 
                 printf(menu_edit_widget,
                     wcfg->props.hjust,

@@ -36,60 +36,62 @@
 #define MAJOR_ROLL_TICK  15
 
 
-static struct widget_priv {
+struct widget_priv {
     float pitch, roll;
 
     int pitch_deg, roll_deg;
     float cos_roll, sin_roll;
+};
 
-    struct canvas canvas;
-} priv;
-
-
-const struct widget horizon_widget;
-
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
 {
-    priv.pitch = mavlink_msg_attitude_get_pitch(msg);
-    priv.pitch_deg = RAD2DEG(priv.pitch * SCALE);
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
 
-    priv.roll = mavlink_msg_attitude_get_roll(msg);
-    priv.roll_deg  = RAD2DEG(priv.roll);
-    priv.cos_roll = cos(priv.roll);
-    priv.sin_roll = -1 * sin(priv.roll);
+    priv->pitch = mavlink_msg_attitude_get_pitch(msg);
+    priv->pitch_deg = RAD2DEG(priv->pitch * SCALE);
 
-    schedule_widget(&horizon_widget);
+    priv->roll = mavlink_msg_attitude_get_roll(msg);
+    priv->roll_deg  = RAD2DEG(priv->roll);
+    priv->cos_roll = cos(priv->roll);
+    priv->sin_roll = -1 * sin(priv->roll);
+
+    schedule_widget(w);
 }
 
-static void init(struct widget_config *wcfg)
+static int init(struct widget *w)
 {
-    struct canvas *ca = &priv.canvas;
+    struct widget_priv *priv;
 
-    priv.roll = 0;
-    priv.pitch = 0;
-    priv.cos_roll = cos(0);
-    priv.sin_roll = sin(0);
-    add_mavlink_callback(MAVLINK_MSG_ID_ATTITUDE, mav_callback, CALLBACK_WIDGET);
+    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (priv == NULL)
+        return -1;
+    w->priv = priv;
 
-    alloc_canvas(ca, wcfg, X_SIZE, Y_SIZE);
+    priv->roll = 0;
+    priv->pitch = 0;
+    priv->cos_roll = cos(0);
+    priv->sin_roll = sin(0);
+    
+    add_mavlink_callback(MAVLINK_MSG_ID_ATTITUDE, mav_callback, CALLBACK_WIDGET, w);
+    w->cfg->w = X_SIZE;
+    w->cfg->h = Y_SIZE;
+    return 0;
 }
 
-
-static int render(void)
+static void render(struct widget *w)
 {
-    struct canvas *ca = &priv.canvas;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct canvas *ca = &w->ca;
     int y, i, j;
     int x0, x1, y0, y1, offset, cx, cy;
     unsigned char size, gap;
     char buf[10];
 
-    if (init_canvas(ca, 0))
-        return 1;
-
     for (i = -RANGE/2; i <= RANGE/2; i++) {
         y = Y_CENTER - i;
-        //j = priv.pitch_deg*SCALE + i;
-        j = priv.pitch_deg + i;
+        //j = priv->pitch_deg*SCALE + i;
+        j = priv->pitch_deg + i;
 
         if (j % (MINOR_TICK*SCALE) == 0) {
             if (j == 0) {
@@ -103,19 +105,19 @@ static int render(void)
                 gap = 10;
             }
 
-            cx = X_CENTER + (int) (i * priv.sin_roll);
-            cy = y + i - (int) (i * priv.cos_roll);
+            cx = X_CENTER + (int) (i * priv->sin_roll);
+            cy = y + i - (int) (i * priv->cos_roll);
 
             
-            offset = (int) gap * priv.cos_roll;
+            offset = (int) gap * priv->cos_roll;
             x0 = cx + offset;
-            offset = (int) size * priv.cos_roll;
+            offset = (int) size * priv->cos_roll;
             x1 = x0 + offset;
 
             
-            offset = (int) gap * priv.sin_roll;
+            offset = (int) gap * priv->sin_roll;
             y0 = cy + offset;
-            offset = (int) size * priv.sin_roll;
+            offset = (int) size * priv->sin_roll;
             y1 = y0 + offset;
             
             if (j == 0) {
@@ -131,15 +133,15 @@ static int render(void)
             }
 
 
-            offset = (int) gap * priv.cos_roll;
+            offset = (int) gap * priv->cos_roll;
             x0 = cx - offset;
-            offset = (int) size * priv.cos_roll;
+            offset = (int) size * priv->cos_roll;
             x1 = x0 - offset;
 
 
-            offset = (int) gap * priv.sin_roll;
+            offset = (int) gap * priv->sin_roll;
             y0 = cy - offset;
-            offset = (int) size * priv.sin_roll;
+            offset = (int) size * priv->sin_roll;
             y1 = y0 - offset;
 
             if (j == 0) {
@@ -160,8 +162,8 @@ static int render(void)
 
     for (i = -ROLL_RANGE/2; i <= ROLL_RANGE/2; i++) {
         y = Y_CENTER - i;
-        //j = priv.pitch_deg*SCALE + i;
-        //j = priv.roll_deg + i;
+        //j = priv->pitch_deg*SCALE + i;
+        //j = priv->roll_deg + i;
 
         if (i % (MINOR_ROLL_TICK) == 0) {
             gap = 70;
@@ -201,31 +203,28 @@ static int render(void)
         }
     }
 
-    cx = X_CENTER; // + (int) (gap * priv.sin_roll);
-    cy = Y_CENTER ; //- (int) (gap * priv.cos_roll);
+    cx = X_CENTER; // + (int) (gap * priv->sin_roll);
+    cy = Y_CENTER ; //- (int) (gap * priv->cos_roll);
     size = 10;
 
-    offset = (int) (gap-size) * priv.cos_roll;
+    offset = (int) (gap-size) * priv->cos_roll;
     x0 = cx + offset;
-    offset = (int) size * priv.cos_roll;
+    offset = (int) size * priv->cos_roll;
     x1 = x0 + offset;
 
 
-    offset = (int) (gap-size) * priv.sin_roll;
+    offset = (int) (gap-size) * priv->sin_roll;
     y0 = cy + offset;
-    offset = (int) size * priv.sin_roll;
+    offset = (int) size * priv->sin_roll;
     y1 = y0 + offset;
 
 
     draw_line(x0-1, y0-1, x1+1, y1-1, 3, ca);
     draw_line(x0-1, y0+1, x1+1, y1+1, 3, ca);
     draw_line(x0, y0, x1, y1, 1, ca);
-    
-    schedule_canvas(ca);
-    return 0;
 }
 
-const struct widget horizon_widget = {
+const struct widget_ops horizon_widget_ops = {
     .name = "Articial Horizon",
     .id = WIDGET_HORIZON_ID,
     .init = init,

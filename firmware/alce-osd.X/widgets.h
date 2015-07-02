@@ -19,6 +19,9 @@
 #ifndef WIDGETS_H
 #define	WIDGETS_H
 
+#include "videocore.h"
+
+
 enum {
     WIDGET_ALTITUDE_ID = 0,
     WIDGET_HORIZON_ID,
@@ -36,6 +39,7 @@ enum {
     WIDGET_WIND_ID,
 };
 
+#define WIDGET_SCHEDULED    (0x1)
 
 typedef union {
     unsigned int raw;
@@ -54,22 +58,32 @@ struct widget_config {
     unsigned int widget_id;
     int x, y;
     widget_props props;
+    unsigned int w, h;
 };
 
+struct widget;
 
-struct widget {
+struct widget_ops {
     unsigned int id;
-    void (*init)(struct widget_config *wcfg);
-    int (*render)(void);
+    int (*init)(struct widget *w);
+    void (*render)(struct widget *w);
     char name[];
 };
 
+struct widget {
+    const struct widget_ops *ops;
+    struct widget_config *cfg;
+    void *priv;
+    struct canvas ca;
+    unsigned int status;
+};
 
+void* widget_malloc(unsigned int size);
 void widgets_init(void);
 void build_tab_list(void);
 void load_tab(unsigned char tab);
 void widgets_process(void);
-void schedule_widget(const struct widget *w);
-const struct widget *get_widget(unsigned int id);
+void schedule_widget(struct widget *w);
+const struct widget_ops *get_widget_ops(unsigned int id);
 
 #endif

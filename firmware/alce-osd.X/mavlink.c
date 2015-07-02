@@ -23,7 +23,8 @@
 struct mavlink_callback {
     unsigned char msgid;
     unsigned char type;
-    void (*cbk) (mavlink_message_t *msg, mavlink_status_t *status);
+    void *data;
+    void (*cbk) (mavlink_message_t *msg, mavlink_status_t *status, void *data);
 };
 
 static struct mavlink_callback callbacks[MAX_MAVLINK_CALLBACKS];
@@ -36,7 +37,7 @@ static void mavlink_parse_msg(mavlink_message_t *msg, mavlink_status_t *status)
     for (i = 0; i < nr_callbacks; i++) {
         c = &callbacks[i];
         if (msg->msgid == c->msgid)
-            c->cbk(msg, status);
+            c->cbk(msg, status, c->data);
     }
 }
 
@@ -58,7 +59,7 @@ void mavlink_process()
     uart_discard2(count);
 }
 
-void add_mavlink_callback(unsigned char msgid, void *cbk, unsigned char ctype)
+void add_mavlink_callback(unsigned char msgid, void *cbk, unsigned char ctype, void *data)
 {
     struct mavlink_callback *c;
     if (nr_callbacks == MAX_MAVLINK_CALLBACKS)
@@ -67,6 +68,7 @@ void add_mavlink_callback(unsigned char msgid, void *cbk, unsigned char ctype)
     c->msgid = msgid;
     c->cbk = cbk;
     c->type = ctype;
+    c->data = data;
 }
 
 

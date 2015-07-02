@@ -23,62 +23,62 @@
 
 #define RSSI_MAX 255
 
-static struct widget_priv {
+struct widget_priv {
     unsigned char rssi, last_rssi;
-    struct canvas ca;
-} priv;
+};
 
-const struct widget rssi_widget;
-
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
 {
-    priv.rssi = mavlink_msg_rc_channels_raw_get_rssi(msg);
+    struct widget *w = (struct widget*) data;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
 
-    if (priv.rssi ==  priv.last_rssi)
+    priv->rssi = mavlink_msg_rc_channels_raw_get_rssi(msg);
+    if (priv->rssi ==  priv->last_rssi)
         return;
 
-    schedule_widget(&rssi_widget);
-    priv.last_rssi = priv.rssi;
+    priv->last_rssi = priv->rssi;
+    schedule_widget(w);
+}
+
+static int init(struct widget *w)
+{
+    struct widget_priv *priv;
+
+    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (priv == NULL)
+        return -1;
+    w->priv = priv;
+
+    priv->last_rssi = 0xff;
+
+    w->cfg->w = X_SIZE;
+    w->cfg->h = Y_SIZE;
+    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET, w);
+    return 0;
 }
 
 
-static void init(struct widget_config *wcfg)
+static void render(struct widget *w)
 {
-    struct canvas *ca = &priv.ca;
-
-    priv.last_rssi = 0xff;
-
-    alloc_canvas(ca, wcfg, X_SIZE, Y_SIZE);
-    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET);
-}
-
-
-static int render(void)
-{
-    struct canvas *ca = &priv.ca;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct canvas *ca = &w->ca;
     unsigned char i, x;
     char buf[5];
 
-    if (init_canvas(ca, 0))
-        return 1;
-
     x = 0;
-    for (i = 0; i < (5 * priv.rssi)/(RSSI_MAX-RSSI_MAX/5); i++) {
+    for (i = 0; i < (5 * priv->rssi)/(RSSI_MAX-RSSI_MAX/5); i++) {
         draw_vline(x, Y_SIZE-1 - i*3, Y_SIZE-1, 3, ca);
         draw_vline(x+1, Y_SIZE-1 - i*3, Y_SIZE-1, 1, ca);
         draw_vline(x+2, Y_SIZE-1 - i*3, Y_SIZE-1, 1, ca);
         x += 4;
     }
 
-    sprintf(buf, "%3d", (priv.rssi * 100) / RSSI_MAX);
+    sprintf(buf, "%3d", (priv->rssi * 100) / RSSI_MAX);
     draw_str(buf, 25, 4, ca, 2);
-
-    schedule_canvas(ca);
-    return 0;
 }
 
 
-const struct widget rssi_widget = {
+const struct widget_ops rssi_widget_ops = {
     .name = "RSSI",
     .id = WIDGET_RSSI_ID,
     .init = init,
