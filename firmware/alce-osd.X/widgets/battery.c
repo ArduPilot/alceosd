@@ -30,6 +30,9 @@
 struct widget_priv {
     float bat_voltage, bat_current;
     int bat_remaining;
+
+    unsigned int *adc_raw, *adc_raw2;
+    float bat_voltage2;
 };
 
 
@@ -45,6 +48,15 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
     schedule_widget(w);
 }
 
+static void timer_callback(struct timer *t, void *d)
+{
+    struct widget *w = (struct widget*) d;
+    struct widget_priv *priv = (struct widget_priv*) w->priv;
+
+    priv->bat_voltage = *(priv->adc_raw) * 18.3 / (1 << 10);
+    priv->bat_voltage2 = *(priv->adc_raw2) * 18.3 / (1 << 10);
+    schedule_widget(w);
+}
 
 static int init(struct widget *w)
 {
@@ -55,9 +67,41 @@ static int init(struct widget *w)
         return -1;
     w->priv = priv;
 
-    add_mavlink_callback(MAVLINK_MSG_ID_SYS_STATUS, mav_callback, CALLBACK_WIDGET, w);
-    w->cfg->w = X_SIZE;
-    w->cfg->h = Y_SIZE;
+
+    switch (w->cfg->props.mode) {
+        default:
+        case 0:
+            add_mavlink_callback(MAVLINK_MSG_ID_SYS_STATUS, mav_callback, CALLBACK_WIDGET, w);
+            w->cfg->w = X_SIZE;
+            w->cfg->h = Y_SIZE;
+            break;
+        case 1:
+            /* adc ch 0 */
+            adc_start(1);
+            adc_link_ch(0, &priv->adc_raw);
+            w->cfg->w = X_SIZE;
+            w->cfg->h = 15;
+            add_timer(TIMER_WIDGET, 2, timer_callback, w);
+            break;
+        case 2:
+            /* adc ch 1 */
+            adc_start(1);
+            adc_link_ch(1, &priv->adc_raw);
+            w->cfg->w = X_SIZE;
+            w->cfg->h = 15;
+            add_timer(TIMER_WIDGET, 2, timer_callback, w);
+            break;
+        case 3:
+            /* adc ch 0,1 */
+            adc_start(1);
+            adc_link_ch(0, &priv->adc_raw);
+            adc_link_ch(1, &priv->adc_raw2);
+            w->cfg->w = X_SIZE;
+            w->cfg->h = 30;
+            add_timer(TIMER_WIDGET, 2, timer_callback, w);
+            break;
+    }
+
     return 0;
 }
 
@@ -66,26 +110,39 @@ static void render(struct widget *w)
 {
     struct widget_priv *priv = (struct widget_priv*) w->priv;
     struct canvas *ca = &w->ca;
-    char buf[10];
+    char buf[20];
     int i;
 
-    sprintf(buf, "%5.2fV", priv->bat_voltage);
-    draw_str(buf, 4, BAT_BAR_Y + BAT_BAR_H + 3, ca, 2);
-    sprintf(buf, "%5.2fA", priv->bat_current);
-    draw_str(buf, 4, BAT_BAR_Y + BAT_BAR_H + 17, ca, 2);
 
-    draw_rect(BAT_BAR_X, BAT_BAR_Y, BAT_BAR_X + BAT_BAR_W, BAT_BAR_Y + BAT_BAR_H, 3, ca);
-    draw_rect(BAT_BAR_X+1, BAT_BAR_Y+1, BAT_BAR_X + BAT_BAR_W-1, BAT_BAR_Y + BAT_BAR_H-1, 1, ca);
-    draw_vline(BAT_BAR_X - 1, BAT_BAR_Y + 4, BAT_BAR_Y + BAT_BAR_H - 4, 1, ca);
-    draw_vline(BAT_BAR_X - 2, BAT_BAR_Y + 4, BAT_BAR_Y + BAT_BAR_H - 4, 1, ca);
-    draw_vline(BAT_BAR_X - 3, BAT_BAR_Y + 4, BAT_BAR_Y + BAT_BAR_H - 4, 3, ca);
+    switch (w->cfg->props.mode) {
+        case 0:
+        default:
+            sprintf(buf, "%5.2fV\n%5.2fA", priv->bat_voltage, priv->bat_current);
+            draw_str(buf, 4, BAT_BAR_Y + BAT_BAR_H + 3, ca, 2);
 
-    for (i = 0; i < (priv->bat_remaining*BAT_BAR_W)/100 - 2; i++) {
-        draw_vline(BAT_BAR_X + 2 + i, BAT_BAR_Y + 2, BAT_BAR_Y + BAT_BAR_H - 2, 2, ca);
+            draw_rect(BAT_BAR_X, BAT_BAR_Y, BAT_BAR_X + BAT_BAR_W, BAT_BAR_Y + BAT_BAR_H, 3, ca);
+            draw_rect(BAT_BAR_X+1, BAT_BAR_Y+1, BAT_BAR_X + BAT_BAR_W-1, BAT_BAR_Y + BAT_BAR_H-1, 1, ca);
+            draw_vline(BAT_BAR_X - 1, BAT_BAR_Y + 4, BAT_BAR_Y + BAT_BAR_H - 4, 1, ca);
+            draw_vline(BAT_BAR_X - 2, BAT_BAR_Y + 4, BAT_BAR_Y + BAT_BAR_H - 4, 1, ca);
+            draw_vline(BAT_BAR_X - 3, BAT_BAR_Y + 4, BAT_BAR_Y + BAT_BAR_H - 4, 3, ca);
+
+            for (i = 0; i < (priv->bat_remaining*BAT_BAR_W)/100 - 2; i++) {
+                draw_vline(BAT_BAR_X + 2 + i, BAT_BAR_Y + 2, BAT_BAR_Y + BAT_BAR_H - 2, 2, ca);
+            }
+
+            sprintf(buf, "%d", priv->bat_remaining);
+            draw_str(buf, BAT_BAR_X + BAT_BAR_W/2 - 6, BAT_BAR_Y + 3, ca, 0);
+            break;
+        case 1:
+        case 2:
+            sprintf(buf, "%5.2fV", priv->bat_voltage);
+            draw_str(buf, 0, 0, ca, 2);
+            break;
+        case 3:
+            sprintf(buf, "%5.2fV\n%5.2fV", priv->bat_voltage, priv->bat_voltage2);
+            draw_str(buf, 0, 0, ca, 2);
+            break;
     }
-
-    sprintf(buf, "%d", priv->bat_remaining);
-    draw_str(buf, BAT_BAR_X + BAT_BAR_W/2 - 6, BAT_BAR_Y + 3, ca, 0);
 }
 
 
