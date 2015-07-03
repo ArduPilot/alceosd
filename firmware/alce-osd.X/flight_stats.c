@@ -19,6 +19,7 @@
 #include "alce-osd.h"
 
 struct flight_stats stats;
+extern struct home_data home;
 
 #define NO_HEADING 0xfff
 
@@ -56,11 +57,12 @@ static void store_mavdata(mavlink_message_t *msg, mavlink_status_t *status)
 static void calc_stats(struct timer *t, void *d)
 {
     /* accumulate distance */
-    stats.total_distance += (priv.groundspeed * 10) / 1000;
+    stats.total_distance += ((float) priv.groundspeed / 10);
 
     stats.max_air_speed = MAX(priv.airspeed, stats.max_air_speed);
     stats.max_gnd_speed = MAX(priv.groundspeed, stats.max_gnd_speed);
     stats.max_altitude  = MAX(priv.alt, stats.max_altitude);
+    stats.max_home_distance = MAX((unsigned int) home.distance, stats.max_home_distance);
 }
 
 
@@ -68,6 +70,10 @@ static void start_calc_stats(void)
 {
     /* flight start time */
     stats.flight_start = get_millis();
+    stats.max_air_speed = 0;
+    stats.max_gnd_speed = 0;
+    stats.max_altitude = 0;
+    stats.max_home_distance = 0;
 
     /* start calcs in a 100ms interval */
     add_timer(TIMER_ALWAYS, 1, calc_stats, NULL);
