@@ -16,43 +16,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ALCE_OSD_H
-#define	ALCE_OSD_H
-
-#include <p33Exxxx.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-
-#include "graphics.h"
-#include "config.h"
-#include "widgets.h"
-#include "videocore.h"
-#include "mavlink.h"
-#include "uart.h"
-#include "clock.h"
-#include "alce-math.h"
-#include "home.h"
-#include "flight_stats.h"
-#include "fonts.h"
-#include "adc.h"
+#ifndef ADC_H
+#define	ADC_H
 
 
-#define WITH_BOOTLOADER
+void adc_init(void);
+void adc_start(unsigned int t);
+void adc_link_ch(unsigned char ch, unsigned int **v);
+void adc_unlink_ch(unsigned char ch);
+void adc_stop(void);
 
 
-/* led on the board */
-#define LED_DIR     TRISAbits.TRISA10
-#define LED         LATAbits.LATA10
 
-
-typedef union {
-    unsigned long l;
-    unsigned int  w[2];
-    unsigned char b[4];
-} u32union;
-
-
-#endif	/* ALCE_OSD_H */
-
+#endif

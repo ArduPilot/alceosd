@@ -224,6 +224,7 @@ void load_tab(unsigned char tab)
     while (sram_busy);
     SET_AND_SAVE_CPU_IPL(ipl, 7);
 
+    adc_stop();
     remove_timers(TIMER_WIDGET);
     del_mavlink_callbacks(CALLBACK_WIDGET);
     wfifo.rd = wfifo.wr = 0;

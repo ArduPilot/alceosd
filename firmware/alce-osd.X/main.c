@@ -158,6 +158,9 @@ int main(void) {
     /* real time clock init */
     clock_init();
 
+    /* adc init */
+    adc_init();
+
     /* init uart2 */
     uart_init2(UART_PORT_TELEMETRY);
 
