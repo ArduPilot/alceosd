@@ -86,12 +86,9 @@ _clear_canvas:
     MOV DSRPAG, W6
     MOV W1, DSRPAG
 
-;   don't call this routine with W2(count) = 0
     DEC W2,W2
-    DO  W2, clear_canvas_loop
 
-    NOP
-clear_canvas_loop:
+    REPEAT W2
     MOV.B W3, [W0++]
 
     MOV W6, DSRPAG
