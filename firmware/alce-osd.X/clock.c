@@ -55,6 +55,8 @@ void remove_timer(struct timer *t)
 {
     unsigned char i = t - timers;
 
+    if (t == NULL)
+        return;
     if (i < (nr_timers - 1))
         memcpy(&timers[i], &timers[i + 1], sizeof(struct timer) * (nr_timers - i - 1));
     nr_timers--;
