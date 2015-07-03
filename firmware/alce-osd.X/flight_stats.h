@@ -23,8 +23,10 @@
 struct flight_stats {
     int launch_heading;
     unsigned long total_distance;
-    unsigned long flight_start;
-    
+    unsigned long flight_start, flight_end;
+
+    int max_altitude;
+    unsigned int max_gnd_speed, max_air_speed;    
 };
 
 void init_flight_stats_process(void);

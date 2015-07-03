@@ -58,6 +58,9 @@ static void calc_stats(struct timer *t, void *d)
     /* accumulate distance */
     stats.total_distance += (priv.groundspeed * 10) / 1000;
 
+    stats.max_air_speed = MAX(priv.airspeed, stats.max_air_speed);
+    stats.max_gnd_speed = MAX(priv.groundspeed, stats.max_gnd_speed);
+    stats.max_altitude  = MAX(priv.alt, stats.max_altitude);
 }
 
 
@@ -99,7 +102,7 @@ void init_flight_stats_process(void)
     stats.launch_heading = NO_HEADING;
 
     /* determine launch heading */
-    add_timer(TIMER_ALWAYS, 10, find_launch_heading, NULL);
+    add_timer(TIMER_ALWAYS, 5, find_launch_heading, NULL);
 
     add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, store_mavdata, CALLBACK_PERSISTENT, NULL);
 }
