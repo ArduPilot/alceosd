@@ -48,7 +48,8 @@ typedef union {
         unsigned hjust:2;
         unsigned mode:4;
         unsigned units:3;
-        unsigned :5;
+        unsigned source:3;
+        unsigned :2;
     };
 } widget_props;
 

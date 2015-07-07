@@ -310,6 +310,7 @@ const char menu_edit_widget[] = "\n\nAlceOSD :: Edit widget\n\n"
                                 "2 - Vertical justification: %d\n"
                                 "3/4 - Mode: %d\n"
                                 "5/6 - Units: %d\n"
+                                "7/8 - Source: %d\n"
                                 "w/e - X position: %d\n"
                                 "q/a - Y position: %d\n"
                                 "0 - Remove\n"
@@ -406,6 +407,7 @@ int config_osd(void)
                     wcfg->props.vjust,
                     wcfg->props.mode,
                     wcfg->props.units,
+                    wcfg->props.source,
                     wcfg->x,
                     wcfg->y);
                 break;
@@ -642,6 +644,12 @@ int config_osd(void)
                     break;
                 case '6':
                     wcfg->props.units++;
+                    break;
+                case '7':
+                    wcfg->props.source--;
+                    break;
+                case '8':
+                    wcfg->props.source++;
                     break;
                 case 'x':
                     state = MENU_TAB_WIDGETS;
