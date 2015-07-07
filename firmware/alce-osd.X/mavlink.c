@@ -20,8 +20,11 @@
 
 #define MAX_MAVLINK_CALLBACKS 100
 
+extern struct alceosd_config config;
+
 struct mavlink_callback {
     unsigned char msgid;
+    unsigned char sysid;
     unsigned char type;
     void *data;
     void (*cbk) (mavlink_message_t *msg, mavlink_status_t *status, void *data);
@@ -34,9 +37,10 @@ static void mavlink_parse_msg(mavlink_message_t *msg, mavlink_status_t *status)
 {
     struct mavlink_callback *c;
     unsigned char i;
+
     for (i = 0; i < nr_callbacks; i++) {
         c = &callbacks[i];
-        if (msg->msgid == c->msgid)
+        if ((msg->msgid == c->msgid) && (msg->sysid == c->sysid))
             c->cbk(msg, status, c->data);
     }
 }
@@ -59,12 +63,29 @@ void mavlink_process()
     uart_discard2(count);
 }
 
-void add_mavlink_callback(unsigned char msgid, void *cbk, unsigned char ctype, void *data)
+void add_mavlink_callback(unsigned char msgid,
+            void *cbk, unsigned char ctype, void *data)
 {
     struct mavlink_callback *c;
     if (nr_callbacks == MAX_MAVLINK_CALLBACKS)
         return;
     c = &callbacks[nr_callbacks++];
+    c->sysid = config.mavlink_default_sysid;
+    c->msgid = msgid;
+    c->cbk = cbk;
+    c->type = ctype;
+    c->data = data;
+}
+
+
+void add_mavlink_callback_sysid(unsigned char sysid, unsigned char msgid,
+            void *cbk, unsigned char ctype, void *data)
+{
+    struct mavlink_callback *c;
+    if (nr_callbacks == MAX_MAVLINK_CALLBACKS)
+        return;
+    c = &callbacks[nr_callbacks++];
+    c->sysid = sysid;
     c->msgid = msgid;
     c->cbk = cbk;
     c->type = ctype;

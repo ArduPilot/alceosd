@@ -39,8 +39,8 @@ struct baudrate_tbl {
 
 void uart_init2(unsigned char pins);
 
-unsigned long uart_get_baudrate(unsigned int b);
-void uart_set_baudrate2(unsigned int b);
+unsigned long uart_get_baudrate(unsigned char b);
+void uart_set_baudrate2(unsigned char b);
 
 unsigned char uart_getc2(char *c);
 unsigned int uart_read2(char **buf);

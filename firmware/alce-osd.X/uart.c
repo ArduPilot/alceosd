@@ -88,7 +88,7 @@ void uart_init2(unsigned char pins)
 }
 
 
-unsigned long uart_get_baudrate(unsigned int b)
+unsigned long uart_get_baudrate(unsigned char b)
 {
     if (b < UART_BAUDRATES)
         return baudrates[b].baudrate;
@@ -96,7 +96,7 @@ unsigned long uart_get_baudrate(unsigned int b)
         return 0;
 }
 
-void uart_set_baudrate2(unsigned int b)
+void uart_set_baudrate2(unsigned char b)
 {
     if (b < UART_BAUDRATES)
         U2BRG = baudrates[b].brg;
