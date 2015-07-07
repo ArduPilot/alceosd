@@ -76,6 +76,8 @@ struct alceosd_config config = {
         { 2, WIDGET_RC_CHANNELS_ID,      0,  0, {JUST_VCENTER | JUST_LEFT}},
         { 2, WIDGET_RADAR_ID,            0,  0, {JUST_TOP     | JUST_HCENTER}},
 
+        { 3, WIDGET_FLIGHT_INFO_ID,      0,  0, {JUST_VCENTER | JUST_HCENTER}},
+
         { TABS_END, 0, 0, 0, {0}},
     }
 };;

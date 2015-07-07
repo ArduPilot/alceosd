@@ -42,6 +42,7 @@
         <itemPath>widgets/throttle.c</itemPath>
         <itemPath>widgets/vario_graph.c</itemPath>
         <itemPath>widgets/wind.c</itemPath>
+        <itemPath>widgets/flight_info.c</itemPath>
       </logicalFolder>
       <itemPath>uart.c</itemPath>
       <itemPath>main.c</itemPath>
