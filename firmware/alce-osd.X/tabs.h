@@ -16,48 +16,31 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ALCE_OSD_H
-#define	ALCE_OSD_H
+#ifndef TABS_H
+#define	TABS_H
 
-#include <p33Exxxx.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
+enum {
+    TAB_CHANGE_CHANNEL = 0,
+    TAB_CHANGE_FLIGHTMODE,
+    TAB_CHANGE_TOGGLE,
+};
 
-#include "graphics.h"
-#include "config.h"
-#include "widgets.h"
-#include "videocore.h"
-#include "mavlink.h"
-#include "uart.h"
-#include "clock.h"
-#include "alce-math.h"
-#include "home.h"
-#include "flight_stats.h"
-#include "fonts.h"
-#include "adc.h"
-#include "tabs.h"
+struct tab_change_config {
+    /* tab change channel settings */
+    unsigned int tab_change_ch_min;
+    unsigned int tab_change_ch_max;
+
+    /* tab change channel */
+    unsigned ch:4;
+    /* tab change mode */
+    unsigned mode:2;
+};
 
 
-#define VERSION_MAJOR   0
-#define VERSION_MINOR   4
-#define VERSION_DEV     1
-
-#define WITH_BOOTLOADER
+void tabs_init(void);
+void build_tab_list(void);
+void load_tab(unsigned char tab);
 
 
-/* led on the board */
-#define LED_DIR     TRISAbits.TRISA10
-#define LED         LATAbits.LATA10
-
-
-typedef union {
-    unsigned long l;
-    unsigned int  w[2];
-    unsigned char b[4];
-} u32union;
-
-
-#endif	/* ALCE_OSD_H */
+#endif	/* TABS_H */
 

@@ -110,4 +110,7 @@ void video_apply_config(struct video_config *cfg);
 void video_get_size(unsigned int *xsize, unsigned int *ysize);
 
 
+void video_pause(void);
+void video_resume(void);
+
 #endif

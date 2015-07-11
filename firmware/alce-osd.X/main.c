@@ -173,9 +173,9 @@ int main(void) {
     /* video driver config */
     video_apply_config(&config.video);
 
-    /* init widgets */
-    widgets_init();
-
+    /* setup tabs */
+    tabs_init();
+    
     /* enable all interrupts */
     SRbits.IPL = 0;
     CORCONbits.IPL3 = 1;

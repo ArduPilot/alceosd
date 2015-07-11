@@ -80,12 +80,10 @@ struct widget {
     unsigned int status;
 };
 
-void* widget_malloc(unsigned int size);
 void widgets_init(void);
-void build_tab_list(void);
-void load_tab(unsigned char tab);
 void widgets_process(void);
 void schedule_widget(struct widget *w);
 const struct widget_ops *get_widget_ops(unsigned int id);
+void* widget_malloc(unsigned int size);
 
 #endif

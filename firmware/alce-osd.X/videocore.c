@@ -320,6 +320,18 @@ void init_video(void)
     video_init_hw();
 }
 
+static int ipl;
+
+void video_pause(void)
+{
+    while (sram_busy);
+    SET_AND_SAVE_CPU_IPL(ipl, 7);
+}
+
+void video_resume(void)
+{
+    RESTORE_CPU_IPL(ipl);
+}
 
 void video_apply_config(struct video_config *cfg)
 {

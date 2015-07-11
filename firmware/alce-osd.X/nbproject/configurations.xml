@@ -17,6 +17,7 @@
       <itemPath>flight_stats.h</itemPath>
       <itemPath>fonts.h</itemPath>
       <itemPath>adc.h</itemPath>
+      <itemPath>tabs.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -59,6 +60,7 @@
       <itemPath>flight_stats.c</itemPath>
       <itemPath>fonts.c</itemPath>
       <itemPath>adc.c</itemPath>
+      <itemPath>tabs.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

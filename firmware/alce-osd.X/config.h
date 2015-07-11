@@ -21,6 +21,7 @@
 
 #include "videocore.h"
 #include "widgets.h"
+#include "tabs.h"
 
 
 #define CONFIG_MAX_WIDGETS      (100)
@@ -59,27 +60,23 @@ enum {
     UNITS_CUSTOM_5,
 };
 
-
-
-
 struct alceosd_config {
     /* telemetry baudrate */
     unsigned char baudrate;
-    
+
     /* mavlink default system id for the plane */
     unsigned char mavlink_default_sysid;
 
     /* video config */
     struct video_config video;
 
-    /* tab change channel */
-    unsigned int tab_change_ch_min;
-    unsigned int tab_change_ch_max;
-    unsigned char tab_change_ch;
+    /* tab changing config */
+    struct tab_change_config tab_change;
 
     /* default unit system */
     unsigned char default_units;
-    
+
+    /* home position locking timer */
     unsigned char home_lock_sec;
 
     /* widgets config */

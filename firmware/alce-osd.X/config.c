@@ -43,17 +43,19 @@ struct alceosd_config config = {
 
     .video.standard = VIDEO_STANDARD_PAL,
     .video.scan = VIDEO_SCAN_PROGRESSIVE,
-    .video.brightness = 0x50,
+    .video.brightness = 600, //0x50,
     .video.x_offset = 85,
     .video.y_offset = 40,
 
     .video.x_size = VIDEO_XSIZE_480,
     .video.y_size = 260,
 
-    .tab_change_ch = 7,
-    .tab_change_ch_min = 1000,
-    .tab_change_ch_max = 2000,
+    .tab_change.tab_change_ch_min = 1000,
+    .tab_change.tab_change_ch_max = 2000,
+    .tab_change.ch = 7,
+    .tab_change.mode = TAB_CHANGE_CHANNEL,
 
+    
     .default_units = UNITS_METRIC,
     .home_lock_sec = 15,
 
@@ -80,7 +82,7 @@ struct alceosd_config config = {
 
         { TABS_END, 0, 0, 0, {0}},
     }
-};;
+};
 
 
 /* flash operation functions */
@@ -361,7 +363,7 @@ int config_osd(void)
                 break;
             case MENU_TABS:
                 printf(menu_tabs,
-                        config.tab_change_ch + 1,
+                        config.tab_change.ch + 1,
                         current_tab);
                 break;
             case MENU_TAB_WIDGETS: {
@@ -535,12 +537,12 @@ int config_osd(void)
         case MENU_TABS:
             switch (c) {
                 case '1':
-                    if (config.tab_change_ch > 0)
-                        config.tab_change_ch--;
+                    if (config.tab_change.ch > 0)
+                        config.tab_change.ch--;
                     break;
                 case '2':
-                    if (config.tab_change_ch < 7)
-                        config.tab_change_ch++;
+                    if (config.tab_change.ch < 7)
+                        config.tab_change.ch++;
                     break;
                 case '3':
                     current_tab--;
