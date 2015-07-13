@@ -63,28 +63,41 @@ void mavlink_process()
     uart_discard2(count);
 }
 
-void add_mavlink_callback(unsigned char msgid,
+struct mavlink_callback* add_mavlink_callback(unsigned char msgid,
             void *cbk, unsigned char ctype, void *data)
 {
     struct mavlink_callback *c;
     if (nr_callbacks == MAX_MAVLINK_CALLBACKS)
-        return;
+        return NULL;
     c = &callbacks[nr_callbacks++];
     c->sysid = config.mavlink_default_sysid;
     c->msgid = msgid;
     c->cbk = cbk;
     c->type = ctype;
     c->data = data;
+    return c;
 }
 
 
-void add_mavlink_callback_sysid(unsigned char sysid, unsigned char msgid,
+struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid, unsigned char msgid,
             void *cbk, unsigned char ctype, void *data)
 {
     struct mavlink_callback *c;
     if (nr_callbacks == MAX_MAVLINK_CALLBACKS)
-        return;
+        return NULL;
     c = &callbacks[nr_callbacks++];
+    c->sysid = sysid;
+    c->msgid = msgid;
+    c->cbk = cbk;
+    c->type = ctype;
+    c->data = data;
+    return c;
+}
+
+void reset_mavlink_callback(struct mavlink_callback *c,
+            unsigned char sysid, unsigned char msgid,
+            void *cbk, unsigned char ctype, void *data)
+{
     c->sysid = sysid;
     c->msgid = msgid;
     c->cbk = cbk;
