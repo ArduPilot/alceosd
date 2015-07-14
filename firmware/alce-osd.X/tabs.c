@@ -21,8 +21,11 @@
 //#define DEBUG_TABS
 #define MAX_TABS 10
 
+#define TAB_TIMER_IDLE   (0xff)
+
 unsigned char tab_list[MAX_TABS];
-static unsigned char active_tab, ch_val;
+static unsigned char active_tab, val, prev_val, tmr = TAB_TIMER_IDLE;
+static unsigned char active_tab_idx = 0, source_mode = 0xff;
 
 extern struct alceosd_config config;
 
@@ -102,7 +105,7 @@ static void tab_switch_task(struct timer *t, void *d)
     switch (cfg->mode) {
         case TAB_CHANGE_CHANNEL:
         default:
-            idx = ((ch_val * tab_list[0]) / 100) + 1;
+            idx = ((val * tab_list[0]) / 100) + 1;
             new_tab = tab_list[idx];
             if (new_tab != active_tab) {
                 DTABS("tab_change_channel: change to tab %d\n", new_tab);
@@ -110,15 +113,55 @@ static void tab_switch_task(struct timer *t, void *d)
             }
             break;
         case TAB_CHANGE_FLIGHTMODE:
-            
+            /* idle */
+            if (tmr == TAB_TIMER_IDLE) {
+                break;
+            } else if (tmr < cfg->time_window) {
+                tmr++;
+            } else {
+                tmr = TAB_TIMER_IDLE;
+            }
             break;
         case TAB_CHANGE_TOGGLE:
+            /* idle val not acquired */
+            if (val == 0)
+                break;
+
+            /* idle */
+            if (tmr == TAB_TIMER_IDLE) {
+                break;
+            } else if (tmr < cfg->time_window) {
+                tmr++;
+                /* switch returned to idle position */
+                if (prev_val == val) {
+                    /* next tab */
+                    active_tab_idx++;
+                    if (active_tab_idx >= tab_list[0])
+                        active_tab_idx = 0;
+                    load_tab(tab_list[active_tab_idx+1]);
+
+                    tmr = TAB_TIMER_IDLE;
+                }
+            } else if (tmr == cfg->time_window) {
+                tmr++;
+                /* previous tab */
+                if (active_tab_idx == 0)
+                    active_tab_idx = tab_list[0]-1;
+                else
+                    active_tab_idx--;
+                load_tab(tab_list[active_tab_idx+1]);
+            } else {
+                /* wait until switch  returns to idle state */
+                if (val == prev_val)
+                    tmr = TAB_TIMER_IDLE;
+            }
+
             break;
     }
 }
 
 
-static void tab_switch_cbk(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void tab_switch_channel_cbk(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
     struct tab_change_config *cfg = (struct tab_change_config*) d;
     unsigned int ch_raw;
@@ -157,17 +200,85 @@ static void tab_switch_cbk(mavlink_message_t *msg, mavlink_status_t *status, voi
                (cfg->tab_change_ch_max - cfg->tab_change_ch_min));
     DTABS("cbk: percent = %ld\n", percent);
 
-    if (percent < 0)
-        percent = 0;
-    else if (percent > 100)
-        percent = 100;
+    switch (cfg->mode) {
+        case TAB_CHANGE_CHANNEL:
+        default:
+            if (percent < 0)
+                percent = 0;
+            else if (percent > 100)
+                percent = 100;
+            val = (unsigned char) percent;
+            break;
+        case TAB_CHANGE_TOGGLE:
+            if (percent < 50)
+                percent = 1;
+            else
+                percent = 2;
+            if (val == 0)
+                prev_val = percent;
+            
+            val = percent;
 
-    ch_val = (unsigned char) percent;
-    DTABS("cbk: ch_val = %u\n", ch_val);
+            /* start timer */
+            if ((val != prev_val) && (tmr == TAB_TIMER_IDLE))
+                tmr = 0;
+
+            break;
+    }
+
+    DTABS("cbk: val=%u prev_val=%d\n", val, prev_val);
 }
 
+static void tab_switch_flightmode_cbk(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+{
+    struct tab_change_config *cfg = (struct tab_change_config*) d;
+    unsigned char mav_type;
 
-void build_tab_list(void)
+    val = mavlink_msg_heartbeat_get_custom_mode(msg);
+    mav_type = mavlink_msg_heartbeat_get_type(msg);
+    if (mav_type !=  MAV_TYPE_FIXED_WING)
+        val += 100;
+
+    /* don't switch tab in case failsafe triggers */
+    switch (val) {
+        case PLANE_MODE_CIRCLE:
+        case PLANE_MODE_AUTO:
+        case PLANE_MODE_RTL:
+        case PLANE_MODE_LOITER:
+        case COPTER_MODE_AUTO:
+        case COPTER_MODE_LOITER:
+        case COPTER_MODE_RTL:
+        case COPTER_MODE_CIRCLE:
+            return;
+        default:
+            break;
+    }
+
+    if (val != prev_val) {
+        /* mode changed */
+        DTABS("flightmode_cbk: mode has changed: tmr=%d source_mode=%d mode=%d\n",
+                tmr, source_mode, val);
+        if (tmr != TAB_TIMER_IDLE) {
+            if (source_mode == val) {
+                /* change to next tab */
+                DTABS("flightmode_cbk: back to the same mode in less than 2 sec\n");
+                active_tab_idx++;
+                if (active_tab_idx >= tab_list[0])
+                    active_tab_idx = 0;
+                load_tab(tab_list[active_tab_idx+1]);
+            }
+            tmr = TAB_TIMER_IDLE;
+        } else {
+            DTABS("flightmode_cbk: starting timer\n");
+            tmr = 0;
+            source_mode = prev_val;
+        }
+        prev_val = val;
+    }
+
+}
+
+static void build_tab_list(void)
 {
     struct widget_config *wcfg = &config.widgets[0];
     unsigned char *p = &tab_list[1];
@@ -201,12 +312,39 @@ void build_tab_list(void)
 
 void tabs_init(void)
 {
+    static struct mavlink_callback *mav_cbk = NULL;
+    static struct timer *tab_timer = NULL;
+    unsigned char msgid;
+    void *cbk;
+
     /* build tab list from config */
     build_tab_list();
 
-    /* track channel raw values */
-    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, tab_switch_cbk, CALLBACK_PERSISTENT, &config.tab_change);
+    switch (config.tab_change.mode) {
+        case TAB_CHANGE_CHANNEL:
+        case TAB_CHANGE_TOGGLE:
+        default:
+            msgid = MAVLINK_MSG_ID_RC_CHANNELS_RAW;
+            cbk = tab_switch_channel_cbk;
+            val = 0;
+            break;
+        case TAB_CHANGE_FLIGHTMODE:
+            msgid = MAVLINK_MSG_ID_HEARTBEAT;
+            cbk = tab_switch_flightmode_cbk;
+            tmr = 0xff;
+            break;
+    }
+
+    /* track required mavlink data */
+    if (mav_cbk == NULL)
+        mav_cbk = add_mavlink_callback(msgid, cbk,
+                    CALLBACK_PERSISTENT, &config.tab_change);
+    else
+        reset_mavlink_callback(mav_cbk, config.mavlink_default_sysid,
+                    msgid, cbk, CALLBACK_PERSISTENT, &config.tab_change);
 
     /* tab switching task (100ms) */
-    add_timer(TIMER_ALWAYS, 1, tab_switch_task, &config.tab_change);
+    if (tab_timer == NULL)
+        tab_timer = add_timer(TIMER_ALWAYS, 1, tab_switch_task,
+                                &config.tab_change);
 }

@@ -23,6 +23,7 @@ enum {
     TAB_CHANGE_CHANNEL = 0,
     TAB_CHANGE_FLIGHTMODE,
     TAB_CHANGE_TOGGLE,
+    TAB_CHANGE_MODES_END,
 };
 
 struct tab_change_config {
@@ -30,6 +31,7 @@ struct tab_change_config {
     unsigned int tab_change_ch_min;
     unsigned int tab_change_ch_max;
 
+    unsigned char time_window;
     /* tab change channel */
     unsigned ch:4;
     /* tab change mode */
@@ -38,7 +40,6 @@ struct tab_change_config {
 
 
 void tabs_init(void);
-void build_tab_list(void);
 void load_tab(unsigned char tab);
 
 

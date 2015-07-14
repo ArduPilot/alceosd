@@ -202,8 +202,8 @@ int main(void) {
         }
     }
 
-    /* re-build tab list */
-    build_tab_list();
+    /* re-init tabs */
+    tabs_init();
 
     uart_set_baudrate2(config.baudrate);
 

@@ -54,6 +54,7 @@ struct alceosd_config config = {
     .tab_change.tab_change_ch_max = 2000,
     .tab_change.ch = 7,
     .tab_change.mode = TAB_CHANGE_CHANNEL,
+    .tab_change.time_window = 20,
 
     
     .default_units = UNITS_METRIC,
@@ -299,10 +300,12 @@ const char menu_video[] = "\n\nAlceOSD :: VIDEO setup\n\n"
                           "x - Go back\n";
 
 const char menu_tabs[] = "\n\nAlceOSD :: TAB config\n\n"
-                         "1/2 - Tab change channel: RC%d\n"
-                         "3/4 - Change current tab: %d\n\n"
-                         "5 - Edit tab\n"
-                         "x - Go back\n";
+                         "1/2 - Change active tab: %d\n"
+                         "3/4 - Tab change mode: %s\n";
+const char menu_tabs_mode_ch[] = "5/6 - Tab change channel: RC%d\n";
+const char menu_tabs_mode_tmr[] = "7/8 - Change time window: %d00ms\n";
+const char menu_tabs_end[] = "e - Edit tab\n"
+                             "x - Go back\n";
 
 const char menu_tab_widgets[] = "\n\nAlceOSD :: TAB %d widgets config\n\n"
                                 "0 - Add widget\n"
@@ -362,9 +365,25 @@ int config_osd(void)
 
                 break;
             case MENU_TABS:
-                printf(menu_tabs,
-                        config.tab_change.ch + 1,
-                        current_tab);
+                printf(menu_tabs, current_tab,
+                        (config.tab_change.mode == TAB_CHANGE_CHANNEL) ? "RC CHANNEL PERCENT" :
+                        (config.tab_change.mode == TAB_CHANGE_FLIGHTMODE) ? "FLIGHT MODE" :
+                        (config.tab_change.mode == TAB_CHANGE_TOGGLE) ? "RC CHANNEL TOGGLE" : "????");
+
+                switch (config.tab_change.mode) {
+                    case TAB_CHANGE_CHANNEL:
+                    default:
+                        printf(menu_tabs_mode_ch, config.tab_change.ch + 1);
+                        break;
+                    case TAB_CHANGE_FLIGHTMODE:
+                        printf(menu_tabs_mode_tmr, config.tab_change.time_window);
+                        break;
+                    case TAB_CHANGE_TOGGLE:
+                        printf(menu_tabs_mode_ch, config.tab_change.ch + 1);
+                        printf(menu_tabs_mode_tmr, config.tab_change.time_window);
+                        break;
+                }
+                printf(menu_tabs_end);
                 break;
             case MENU_TAB_WIDGETS: {
                 wcfg = &config.widgets[0];
@@ -537,22 +556,38 @@ int config_osd(void)
         case MENU_TABS:
             switch (c) {
                 case '1':
-                    if (config.tab_change.ch > 0)
-                        config.tab_change.ch--;
-                    break;
-                case '2':
-                    if (config.tab_change.ch < 7)
-                        config.tab_change.ch++;
-                    break;
-                case '3':
                     current_tab--;
                     load_tab(current_tab);
                     break;
-                case '4':
+                case '2':
                     current_tab++;
                     load_tab(current_tab);
                     break;
+                case '3':
+                    if (config.tab_change.mode > 0)
+                        config.tab_change.mode--;
+                    break;
+                case '4':
+                    if (config.tab_change.mode < (TAB_CHANGE_MODES_END-1))
+                        config.tab_change.mode++;
+                    break;
                 case '5':
+                    if (config.tab_change.ch > 0)
+                        config.tab_change.ch--;
+                    break;
+                case '6':
+                    if (config.tab_change.ch < 7)
+                        config.tab_change.ch++;
+                    break;
+                case '7':
+                    if (config.tab_change.time_window > 5)
+                        config.tab_change.time_window--;
+                    break;
+                case '8':
+                    if (config.tab_change.time_window < 50)
+                        config.tab_change.time_window++;
+                    break;
+                case 'e':
                     state = MENU_TAB_WIDGETS;
                     break;
                 case 'x':
