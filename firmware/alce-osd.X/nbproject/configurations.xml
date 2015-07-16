@@ -44,6 +44,7 @@
         <itemPath>widgets/vario_graph.c</itemPath>
         <itemPath>widgets/wind.c</itemPath>
         <itemPath>widgets/flight_info.c</itemPath>
+        <itemPath>widgets/console.c</itemPath>
       </logicalFolder>
       <itemPath>uart.c</itemPath>
       <itemPath>main.c</itemPath>
@@ -255,7 +256,6 @@
         <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
         <property key="UART 1" value="true"/>
         <property key="UART 2" value="true"/>
-        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>
