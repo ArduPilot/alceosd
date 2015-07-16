@@ -85,7 +85,9 @@ void* widget_malloc(unsigned int size)
 
     ptr = &widgets_mem.mem[widgets_mem.alloc_size];
     widgets_mem.alloc_size += size;
-    
+
+    memset(ptr, 0, size);
+
     return ptr;
 }
 
