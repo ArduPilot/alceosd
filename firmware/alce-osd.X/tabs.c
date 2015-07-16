@@ -20,9 +20,11 @@
 
 //#define DEBUG_TABS
 #define MAX_TABS 10
+#define MAX_ACTIVE_WIDGETS  (50)
 
 #define TAB_TIMER_IDLE   (0xff)
 
+static struct widget *active_widgets[MAX_ACTIVE_WIDGETS] = {NULL};
 unsigned char tab_list[MAX_TABS];
 static unsigned char active_tab, val, prev_val, tmr = TAB_TIMER_IDLE;
 static unsigned char active_tab_idx = 0, source_mode = 0xff;
@@ -59,10 +61,22 @@ void load_tab(unsigned char tab)
     const struct widget_ops *w_ops;
     struct widget *w;
 
+    struct widget **aw = active_widgets;
+
     DTABS("Loading tab %d\n", tab);
 
     /* stop rendering */
     video_pause();
+
+    while ((*aw) != NULL) {
+        if ((*aw)->ops->close != NULL) {
+            DTABS("closing widget %p: %s\n", *aw, (*aw)->ops->name);
+            (*aw)->ops->close(*aw);
+        }
+        aw++;
+    }
+    aw = active_widgets;
+
     /* reset widgets module */
     widgets_init();
 
@@ -84,11 +98,13 @@ void load_tab(unsigned char tab)
                 alloc_canvas(&w->ca, w->cfg->x, w->cfg->y,
                               w->cfg->props.hjust, w->cfg->props.vjust,
                               w->cfg->w, w->cfg->h);
+                *(aw++) = w;
                 schedule_widget(w);
             }
         }
         w_cfg++;
     }
+    *aw = NULL;
     /* resume video rendering */
     video_resume();
     active_tab = tab;
@@ -156,6 +172,18 @@ static void tab_switch_task(struct timer *t, void *d)
                     tmr = TAB_TIMER_IDLE;
             }
 
+            break;
+        case TAB_CHANGE_DEMO:
+            tmr++;
+            if (tmr > 20) {
+                /* next tab */
+                active_tab_idx++;
+                if (active_tab_idx >= tab_list[0])
+                    active_tab_idx = 0;
+                load_tab(tab_list[active_tab_idx+1]);
+
+                tmr = 0;
+            }
             break;
     }
 }
@@ -331,18 +359,23 @@ void tabs_init(void)
         case TAB_CHANGE_FLIGHTMODE:
             msgid = MAVLINK_MSG_ID_HEARTBEAT;
             cbk = tab_switch_flightmode_cbk;
-            tmr = 0xff;
+            tmr = TAB_TIMER_IDLE;
+        case TAB_CHANGE_DEMO:
+            cbk = NULL;
+            tmr = 0;
             break;
     }
 
     /* track required mavlink data */
-    if (mav_cbk == NULL)
-        mav_cbk = add_mavlink_callback(msgid, cbk,
-                    CALLBACK_PERSISTENT, &config.tab_change);
-    else
-        reset_mavlink_callback(mav_cbk, config.mavlink_default_sysid,
-                    msgid, cbk, CALLBACK_PERSISTENT, &config.tab_change);
-
+    if (cbk != NULL) {
+        if (mav_cbk == NULL)
+            mav_cbk = add_mavlink_callback(msgid, cbk,
+                        CALLBACK_PERSISTENT, &config.tab_change);
+        else
+            reset_mavlink_callback(mav_cbk, config.mavlink_default_sysid,
+                        msgid, cbk, CALLBACK_PERSISTENT, &config.tab_change);
+    }
+    
     /* tab switching task (100ms) */
     if (tab_timer == NULL)
         tab_timer = add_timer(TIMER_ALWAYS, 1, tab_switch_task,
