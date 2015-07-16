@@ -62,7 +62,7 @@ static void render(struct widget *w)
 {
     struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
-    char buf[20];
+    char buf[50];
 
     sprintf(buf, "%10.6f", priv->gps_lat);
     draw_str(buf, 0, 0, ca, 0);
