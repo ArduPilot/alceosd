@@ -175,7 +175,7 @@ static void tab_switch_task(struct timer *t, void *d)
             break;
         case TAB_CHANGE_DEMO:
             tmr++;
-            if (tmr > 20) {
+            if (tmr > cfg->time_window) {
                 /* next tab */
                 active_tab_idx++;
                 if (active_tab_idx >= tab_list[0])
@@ -259,7 +259,6 @@ static void tab_switch_channel_cbk(mavlink_message_t *msg, mavlink_status_t *sta
 
 static void tab_switch_flightmode_cbk(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct tab_change_config *cfg = (struct tab_change_config*) d;
     unsigned char mav_type;
 
     val = mavlink_msg_heartbeat_get_custom_mode(msg);

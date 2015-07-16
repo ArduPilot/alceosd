@@ -368,7 +368,8 @@ int config_osd(void)
                 printf(menu_tabs, current_tab,
                         (config.tab_change.mode == TAB_CHANGE_CHANNEL) ? "RC CHANNEL PERCENT" :
                         (config.tab_change.mode == TAB_CHANGE_FLIGHTMODE) ? "FLIGHT MODE" :
-                        (config.tab_change.mode == TAB_CHANGE_TOGGLE) ? "RC CHANNEL TOGGLE" : "????");
+                        (config.tab_change.mode == TAB_CHANGE_TOGGLE) ? "RC CHANNEL TOGGLE" :
+                        (config.tab_change.mode == TAB_CHANGE_TOGGLE) ? "DEMO" : "????");
 
                 switch (config.tab_change.mode) {
                     case TAB_CHANGE_CHANNEL:
@@ -376,6 +377,7 @@ int config_osd(void)
                         printf(menu_tabs_mode_ch, config.tab_change.ch + 1);
                         break;
                     case TAB_CHANGE_FLIGHTMODE:
+                    case TAB_CHANGE_DEMO:
                         printf(menu_tabs_mode_tmr, config.tab_change.time_window);
                         break;
                     case TAB_CHANGE_TOGGLE:
