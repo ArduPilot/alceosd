@@ -57,6 +57,7 @@ const struct widget_ops *all_widget_ops[] = {
 
 #define WIDGET_FIFO_MASK    (0x3f)
 #define MAX_WIDGET_ALLOC_MEM (0x1000)
+#define MAX_ACTIVE_WIDGETS  (50)
 
 struct widgets_mem_s {
     unsigned int mem[MAX_WIDGET_ALLOC_MEM/2];
@@ -73,6 +74,8 @@ struct widget_fifo {
     .rd = 0,
     .wr = 0,
 };
+
+struct widget *active_widgets[MAX_ACTIVE_WIDGETS] = {NULL};
 
 
 /* custom memory allocator for widgets */
@@ -104,7 +107,7 @@ const struct widget_ops *get_widget_ops(unsigned int id)
 }
 
 
-static void render_widget(struct widget *w)
+static inline void render_widget(struct widget *w)
 {
     if (init_canvas(&w->ca, 0) == 0) {
         w->ops->render(w);
@@ -141,9 +144,16 @@ void schedule_widget(struct widget *w)
 
 
 void widgets_init(void)
-{    
-    /* stop adc sampling */
-    adc_stop();
+{
+    struct widget **w = active_widgets;
+
+    while ((*w) != NULL) {
+        if ((*w)->ops->close != NULL)
+            (*w)->ops->close(*w);
+        w++;
+    }
+
+
     /* remove widget related timers/tasks */
     remove_timers(TIMER_WIDGET);
     /* remove widget related mavlink callbacks */
@@ -152,6 +162,8 @@ void widgets_init(void)
     wfifo.rd = wfifo.wr = 0;
     /* reset widgets mem allocator */
     widgets_mem.alloc_size = 0;
+    /* reset active widget list */
+    active_widgets[0] = NULL;
     /* release all canvas memory */
     free_mem();
     /* clear display */

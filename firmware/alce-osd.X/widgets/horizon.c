@@ -43,10 +43,10 @@ struct widget_priv {
     float cos_roll, sin_roll;
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
 
     priv->pitch = mavlink_msg_attitude_get_pitch(msg);
     priv->pitch_deg = RAD2DEG(priv->pitch * SCALE);
@@ -81,7 +81,7 @@ static int init(struct widget *w)
 
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     int y, i, j;
     int x0, x1, y0, y1, offset, cx, cy;
@@ -229,4 +229,5 @@ const struct widget_ops horizon_widget_ops = {
     .id = WIDGET_HORIZON_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };

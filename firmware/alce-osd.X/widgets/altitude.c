@@ -31,10 +31,10 @@ struct widget_priv {
 };
 
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
     float altitude;
     
     switch (w->cfg->props.mode) {
@@ -89,7 +89,7 @@ int init(struct widget *w)
 
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     int i, j, y = -1;
     long yy;
@@ -135,4 +135,5 @@ const struct widget_ops altitude_widget_ops = {
     .id = WIDGET_ALTITUDE_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };

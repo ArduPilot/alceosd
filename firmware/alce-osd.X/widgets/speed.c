@@ -30,10 +30,10 @@ struct widget_priv {
     int speed_i;
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
 
     priv->speed = mavlink_msg_vfr_hud_get_airspeed(msg) * 3600 / 1000.0;
     priv->speed_i = (int) priv->speed;
@@ -60,7 +60,7 @@ static int init(struct widget *w)
 
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     int i, j, y = -1;
     long yy;
@@ -107,4 +107,5 @@ const struct widget_ops speed_widget_ops = {
     .id = WIDGET_SPEED_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };

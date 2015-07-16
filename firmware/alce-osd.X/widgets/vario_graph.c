@@ -34,10 +34,10 @@ struct widget_priv {
     int y;
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
     
     priv->climb = mavlink_msg_vfr_hud_get_climb(msg) * 60.0;
     priv->avg = priv->avg - (int) (((float) priv->avg - priv->climb) * ALPHA);
@@ -74,7 +74,7 @@ static int init(struct widget *w)
 
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     unsigned char i;
     char buf[6];
@@ -100,4 +100,5 @@ const struct widget_ops vario_graph_widget_ops = {
     .id = WIDGET_VARIOMETER_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };

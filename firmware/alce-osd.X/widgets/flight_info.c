@@ -16,8 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "alce-osd.h"
+
 
 static void timer_callback(struct timer *t, void *d)
 {
@@ -38,9 +38,10 @@ static int init(struct widget *w)
     return 0;
 }
 
+
 static void render(struct widget *w)
 {
-    struct flight_stats *priv = (struct flight_stats*) w->priv;
+    struct flight_stats *priv = w->priv;
     struct canvas *ca = &w->ca;
     char buf[50];
 
@@ -66,5 +67,6 @@ const struct widget_ops flight_info_widget_ops = {
     .id = WIDGET_FLIGHT_INFO_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };
 

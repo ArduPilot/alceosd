@@ -23,10 +23,10 @@ struct widget_priv {
     unsigned char bar_size;
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
 
     priv->ch_raw[0] = mavlink_msg_rc_channels_raw_get_chan1_raw(msg);
     priv->ch_raw[1] = mavlink_msg_rc_channels_raw_get_chan2_raw(msg);
@@ -82,7 +82,7 @@ static int init(struct widget *w)
 
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     unsigned char i;
     unsigned int width = ca->width;
@@ -121,4 +121,5 @@ const struct widget_ops rc_channels_widget_ops = {
     .id = WIDGET_RC_CHANNELS_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };

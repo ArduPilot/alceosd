@@ -69,6 +69,7 @@ struct widget_ops {
     unsigned int id;
     int (*init)(struct widget *w);
     void (*render)(struct widget *w);
+    void (*close)(struct widget *w);
     char name[];
 };
 

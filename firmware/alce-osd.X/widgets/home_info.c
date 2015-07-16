@@ -23,7 +23,7 @@ extern struct alceosd_config config;
 
 static void timer_callback(struct timer *t, void *d)
 {
-    struct widget *w = (struct widget*) d;
+    struct widget *w = d;
     schedule_widget(w);
 }
 
@@ -42,7 +42,7 @@ static int init(struct widget *w)
 
 static void render(struct widget *w)
 {
-    struct home_data *priv = (struct home_data*) w->priv;
+    struct home_data *priv = w->priv;
     struct canvas *ca = &w->ca;
     char buf[50];
     float d, a;
@@ -107,5 +107,6 @@ const struct widget_ops home_info_widget_ops = {
     .id = WIDGET_HOME_INFO_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };
 

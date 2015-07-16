@@ -18,18 +18,16 @@
 
 #include "alce-osd.h"
 
-extern struct alceosd_config config;
-
 struct widget_priv {
     unsigned int custom_mode, prev_custom_mode;
     unsigned char font_id;
     unsigned char mav_type;
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
 
     priv->custom_mode = mavlink_msg_heartbeat_get_custom_mode(msg);
     if (priv->custom_mode == priv->prev_custom_mode)
@@ -67,7 +65,7 @@ static int init(struct widget *w)
 
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     char mode[17];
     unsigned int cust_mode;
@@ -162,4 +160,5 @@ const struct widget_ops flightmode_widget_ops = {
     .id = WIDGET_FLIGHT_MODE_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };

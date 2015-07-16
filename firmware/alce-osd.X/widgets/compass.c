@@ -1,4 +1,3 @@
-#include <stdio.h>
 /*
     AlceOSD - Graphical OSD
     Copyright (C) 2015  Luis Alves
@@ -34,10 +33,10 @@ struct widget_priv {
     char heading_s[4];
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
     
     priv->heading = mavlink_msg_vfr_hud_get_heading(msg);
     priv->heading_s[0] = '0' + (priv->heading / 100);
@@ -65,7 +64,7 @@ static int init(struct widget *w)
 
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     const char cardinals[] = {'N', 'E', 'S', 'W'};
     int i, j, x;
@@ -100,4 +99,5 @@ const struct widget_ops compass_widget_ops = {
     .id = WIDGET_COMPASS_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };

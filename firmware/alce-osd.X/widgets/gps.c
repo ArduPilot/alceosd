@@ -28,10 +28,10 @@ struct widget_priv {
     unsigned char gps_nrsats, gps_fix_type;
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
 
     priv->gps_lat = mavlink_msg_gps_raw_int_get_lat(msg) / 10000000.0;
     priv->gps_lon = mavlink_msg_gps_raw_int_get_lon(msg) / 10000000.0;
@@ -103,4 +103,5 @@ const struct widget_ops gps_info_widget_ops = {
     .id = WIDGET_GPS_INFO_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };

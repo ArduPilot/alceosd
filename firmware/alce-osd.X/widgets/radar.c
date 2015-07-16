@@ -28,29 +28,29 @@ struct widget_priv {
     unsigned int wp_distance, wp_seq;
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
     priv->heading = mavlink_msg_vfr_hud_get_heading(msg);
 }
-static void mav_callback_nav(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback_nav(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
     priv->wp_target_bearing = mavlink_msg_nav_controller_output_get_target_bearing(msg);
     priv->wp_distance = mavlink_msg_nav_controller_output_get_wp_dist(msg);
 }
-static void mav_callback_wp_seq(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback_wp_seq(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
     priv->wp_seq = mavlink_msg_mission_current_get_seq(msg);
 }
 
 static void timer_callback(struct timer *t, void *d)
 {
-    struct widget *w = (struct widget*) d;
+    struct widget *w = d;
     schedule_widget(w);
 }
 
@@ -85,7 +85,7 @@ static int init(struct widget *w)
 
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     char buf[10];
     unsigned long d = (unsigned long) priv->home->distance;
@@ -197,4 +197,5 @@ const struct widget_ops radar_widget_ops = {
     .id = WIDGET_RADAR_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };

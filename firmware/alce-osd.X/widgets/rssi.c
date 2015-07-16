@@ -27,10 +27,10 @@ struct widget_priv {
     unsigned char rssi, last_rssi;
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
 
     priv->rssi = mavlink_msg_rc_channels_raw_get_rssi(msg);
     if (priv->rssi ==  priv->last_rssi)
@@ -60,7 +60,7 @@ static int init(struct widget *w)
 
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     unsigned char i, x;
     char buf[5];
@@ -83,4 +83,5 @@ const struct widget_ops rssi_widget_ops = {
     .id = WIDGET_RSSI_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };

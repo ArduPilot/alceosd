@@ -29,17 +29,17 @@ struct widget_priv {
     float speed_z;
 };
 
-static void mav_callback_vfr_hud(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback_vfr_hud(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
     priv->heading = mavlink_msg_vfr_hud_get_heading(msg);
 }
 
-static void mav_callback_wind(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback_wind(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
     priv->direction = mavlink_msg_wind_get_direction(msg);
     priv->speed = mavlink_msg_wind_get_speed(msg);
     priv->speed_z = mavlink_msg_wind_get_speed_z(msg);
@@ -69,7 +69,7 @@ static int init(struct widget *w)
 
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     char buf[10];
     struct point uav_points[4] = { {0, 0}, {6, 8}, {0, -8}, {-6, 8} };
@@ -123,4 +123,5 @@ const struct widget_ops wind_widget_ops = {
     .id = WIDGET_WIND_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };

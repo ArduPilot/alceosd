@@ -48,10 +48,10 @@ struct widget_priv {
     unsigned char var1;
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
 
     /*
        do stuff in here with the mavlink message data
@@ -110,12 +110,12 @@ static int init(struct widget *w)
 /* renders the widget on its canvas */
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     char buf[10];
 
     /* do stuff */
-    sprintf(buf, "AlceOSD");
+    sprintf(buf, "AlceOSD var1=%d", priv->var1);
     draw_str(buf, 0, 0, ca, 1);
 }
 
@@ -129,4 +129,5 @@ const struct widget_ops template_widget_ops = {
     .id = WIDGET_TEMPLATE_ID,
     .init = init,
     .render = render,
+    .close = NULL,
 };

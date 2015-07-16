@@ -36,10 +36,10 @@ struct widget_priv {
 };
 
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *data)
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct widget *w = (struct widget*) data;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
     
     priv->bat_voltage = mavlink_msg_sys_status_get_voltage_battery(msg) / 1000.0;
     priv->bat_current = mavlink_msg_sys_status_get_current_battery(msg) / 100.0;
@@ -50,8 +50,8 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
 
 static void timer_callback(struct timer *t, void *d)
 {
-    struct widget *w = (struct widget*) d;
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
 
     priv->bat_voltage = *(priv->adc_raw) * 18.3 / (1 << 10);
     priv->bat_voltage2 = *(priv->adc_raw2) * 18.3 / (1 << 10);
@@ -106,9 +106,15 @@ static int init(struct widget *w)
 }
 
 
+static void close(struct widget *w)
+{
+    adc_stop();
+}
+
+
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = (struct widget_priv*) w->priv;
+    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     char buf[20];
     int i;
@@ -151,4 +157,5 @@ const struct widget_ops bat_info_widget_ops = {
     .id = WIDGET_BATTERY_INFO_ID,
     .init = init,
     .render = render,
+    .close = close,
 };
