@@ -71,7 +71,7 @@ static void render(struct widget *w)
     draw_str(buf, 0, 9, ca, 0);
 
     sprintf(buf, "%2d", priv->gps_nrsats);
-    draw_str(buf, SAT_X + 20 + 1, 0, ca, 0);
+    draw_str(buf, 60 + 20 + 1, 0, ca, 0);
 
     buf[1] = 'D';
     switch (priv->gps_fix_type) {
@@ -88,13 +88,13 @@ static void render(struct widget *w)
         buf[0] = '3';
         break;
     }
-    draw_chr(buf[0], SAT_X + 20 + 1, 9, ca, 0);
-    draw_chr(buf[1], SAT_X + 20 + 1 + 6, 9, ca, 0);
+    draw_chr(buf[0], 60 + 20 + 1, 9, ca, 0);
+    draw_chr(buf[1], 60 + 20 + 1 + 6, 9, ca, 0);
 
     strcpy(buf, "HDP");
-    draw_str(buf, SAT_X + 20 + 1 + 18, 0, ca, 0);
+    draw_str(buf, 60 + 20 + 1 + 18, 0, ca, 0);
     sprintf(buf, "%2.1f", priv->gps_eph);
-    draw_str(buf, SAT_X + 20 + 1 + 18, 9, ca, 0);
+    draw_str(buf, 60 + 20 + 1 + 18, 9, ca, 0);
 }
 
 
