@@ -19,13 +19,10 @@
 #include "alce-osd.h"
 
 
-#define X_SIZE  60 + 32 + 20 + 32
-#define Y_SIZE  18
-
-
 struct widget_priv {
     float gps_lat, gps_lon, gps_eph;
     unsigned char gps_nrsats, gps_fix_type;
+    unsigned char font_id;
 };
 
 static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
@@ -45,14 +42,21 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
 static int init(struct widget *w)
 {
     struct widget_priv *priv;
+    unsigned char m = w->cfg->props.mode;
+    const struct font *f;
 
     priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
     if (priv == NULL)
         return -1;
     w->priv = priv;
 
-    w->cfg->w = X_SIZE;
-    w->cfg->h = Y_SIZE;
+    if (m > 2)
+        m = 2;
+
+    priv->font_id = m;
+    f = get_font(m);
+    w->cfg->h = (f->height * 2) + 1;
+    w->cfg->w = (f->width + f->spacing) * 19;
     add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET, w);
     return 0;
 }
@@ -61,17 +65,16 @@ static int init(struct widget *w)
 static void render(struct widget *w)
 {
     struct widget_priv *priv = w->priv;
+    const struct font *f = get_font(priv->font_id);
     struct canvas *ca = &w->ca;
-    char buf[50];
+    unsigned int x2 = (f->width + f->spacing) * 12;
+    char buf[100];
 
-    sprintf(buf, "%10.6f", priv->gps_lat);
-    draw_str(buf, 0, 0, ca, 0);
-
-    sprintf(buf, "%10.6f", priv->gps_lon);
-    draw_str(buf, 0, 9, ca, 0);
+    sprintf(buf, "%10.6f\n%10.6f", priv->gps_lat, priv->gps_lon);
+    draw_str(buf, 0, 0, ca, priv->font_id);
 
     sprintf(buf, "%2d", priv->gps_nrsats);
-    draw_str(buf, 60 + 20 + 1, 0, ca, 0);
+    draw_str(buf, x2, 0, ca, priv->font_id);
 
     buf[1] = 'D';
     switch (priv->gps_fix_type) {
@@ -88,13 +91,11 @@ static void render(struct widget *w)
         buf[0] = '3';
         break;
     }
-    draw_chr(buf[0], 60 + 20 + 1, 9, ca, 0);
-    draw_chr(buf[1], 60 + 20 + 1 + 6, 9, ca, 0);
+    buf[2] = '\0';
+    draw_str(buf, x2, f->height, ca, priv->font_id);
 
-    strcpy(buf, "HDP");
-    draw_str(buf, 60 + 20 + 1 + 18, 0, ca, 0);
-    sprintf(buf, "%2.1f", priv->gps_eph);
-    draw_str(buf, 60 + 20 + 1 + 18, 9, ca, 0);
+    sprintf(buf, "HDP\n%2.1f", priv->gps_eph);
+    draw_str(buf, x2 + (f->width + f->spacing) * 4, 0, ca, priv->font_id);
 }
 
 
