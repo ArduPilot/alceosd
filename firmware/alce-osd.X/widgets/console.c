@@ -34,24 +34,15 @@ struct widget_priv {
 };
 
 
-void console_print(char *str)
+static inline void print_chr(char chr)
 {
+    struct widget_priv *wp = console->priv;
     unsigned char i, j;
-    struct widget_priv *wp;
 
-    if (console == NULL)
-        return;
-
-    wp = console->priv;
-
-    while (*str != '\0') {
-        if (*str == '\n') {
-            wp->x = 0;
-            wp->y++;
-            str++;
-            continue;
-        }
-        
+    if (chr == '\n') {
+        wp->x = 0;
+        wp->y++;
+    } else {
         if (wp->x == COLS) {
             wp->x = 0;
             wp->y++;
@@ -65,14 +56,51 @@ void console_print(char *str)
                 wp->buf[ROWS-1][j] = ' ';
             wp->y --;
         }
-
-        wp->buf[wp->y][wp->x] = *str++;
-
+        wp->buf[wp->y][wp->x] = chr;
         wp->x++;
     }
+}
 
+
+void console_printn(char *str, unsigned int len)
+{
+    if (console == NULL)
+        return;
+
+    while (len-- != 0)
+        print_chr(*(str++));
     schedule_widget(console);
 }
+
+
+void console_print(char *str)
+{
+    if (console == NULL)
+        return;
+
+    while (*str != '\0')
+        print_chr(*(str++));
+    schedule_widget(console);
+}
+
+
+int console_printf(const char *fmt, ...)
+{
+    char buf[MAX_LINE_LENGTH];
+    int ret;
+    va_list ap;
+
+    va_start(ap, fmt);
+    ret = vsprintf(buf, fmt, ap);
+    va_end(ap);
+    if (ret > 0) {
+        console_print(buf);
+    }
+    return ret;
+}
+
+
+
 
 static int init(struct widget *w)
 {
