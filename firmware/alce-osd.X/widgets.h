@@ -68,7 +68,8 @@ struct widget;
 
 struct widget_ops {
     unsigned int id;
-    int (*init)(struct widget *w);
+    void (*init)(void);
+    int (*open)(struct widget *w);
     void (*render)(struct widget *w);
     void (*close)(struct widget *w);
     char name[];
@@ -83,6 +84,7 @@ struct widget {
 };
 
 void widgets_init(void);
+void widgets_reset(void);
 void widgets_process(void);
 void schedule_widget(struct widget *w);
 const struct widget_ops *get_widget_ops(unsigned int id);

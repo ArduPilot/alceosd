@@ -78,7 +78,7 @@ void load_tab(unsigned char tab)
     aw = active_widgets;
 
     /* reset widgets module */
-    widgets_init();
+    widgets_reset();
 
     /* load tab widgets */
     while (w_cfg->tab != TABS_END) {
@@ -93,7 +93,7 @@ void load_tab(unsigned char tab)
                 w->ops = w_ops;
                 w->cfg = w_cfg;
                 w->status = 0;
-                if (w_ops->init(w))
+                if (w_ops->open(w))
                     break;
                 alloc_canvas(&w->ca, w->cfg->x, w->cfg->y,
                               w->cfg->props.hjust, w->cfg->props.vjust,

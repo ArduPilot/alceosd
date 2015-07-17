@@ -54,7 +54,7 @@ static void timer_callback(struct timer *t, void *d)
     schedule_widget(w);
 }
 
-static int init(struct widget *w)
+static int open(struct widget *w)
 {
     struct widget_priv *priv;
 
@@ -195,7 +195,8 @@ static void render(struct widget *w)
 const struct widget_ops radar_widget_ops = {
     .name = "Radar",
     .id = WIDGET_RADAR_ID,
-    .init = init,
+    .init = NULL,
+    .open = open,
     .render = render,
     .close = NULL,
 };

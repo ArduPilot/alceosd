@@ -144,7 +144,7 @@ void schedule_widget(struct widget *w)
 }
 
 
-void widgets_init(void)
+void widgets_reset(void)
 {
     /* remove widget related timers/tasks */
     remove_timers(TIMER_WIDGET);
@@ -158,4 +158,15 @@ void widgets_init(void)
     free_mem();
     /* clear display */
     clear_sram();
+}
+
+
+void widgets_init(void)
+{
+    const struct widget_ops **w = all_widget_ops;
+    while ((*w) != NULL) {
+        if ((*w)->init != NULL)
+            (*w)->init();
+        w++;
+    }
 }

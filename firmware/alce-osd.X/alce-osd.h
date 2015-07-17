@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "graphics.h"
 #include "config.h"
@@ -42,10 +43,12 @@
 
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   5
-#define VERSION_DEV     0
+#define VERSION_DEV     1
 
 #define WITH_BOOTLOADER
 
+/* maximum line length for print function stack buffers */
+#define MAX_LINE_LENGTH 128
 
 /* led on the board */
 #define LED_DIR     TRISAbits.TRISA10
@@ -58,6 +61,9 @@ typedef union {
     unsigned char b[4];
 } u32union;
 
+
+extern void console_print(char *str);
+extern int console_printf(const char *fmt, ...);
 
 #endif	/* ALCE_OSD_H */
 

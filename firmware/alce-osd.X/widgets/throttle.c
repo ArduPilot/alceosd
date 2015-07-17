@@ -39,7 +39,7 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
 }
 
 
-static int init(struct widget *w)
+static int open(struct widget *w)
 {
     struct widget_priv *priv;
 
@@ -72,7 +72,8 @@ static void render(struct widget *w)
 const struct widget_ops throttle_widget_ops = {
     .name = "Throttle bar",
     .id = WIDGET_THROTTLE_ID,
-    .init = init,
+    .init = NULL,
+    .open = open,
     .render = render,
     .close = NULL,
 };

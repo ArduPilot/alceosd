@@ -41,7 +41,7 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
 }
 
 
-static int init(struct widget *w)
+static int open(struct widget *w)
 {
     struct widget_priv *priv;
     unsigned int i;
@@ -119,7 +119,8 @@ static void render(struct widget *w)
 const struct widget_ops rc_channels_widget_ops = {
     .name = "RC Channels",
     .id = WIDGET_RC_CHANNELS_ID,
-    .init = init,
+    .init = NULL,
+    .open = open,
     .render = render,
     .close = NULL,
 };

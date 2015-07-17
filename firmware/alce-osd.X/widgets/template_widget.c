@@ -75,9 +75,9 @@ static void timer_callback(struct timer *t, void *d)
     schedule_widget(w);
 }
 
-/* called once - init the widget */
+/* called when the widget is shown on the screen */
 /* should return 0 if the init was successeful */
-static int init(struct widget *w)
+static int open(struct widget *w)
 {
     struct widget_priv *priv;
 
@@ -119,6 +119,19 @@ static void render(struct widget *w)
     draw_str(buf, 0, 0, ca, 1);
 }
 
+/* called each time the widget is removed from screen - changing tabs */
+static void close(struct widget *w)
+{
+    /* uninit stuff here */
+}
+
+/* called only once on system startup */
+static void init(void)
+{
+    /* init stuff here */
+}
+
+
 /* dummy define */
 /* the ID should be assigned in the widgets.h file and removed from here */
 #define WIDGET_TEMPLATE_ID -1
@@ -128,6 +141,7 @@ const struct widget_ops template_widget_ops = {
     .name = "Template widget",
     .id = WIDGET_TEMPLATE_ID,
     .init = init,
+    .open = open,
     .render = render,
-    .close = NULL,
+    .close = close,
 };

@@ -102,7 +102,7 @@ int console_printf(const char *fmt, ...)
 
 
 
-static int init(struct widget *w)
+static int open(struct widget *w)
 {
     struct widget_priv *priv;
 
@@ -146,7 +146,8 @@ static void render(struct widget *w)
 const struct widget_ops console_widget_ops = {
     .name = "Console",
     .id = WIDGET_CONSOLE_ID,
-    .init = init,
+    .init = NULL,
+    .open = open,
     .render = render,
     .close = close,
 };

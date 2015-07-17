@@ -28,7 +28,7 @@ static void timer_callback(struct timer *t, void *d)
 }
 
 
-static int init(struct widget *w)
+static int open(struct widget *w)
 {
     w->priv = (struct home_data*) get_home_data();
 
@@ -105,7 +105,8 @@ static void render(struct widget *w)
 const struct widget_ops home_info_widget_ops = {
     .name = "Home info",
     .id = WIDGET_HOME_INFO_ID,
-    .init = init,
+    .init = NULL,
+    .open = open,
     .render = render,
     .close = NULL,
 };

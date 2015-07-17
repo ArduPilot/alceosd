@@ -93,6 +93,21 @@ extern struct alceosd_config config;
 
 //#define DEBUG_INIT
 
+#ifdef REDIRECT_TO_CONSOLE
+int __attribute__((__weak__, __section__(".libc"))) write(int handle, void *buf, unsigned int len)
+{
+    switch (handle) {
+        case 0:
+        case 1:
+        case 2:
+            console_printn((char *) buf, len);
+            break;
+    }
+    return len;
+}
+#endif
+
+
 void hw_init(void)
 {
     /* LED */
@@ -173,6 +188,9 @@ int main(void) {
     /* video driver config */
     video_apply_config(&config.video);
 
+    /* init widget modules */
+    widgets_init();
+    
     /* setup tabs */
     tabs_init();
     
@@ -198,6 +216,7 @@ int main(void) {
             in_config = config_osd();
             widgets_process();
             render_process();
+            clock_process();
             ClrWdt();
         }
     }

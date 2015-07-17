@@ -39,7 +39,7 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
     schedule_widget(w);
 }
 
-static int init(struct widget *w)
+static int open(struct widget *w)
 {
     struct widget_priv *priv;
     unsigned char m = w->cfg->props.mode;
@@ -102,7 +102,8 @@ static void render(struct widget *w)
 const struct widget_ops gps_info_widget_ops = {
     .name = "GPS stats",
     .id = WIDGET_GPS_INFO_ID,
-    .init = init,
+    .init = NULL,
+    .open = open,
     .render = render,
     .close = NULL,
 };

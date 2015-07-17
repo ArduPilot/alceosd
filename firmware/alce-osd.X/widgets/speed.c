@@ -41,7 +41,7 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
     schedule_widget(w);
 }
 
-static int init(struct widget *w)
+static int open(struct widget *w)
 {
     struct widget_priv *priv;
 
@@ -105,7 +105,8 @@ static void render(struct widget *w)
 const struct widget_ops speed_widget_ops = {
     .name = "Air speed",
     .id = WIDGET_SPEED_ID,
-    .init = init,
+    .init = NULL,
+    .open = open,
     .render = render,
     .close = NULL,
 };

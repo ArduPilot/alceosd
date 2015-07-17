@@ -26,7 +26,7 @@ static void timer_callback(struct timer *t, void *d)
 }
 
 
-static int init(struct widget *w)
+static int open(struct widget *w)
 {
     w->priv = (struct flight_stats*) get_flight_stats();
 
@@ -65,7 +65,8 @@ static void render(struct widget *w)
 const struct widget_ops flight_info_widget_ops = {
     .name = "Flight information",
     .id = WIDGET_FLIGHT_INFO_ID,
-    .init = init,
+    .init = NULL,
+    .open = open,
     .render = render,
     .close = NULL,
 };
