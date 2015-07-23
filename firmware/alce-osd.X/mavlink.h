@@ -27,6 +27,15 @@
 #define MAV_TYPE_ALCEOSD        (27)
 
 
+struct mavlink_callback {
+    unsigned char msgid;
+    unsigned char sysid;
+    unsigned char type;
+    void *data;
+    void (*cbk) (mavlink_message_t *msg, mavlink_status_t *status, void *data);
+};
+
+
 void mavlink_init(void);
 void mavlink_process(void);
 struct mavlink_callback* add_mavlink_callback(unsigned char msgid,
@@ -34,9 +43,6 @@ struct mavlink_callback* add_mavlink_callback(unsigned char msgid,
 struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid,
         unsigned char msgid,
         void *cbk, unsigned char ctype, void *data);
-void reset_mavlink_callback(struct mavlink_callback *c,
-            unsigned char sysid, unsigned char msgid,
-            void *cbk, unsigned char ctype, void *data);
 void del_mavlink_callbacks(unsigned char ctype);
 
 enum {

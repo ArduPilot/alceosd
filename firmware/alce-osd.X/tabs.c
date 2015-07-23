@@ -367,12 +367,13 @@ void tabs_init(void)
 
     /* track required mavlink data */
     if (cbk != NULL) {
-        if (mav_cbk == NULL)
+        if (mav_cbk == NULL) {
             mav_cbk = add_mavlink_callback(msgid, cbk,
                         CALLBACK_PERSISTENT, &config.tab_change);
-        else
-            reset_mavlink_callback(mav_cbk, config.mavlink_default_sysid,
-                        msgid, cbk, CALLBACK_PERSISTENT, &config.tab_change);
+        } else {
+            mav_cbk->msgid = msgid;
+            mav_cbk->cbk = cbk;
+        }
     }
     
     /* tab switching task (100ms) */

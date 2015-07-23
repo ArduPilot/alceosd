@@ -22,13 +22,6 @@
 
 extern struct alceosd_config config;
 
-struct mavlink_callback {
-    unsigned char msgid;
-    unsigned char sysid;
-    unsigned char type;
-    void *data;
-    void (*cbk) (mavlink_message_t *msg, mavlink_status_t *status, void *data);
-};
 
 static struct mavlink_callback callbacks[MAX_MAVLINK_CALLBACKS];
 static unsigned char nr_callbacks = 0;
@@ -114,17 +107,6 @@ struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid, unsigne
     return c;
 }
 
-void reset_mavlink_callback(struct mavlink_callback *c,
-            unsigned char sysid, unsigned char msgid,
-            void *cbk, unsigned char ctype, void *data)
-{
-    c->sysid = sysid;
-    c->msgid = msgid;
-    c->cbk = cbk;
-    c->type = ctype;
-    c->data = data;
-}
-
 
 void del_mavlink_callbacks(unsigned char ctype)
 {
@@ -150,14 +132,13 @@ static void mav_heartbeat(struct timer *t, void *d)
     unsigned char buf[30], *c = buf;
 
     mavlink_msg_heartbeat_pack(uav_sysid,
-            MAV_COMP_ID_ALCEOSD, &msg, MAV_TYPE_ALCEOSD, MAV_AUTOPILOT_INVALID,
+            MAV_COMP_ID_ALCEOSD, &msg, MAV_TYPE_ALCEOSD,
+            MAV_AUTOPILOT_INVALID,
             MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, // base_mode
             0, //custom_mode
             MAV_STATE_ACTIVE);
 
     len = mavlink_msg_to_send_buffer(buf, &msg);
-    //printf("msg len = %d\n", len);
-    //printstrc("heartbeat!\n");
     while (len) {
         while (!U2STAbits.TRMT);
         U2TXREG = *c++;
