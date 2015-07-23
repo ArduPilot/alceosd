@@ -41,13 +41,12 @@ struct alceosd_config config = {
     
     .mavlink_default_sysid = 1,
 
-    .video.standard = VIDEO_STANDARD_PAL,
-    .video.scan = VIDEO_SCAN_PROGRESSIVE,
+    .video.standard = VIDEO_STANDARD_PAL_P,
     .video.brightness = 600, //0x50,
     .video.x_offset = 85,
     .video.y_offset = 40,
 
-    .video.x_size = VIDEO_XSIZE_480,
+    .video.x_size_id = VIDEO_XSIZE_480,
     .video.y_size = 260,
 
     .tab_change.tab_change_ch_min = 1000,
@@ -291,7 +290,7 @@ const char menu_main[] = "\n\n"
                          "x - Exit config\n";
 
 const char menu_video[] = "\n\nAlceOSD :: VIDEO setup\n\n"
-                          "1 - Video scan: %s\n"
+                          "1 - Video standard: %s\n"
                           "2/3 - Adjust video brightness: %u\n"
                           "q/a - Adjust video window vertically: %d\n"
                           "d/f - Adjust video window horizontally: %d\n"
@@ -356,7 +355,9 @@ int config_osd(void)
                 break;
             case MENU_VIDEO:
                 printf(menu_video,
-                        (config.video.scan == VIDEO_SCAN_PROGRESSIVE) ? "Progressive" : "Interlaced",
+                        (config.video.standard == VIDEO_STANDARD_PAL_P) ? "PAL progressive" :
+                        (config.video.standard == VIDEO_STANDARD_PAL_I) ? "PAL interlaced" :
+                        (config.video.standard == VIDEO_STANDARD_NTSC_P) ? "NTSC progressive" : "NTSC interlaced",
                         config.video.brightness,
                         config.video.y_offset,
                         config.video.x_offset,
@@ -494,9 +495,9 @@ int config_osd(void)
         case MENU_VIDEO:
             switch (c) {
                 case '1':
-                    config.video.scan += 1;
-                    if (config.video.scan >= VIDEO_SCAN_END)
-                        config.video.scan = 0;
+                    config.video.standard += 1;
+                    if (config.video.standard >= VIDEO_STANDARD_END)
+                        config.video.standard = 0;
                     load_tab(current_tab);
                     break;
                 case '2':
@@ -527,14 +528,14 @@ int config_osd(void)
                         config.video.x_offset++;
                     break;
                 case 'e':
-                    if (config.video.x_size > 0)
-                        config.video.x_size--;
+                    if (config.video.x_size_id > 0)
+                        config.video.x_size_id--;
                     video_apply_config(&config.video);
                     load_tab(current_tab);
                     break;
                 case 'r':
-                    if (config.video.x_size < (VIDEO_XSIZE_END-1))
-                        config.video.x_size++;
+                    if (config.video.x_size_id < (VIDEO_XSIZE_END-1))
+                        config.video.x_size_id++;
                     video_apply_config(&config.video);
                     load_tab(current_tab);
                     break;

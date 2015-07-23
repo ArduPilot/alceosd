@@ -246,7 +246,7 @@ static void video_init_hw(void)
     SPI2CON1bits.DISSDO = 1;
     SPI2CON1bits.DISSCK = 0;
     SPI2CON1bits.PPRE = 3;
-    SPI2CON1bits.SPRE = video_xsizes[config.video.x_size].clk_ps;
+    SPI2CON1bits.SPRE = video_xsizes[config.video.x_size_id].clk_ps;
     SPI2CON1bits.MODE16 = 1;
     SPI2CON2bits.FRMEN = 1;
     /* pins as ports */
@@ -341,7 +341,7 @@ void video_apply_config(struct video_config *cfg)
     /* pixel clock */
     INTCON2bits.GIE = 0;
     SPI2STATbits.SPIEN = 0;
-    SPI2CON1bits.SPRE = video_xsizes[cfg->x_size].clk_ps;
+    SPI2CON1bits.SPRE = video_xsizes[cfg->x_size_id].clk_ps;
     INTCON2bits.GIE = 1;
 
 }
@@ -358,9 +358,9 @@ void free_mem(void)
 
 void video_get_size(unsigned int *xsize, unsigned int *ysize)
 {
-    *xsize = video_xsizes[config.video.x_size].xsize;
+    *xsize = video_xsizes[config.video.x_size_id].xsize;
     *ysize = config.video.y_size;
-    if (config.video.scan == VIDEO_SCAN_INTERLACED)
+    if (config.video.standard & VIDEO_STANDARD_SCAN_MASK)
         *ysize *= 2;
 }
 
@@ -464,7 +464,7 @@ void render_process(void)
             x = ca->x >> 2;
             b = ca->buf;
 
-            xsize = (video_xsizes[config.video.x_size].xsize) >> 2;
+            xsize = (video_xsizes[config.video.x_size_id].xsize) >> 2;
             addr.l = x + ((unsigned long) xsize *  y);
             render_state = 1;
         }
@@ -570,7 +570,7 @@ void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
         /* do nothing */
     } else if (line < config.video.y_offset-1) {
         /* T-2: setup vars */
-        osdxsize = video_xsizes[config.video.x_size].xsize;
+        osdxsize = video_xsizes[config.video.x_size_id].xsize;
 
         /* calc last_line */
         last_line = config.video.y_size + config.video.y_offset;
@@ -581,14 +581,14 @@ void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
 
         /* auto detect video standard */
         if (last_line_cnt < 300)
-            config.video.standard = VIDEO_STANDARD_NTSC;
+            config.video.standard |= VIDEO_STANDARD_MASK;
         else
-            config.video.standard = VIDEO_STANDARD_PAL;
+            config.video.standard &= ~VIDEO_STANDARD_MASK;
 
         sram_busy = 1;
         addr.l = 0;
 
-        if (config.video.scan == VIDEO_SCAN_INTERLACED) {
+        if (config.video.standard && VIDEO_STANDARD_SCAN_MASK) {
             odd = PORTBbits.RB15;
             if (odd == 0) {
                 addr.l += (osdxsize/4);
@@ -625,7 +625,7 @@ void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
         T2CONbits.TON = 1;
 
         /* calc next address */
-        if (config.video.scan == VIDEO_SCAN_INTERLACED) {
+        if (config.video.standard & VIDEO_STANDARD_SCAN_MASK) {
             addr.l += (unsigned long) ((osdxsize/4) * 2);
         } else {
             addr.l += (unsigned long) (osdxsize/4);

@@ -29,16 +29,15 @@ enum {
 };
 
 enum {
-    VIDEO_STANDARD_PAL = 0,
-    VIDEO_STANDARD_NTSC,
-    VIDEO_STANDARD_END,
+    VIDEO_STANDARD_PAL_P  = 0,
+    VIDEO_STANDARD_PAL_I  = 1,
+    VIDEO_STANDARD_NTSC_P = 2,
+    VIDEO_STANDARD_NTSC_I = 3,
+    VIDEO_STANDARD_END    = 4,
 };
 
-enum {
-    VIDEO_SCAN_PROGRESSIVE = 0,
-    VIDEO_SCAN_INTERLACED,
-    VIDEO_SCAN_END,
-};
+#define VIDEO_STANDARD_MASK         (0x02)
+#define VIDEO_STANDARD_SCAN_MASK    (0x01)
 
 
 union sram_addr {
@@ -71,12 +70,10 @@ struct canvas {
 };
 
 struct video_config {
-    /* video standard */
-    unsigned int standard;
-    /* video scan */
-    unsigned int scan;
-    /* video X resolution */
-    unsigned int x_size;
+    /* video standard and scan */
+    unsigned char standard;
+    /* video X resolution id */
+    unsigned char x_size_id;
     /* video Y resolution */
     unsigned int y_size;
     /* video X resolution */
