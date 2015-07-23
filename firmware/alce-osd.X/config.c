@@ -39,8 +39,6 @@ static unsigned long valid_config_addr = 0;
 struct alceosd_config config = {
     .baudrate = UART_57600,
     
-    .mavlink_default_sysid = 1,
-
     .video.standard = VIDEO_STANDARD_PAL_P,
     .video.brightness = 600, //0x50,
     .video.x_offset = 85,

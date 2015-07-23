@@ -64,9 +64,6 @@ struct alceosd_config {
     /* telemetry baudrate */
     unsigned char baudrate;
 
-    /* mavlink default system id for the plane */
-    unsigned char mavlink_default_sysid;
-
     /* video config */
     struct video_config video;
 

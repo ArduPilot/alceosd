@@ -229,6 +229,8 @@ int main(void) {
     init_home_process();
     init_flight_stats_process();
 
+    mavlink_init();
+
     for (;;) {
         mavlink_process();
         widgets_process();

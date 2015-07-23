@@ -22,7 +22,12 @@
 #define MAVLINK_COMM_NUM_BUFFERS 1
 #include "mavlink/v1.0/ardupilotmega/mavlink.h"
 
+#define MAV_SYS_ID_ANY          (0)
+#define MAV_COMP_ID_ALCEOSD     (155)
+#define MAV_TYPE_ALCEOSD        (27)
 
+
+void mavlink_init(void);
 void mavlink_process(void);
 struct mavlink_callback* add_mavlink_callback(unsigned char msgid,
         void *cbk, unsigned char ctype, void *data);

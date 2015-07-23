@@ -33,14 +33,34 @@ struct mavlink_callback {
 static struct mavlink_callback callbacks[MAX_MAVLINK_CALLBACKS];
 static unsigned char nr_callbacks = 0;
 
+static unsigned char uav_sysid = 1;
+
+
+#ifdef DEBUG_MAVLINK
+#define DMAV(x...) \
+    do { \
+        console_printf("MAV: "); \
+        console_printf(x); \
+    } while(0)
+#else
+#define DMAV(x...)
+#endif
+
+
 static void mavlink_parse_msg(mavlink_message_t *msg, mavlink_status_t *status)
 {
     struct mavlink_callback *c;
     unsigned char i;
 
+    console_printf("rcv:sys=%d cmp=%d msg=%d\n", msg->sysid, msg->compid, msg->msgid);
+    if (msg->msgid == 0) {
+        console_printf("heartbeat:type=%d\n", mavlink_msg_heartbeat_get_type(msg));
+    }
+
+
     for (i = 0; i < nr_callbacks; i++) {
         c = &callbacks[i];
-        if ((msg->msgid == c->msgid) && (msg->sysid == c->sysid))
+        if ((msg->msgid == c->msgid) && ((msg->sysid == c->sysid) || (c->sysid == MAV_SYS_ID_ANY)))
             c->cbk(msg, status, c->data);
     }
 }
@@ -70,7 +90,7 @@ struct mavlink_callback* add_mavlink_callback(unsigned char msgid,
     if (nr_callbacks == MAX_MAVLINK_CALLBACKS)
         return NULL;
     c = &callbacks[nr_callbacks++];
-    c->sysid = config.mavlink_default_sysid;
+    c->sysid = uav_sysid;
     c->msgid = msgid;
     c->cbk = cbk;
     c->type = ctype;
@@ -122,3 +142,32 @@ void del_mavlink_callbacks(unsigned char ctype)
     }
 }
 
+
+static void mav_heartbeat(struct timer *t, void *d)
+{
+    mavlink_message_t msg;
+    unsigned int len;
+    unsigned char buf[30], *c = buf;
+
+    mavlink_msg_heartbeat_pack(uav_sysid,
+            MAV_COMP_ID_ALCEOSD, &msg, MAV_TYPE_ALCEOSD, MAV_AUTOPILOT_INVALID,
+            MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, // base_mode
+            0, //custom_mode
+            MAV_STATE_ACTIVE);
+
+    len = mavlink_msg_to_send_buffer(buf, &msg);
+    //printf("msg len = %d\n", len);
+    //printstrc("heartbeat!\n");
+    while (len) {
+        while (!U2STAbits.TRMT);
+        U2TXREG = *c++;
+        len--;
+    }
+}
+
+
+void mavlink_init(void)
+{
+    /* heartbeat sender task */
+    add_timer(TIMER_ALWAYS, 10, mav_heartbeat, NULL);
+}
