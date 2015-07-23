@@ -130,3 +130,12 @@ void uart_discard2(unsigned int count)
     rx2_fifo.rd += count;
     rx2_fifo.rd &= UART_FIFO_MASK;
 }
+
+void uart_write2(unsigned char *buf, unsigned int len)
+{
+    while (len) {
+        while (!U2STAbits.TRMT);
+        U2TXREG = *buf++;
+        len--;
+    }
+}

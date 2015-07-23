@@ -45,5 +45,6 @@ void uart_set_baudrate2(unsigned char b);
 unsigned char uart_getc2(char *c);
 unsigned int uart_read2(char **buf);
 void uart_discard2(unsigned int count);
+void uart_write2(unsigned char *buf, unsigned int len);
 
 #endif
