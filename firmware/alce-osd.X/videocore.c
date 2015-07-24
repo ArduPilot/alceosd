@@ -52,6 +52,20 @@
 /* spi2 clock pin */
 #define SCK2_O 0x09
 
+extern struct alceosd_config config;
+
+void video_apply_config_cbk(void);
+
+const struct mavlink_param mavparams_video[] = {
+    MAVPARAM("OSD", "VID", "STD", MAV_PARAM_TYPE_UINT8, &config.video.standard, NULL),
+    MAVPARAM("OSD", "VID", "XSIZE", MAV_PARAM_TYPE_UINT8, &config.video.x_size_id, video_apply_config_cbk),
+    MAVPARAM("OSD", "VID", "YSIZE", MAV_PARAM_TYPE_UINT16, &config.video.y_size, NULL),
+    MAVPARAM("OSD", "VID", "XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video.x_offset, NULL),
+    MAVPARAM("OSD", "VID", "YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video.y_offset, NULL),
+    MAVPARAM("OSD", "VID", "BRIGHT", MAV_PARAM_TYPE_UINT16, &config.video.brightness, video_apply_config_cbk),
+    MAVPARAM_END,
+};
+
 
 volatile unsigned char sram_busy = 0;
 volatile unsigned int line, last_line = 200, last_line_cnt = 0;
@@ -59,7 +73,6 @@ volatile unsigned int ticks = 0;
 volatile unsigned char odd = 0;
 static unsigned char render_state = 0;
 
-extern volatile struct alceosd_config config;
 
 
 const struct osd_xsize_tbl video_xsizes[] = {
@@ -318,6 +331,8 @@ void init_video(void)
 {
     video_init_sram();
     video_init_hw();
+
+    mavlink_add_params(mavparams_video);
 }
 
 static int ipl;
@@ -333,6 +348,7 @@ void video_resume(void)
     RESTORE_CPU_IPL(ipl);
 }
 
+
 void video_apply_config(struct video_config *cfg)
 {
     /* brightness */
@@ -344,6 +360,14 @@ void video_apply_config(struct video_config *cfg)
     SPI2CON1bits.SPRE = video_xsizes[cfg->x_size_id].clk_ps;
     INTCON2bits.GIE = 1;
 
+}
+
+void video_apply_config_cbk(void)
+{
+    struct video_config *c = &config.video;
+    if (c->x_size_id >= VIDEO_XSIZE_END)
+        c->x_size_id = VIDEO_XSIZE_END - 1;
+    video_apply_config(c);
 }
 
 

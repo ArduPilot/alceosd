@@ -198,6 +198,7 @@ int main(void) {
     SRbits.IPL = 0;
     CORCONbits.IPL3 = 1;
 
+
     /* TODO: rework config entry */
     /* check for config entry */
     for (i = 0; i < 8; i++) {
@@ -223,6 +224,8 @@ int main(void) {
 
     /* re-init tabs */
     tabs_init();
+
+    console_printf("AlceOSD %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
 
     uart_set_baudrate2(config.baudrate);
 
