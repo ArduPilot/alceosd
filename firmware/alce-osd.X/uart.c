@@ -34,6 +34,7 @@ struct uart_fifo {
 };
 
 static struct uart_fifo rx2_fifo;
+static struct uart_fifo rx1_fifo;
 
 void __attribute__((__interrupt__, auto_psv)) _U2RXInterrupt(void)
 {
@@ -136,6 +137,114 @@ void uart_write2(unsigned char *buf, unsigned int len)
     while (len) {
         while (!U2STAbits.TRMT);
         U2TXREG = *buf++;
+        len--;
+    }
+}
+
+
+
+
+
+
+
+
+void __attribute__((__interrupt__, auto_psv)) _U1RXInterrupt(void)
+{
+    unsigned char n_wr = (rx1_fifo.wr + 1) & UART_FIFO_MASK;
+
+    if(U1STAbits.OERR == 1) {
+        U1STAbits.OERR = 0;
+    }
+
+    if (n_wr == rx1_fifo.rd) {
+        n_wr = U1RXREG;
+        //U2TXREG = 'O';
+    } else {
+        rx1_fifo.buf[rx1_fifo.wr] = U1RXREG;
+        rx1_fifo.wr = n_wr;
+    }
+
+    IFS0bits.U1RXIF = 0;
+}
+
+
+void uart_init1(unsigned char pins)
+{
+
+    // set pins
+    switch (pins) {
+        case UART_PORT_TELEMETRY:
+            // U2TX
+            //_RP37R = 3;
+            // U2RX
+            //_U2RXR = 38;
+            break;
+        case UART_PORT_ICSP:
+        case UART_PORT_CON2:
+        default:
+            // TX
+            _RP41R = 1;
+            // RX
+            _U1RXR = 20;
+            break;
+    }
+
+    U1BRG = baudrates[UART_115200].brg;
+    U1MODE = 0;              //clear mode register
+    //U2MODEbits.BRGH = 1;     //use high precision baud generator
+    U1STA = 0;               //clear status register
+
+    U1MODEbits.UARTEN = 1;   //enable the UART RX
+    U1STAbits.UTXEN = 1;
+
+    /* priority */
+    IPC2bits.U1RXIP = 1;
+
+    IFS0bits.U1RXIF = 0;     //clear the receive flag
+    IEC0bits.U1RXIE = 1;
+}
+
+
+void uart_set_baudrate1(unsigned char b)
+{
+    if (b < UART_BAUDRATES)
+        U1BRG = baudrates[b].brg;
+}
+
+unsigned char uart_getc1(char *c)
+{
+  unsigned char ret = (rx1_fifo.rd != rx1_fifo.wr);
+  if (ret) {
+    *c = rx1_fifo.buf[rx1_fifo.rd++];
+    rx1_fifo.rd &= UART_FIFO_MASK;
+  }
+  return ret;
+}
+
+unsigned int uart_read1(char **buf)
+{
+    unsigned int wr = rx1_fifo.wr;
+    unsigned int ret = (wr - rx1_fifo.rd) & UART_FIFO_MASK;
+    if (ret) {
+        *buf = &rx1_fifo.buf[rx1_fifo.rd];
+        if (rx1_fifo.rd > wr) {
+            ret = UART_FIFO_MASK + 1 - rx1_fifo.rd;
+        }
+    }
+    return ret;
+}
+
+void uart_discard1(unsigned int count)
+{
+    rx1_fifo.rd += count;
+    rx1_fifo.rd &= UART_FIFO_MASK;
+}
+
+void uart_write1(unsigned char *buf, unsigned int len)
+{
+    while (len) {
+        while (!U1STAbits.TRMT);
+        U1TXREG = *buf++;
         len--;
     }
 }
