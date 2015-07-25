@@ -178,6 +178,7 @@ int main(void) {
 
     /* init uart2 */
     uart_init2(UART_PORT_TELEMETRY);
+    uart_init1(UART_PORT_CON2);
 
     /* init video driver */
     init_video();
@@ -228,6 +229,8 @@ int main(void) {
     console_printf("AlceOSD %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
 
     uart_set_baudrate2(config.baudrate);
+
+    uart_set_baudrate1(UART_19200);
 
     init_home_process();
     init_flight_stats_process();

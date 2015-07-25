@@ -19,7 +19,7 @@
 #ifndef _MAVLINK_H
 #define	_MAVLINK_H
 
-#define MAVLINK_COMM_NUM_BUFFERS 1
+#define MAVLINK_COMM_NUM_BUFFERS 2
 #include "mavlink/v1.0/ardupilotmega/mavlink.h"
 
 #define MAV_SYS_ID_ANY          (0)

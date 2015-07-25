@@ -35,7 +35,7 @@
 static struct mavlink_callback callbacks[MAX_MAVLINK_CALLBACKS];
 static unsigned char nr_callbacks = 0;
 
-static unsigned char uav_sysid = 1, osd_sysid = 1;
+static unsigned char uav_sysid = 1, osd_sysid = 200;
 
 static struct mavlink_param *all_params[MAX_MAVLINK_PARAMS];
 static unsigned int nr_params = 0, pidx = 0, nr_dynamic_params = 0;
@@ -75,17 +75,43 @@ void mavlink_process()
     static mavlink_message_t msg;
     static mavlink_status_t status;
     char *buf;
-    int count, i;
+    int count, i, len;
+
+    unsigned char msg_buf[MAVLINK_MAX_PACKET_LEN];
 
     i = count = uart_read2(&buf);
     while (i--) {    
         if (mavlink_parse_char(MAVLINK_COMM_0, *(buf++), &msg, &status)) {
+
+            /* forward to uart1 */
+            len = mavlink_msg_to_send_buffer(msg_buf, &msg);
+            uart_write1(msg_buf, len);
+
             LED = 0;
             mavlink_parse_msg(&msg, &status);
             LED = 1;
         }
     }
     uart_discard2(count);
+
+
+    static mavlink_message_t msg2;
+    static mavlink_status_t status2;
+    i = count = uart_read1(&buf);
+    while (i--) {
+        if (mavlink_parse_char(MAVLINK_COMM_1, *(buf++), &msg2, &status2)) {
+
+            /* forward to uart0 */
+            len = mavlink_msg_to_send_buffer(msg_buf, &msg2);
+            uart_write2(msg_buf, len);
+
+            LED = 0;
+            mavlink_parse_msg(&msg2, &status2);
+            LED = 1;
+        }
+    }
+    uart_discard1(count);
+
 }
 
 struct mavlink_callback* add_mavlink_callback(unsigned char msgid,
@@ -328,17 +354,16 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
     if (idx < nr_params) {
         p = all_params[idx];
         cast2param(p, mavlink_msg_param_set_get_param_value(msg));
+        if (p->cbk != NULL)
+            p->cbk();
     } else {
         strcpy(sp.name, buf);
         sp.value = (void*) &pv;
+        sp.type = mavlink_msg_param_set_get_param_type(msg);
         p = &sp;
         cast2param(p, mavlink_msg_param_set_get_param_value(msg));
         dynamic_params->set(p);
     }
-
-
-    if (p->cbk != NULL)
-        p->cbk();
 
     mavlink_msg_param_value_pack(uav_sysid, MAV_COMP_ID_ALCEOSD, &msg2,
                                     p->name, cast2float(p),  p->type, nr_params, idx);
