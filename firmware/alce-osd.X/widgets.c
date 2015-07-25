@@ -161,9 +161,223 @@ void widgets_reset(void)
 }
 
 
+extern struct alceosd_config config;
+
+
+enum {
+    WID_PARAM_TAB = 0,
+    WID_PARAM_X,
+    WID_PARAM_Y,
+    WID_PARAM_HJUST,
+    WID_PARAM_VJUST,
+    WID_PARAM_MODE,
+    WID_PARAM_SOURCE,
+    WID_PARAM_UNITS,
+    WID_PARAM_PARAM1,
+    WID_PARAM_PARAM2,
+    WID_PARAM_PARAM3,
+    WID_PARAM_PARAM4,
+    WID_PARAM_END
+};
+
+const char widget_param_lut[WID_PARAM_END][10] = {
+    [WID_PARAM_TAB] = "TAB",
+    [WID_PARAM_X] = "X",
+    [WID_PARAM_Y] = "Y",
+    [WID_PARAM_HJUST] = "HJUST",
+    [WID_PARAM_VJUST] = "VJUST",
+    [WID_PARAM_MODE] = "MODE",
+    [WID_PARAM_SOURCE] = "SOURCE",
+    [WID_PARAM_UNITS] = "UNITS",
+    [WID_PARAM_PARAM1] = "PARAM1",
+    [WID_PARAM_PARAM2] = "PARAM2",
+    [WID_PARAM_PARAM3] = "PARAM3",
+    [WID_PARAM_PARAM4] = "PARAM4",
+};
+
+
+/* appends a param to the name */
+static void get_widget_param(unsigned int pidx,
+            struct widget_config *wcfg, struct mavlink_param *p)
+{
+    struct mavlink_param_value *pv = p->value;
+    if (pidx >= WID_PARAM_END)
+        return;
+
+    strncat(p->name, widget_param_lut[pidx], 8);
+    switch (pidx) {
+        case WID_PARAM_TAB:
+            p->type = MAV_PARAM_TYPE_UINT8;
+            pv->param_uint8 = wcfg->tab;
+            break;
+        case WID_PARAM_X:
+            p->type = MAV_PARAM_TYPE_INT16;
+            pv->param_int16 = wcfg->x;
+            break;
+        case WID_PARAM_Y:
+            p->type = MAV_PARAM_TYPE_INT16;
+            pv->param_int16 = wcfg->y;
+            break;
+        case WID_PARAM_VJUST:
+            p->type = MAV_PARAM_TYPE_UINT8;
+            pv->param_uint8 = wcfg->props.vjust;
+            break;
+        case WID_PARAM_HJUST:
+            p->type = MAV_PARAM_TYPE_UINT8;
+            pv->param_uint8 = wcfg->props.hjust;
+            break;
+        case WID_PARAM_MODE:
+            p->type = MAV_PARAM_TYPE_UINT8;
+            pv->param_uint8 = wcfg->props.mode;
+            break;
+        case WID_PARAM_UNITS:
+            p->type = MAV_PARAM_TYPE_UINT8;
+            pv->param_uint8 = wcfg->props.units;
+            break;
+        case WID_PARAM_SOURCE:
+            p->type = MAV_PARAM_TYPE_UINT8;
+            pv->param_uint8 = wcfg->props.source;
+            break;
+        case WID_PARAM_PARAM1:
+        case WID_PARAM_PARAM2:
+        case WID_PARAM_PARAM3:
+        case WID_PARAM_PARAM4:
+            p->type = MAV_PARAM_TYPE_UINT16;
+            pv->param_uint16 = wcfg->params[pidx - WID_PARAM_PARAM1];
+            break;
+        default:
+            break;
+    }
+
+}
+
+static void set_widget_param(struct widget_config *wcfg, struct mavlink_param *p)
+{
+    char pname[10];
+    unsigned char i;
+    struct mavlink_param_value *pv = p->value;
+    
+    strcpy(pname, &p->name[7]);
+    //console_printf("pname=%s\n", pname);
+
+    for(i = 0; i < WID_PARAM_END; i++) {
+        if (strcmp(pname, widget_param_lut[i]) == 0)
+            break;
+    }
+
+    if (i == WID_PARAM_END) {
+        console_printf("lut failed\n");
+        return;
+    }
+
+    console_printf("pidx=%d\n", i);
+
+    switch (i) {
+        case WID_PARAM_TAB:
+            wcfg->tab = pv->param_uint8;
+            break;
+        case WID_PARAM_X:
+            wcfg->x = pv->param_int16;
+            break;
+        case WID_PARAM_Y:
+            wcfg->y = pv->param_int16;
+            break;
+        case WID_PARAM_VJUST:
+            wcfg->props.vjust = pv->param_uint8;
+            break;
+        case WID_PARAM_HJUST:
+            wcfg->props.hjust = pv->param_uint8;
+            break;
+        case WID_PARAM_MODE:
+            wcfg->props.mode = pv->param_uint8;
+            break;
+        case WID_PARAM_UNITS:
+            wcfg->props.units = pv->param_uint8;
+            break;
+        case WID_PARAM_SOURCE:
+            wcfg->props.source = pv->param_uint8;
+            break;
+        case WID_PARAM_PARAM1:
+        case WID_PARAM_PARAM2:
+        case WID_PARAM_PARAM3:
+        case WID_PARAM_PARAM4:
+            wcfg->params[i - WID_PARAM_PARAM1] = pv->param_uint16;
+            break;
+    }
+
+
+}
+
+static unsigned int count_widget_params(void)
+{
+    struct widget_config *wcfg = config.widgets;
+    unsigned int total = 0;
+
+    while ((wcfg++)->tab != TABS_END) {
+        total++;
+    }
+
+    return WID_PARAM_END * total;
+}
+
+
+static void get_widget_params(int idx, struct mavlink_param *p)
+{
+    struct widget_config *wcfg;
+    const struct widget_ops *wops;
+    unsigned int table_idx = idx / WID_PARAM_END;
+    unsigned int param_idx = idx % WID_PARAM_END;
+
+    unsigned int table_max = count_widget_params() / WID_PARAM_END;
+
+    if (table_idx >= table_max)
+        return;
+
+    /* get widget at location */
+    wcfg = &config.widgets[table_idx];
+    wops = get_widget_ops(wcfg->widget_id);
+
+    sprintf(p->name, "W%1d", wcfg->uid);
+    strncat(p->name, wops->name, 4);
+    strcat(p->name, "_");
+
+    get_widget_param(param_idx, wcfg, p);
+}
+
+static void set_widget_params(struct mavlink_param *p)
+{
+    struct widget_config *wcfg = config.widgets;
+    const struct widget_ops *wops;
+
+    unsigned char uid;
+    char buf[4];
+
+    uid = p->name[1] - '0';
+    memcpy(buf, &p->name[2], 4);
+    while (wcfg->tab != TABS_END) {
+        wops = get_widget_ops(wcfg->widget_id);
+        if ((uid == wcfg->uid) && (memcmp(buf, wops->name, 4) == 0)) {
+            set_widget_param(wcfg, p);
+        }
+        wcfg++;
+    }
+}
+
+
+
+struct mavlink_dynamic_param_def mavparams_widgets = {
+    .get = get_widget_params,
+    .set = set_widget_params,
+    .count = count_widget_params,
+};
+
+
 void widgets_init(void)
 {
     const struct widget_ops **w = all_widget_ops;
+
+    mavlink_set_dynamic_params(&mavparams_widgets);
+
     while ((*w) != NULL) {
         if ((*w)->init != NULL)
             (*w)->init();

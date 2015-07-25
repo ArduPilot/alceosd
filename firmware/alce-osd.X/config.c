@@ -58,27 +58,29 @@ struct alceosd_config config = {
     .home_lock_sec = 15,
 
     .widgets = {
-        { 1, WIDGET_ALTITUDE_ID,        0,   0, {JUST_VCENTER | JUST_RIGHT}},
-        { 1, WIDGET_BATTERY_INFO_ID,    0,   0, {JUST_TOP     | JUST_LEFT}},
-        { 1, WIDGET_COMPASS_ID,         0,   0, {JUST_BOT     | JUST_HCENTER}},
-        { 1, WIDGET_FLIGHT_MODE_ID,     0, -32, {JUST_BOT     | JUST_LEFT}},
-        { 1, WIDGET_GPS_INFO_ID,        0,   0, {JUST_BOT     | JUST_LEFT}},
-        { 1, WIDGET_HORIZON_ID,        16,   0, {JUST_VCENTER | JUST_HCENTER}},
-        { 1, WIDGET_RSSI_ID,            0,   0, {JUST_TOP     | JUST_RIGHT}},
-        { 1, WIDGET_SPEED_ID,           0,   0, {JUST_VCENTER | JUST_LEFT}},
-        { 1, WIDGET_THROTTLE_ID,       70,   0, {JUST_TOP     | JUST_LEFT}},
-        { 1, WIDGET_VARIOMETER_ID,      0,  -5, {JUST_BOT     | JUST_RIGHT}},
-        { 1, WIDGET_WIND_ID,             0, 30, {JUST_TOP     | JUST_RIGHT}},
+        { 5, 0, WIDGET_CONSOLE_ID,         0,   0, {JUST_VCENTER | JUST_HCENTER}},
 
-        { 1, WIDGET_HOME_INFO_ID,       80,  0, {JUST_TOP     | JUST_LEFT}},
-        { 1, WIDGET_RADAR_ID,           60,-44, {JUST_BOT     | JUST_LEFT}},
+        { 1, 0, WIDGET_ALTITUDE_ID,        0,   0, {JUST_VCENTER | JUST_RIGHT}},
+        { 1, 0, WIDGET_BATTERY_INFO_ID,    0,   0, {JUST_TOP     | JUST_LEFT}},
+        { 1, 0, WIDGET_COMPASS_ID,         0,   0, {JUST_BOT     | JUST_HCENTER}},
+        { 1, 0, WIDGET_FLIGHT_MODE_ID,     0, -32, {JUST_BOT     | JUST_LEFT}},
+        { 1, 0, WIDGET_GPS_INFO_ID,        0,   0, {JUST_BOT     | JUST_LEFT}},
+        { 1, 0, WIDGET_HORIZON_ID,        16,   0, {JUST_VCENTER | JUST_HCENTER}},
+        { 1, 0, WIDGET_RSSI_ID,            0,   0, {JUST_TOP     | JUST_RIGHT}},
+        { 1, 0, WIDGET_SPEED_ID,           0,   0, {JUST_VCENTER | JUST_LEFT}},
+        { 1, 0, WIDGET_THROTTLE_ID,       70,   0, {JUST_TOP     | JUST_LEFT}},
+        { 1, 0, WIDGET_VARIOMETER_ID,      0,  -5, {JUST_BOT     | JUST_RIGHT}},
+        { 1, 0, WIDGET_WIND_ID,             0, 30, {JUST_TOP     | JUST_RIGHT}},
 
-        { 2, WIDGET_RC_CHANNELS_ID,      0,  0, {JUST_VCENTER | JUST_LEFT}},
-        { 2, WIDGET_RADAR_ID,            0,  0, {JUST_TOP     | JUST_HCENTER}},
+        { 1, 0, WIDGET_HOME_INFO_ID,       80,  0, {JUST_TOP     | JUST_LEFT}},
+        { 1, 0, WIDGET_RADAR_ID,           60,-44, {JUST_BOT     | JUST_LEFT}},
 
-        { 3, WIDGET_FLIGHT_INFO_ID,      0,  0, {JUST_VCENTER | JUST_HCENTER}},
+        { 2, 0, WIDGET_RC_CHANNELS_ID,      0,  0, {JUST_VCENTER | JUST_LEFT}},
+        { 2, 1, WIDGET_RADAR_ID,            0,  0, {JUST_TOP     | JUST_HCENTER}},
 
-        { TABS_END, 0, 0, 0, {0}},
+        { 3, 0, WIDGET_FLIGHT_INFO_ID,      0,  0, {JUST_VCENTER | JUST_HCENTER}},
+
+        { TABS_END, 0, 0, 0, 0, {0}},
     }
 };
 
@@ -268,6 +270,26 @@ void write_config(void)
 
 
 
+void dump_config_text(void)
+{
+    printf("\nAlceOSD config %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
+}
+
+
+
+void load_config_text(void)
+{
+
+}
+
+
+
+
+
+
+
+
+
 enum {
     MENU_MAIN,
     MENU_VIDEO,
@@ -284,7 +306,10 @@ const char menu_main[] = "\n\n"
                          "3 - Configure tabs\n"
                          "4 - Units (global setting): %s\n"
                          "q/w - Decrease/increase home locking timer: %d\n"
-                         "\ns - Save settings to FLASH\n"
+                         "\n"
+                         "s - Save settings to FLASH\n"
+                         "d - Dump setting to console\n"
+                         "l - Load settings from console\n"
                          "x - Exit config\n";
 
 const char menu_video[] = "\n\nAlceOSD :: VIDEO setup\n\n"
@@ -427,6 +452,7 @@ int config_osd(void)
             }
             case MENU_EDIT_WIDGET: {
                 wcfg = (struct widget_config*) options[nr_opt];
+                // struct widget_ops *w_ops = get_widget_ops(wcfg->widget_id);
 
                 printf(menu_edit_widget,
                     wcfg->props.hjust,
@@ -482,6 +508,14 @@ int config_osd(void)
                 case 's':
                     printf("Saving config to FLASH...\n");
                     write_config();
+                    break;
+                case 'd':
+                    printf("Dumping config to console...\n");
+                    dump_config_text();
+                    break;
+                case 'l':
+                    printf("Loading config from console...\n");
+                    load_config_text();
                     break;
                 case 'x':
                     return 0;

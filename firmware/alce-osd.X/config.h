@@ -35,7 +35,7 @@
 #define JUST_RIGHT      0x4
 #define JUST_HCENTER    0x8
 
-#define TABS_END        (0xffff)
+#define TABS_END        (0xff)
 
 enum {
     VJUST_TOP = 0,

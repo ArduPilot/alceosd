@@ -38,7 +38,10 @@ static unsigned char nr_callbacks = 0;
 static unsigned char uav_sysid = 1, osd_sysid = 1;
 
 static struct mavlink_param *all_params[MAX_MAVLINK_PARAMS];
-static unsigned int nr_params = 0, pidx = 0;
+static unsigned int nr_params = 0, pidx = 0, nr_dynamic_params = 0;
+
+
+static struct mavlink_dynamic_param_def *dynamic_params;
 
 
 const struct mavlink_param mavparams_mavlink[] = {
@@ -54,10 +57,10 @@ static void mavlink_parse_msg(mavlink_message_t *msg, mavlink_status_t *status)
     struct mavlink_callback *c;
     unsigned char i;
 
-    console_printf("rcv:sys=%d cmp=%d msg=%d\n", msg->sysid, msg->compid, msg->msgid);
-    if (msg->msgid == 0) {
-        console_printf("heartbeat:type=%d\n", mavlink_msg_heartbeat_get_type(msg));
-    }
+    //console_printf("rcv:sys=%d cmp=%d msg=%d\n", msg->sysid, msg->compid, msg->msgid);
+    //if (msg->msgid == 0) {
+    //    console_printf("heartbeat:type=%d\n", mavlink_msg_heartbeat_get_type(msg));
+    //}
 
 
     for (i = 0; i < nr_callbacks; i++) {
@@ -158,8 +161,12 @@ static float cast2float(struct mavlink_param *p)
     switch (p->type) {
         case MAV_PARAM_TYPE_UINT8:
             return (float) *((unsigned char*) (p->value));
+        case MAV_PARAM_TYPE_INT8:
+            return (float) *((char*) (p->value));
         case MAV_PARAM_TYPE_UINT16:
             return (float) *((unsigned int*) (p->value));
+        case MAV_PARAM_TYPE_INT16:
+            return (float) *((int*) (p->value));
         case MAV_PARAM_TYPE_REAL32:
             return (float) *((float*) (p->value));
         default:
@@ -173,8 +180,14 @@ static void cast2param(struct mavlink_param *p, float v)
         case MAV_PARAM_TYPE_UINT8:
             *((unsigned char*) (p->value)) = (unsigned char) v;
             break;
+        case MAV_PARAM_TYPE_INT8:
+            *((char*) (p->value)) = (char) v;
+            break;
         case MAV_PARAM_TYPE_UINT16:
             *((unsigned int*) (p->value)) = (unsigned int) v;
+            break;
+        case MAV_PARAM_TYPE_INT16:
+            *((int*) (p->value)) = (int) v;
             break;
         case MAV_PARAM_TYPE_REAL32:
             *((float*) (p->value)) = (float) v;
@@ -201,12 +214,25 @@ static void send_param_list_cbk(struct timer *t, void *d)
     unsigned int len;
     unsigned char buf[50];
     struct mavlink_param p;
+    struct mavlink_param_value pv;
 
     if (pidx < nr_params) {
         console_printf("send param s %d\n", pidx);
         mavlink_msg_param_value_pack(uav_sysid, MAV_COMP_ID_ALCEOSD, &msg,
                                         all_params[pidx]->name, cast2float(all_params[pidx]),
-                                        all_params[pidx]->type, nr_params, pidx);
+                                        all_params[pidx]->type, nr_params + nr_dynamic_params, pidx);
+        pidx++;
+        len = mavlink_msg_to_send_buffer(buf, &msg);
+        uart_write2(buf, len);
+    } else if (pidx < nr_params + nr_dynamic_params) {
+        console_printf("send param d %d\n", pidx);
+
+        p.value = (void*) &pv;
+        dynamic_params->get(pidx - nr_params, &p);
+
+        mavlink_msg_param_value_pack(uav_sysid, MAV_COMP_ID_ALCEOSD, &msg,
+                                        p.name, cast2float(&p),
+                                        p.type, nr_params + nr_dynamic_params, pidx);
         pidx++;
         len = mavlink_msg_to_send_buffer(buf, &msg);
         uart_write2(buf, len);
@@ -228,6 +254,7 @@ void mav_param_request_list(mavlink_message_t *msg, mavlink_status_t *status, vo
         return;
     
     pidx = 0;
+    nr_dynamic_params = dynamic_params->count();
     add_timer(TIMER_ALWAYS, 1, send_param_list_cbk, d);
 
     console_printf("plist:sysid=%d compid=%d\n", sys, comp);
@@ -241,6 +268,8 @@ void mav_param_request_read(mavlink_message_t *msg, mavlink_status_t *status, vo
     unsigned int len;
     unsigned char buf[50];
     int idx;
+    struct mavlink_param sp, *p;
+    struct mavlink_param_value pv;
 
     sys = mavlink_msg_param_request_read_get_target_system(msg);
     comp = mavlink_msg_param_request_read_get_target_component(msg);
@@ -255,13 +284,19 @@ void mav_param_request_read(mavlink_message_t *msg, mavlink_status_t *status, vo
         idx = find_param((char*) buf);
     }
 
-    if (idx >= nr_params)
-        return;
+    if (idx < nr_params) {
+        p = all_params[idx];
+    } else {
+        sp.value = (void*) &pv;
+        dynamic_params->get(idx - nr_params, &sp);
+        p = &sp;
+    }
+
 
     console_printf("param_req_read %d\n", idx);
     mavlink_msg_param_value_pack(uav_sysid, MAV_COMP_ID_ALCEOSD, &msg2,
-                                    all_params[idx]->name, cast2float(all_params[pidx]),
-                                    all_params[idx]->type, nr_params, idx);
+                                    p->name, cast2float(p),
+                                    p->type, nr_params, idx);
 
     len = mavlink_msg_to_send_buffer(buf, &msg2);
     uart_write2(buf, len);
@@ -273,7 +308,8 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
     unsigned char sys, comp;
     mavlink_message_t msg2;
     unsigned int len;
-    struct mavlink_param *p;
+    struct mavlink_param *p, sp;
+    struct mavlink_param_value pv;
     char buf[50];
     unsigned char idx;
 
@@ -288,9 +324,18 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
     console_printf("set_param: %s\n", buf);
 
     idx = find_param(buf);
-    p = all_params[idx];
 
-    cast2param(p, mavlink_msg_param_set_get_param_value(msg));
+    if (idx < nr_params) {
+        p = all_params[idx];
+        cast2param(p, mavlink_msg_param_set_get_param_value(msg));
+    } else {
+        strcpy(sp.name, buf);
+        sp.value = (void*) &pv;
+        p = &sp;
+        cast2param(p, mavlink_msg_param_set_get_param_value(msg));
+        dynamic_params->set(p);
+    }
+
 
     if (p->cbk != NULL)
         p->cbk();
@@ -306,6 +351,11 @@ void mavlink_add_params(const struct mavlink_param *p)
 {
     while (p->name[0] != '\0')
         all_params[nr_params++] = (struct mavlink_param*) p++;
+}
+
+void mavlink_set_dynamic_params(struct mavlink_dynamic_param_def *p)
+{
+    dynamic_params = p;
 }
 
 void mavlink_init(void)

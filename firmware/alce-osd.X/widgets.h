@@ -57,22 +57,25 @@ typedef union {
 
 
 struct widget_config {
-    unsigned int tab;
-    unsigned int widget_id;
+    unsigned char tab;
+    unsigned char uid;
+    unsigned char widget_id;
     int x, y;
     widget_props props;
     unsigned int w, h;
+    unsigned int params[4];
 };
 
 struct widget;
 
 struct widget_ops {
     unsigned int id;
+    char name[20];
+
     void (*init)(void);
     int (*open)(struct widget *w);
     void (*render)(struct widget *w);
     void (*close)(struct widget *w);
-    char name[];
 };
 
 struct widget {
