@@ -55,7 +55,7 @@ struct mavlink_param_value {
 };
 
 struct mavlink_dynamic_param_def {
-    void (*set)(struct mavlink_param *p);
+    int (*set)(struct mavlink_param *p);
     void (*get)(int idx, struct mavlink_param *p);
     unsigned int (*count)(void);
 };

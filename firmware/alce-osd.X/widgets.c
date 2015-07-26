@@ -251,15 +251,11 @@ static void get_widget_param(unsigned int pidx,
 
 }
 
-static void set_widget_param(struct widget_config *wcfg, struct mavlink_param *p)
+static int set_widget_param(struct widget_config *wcfg, struct mavlink_param *p, char *pname)
 {
-    char pname[10];
     unsigned char i;
     struct mavlink_param_value *pv = p->value;
     
-    strcpy(pname, &p->name[7]);
-    //console_printf("pname=%s\n", pname);
-
     for(i = 0; i < WID_PARAM_END; i++) {
         if (strcmp(pname, widget_param_lut[i]) == 0)
             break;
@@ -267,7 +263,7 @@ static void set_widget_param(struct widget_config *wcfg, struct mavlink_param *p
 
     if (i == WID_PARAM_END) {
         console_printf("lut failed\n");
-        return;
+        return -1;
     }
 
     console_printf("pidx=%d\n", i);
@@ -305,7 +301,7 @@ static void set_widget_param(struct widget_config *wcfg, struct mavlink_param *p
             break;
     }
 
-
+    return (int) i;
 }
 
 static unsigned int count_widget_params(void)
@@ -323,44 +319,57 @@ static unsigned int count_widget_params(void)
 
 static void get_widget_params(int idx, struct mavlink_param *p)
 {
-    struct widget_config *wcfg;
+    struct widget_config *wcfg = config.widgets;
     const struct widget_ops *wops;
     unsigned int table_idx = idx / WID_PARAM_END;
     unsigned int param_idx = idx % WID_PARAM_END;
+    unsigned int table_total = 0;
 
-    unsigned int table_max = count_widget_params() / WID_PARAM_END;
+    while ((wcfg++)->tab != TABS_END) {
+        table_total++;
+    }
 
-    if (table_idx >= table_max)
+    if (table_idx >= table_total)
         return;
 
     /* get widget at location */
     wcfg = &config.widgets[table_idx];
     wops = get_widget_ops(wcfg->widget_id);
 
-    sprintf(p->name, "W%1d", wcfg->uid);
-    strncat(p->name, wops->name, 4);
-    strcat(p->name, "_");
-
+    sprintf(p->name, "%s%1d_", wops->mavname, wcfg->uid);
     get_widget_param(param_idx, wcfg, p);
 }
 
-static void set_widget_params(struct mavlink_param *p)
+
+static int set_widget_params(struct mavlink_param *p)
 {
     struct widget_config *wcfg = config.widgets;
     const struct widget_ops *wops;
 
+    unsigned int idx = 0;
+    int ret = -1;
     unsigned char uid;
-    char buf[4];
+    char *pname;
+    char buf[17];
 
-    uid = p->name[1] - '0';
-    memcpy(buf, &p->name[2], 4);
+    strcpy(buf, p->name);
+    pname = strchr(buf, '_');
+    *pname++ = '\0';
+    uid = *(pname-2) - '0';
+    *(pname-2) = '\0';
     while (wcfg->tab != TABS_END) {
         wops = get_widget_ops(wcfg->widget_id);
-        if ((uid == wcfg->uid) && (memcmp(buf, wops->name, 4) == 0)) {
-            set_widget_param(wcfg, p);
+        if ((uid == wcfg->uid) && (strcmp(buf, wops->mavname) == 0)) {
+            ret = set_widget_param(wcfg, p, pname);
+            break;
         }
+        idx++;
         wcfg++;
     }
+    if (ret == -1)
+        return ret;
+    else
+        return idx * ret;
 }
 
 
