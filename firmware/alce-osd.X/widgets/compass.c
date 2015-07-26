@@ -96,6 +96,7 @@ static void render(struct widget *w)
 
 const struct widget_ops compass_widget_ops = {
     .name = "Compass",
+    .mavname = "COMPASS",
     .id = WIDGET_COMPASS_ID,
     .init = NULL,
     .open = open,

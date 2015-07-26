@@ -104,6 +104,7 @@ static void render(struct widget *w)
 
 const struct widget_ops home_info_widget_ops = {
     .name = "Home info",
+    .mavname = "HOMEINF",
     .id = WIDGET_HOME_INFO_ID,
     .init = NULL,
     .open = open,

@@ -139,6 +139,7 @@ static void init(void)
 
 const struct widget_ops template_widget_ops = {
     .name = "Template widget",
+    .mavname = "TPLT",
     .id = WIDGET_TEMPLATE_ID,
     .init = init,
     .open = open,

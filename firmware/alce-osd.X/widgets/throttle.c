@@ -71,6 +71,7 @@ static void render(struct widget *w)
 
 const struct widget_ops throttle_widget_ops = {
     .name = "Throttle bar",
+    .mavname = "THROTTL",
     .id = WIDGET_THROTTLE_ID,
     .init = NULL,
     .open = open,

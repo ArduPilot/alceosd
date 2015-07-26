@@ -226,6 +226,7 @@ static void render(struct widget *w)
 
 const struct widget_ops horizon_widget_ops = {
     .name = "Articial Horizon",
+    .mavname = "HORIZON",
     .id = WIDGET_HORIZON_ID,
     .init = NULL,
     .open = open,

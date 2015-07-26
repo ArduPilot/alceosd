@@ -101,6 +101,7 @@ static void render(struct widget *w)
 
 const struct widget_ops gps_info_widget_ops = {
     .name = "GPS stats",
+    .mavname = "GPSINFO",
     .id = WIDGET_GPS_INFO_ID,
     .init = NULL,
     .open = open,

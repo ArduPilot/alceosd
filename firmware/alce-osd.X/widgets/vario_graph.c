@@ -97,6 +97,7 @@ static void render(struct widget *w)
 
 const struct widget_ops vario_graph_widget_ops = {
     .name = "Variometer chart",
+    .mavname = "VARIO",
     .id = WIDGET_VARIOMETER_ID,
     .init = NULL,
     .open = open,

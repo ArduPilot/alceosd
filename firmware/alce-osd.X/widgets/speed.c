@@ -104,6 +104,7 @@ static void render(struct widget *w)
 
 const struct widget_ops speed_widget_ops = {
     .name = "Air speed",
+    .mavname = "SPEED",
     .id = WIDGET_SPEED_ID,
     .init = NULL,
     .open = open,

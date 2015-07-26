@@ -80,6 +80,7 @@ static void render(struct widget *w)
 
 const struct widget_ops rssi_widget_ops = {
     .name = "RSSI",
+    .mavname = "RSSI",
     .id = WIDGET_RSSI_ID,
     .init = NULL,
     .open = open,

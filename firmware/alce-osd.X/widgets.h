@@ -71,6 +71,7 @@ struct widget;
 struct widget_ops {
     unsigned int id;
     char name[20];
+    char mavname[8];
 
     void (*init)(void);
     int (*open)(struct widget *w);

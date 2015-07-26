@@ -118,6 +118,7 @@ static void render(struct widget *w)
 
 const struct widget_ops rc_channels_widget_ops = {
     .name = "RC Channels",
+    .mavname = "RCCHAN",
     .id = WIDGET_RC_CHANNELS_ID,
     .init = NULL,
     .open = open,

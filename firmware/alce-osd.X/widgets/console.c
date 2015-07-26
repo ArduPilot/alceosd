@@ -145,6 +145,7 @@ static void render(struct widget *w)
 
 const struct widget_ops console_widget_ops = {
     .name = "Console",
+    .mavname = "CONSOLE",
     .id = WIDGET_CONSOLE_ID,
     .init = NULL,
     .open = open,

@@ -154,6 +154,7 @@ static void render(struct widget *w)
 
 const struct widget_ops bat_info_widget_ops = {
     .name = "Battery info",
+    .mavname = "BATTERY",
     .id = WIDGET_BATTERY_INFO_ID,
     .init = NULL,
     .open = open,

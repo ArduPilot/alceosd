@@ -64,6 +64,7 @@ static void render(struct widget *w)
 
 const struct widget_ops flight_info_widget_ops = {
     .name = "Flight information",
+    .mavname = "FLTINFO",
     .id = WIDGET_FLIGHT_INFO_ID,
     .init = NULL,
     .open = open,

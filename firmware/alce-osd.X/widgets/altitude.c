@@ -132,6 +132,7 @@ static void render(struct widget *w)
 
 const struct widget_ops altitude_widget_ops = {
     .name = "Altitude",
+    .mavname = "ALTITUD",
     .id = WIDGET_ALTITUDE_ID,
     .init = NULL,
     .open = open,

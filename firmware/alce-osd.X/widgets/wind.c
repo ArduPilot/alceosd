@@ -120,6 +120,7 @@ static void render(struct widget *w)
 
 const struct widget_ops wind_widget_ops = {
     .name = "Wind information",
+    .mavname = "WINDINF",
     .id = WIDGET_WIND_ID,
     .init = NULL,
     .open = open,

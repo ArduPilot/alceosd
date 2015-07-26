@@ -194,6 +194,7 @@ static void render(struct widget *w)
 
 const struct widget_ops radar_widget_ops = {
     .name = "Radar",
+    .mavname = "RADAR",
     .id = WIDGET_RADAR_ID,
     .init = NULL,
     .open = open,

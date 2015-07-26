@@ -157,6 +157,7 @@ static void render(struct widget *w)
 
 const struct widget_ops flightmode_widget_ops = {
     .name = "Flight mode",
+    .mavname = "FLTMODE",
     .id = WIDGET_FLIGHT_MODE_ID,
     .init = NULL,
     .open = open,
