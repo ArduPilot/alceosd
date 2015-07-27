@@ -21,7 +21,7 @@
 #define MAX_TIMERS  (50)
 
 volatile unsigned long millis = 0;
-volatile unsigned int ms100 = 0;
+volatile unsigned int ms10 = 0;
 
 
 struct timer {
@@ -36,17 +36,20 @@ struct timer {
 static struct timer timers[MAX_TIMERS];
 static unsigned char nr_timers = 0;
 
-struct timer* add_timer(unsigned char type, unsigned long time, void *cbk, void *data)
+struct timer* add_timer(unsigned char type, unsigned int time, void *cbk, void *data)
 {
     struct timer *t = NULL;
     if (nr_timers < MAX_TIMERS) {
         t = &timers[nr_timers++];
         t->cbk = cbk;
         t->data = data;
-        t->time = time;
+        if (type & TIMER_10MS)
+            t->time = time;
+        else
+            t->time = time * 10;
         t->type = type;
         t->active = 1;
-        t->last_time = ms100;
+        t->last_time = ms10;
     }
     return t;
 }
@@ -85,7 +88,7 @@ void clock_process(void)
 
     for (i = 0; i < nr_timers; i++) {
         t = &timers[i];
-        if ((t->active) && ((ms100 - t->last_time) > t->time )) {
+        if ((t->active) && ((ms10 - t->last_time) > t->time)) {
             t->last_time += t->time;
             t->cbk(t, t->data);
             if (t->type == TIMER_ONCE)
@@ -118,9 +121,9 @@ void __attribute__((__interrupt__, no_auto_psv )) _T1Interrupt()
     static unsigned int j = 0;
     millis++;
 
-    if (++j == 100) {
+    if (++j == 10) {
         j = 0;
-        ms100++;
+        ms10++;
     }
     IFS0bits.T1IF = 0;
 }

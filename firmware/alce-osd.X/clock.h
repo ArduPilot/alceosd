@@ -19,7 +19,7 @@
 #ifndef CLOCK_H
 #define	CLOCK_H
 
-#define TIMER_SEC (10)
+#define TIMER_10MS  0x10
 
 enum {
     TIMER_ONCE = 0,
@@ -30,7 +30,7 @@ enum {
 
 void clock_init(void);
 void clock_process(void);
-struct timer* add_timer(unsigned char type, unsigned long time, void *cbk, void *data);
+struct timer* add_timer(unsigned char type, unsigned int time, void *cbk, void *data);
 void remove_timer(struct timer *t);
 void remove_timers(unsigned char type);
 unsigned long get_millis(void);
