@@ -88,8 +88,8 @@ static void mavlink_send_msg(mavlink_message_t *msg)
 
 void mavlink_process(void)
 {
-    static mavlink_message_t msg;
-    static mavlink_status_t status;
+    mavlink_message_t msg __attribute__ ((aligned(2)));
+    mavlink_status_t status;
     char *buf;
     int count, i, len;
 
@@ -109,16 +109,14 @@ void mavlink_process(void)
     uart_discard2(count);
 
 
-    static mavlink_message_t msg2;
-    static mavlink_status_t status2;
     i = count = uart_read1(&buf);
     while (i--) {
-        if (mavlink_parse_char(MAVLINK_COMM_1, *(buf++), &msg2, &status2)) {
+        if (mavlink_parse_char(MAVLINK_COMM_1, *(buf++), &msg, &status)) {
             /* forward to uart2 */
-            len = mavlink_msg_to_send_buffer(msg_buf, &msg2);
+            len = mavlink_msg_to_send_buffer(msg_buf, &msg);
             uart_write2(msg_buf, len);
 
-            mavlink_parse_msg(&msg2, &status2);
+            mavlink_parse_msg(&msg, &status);
         }
     }
     uart_discard1(count);
@@ -245,19 +243,20 @@ static unsigned int find_param(char *id)
 static void send_param_list_cbk(struct timer *t, void *d)
 {
     mavlink_message_t msg;
-    struct mavlink_param sp, *p;
+    struct mavlink_param sp, *p = &sp;
     struct mavlink_param_value pv;
 
     if (pidx == total_params) {
         console_printf("send param end\n", pidx);
         remove_timer(t);
         return;
-    } else if (pidx < nr_params) {
+    }
+
+    if (pidx < nr_params) {
         p = all_params[pidx];
     } else if (pidx < total_params) {
         sp.value = (void*) &pv;
         dynamic_params->get(pidx - nr_params, &sp);
-        p = &sp;
     }
     mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_ALCEOSD, &msg,
                                     p->name, cast2float(p), MAVLINK_TYPE_FLOAT, //p->type,
@@ -274,13 +273,12 @@ void mav_param_request_list(mavlink_message_t *msg, mavlink_status_t *status, vo
     comp = mavlink_msg_param_request_list_get_target_component(msg);
     
     //if ((comp != MAV_COMP_ID_ALCEOSD) || (sys != osd_sysid))
-    //    return;
     if (sys != osd_sysid)
         return;
     
     pidx = 0;
     total_params = dynamic_params->count() + nr_params;
-    add_timer(TIMER_ALWAYS, 1, send_param_list_cbk, d);
+    add_timer(TIMER_ALWAYS | TIMER_10MS, 1, send_param_list_cbk, d);
 
     console_printf("plist:sysid=%d compid=%d\n", sys, comp);
 }
