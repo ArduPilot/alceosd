@@ -51,6 +51,31 @@ const struct mavlink_param mavparams_mavlink[] = {
 };
 
 
+/* aditional helper functions */
+unsigned int mavlink_msg_rc_channels_raw_get_chan(mavlink_message_t *msg, unsigned char ch)
+{
+    switch (ch) {
+        default:
+        case 0:
+            return mavlink_msg_rc_channels_raw_get_chan1_raw(msg);
+        case 1:
+            return mavlink_msg_rc_channels_raw_get_chan2_raw(msg);
+        case 2:
+            return mavlink_msg_rc_channels_raw_get_chan3_raw(msg);
+        case 3:
+            return mavlink_msg_rc_channels_raw_get_chan4_raw(msg);
+        case 4:
+            return mavlink_msg_rc_channels_raw_get_chan5_raw(msg);
+        case 5:
+            return mavlink_msg_rc_channels_raw_get_chan6_raw(msg);
+        case 6:
+            return mavlink_msg_rc_channels_raw_get_chan7_raw(msg);
+        case 7:
+            return mavlink_msg_rc_channels_raw_get_chan8_raw(msg);
+    }
+}
+/* *************** */
+
 
 static void mavlink_parse_msg(mavlink_message_t *msg, mavlink_status_t *status)
 {

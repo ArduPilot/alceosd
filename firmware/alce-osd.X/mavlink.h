@@ -81,6 +81,11 @@ void del_mavlink_callbacks(unsigned char ctype);
 void mavlink_add_params(const struct mavlink_param *p);
 void mavlink_set_dynamic_params(struct mavlink_dynamic_param_def *p);
 
+
+/* aditional helper functions */
+unsigned int mavlink_msg_rc_channels_raw_get_chan(mavlink_message_t *msg, unsigned char ch);
+
+
 enum {
     CALLBACK_WIDGET = 0,
     CALLBACK_PERSISTENT,

@@ -195,33 +195,7 @@ static void tab_switch_channel_cbk(mavlink_message_t *msg, mavlink_status_t *sta
     unsigned int ch_raw;
     long percent;
 
-    switch (cfg->ch) {
-        case 0:
-            ch_raw = mavlink_msg_rc_channels_raw_get_chan1_raw(msg);
-            break;
-        case 1:
-            ch_raw = mavlink_msg_rc_channels_raw_get_chan2_raw(msg);
-            break;
-        case 2:
-            ch_raw = mavlink_msg_rc_channels_raw_get_chan3_raw(msg);
-            break;
-        case 3:
-            ch_raw = mavlink_msg_rc_channels_raw_get_chan4_raw(msg);
-            break;
-        case 4:
-            ch_raw = mavlink_msg_rc_channels_raw_get_chan5_raw(msg);
-            break;
-        case 5:
-            ch_raw = mavlink_msg_rc_channels_raw_get_chan6_raw(msg);
-            break;
-        case 6:
-            ch_raw = mavlink_msg_rc_channels_raw_get_chan7_raw(msg);
-            break;
-        case 7:
-        default:
-            ch_raw = mavlink_msg_rc_channels_raw_get_chan8_raw(msg);
-            break;
-    }
+    ch_raw = mavlink_msg_rc_channels_raw_get_chan(msg, cfg->ch);
     DTABS("cbk: ch_raw = %u\n", ch_raw);
 
     percent = (( ((long) ch_raw - cfg->tab_change_ch_min) * 100) /
