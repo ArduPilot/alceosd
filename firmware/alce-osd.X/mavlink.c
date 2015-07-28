@@ -383,9 +383,10 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
     } else {
         strcpy(sp.name, buf);
         sp.value = (void*) &pv;
-        sp.type = mavlink_msg_param_set_get_param_type(msg);
+        //sp.type = MAVLINK_TYPE_FLOAT; //mavlink_msg_param_set_get_param_type(msg);
         p = &sp;
-        cast2param(p, mavlink_msg_param_set_get_param_value(msg));
+        //cast2param(p, mavlink_msg_param_set_get_param_value(msg));
+        pv.param_float = mavlink_msg_param_set_get_param_value(msg);
         idx = dynamic_params->set(p) + nr_params;
     }
 
