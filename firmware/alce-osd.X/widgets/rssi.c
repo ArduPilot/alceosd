@@ -90,7 +90,7 @@ static void render(struct widget *w)
 {
     struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
-    unsigned char i, x;
+    unsigned int i, x;
     char buf[5];
 
     unsigned int value;

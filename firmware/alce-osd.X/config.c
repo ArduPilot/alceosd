@@ -66,7 +66,7 @@ struct alceosd_config config = {
         { 1, 0, WIDGET_FLIGHT_MODE_ID,     0, -32, {JUST_BOT     | JUST_LEFT}},
         { 1, 0, WIDGET_GPS_INFO_ID,        0,   0, {JUST_BOT     | JUST_LEFT}},
         { 1, 0, WIDGET_HORIZON_ID,        16,   0, {JUST_VCENTER | JUST_HCENTER}},
-        { 1, 0, WIDGET_RSSI_ID,            0,   0, {JUST_TOP     | JUST_RIGHT}},
+        { 1, 0, WIDGET_RSSI_ID,            0,   0, {JUST_TOP     | JUST_RIGHT}, {0, 255}},
         { 1, 0, WIDGET_SPEED_ID,           0,   0, {JUST_VCENTER | JUST_LEFT}},
         { 1, 0, WIDGET_THROTTLE_ID,       70,   0, {JUST_TOP     | JUST_LEFT}},
         { 1, 0, WIDGET_VARIOMETER_ID,      0,  -5, {JUST_BOT     | JUST_RIGHT}},
@@ -268,11 +268,24 @@ void write_config(void)
     RESTORE_CPU_IPL(ipl);
 }
 
+extern const struct mavlink_param mavparams_video;
 
+static void dump_mavlink_param_text(const struct mavlink_param *p)
+{
+    while (p->name[0] != '\0') {
+        printf("%s = %d\n", p->name, cast2float(p));
+        p++;
+    }
+}
 
 void dump_config_text(void)
 {
     printf("\nAlceOSD config %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
+
+    /* video config */
+    dump_mavlink_param_text(&mavparams_video);
+
+
 }
 
 
