@@ -255,6 +255,8 @@ static int set_widget_param(struct widget_config *wcfg, struct mavlink_param *p,
 {
     unsigned char i;
     struct mavlink_param_value *pv = p->value;
+    /* mavlink param protocol is broken - messages always have the param as float */
+    float v = pv->param_float;
     
     for(i = 0; i < WID_PARAM_END; i++) {
         if (strcmp(pname, widget_param_lut[i]) == 0)
@@ -270,34 +272,34 @@ static int set_widget_param(struct widget_config *wcfg, struct mavlink_param *p,
 
     switch (i) {
         case WID_PARAM_TAB:
-            wcfg->tab = pv->param_uint8;
+            wcfg->tab = (unsigned char) v; //pv->param_uint8;
             break;
         case WID_PARAM_X:
-            wcfg->x = pv->param_int16;
+            wcfg->x = (unsigned int) v; //pv->param_int16;
             break;
         case WID_PARAM_Y:
-            wcfg->y = pv->param_int16;
+            wcfg->y = (unsigned int) v; //pv->param_int16;
             break;
         case WID_PARAM_VJUST:
-            wcfg->props.vjust = pv->param_uint8;
+            wcfg->props.vjust = (unsigned char) v; //pv->param_uint8;
             break;
         case WID_PARAM_HJUST:
-            wcfg->props.hjust = pv->param_uint8;
+            wcfg->props.hjust = (unsigned char) v; //pv->param_uint8;
             break;
         case WID_PARAM_MODE:
-            wcfg->props.mode = pv->param_uint8;
+            wcfg->props.mode = (unsigned char) v; //pv->param_uint8;
             break;
         case WID_PARAM_UNITS:
-            wcfg->props.units = pv->param_uint8;
+            wcfg->props.units = (unsigned char) v; //pv->param_uint8;
             break;
         case WID_PARAM_SOURCE:
-            wcfg->props.source = pv->param_uint8;
+            wcfg->props.source = (unsigned char) v; //pv->param_uint8;
             break;
         case WID_PARAM_PARAM1:
         case WID_PARAM_PARAM2:
         case WID_PARAM_PARAM3:
         case WID_PARAM_PARAM4:
-            wcfg->params[i - WID_PARAM_PARAM1] = pv->param_uint16;
+            wcfg->params[i - WID_PARAM_PARAM1] = (unsigned int) v; //pv->param_uint16;
             break;
     }
 
