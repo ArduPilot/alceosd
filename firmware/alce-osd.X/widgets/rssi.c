@@ -21,10 +21,23 @@
 #define X_SIZE  64
 #define Y_SIZE  16
 
-#define RSSI_MAX 255
+
+#define RSSI_PARAM_MIN      (0)
+#define RSSI_PARAM_MAX      (1)
+#define RSSI_PARAM_RCCH     (2)
+
+
+#define RSSI_SOURCE_RSSI    (0)
+#define RSSI_SOURCE_RCCH    (1)
+#define RSSI_SOURCE_ANALOG  (2)
+
+
+#define RSSI_MODE_PERCENT   (0)
+#define RSSI_MODE_RAW       (1)
+
 
 struct widget_priv {
-    unsigned char rssi, last_rssi;
+    unsigned int rssi, last_rssi;
 };
 
 static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
@@ -32,11 +45,26 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
 
-    priv->rssi = mavlink_msg_rc_channels_raw_get_rssi(msg);
+    switch (w->cfg->props.source) {
+        case RSSI_SOURCE_RSSI:
+        default:
+            priv->rssi = (unsigned int) mavlink_msg_rc_channels_raw_get_rssi(msg);
+            break;
+        case RSSI_SOURCE_RCCH:
+            priv->rssi = mavlink_msg_rc_channels_raw_get_chan(msg, w->cfg->params[RSSI_PARAM_RCCH]);
+            break;
+        case RSSI_SOURCE_ANALOG:
+            /* not implemented yet */
+            priv->rssi = 0;
+            break;
+    }
+
     if (priv->rssi ==  priv->last_rssi)
         return;
-
     priv->last_rssi = priv->rssi;
+
+
+
     schedule_widget(w);
 }
 
@@ -51,8 +79,8 @@ static int open(struct widget *w)
 
     priv->last_rssi = 0xff;
 
-    w->cfg->w = X_SIZE;
-    w->cfg->h = Y_SIZE;
+    w->ca.width = X_SIZE;
+    w->ca.height = Y_SIZE;
     add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET, w);
     return 0;
 }
@@ -65,15 +93,20 @@ static void render(struct widget *w)
     unsigned char i, x;
     char buf[5];
 
+    unsigned int value;
+
+    value = (( ((long) priv->rssi - w->cfg->params[RSSI_PARAM_MIN]) * 100) /
+               (w->cfg->params[RSSI_PARAM_MAX] - w->cfg->params[RSSI_PARAM_MIN]));
+  
     x = 0;
-    for (i = 0; i < (5 * priv->rssi)/(RSSI_MAX-RSSI_MAX/5); i++) {
+    for (i = 0; i < (5 * value)/(100-100/5); i++) {
         draw_vline(x, Y_SIZE-1 - i*3, Y_SIZE-1, 3, ca);
         draw_vline(x+1, Y_SIZE-1 - i*3, Y_SIZE-1, 1, ca);
         draw_vline(x+2, Y_SIZE-1 - i*3, Y_SIZE-1, 1, ca);
         x += 4;
     }
 
-    sprintf(buf, "%3d", (priv->rssi * 100) / RSSI_MAX);
+    sprintf(buf, "%3d", value);
     draw_str(buf, 25, 4, ca, 2);
 }
 
