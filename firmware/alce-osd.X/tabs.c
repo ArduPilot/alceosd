@@ -95,9 +95,7 @@ void load_tab(unsigned char tab)
                 w->status = 0;
                 if (w_ops->open(w))
                     break;
-                alloc_canvas(&w->ca, w->cfg->x, w->cfg->y,
-                              w->cfg->props.hjust, w->cfg->props.vjust,
-                              w->cfg->w, w->cfg->h);
+                alloc_canvas(&w->ca, w->cfg);
                 *(aw++) = w;
                 schedule_widget(w);
             }

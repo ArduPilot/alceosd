@@ -49,8 +49,8 @@ static int open(struct widget *w)
     w->priv = priv;
 
     priv->last_throttle = 0xff;
-    w->cfg->w = X_SIZE;
-    w->cfg->h = Y_SIZE;
+    w->ca.width = X_SIZE;
+    w->ca.height = Y_SIZE;
     add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET, w);
     return 0;
 }

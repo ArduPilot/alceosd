@@ -114,8 +114,8 @@ static int open(struct widget *w)
     if (priv == NULL)
         return -1;
     w->priv = priv;
-    w->cfg->w = X_SIZE;
-    w->cfg->h = Y_SIZE;
+    w->ca.width = X_SIZE;
+    w->ca.height = Y_SIZE;
 
     memset(priv->buf, ' ', ROWS*COLS);
 

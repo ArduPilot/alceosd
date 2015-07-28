@@ -74,8 +74,8 @@ static int open(struct widget *w)
     priv->sin_roll = sin(0);
     
     add_mavlink_callback(MAVLINK_MSG_ID_ATTITUDE, mav_callback, CALLBACK_WIDGET, w);
-    w->cfg->w = X_SIZE;
-    w->cfg->h = Y_SIZE;
+    w->ca.width = X_SIZE;
+    w->ca.height = Y_SIZE;
     return 0;
 }
 

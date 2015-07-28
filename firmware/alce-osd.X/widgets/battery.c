@@ -18,9 +18,6 @@
 
 #include "alce-osd.h"
 
-#define X_SIZE  64
-#define Y_SIZE  45
-
 #define BAT_BAR_X   3
 #define BAT_BAR_Y   0
 #define BAT_BAR_W   58
@@ -67,28 +64,26 @@ static int open(struct widget *w)
         return -1;
     w->priv = priv;
 
+    w->ca.width = 64;
 
     switch (w->cfg->props.mode) {
         default:
         case 0:
             add_mavlink_callback(MAVLINK_MSG_ID_SYS_STATUS, mav_callback, CALLBACK_WIDGET, w);
-            w->cfg->w = X_SIZE;
-            w->cfg->h = Y_SIZE;
+            w->ca.height = 45;
             break;
         case 1:
             /* adc ch 0 */
             adc_start(1);
             adc_link_ch(0, &priv->adc_raw);
-            w->cfg->w = X_SIZE;
-            w->cfg->h = 15;
+            w->ca.height = 15;
             add_timer(TIMER_WIDGET, 2, timer_callback, w);
             break;
         case 2:
             /* adc ch 1 */
             adc_start(1);
             adc_link_ch(1, &priv->adc_raw);
-            w->cfg->w = X_SIZE;
-            w->cfg->h = 15;
+            w->ca.height = 15;
             add_timer(TIMER_WIDGET, 2, timer_callback, w);
             break;
         case 3:
@@ -96,8 +91,7 @@ static int open(struct widget *w)
             adc_start(1);
             adc_link_ch(0, &priv->adc_raw);
             adc_link_ch(1, &priv->adc_raw2);
-            w->cfg->w = X_SIZE;
-            w->cfg->h = 30;
+            w->ca.height = 30;
             add_timer(TIMER_WIDGET, 2, timer_callback, w);
             break;
     }

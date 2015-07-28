@@ -59,8 +59,8 @@ static int open(struct widget *w)
     priv->speed = 0;
     priv->speed_z = 0;
     
-    w->cfg->w = X_SIZE;
-    w->cfg->h = Y_SIZE;
+    w->ca.width = X_SIZE;
+    w->ca.height = Y_SIZE;
 
     add_mavlink_callback(MAVLINK_MSG_ID_WIND, mav_callback_wind, CALLBACK_WIDGET, w);
     add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback_vfr_hud, CALLBACK_WIDGET, w);

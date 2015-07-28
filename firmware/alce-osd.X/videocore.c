@@ -389,55 +389,50 @@ void video_get_size(unsigned int *xsize, unsigned int *ysize)
 }
 
 
-int alloc_canvas(struct canvas *c,
-        int x, int y,
-        unsigned char hjust, unsigned char vjust,
-        unsigned int w, unsigned int h)
+int alloc_canvas(struct canvas *c, void *widget_cfg)
 {
     unsigned int osdxsize, osdysize, i;
+    struct widget_config *wcfg = widget_cfg;
     video_get_size(&osdxsize, &osdysize);
 
-    c->rwidth = w >> 2;
-    c->size = c->rwidth * h;
-
+    c->width = (c->width & 0xfffc);
+    c->rwidth = c->width >> 2;
+    c->size = c->rwidth * c->height;
 
     for (i = 0; i < 2; i++) {
         if ((scratchpad[i].alloc_size + c->size) < SCRATCHPAD_SIZE)
             break;
     }
     if (i == 2) {
-        //U1TXREG = 'm';
         c->lock = 1;
         return -1;
     }
 
-    switch (vjust) {
+    switch (wcfg->props.vjust) {
         case VJUST_TOP:
         default:
-            c->y = y;
+            c->y = wcfg->y;
             break;
         case VJUST_BOT:
-            c->y = osdysize - h + y;
+            c->y = osdysize - c->height + wcfg->y;
             break;
         case VJUST_CENTER:
-            c->y = (osdysize - h)/2 + y;
+            c->y = (osdysize - c->height)/2 + wcfg->y;
             break;
     }
 
-    switch (hjust) {
+    switch (wcfg->props.hjust) {
         case HJUST_LEFT:
         default:
-            c->x = x;
+            c->x = wcfg->x;
             break;
         case HJUST_RIGHT:
-            c->x = osdxsize - w + x;
+            c->x = osdxsize - c->width + wcfg->x;
             break;
         case HJUST_CENTER:
-            c->x = (osdxsize - w)/2 + x;
+            c->x = (osdxsize - c->width)/2 + wcfg->x;
             break;
     }
-
-    c->width = (w & 0xfffc); c->height = h;
 
     c->buf = &scratchpad[i].mem[scratchpad[i].alloc_size];
     scratchpad[i].alloc_size += c->size;

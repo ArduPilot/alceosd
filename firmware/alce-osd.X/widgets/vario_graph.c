@@ -65,8 +65,8 @@ static int open(struct widget *w)
         priv->hist[i] = Y_SIZE/2 - 1;
     priv->y = Y_SIZE/2 - 1;
 
-    w->cfg->w = X_SIZE;
-    w->cfg->h = Y_SIZE;
+    w->ca.width = X_SIZE;
+    w->ca.height = Y_SIZE;
 
     add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET, w);
     return 0;

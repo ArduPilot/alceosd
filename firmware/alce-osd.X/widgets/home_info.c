@@ -32,8 +32,8 @@ static int open(struct widget *w)
 {
     w->priv = (struct home_data*) get_home_data();
 
-    w->cfg->w = 92;
-    w->cfg->h = 12*3;
+    w->ca.width = 92;
+    w->ca.height = 12*3;
 
     /* refresh rate of 0.2 sec */
     add_timer(TIMER_WIDGET, 2, timer_callback, w);

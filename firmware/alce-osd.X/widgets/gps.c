@@ -55,8 +55,8 @@ static int open(struct widget *w)
 
     priv->font_id = m;
     f = get_font(m);
-    w->cfg->h = (f->height * 2) + 1;
-    w->cfg->w = (f->width + f->spacing) * 19;
+    w->ca.height = (f->height * 2) + 1;
+    w->ca.width = (f->width + f->spacing) * 19;
     add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET, w);
     return 0;
 }

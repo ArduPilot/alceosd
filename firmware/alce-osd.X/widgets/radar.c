@@ -67,11 +67,11 @@ static int open(struct widget *w)
     priv->stats = get_flight_stats();
 
     if (w->cfg->props.mode & 1) {
-        w->cfg->w = 84*2;
-        w->cfg->h = 84*2;
+        w->ca.width = 84*2;
+        w->ca.height = 84*2;
     } else {
-        w->cfg->w = 84;
-        w->cfg->h = 84;
+        w->ca.width = 84;
+        w->ca.height = 84;
     }
 
     add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET, w);

@@ -62,7 +62,6 @@ struct widget_config {
     unsigned char widget_id;
     int x, y;
     widget_props props;
-    unsigned int w, h;
     unsigned int params[4];
 };
 

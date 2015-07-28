@@ -61,20 +61,20 @@ static int open(struct widget *w)
         default:
             /* raw numbers and bars */
             priv->bar_size = 25;
-            w->cfg->w = 84;
+            w->ca.width = 84;
             w->cfg->props.mode = 0;
             break;
         case 1:
             /* only numbers */
-            w->cfg->w = 58;
+            w->ca.width = 58;
             break;
         case 2:
             /* only bars */
             priv->bar_size = 50;
-            w->cfg->w = 80;
+            w->ca.width = 80;
             break;
     }
-    w->cfg->h = 64;
+    w->ca.height = 64;
     add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET, w);
     return 0;
 }

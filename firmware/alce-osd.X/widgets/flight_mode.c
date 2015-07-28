@@ -55,8 +55,8 @@ static int open(struct widget *w)
     priv->font_id = m;
 
     f = get_font(m);
-    w->cfg->h = f->height + 1;
-    w->cfg->w = 120;
+    w->ca.height = f->height + 1;
+    w->ca.width = 120;
 
     priv->prev_custom_mode = 0xff;
     add_mavlink_callback(MAVLINK_MSG_ID_HEARTBEAT, mav_callback, CALLBACK_WIDGET, w);

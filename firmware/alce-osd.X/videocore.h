@@ -90,9 +90,7 @@ void init_video(void);
 void render_process(void);
 
 /* canvas related functions */
-int alloc_canvas(struct canvas *c, int x, int y,
-        unsigned char hjust, unsigned char vjust,
-        unsigned int w, unsigned int h);
+int alloc_canvas(struct canvas *ca, void *widget_cfg);
 int init_canvas(struct canvas *ca, unsigned char b);
 void schedule_canvas(struct canvas *ca);
 void render_canvas(struct canvas *ca);

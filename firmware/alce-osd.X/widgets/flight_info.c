@@ -30,8 +30,8 @@ static int open(struct widget *w)
 {
     w->priv = (struct flight_stats*) get_flight_stats();
 
-    w->cfg->w = 4*60;
-    w->cfg->h = 12*5;
+    w->ca.width = 4*60;
+    w->ca.height = 12*5;
 
     /* refresh rate of 0.2 sec */
     add_timer(TIMER_WIDGET, 2, timer_callback, w);
