@@ -39,6 +39,7 @@
 #include "fonts.h"
 #include "adc.h"
 #include "tabs.h"
+#include "flash.h"
 
 
 #define VERSION_MAJOR   0
