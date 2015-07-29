@@ -37,17 +37,17 @@ static unsigned char nr_callbacks = 0;
 
 static unsigned char uav_sysid = 1, osd_sysid = 200;
 
-static struct mavlink_param *all_params[MAX_MAVLINK_PARAMS];
+static struct config_param *all_params[MAX_MAVLINK_PARAMS];
 static unsigned int nr_params = 0, pidx = 0, total_params = 0;
 
 
 static struct mavlink_dynamic_param_def *dynamic_params;
 
 
-const struct mavlink_param mavparams_mavlink[] = {
-    MAVPARAM("OSD", "MAV", "UAVSYSID", MAV_PARAM_TYPE_UINT8, &uav_sysid, NULL),
-    MAVPARAM("OSD", "MAV", "OSDSYSID", MAV_PARAM_TYPE_UINT8, &osd_sysid, NULL),
-    MAVPARAM_END,
+const struct config_param mavparams_mavlink[] = {
+    CFGPARAM("OSD_MAV_UAVSYSID", MAV_PARAM_TYPE_UINT8, &uav_sysid, NULL),
+    CFGPARAM("OSD_MAV_OSDSYSID", MAV_PARAM_TYPE_UINT8, &osd_sysid, NULL),
+    CFGPARAM_END,
 };
 
 
@@ -213,47 +213,6 @@ static void mav_heartbeat(struct timer *t, void *d)
 
 
 
-static float cast2float(struct mavlink_param *p)
-{
-    switch (p->type) {
-        case MAV_PARAM_TYPE_UINT8:
-            return (float) *((unsigned char*) (p->value));
-        case MAV_PARAM_TYPE_INT8:
-            return (float) *((char*) (p->value));
-        case MAV_PARAM_TYPE_UINT16:
-            return (float) *((unsigned int*) (p->value));
-        case MAV_PARAM_TYPE_INT16:
-            return (float) *((int*) (p->value));
-        case MAV_PARAM_TYPE_REAL32:
-            return (float) *((float*) (p->value));
-        default:
-            return 0;
-    }
-}
-
-static void cast2param(struct mavlink_param *p, float v)
-{
-    switch (p->type) {
-        case MAV_PARAM_TYPE_UINT8:
-            *((unsigned char*) (p->value)) = (unsigned char) v;
-            break;
-        case MAV_PARAM_TYPE_INT8:
-            *((char*) (p->value)) = (char) v;
-            break;
-        case MAV_PARAM_TYPE_UINT16:
-            *((unsigned int*) (p->value)) = (unsigned int) v;
-            break;
-        case MAV_PARAM_TYPE_INT16:
-            *((int*) (p->value)) = (int) v;
-            break;
-        case MAV_PARAM_TYPE_REAL32:
-            *((float*) (p->value)) = (float) v;
-            break;
-        default:
-            break;
-    }
-}
-
 static unsigned int find_param(char *id)
 {
     unsigned int idx;
@@ -268,7 +227,7 @@ static unsigned int find_param(char *id)
 static void send_param_list_cbk(struct timer *t, void *d)
 {
     mavlink_message_t msg;
-    struct mavlink_param sp, *p = &sp;
+    struct config_param sp, *p = &sp;
     struct mavlink_param_value pv;
 
     if (pidx == total_params) {
@@ -315,7 +274,7 @@ void mav_param_request_read(mavlink_message_t *msg, mavlink_status_t *status, vo
     mavlink_message_t msg2;
     char buf[17];
     int idx;
-    struct mavlink_param sp, *p;
+    struct config_param sp, *p;
     struct mavlink_param_value pv;
 
     sys = mavlink_msg_param_request_read_get_target_system(msg);
@@ -357,7 +316,7 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
     unsigned char sys, comp;
     mavlink_message_t msg2;
     unsigned int len;
-    struct mavlink_param *p, sp;
+    struct config_param *p, sp;
     struct mavlink_param_value pv;
     char buf[17];
     int idx;
@@ -391,15 +350,15 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
     }
 
     mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_ALCEOSD, &msg2,
-                                    p->name, cast2float(p), MAVLINK_TYPE_FLOAT, //p->type,
+                                    p->name, pv.param_float, MAVLINK_TYPE_FLOAT, //p->type,
                                     total_params, idx);
     mavlink_send_msg(&msg2);
 }
 
-void mavlink_add_params(const struct mavlink_param *p)
+void mavlink_add_params(const struct config_param *p)
 {
     while (p->name[0] != '\0')
-        all_params[nr_params++] = (struct mavlink_param*) p++;
+        all_params[nr_params++] = (struct config_param*) p++;
 }
 
 void mavlink_set_dynamic_params(struct mavlink_dynamic_param_def *p)

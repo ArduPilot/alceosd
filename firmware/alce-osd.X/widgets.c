@@ -198,7 +198,7 @@ const char widget_param_lut[WID_PARAM_END][10] = {
 
 /* appends a param to the name */
 static void get_widget_param(unsigned int pidx,
-            struct widget_config *wcfg, struct mavlink_param *p)
+            struct widget_config *wcfg, struct config_param *p)
 {
     struct mavlink_param_value *pv = p->value;
     if (pidx >= WID_PARAM_END)
@@ -251,7 +251,7 @@ static void get_widget_param(unsigned int pidx,
 
 }
 
-static int set_widget_param(struct widget_config *wcfg, struct mavlink_param *p, char *pname)
+static int set_widget_param(struct widget_config *wcfg, struct config_param *p, char *pname)
 {
     unsigned char i;
     struct mavlink_param_value *pv = p->value;
@@ -319,7 +319,7 @@ static unsigned int count_widget_params(void)
 }
 
 
-static void get_widget_params(int idx, struct mavlink_param *p)
+static void get_widget_params(int idx, struct config_param *p)
 {
     struct widget_config *wcfg = config.widgets;
     const struct widget_ops *wops;
@@ -343,7 +343,7 @@ static void get_widget_params(int idx, struct mavlink_param *p)
 }
 
 
-static int set_widget_params(struct mavlink_param *p)
+static int set_widget_params(struct config_param *p)
 {
     struct widget_config *wcfg = config.widgets;
     const struct widget_ops *wops;

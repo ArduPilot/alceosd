@@ -60,6 +60,22 @@ enum {
     UNITS_CUSTOM_5,
 };
 
+
+struct config_param {
+    /* param name */
+    char name[17];
+    /* param type */
+    unsigned char type;
+    /* param value pointer */
+    void *value;
+    /* callback to trigger when parameter changes */
+    void (*cbk)(void);
+};
+
+#define CFGPARAM(n, t, p, c) { .name = n, .type = t, .value = (void *) p, .cbk = c }
+#define CFGPARAM_END { .name = "" }
+
+
 struct alceosd_config {
     /* telemetry baudrate */
     unsigned char baudrate;
@@ -83,6 +99,10 @@ struct alceosd_config {
 
 void load_config(void);
 int config_osd(void);
+
+float cast2float(struct config_param *p);
+void cast2param(struct config_param *p, float v);
+
 
 unsigned char get_units(struct widget_config *cfg);
 

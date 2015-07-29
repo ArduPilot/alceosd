@@ -184,9 +184,51 @@ void write_config(void)
     RESTORE_CPU_IPL(ipl);
 }
 
-extern const struct mavlink_param mavparams_video;
 
-static void dump_mavlink_param_text(const struct mavlink_param *p)
+float cast2float(struct config_param *p)
+{
+    switch (p->type) {
+        case MAV_PARAM_TYPE_UINT8:
+            return (float) *((unsigned char*) (p->value));
+        case MAV_PARAM_TYPE_INT8:
+            return (float) *((char*) (p->value));
+        case MAV_PARAM_TYPE_UINT16:
+            return (float) *((unsigned int*) (p->value));
+        case MAV_PARAM_TYPE_INT16:
+            return (float) *((int*) (p->value));
+        case MAV_PARAM_TYPE_REAL32:
+            return (float) *((float*) (p->value));
+        default:
+            return 0;
+    }
+}
+
+void cast2param(struct config_param *p, float v)
+{
+    switch (p->type) {
+        case MAV_PARAM_TYPE_UINT8:
+            *((unsigned char*) (p->value)) = (unsigned char) v;
+            break;
+        case MAV_PARAM_TYPE_INT8:
+            *((char*) (p->value)) = (char) v;
+            break;
+        case MAV_PARAM_TYPE_UINT16:
+            *((unsigned int*) (p->value)) = (unsigned int) v;
+            break;
+        case MAV_PARAM_TYPE_INT16:
+            *((int*) (p->value)) = (int) v;
+            break;
+        case MAV_PARAM_TYPE_REAL32:
+            *((float*) (p->value)) = (float) v;
+            break;
+        default:
+            break;
+    }
+}
+
+extern const struct config_param mavparams_video;
+
+static void dump_mavlink_param_text(const struct config_param *p)
 {
     while (p->name[0] != '\0') {
         printf("%s = %d\n", p->name, cast2float(p));

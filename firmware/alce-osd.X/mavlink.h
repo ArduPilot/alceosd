@@ -27,21 +27,6 @@
 #define MAV_TYPE_ALCEOSD        (27)
 
 
-#define MAVPARAM(h, g, n, t, p, c) { .name = h"_"g"_"n, .type = t, .value = (void *) p, .cbk = c }
-#define MAVPARAM_END { .name = "" }
-
-struct mavlink_param {
-    /* param name */
-    char name[17];
-    /* param type */
-    unsigned char type;
-    /* param value pointer */
-    void *value;
-    /* callback to trigger when parameter is written */
-    void (*cbk)(void);
-};
-
-
 struct mavlink_param_value {
     union {
             float param_float;
@@ -55,8 +40,8 @@ struct mavlink_param_value {
 };
 
 struct mavlink_dynamic_param_def {
-    int (*set)(struct mavlink_param *p);
-    void (*get)(int idx, struct mavlink_param *p);
+    int (*set)(struct config_param *p);
+    void (*get)(int idx, struct config_param *p);
     unsigned int (*count)(void);
 };
 
@@ -78,7 +63,7 @@ struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid,
         unsigned char msgid,
         void *cbk, unsigned char ctype, void *data);
 void del_mavlink_callbacks(unsigned char ctype);
-void mavlink_add_params(const struct mavlink_param *p);
+void mavlink_add_params(const struct config_param *p);
 void mavlink_set_dynamic_params(struct mavlink_dynamic_param_def *p);
 
 
