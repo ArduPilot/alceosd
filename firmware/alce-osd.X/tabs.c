@@ -43,6 +43,17 @@ extern struct alceosd_config config;
 #endif
 
 
+const struct param_def params_tabs[] = {
+    PARAM("TABS_MODE", MAV_PARAM_TYPE_UINT8, &config.tab_change.mode, NULL),
+    PARAM("TABS_TIME", MAV_PARAM_TYPE_UINT8, &config.tab_change.time_window, NULL),
+    PARAM("TABS_CH", MAV_PARAM_TYPE_UINT8, &config.tab_change.ch, NULL),
+    PARAM("TABS_CH_MAX", MAV_PARAM_TYPE_UINT16, &config.tab_change.tab_change_ch_max, NULL),
+    PARAM("TABS_CH_MIN", MAV_PARAM_TYPE_UINT16, &config.tab_change.tab_change_ch_min, NULL),
+    PARAM_END,
+};
+
+
+
 static unsigned char search_on_list(unsigned char *list, unsigned char tab)
 {
   unsigned char *p = &list[0];
@@ -315,6 +326,8 @@ void tabs_init(void)
     static struct timer *tab_timer = NULL;
     unsigned char msgid;
     void *cbk;
+
+    params_add(params_tabs);
 
     /* build tab list from config */
     build_tab_list();

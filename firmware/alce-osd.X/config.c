@@ -84,6 +84,12 @@ struct alceosd_config config = {
     }
 };
 
+const struct param_def params_config[] = {
+    PARAM("HOME_LOCKING", MAV_PARAM_TYPE_UINT8, &config.home_lock_sec, NULL),
+    PARAM("OSD_UNITS", MAV_PARAM_TYPE_UINT8, &config.default_units, NULL),
+    PARAM_END,
+};
+
 
 void load_config(void)
 {
@@ -91,6 +97,9 @@ void load_config(void)
     unsigned long addr;
     unsigned char buf[3];
     int ipl;
+
+    /* TODO: params_add should be moved to some other place */
+    params_add(params_config);
 
     SET_AND_SAVE_CPU_IPL(ipl, 7);
     

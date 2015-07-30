@@ -34,9 +34,9 @@ struct tab_change_config {
 
     unsigned char time_window;
     /* tab change channel */
-    unsigned ch:4;
+    unsigned char ch;
     /* tab change mode */
-    unsigned mode:2;
+    unsigned char mode;
 };
 
 

@@ -39,9 +39,9 @@ static unsigned char uav_sysid = 1, osd_sysid = 200;
 static unsigned int pidx = 0, total_params = 0;
 
 
-const struct param_def mavparams_mavlink[] = {
-    PARAM("OSD_MAV_UAVSYSID", MAV_PARAM_TYPE_UINT8, &uav_sysid, NULL),
-    PARAM("OSD_MAV_OSDSYSID", MAV_PARAM_TYPE_UINT8, &osd_sysid, NULL),
+const struct param_def params_mavlink[] = {
+    PARAM("MAV_UAVSYSID", MAV_PARAM_TYPE_UINT8, &uav_sysid, NULL),
+    PARAM("MAV_OSDSYSID", MAV_PARAM_TYPE_UINT8, &osd_sysid, NULL),
     PARAM_END,
 };
 
