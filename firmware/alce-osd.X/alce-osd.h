@@ -41,13 +41,14 @@
 #include "tabs.h"
 #include "flash.h"
 #include "params.h"
+#include "uavtalk.h"
 
 
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   5
 #define VERSION_DEV     1
 
-#define WITH_BOOTLOADER
+//#define WITH_BOOTLOADER
 
 /* maximum line length for print function stack buffers */
 #define MAX_LINE_LENGTH 128
