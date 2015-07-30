@@ -18,13 +18,13 @@
 
 #include "alce-osd.h"
 
+#define PERSISTENT_BUFFER
 
 #define ROWS    (15)
 #define COLS    (40)
 
 #define X_SIZE  (8*COLS)
 #define Y_SIZE  (8*ROWS)
-
 
 static struct widget *console = NULL;
 
@@ -33,10 +33,17 @@ struct widget_priv {
     char buf[ROWS][COLS];
 };
 
+#ifdef PERSISTENT_BUFFER
+static struct widget_priv priv;
+#endif
 
 static inline void print_chr(char chr)
 {
+#ifdef PERSISTENT_BUFFER
+    struct widget_priv *wp = &priv;
+#else
     struct widget_priv *wp = console->priv;
+#endif
     unsigned char i, j;
 
     if (chr == '\n') {
@@ -64,22 +71,36 @@ static inline void print_chr(char chr)
 
 void console_printn(char *str, unsigned int len)
 {
+#ifndef PERSISTENT_BUFFER
     if (console == NULL)
         return;
+#endif
 
     while (len-- != 0)
         print_chr(*(str++));
+
+#ifdef PERSISTENT_BUFFER
+    if (console == NULL)
+        return;
+#endif
     schedule_widget(console);
 }
 
 
 void console_print(char *str)
 {
+#ifndef PERSISTENT_BUFFER
     if (console == NULL)
         return;
+#endif
 
     while (*str != '\0')
         print_chr(*(str++));
+    
+#ifdef PERSISTENT_BUFFER
+    if (console == NULL)
+        return;
+#endif
     schedule_widget(console);
 }
 
@@ -104,21 +125,27 @@ int console_printf(const char *fmt, ...)
 
 static int open(struct widget *w)
 {
-    struct widget_priv *priv;
+    struct widget_priv *p;
 
     /* don't allow more than 1 instance */
     if (console != NULL)
         return -2;
 
-    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
-    if (priv == NULL)
+#ifdef PERSISTENT_BUFFER
+    p = &priv;
+#else
+    p = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
+    if (p == NULL)
         return -1;
-    w->priv = priv;
+#endif
+    w->priv = p;
     w->ca.width = X_SIZE;
     w->ca.height = Y_SIZE;
 
+#ifndef PERSISTENT_BUFFER
     memset(priv->buf, ' ', ROWS*COLS);
-
+#endif
+    
     console = w;
     return 0;
 }
@@ -129,6 +156,13 @@ static void close(struct widget *w)
     console = NULL;
 }
 
+static void init(void)
+{
+    console = NULL;
+#ifdef PERSISTENT_BUFFER
+    memset(priv.buf, ' ', ROWS*COLS);
+#endif
+}
 
 static void render(struct widget *w)
 {
@@ -147,7 +181,7 @@ const struct widget_ops console_widget_ops = {
     .name = "Console",
     .mavname = "CONSOLE",
     .id = WIDGET_CONSOLE_ID,
-    .init = NULL,
+    .init = init,
     .open = open,
     .render = render,
     .close = close,
