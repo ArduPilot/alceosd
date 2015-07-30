@@ -88,7 +88,6 @@ struct widget {
 
 void widgets_init(void);
 void widgets_reset(void);
-void widgets_process(void);
 void schedule_widget(struct widget *w);
 const struct widget_ops *get_widget_ops(unsigned int id);
 void* widget_malloc(unsigned int size);

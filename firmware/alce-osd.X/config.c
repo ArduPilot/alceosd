@@ -118,16 +118,13 @@ void load_config(void)
         addr += CONFIG_PAGE_SIZE;
     }
 
-    if (addr >= CONFIG_ADDR_END) {
-        //printf("no valid config found\n");
-        video_apply_config(&config.video);
-        return;
+    if (addr < CONFIG_ADDR_END) {
+        //printf("valid config found at %4x\n", (unsigned int) addr);
+        valid_config_addr = addr;
+        read_flash(addr + 4, sizeof(struct alceosd_config), (unsigned char *) &config);
     }
-
-    //printf("valid config found at %4x\n", (unsigned int) addr);
-    valid_config_addr = addr;
-
-    read_flash(addr + 4, sizeof(struct alceosd_config), (unsigned char *) &config);
+    
+    video_apply_config(&config.video);
 
     RESTORE_CPU_IPL(ipl);
     return;
@@ -313,7 +310,7 @@ const char menu_edit_widget[] = "\n\nAlceOSD :: Edit widget\n\n"
 
 extern const struct widget_ops *all_widget_ops[];
 
-int config_osd(void)
+void config_process(void)
 {
     static unsigned char state = MENU_MAIN, refresh_disp = 1;
     unsigned int osdxsize, osdysize;
@@ -433,7 +430,7 @@ int config_osd(void)
     }
 
     if (uart_getc2(&c) == 0)
-        return 1;
+        return;
 
     refresh_disp = 1;
     switch (state) {
@@ -481,7 +478,17 @@ int config_osd(void)
                     load_config_text();
                     break;
                 case 'x':
-                    return 0;
+                    process_remove(config_process);
+
+                    /* TODO: rework serial handling */
+                    
+                    uart_set_baudrate2(config.baudrate);
+                    //uart_set_baudrate1(UART_19200);
+                    uart_set_baudrate1(UART_57600);
+
+                    /* re-init tabs */
+                    tabs_init();
+                    return;
                 default:
                     break;
             }

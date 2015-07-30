@@ -87,7 +87,6 @@ struct video_config {
 
 
 void init_video(void);
-void render_process(void);
 
 /* canvas related functions */
 int alloc_canvas(struct canvas *ca, void *widget_cfg);

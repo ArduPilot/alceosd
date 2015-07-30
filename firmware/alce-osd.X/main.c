@@ -164,7 +164,6 @@ void hw_init(void)
 int main(void) {
     extern int __C30_UART; __C30_UART = 2;
     unsigned char i;
-    unsigned char in_config = 0;
     char c;
 
     /* generic hw init */
@@ -186,64 +185,43 @@ int main(void) {
     /* try to load config from flash */
     load_config();
 
-    /* video driver config */
-    video_apply_config(&config.video);
-
     /* init widget modules */
     widgets_init();
     
     /* setup tabs */
     tabs_init();
-    
-    /* enable all interrupts */
-    SRbits.IPL = 0;
-    CORCONbits.IPL3 = 1;
 
+    /* welcome message */
+    console_printf("AlceOSD %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
+
+    /* init home tracking */
+    init_home();
+    
+    /* init flight status tracking */
+    init_flight_stats();
+
+    /* init mavlink module */
+    mavlink_init();
+
+    /* enable all interrupts */
+    _IPL = 0;
+    _IPL3 = 1;
+    
 
     /* TODO: rework config entry */
     /* check for config entry */
     for (i = 0; i < 8; i++) {
-        while (uart_getc2(&c) == 0) {
-            widgets_process();
-            render_process();
-            ClrWdt();
-        }
+        while (uart_getc2(&c) == 0);
         if (c != '!')
             break;
     }
 
-    if (i == 8) {
-        in_config = 1;
-        while (in_config) {
-            in_config = config_osd();
-            widgets_process();
-            render_process();
-            clock_process();
-            ClrWdt();
-        }
-    }
+    if (i == 8)
+        process_add(config_process);
+    process_add(uavtalk_process);
 
-    /* re-init tabs */
-    tabs_init();
-
-    console_printf("AlceOSD %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
-
-    uart_set_baudrate2(config.baudrate);
-
-    uart_set_baudrate1(UART_19200);
-
-    init_home_process();
-    init_flight_stats_process();
-
-    mavlink_init();
-
-    for (;;) {
-        mavlink_process();
-        widgets_process();
-        render_process();
-        clock_process();
-        ClrWdt();
-    }
+    /* main loop */
+    process_run();
 
     return 0;
 }

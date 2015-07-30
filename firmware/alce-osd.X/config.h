@@ -83,7 +83,7 @@ struct alceosd_config {
 
 
 void load_config(void);
-int config_osd(void);
+void config_process(void);
 
 unsigned char get_units(struct widget_config *cfg);
 

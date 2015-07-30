@@ -72,7 +72,7 @@ unsigned int mavlink_msg_rc_channels_raw_get_chan(mavlink_message_t *msg, unsign
 /* *************** */
 
 
-static void mavlink_parse_msg(mavlink_message_t *msg, mavlink_status_t *status)
+void mavlink_parse_msg(mavlink_message_t *msg, mavlink_status_t *status)
 {
     struct mavlink_callback *c;
     unsigned char i;
@@ -102,11 +102,11 @@ static void mavlink_send_msg(mavlink_message_t *msg)
 
     /* TODO: implement routing tables */
     uart_write2(buf, len);
-    uart_write1(buf, len);
+    //uart_write1(buf, len);
 }
 
 
-void mavlink_process(void)
+static void mavlink_process(void)
 {
     mavlink_message_t msg __attribute__ ((aligned(2)));
     mavlink_status_t status;
@@ -121,14 +121,14 @@ void mavlink_process(void)
 
             /* forward to uart1 */
             len = mavlink_msg_to_send_buffer(msg_buf, &msg);
-            uart_write1(msg_buf, len);
+            //uart_write1(msg_buf, len);
 
             mavlink_parse_msg(&msg, &status);
         }
     }
     uart_discard2(count);
 
-
+#if 0
     i = count = uart_read1(&buf);
     while (i--) {
         if (mavlink_parse_char(MAVLINK_COMM_1, *(buf++), &msg, &status)) {
@@ -140,7 +140,7 @@ void mavlink_process(void)
         }
     }
     uart_discard1(count);
-
+#endif
 }
 
 struct mavlink_callback* add_mavlink_callback(unsigned char msgid,
@@ -312,13 +312,15 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 void mavlink_init(void)
 {
     /* register module parameters */
-    params_add(mavparams_mavlink);
+    params_add(params_mavlink);
 
     /* heartbeat sender task */
-    add_timer(TIMER_ALWAYS, 10, mav_heartbeat, NULL);
+    //add_timer(TIMER_ALWAYS, 10, mav_heartbeat, NULL);
 
     /* parameter request handlers */
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_LIST, mav_param_request_list, CALLBACK_PERSISTENT, NULL);
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_READ, mav_param_request_read, CALLBACK_PERSISTENT, NULL);
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_SET, mav_param_set, CALLBACK_PERSISTENT, NULL);
+
+    process_add(mavlink_process);
 }

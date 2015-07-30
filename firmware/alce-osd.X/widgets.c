@@ -119,7 +119,7 @@ static inline void render_widget(struct widget *w)
 
 extern volatile unsigned char sram_busy;
 
-void widgets_process(void)
+static void widgets_process(void)
 {
     struct widget *w;
 
@@ -409,4 +409,6 @@ void widgets_init(void)
             (*w)->init();
         w++;
     }
+
+    process_add(widgets_process);
 }

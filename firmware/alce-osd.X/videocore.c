@@ -327,13 +327,6 @@ static void video_init_hw(void)
 }
 
 
-void init_video(void)
-{
-    video_init_sram();
-    video_init_hw();
-
-    params_add(params_video);
-}
 
 static int ipl;
 
@@ -461,7 +454,7 @@ void schedule_canvas(struct canvas *ca)
 }
 
 
-void render_process(void)
+static void render_process(void)
 {
     static struct canvas *ca;
     static unsigned int y1, y;
@@ -541,6 +534,16 @@ void render_canvas(struct canvas *ca)
         CS_HIGH;
         addr.l += osdxsize/4;
     }
+}
+
+
+void init_video(void)
+{
+    video_init_sram();
+    video_init_hw();
+
+    params_add(params_video);
+    process_add(render_process);
 }
 
 
@@ -652,4 +655,3 @@ void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
     }
     IFS1bits.INT2IF = 0;
 }
-

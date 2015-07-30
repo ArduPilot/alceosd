@@ -81,7 +81,7 @@ void remove_timers(unsigned char ctype)
     }
 }
 
-void clock_process(void)
+static void clock_process(void)
 {
     unsigned char i;
     struct timer *t;
@@ -114,6 +114,8 @@ void clock_init(void)
     IFS0bits.T1IF = 0;
     /* period = 1 / (70000000 / 8) * 8750 = 1ms */
     PR1 = 8750;
+
+    process_add(clock_process);
 }
 
 void __attribute__((__interrupt__, no_auto_psv )) _T1Interrupt()

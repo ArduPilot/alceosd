@@ -37,7 +37,6 @@ struct mavlink_callback {
 
 
 void mavlink_init(void);
-void mavlink_process(void);
 struct mavlink_callback* add_mavlink_callback(unsigned char msgid,
         void *cbk, unsigned char ctype, void *data);
 struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid,
