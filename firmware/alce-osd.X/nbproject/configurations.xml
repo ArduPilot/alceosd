@@ -21,6 +21,7 @@
       <itemPath>flash.h</itemPath>
       <itemPath>params.h</itemPath>
       <itemPath>uavtalk.h</itemPath>
+      <itemPath>process.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -68,6 +69,7 @@
       <itemPath>flash.c</itemPath>
       <itemPath>params.c</itemPath>
       <itemPath>uavtalk.c</itemPath>
+      <itemPath>process.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
