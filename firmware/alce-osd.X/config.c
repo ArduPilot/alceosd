@@ -185,72 +185,55 @@ void write_config(void)
 }
 
 
-float cast2float(struct config_param *p)
+static void dump_config_text(void)
 {
-    switch (p->type) {
-        case MAV_PARAM_TYPE_UINT8:
-            return (float) *((unsigned char*) (p->value));
-        case MAV_PARAM_TYPE_INT8:
-            return (float) *((char*) (p->value));
-        case MAV_PARAM_TYPE_UINT16:
-            return (float) *((unsigned int*) (p->value));
-        case MAV_PARAM_TYPE_INT16:
-            return (float) *((int*) (p->value));
-        case MAV_PARAM_TYPE_REAL32:
-            return (float) *((float*) (p->value));
-        default:
-            return 0;
-    }
-}
-
-void cast2param(struct config_param *p, float v)
-{
-    switch (p->type) {
-        case MAV_PARAM_TYPE_UINT8:
-            *((unsigned char*) (p->value)) = (unsigned char) v;
-            break;
-        case MAV_PARAM_TYPE_INT8:
-            *((char*) (p->value)) = (char) v;
-            break;
-        case MAV_PARAM_TYPE_UINT16:
-            *((unsigned int*) (p->value)) = (unsigned int) v;
-            break;
-        case MAV_PARAM_TYPE_INT16:
-            *((int*) (p->value)) = (int) v;
-            break;
-        case MAV_PARAM_TYPE_REAL32:
-            *((float*) (p->value)) = (float) v;
-            break;
-        default:
-            break;
-    }
-}
-
-extern const struct config_param mavparams_video;
-
-static void dump_mavlink_param_text(const struct config_param *p)
-{
-    while (p->name[0] != '\0') {
-        printf("%s = %d\n", p->name, cast2float(p));
-        p++;
-    }
-}
-
-void dump_config_text(void)
-{
+    char param_name[17];
+    float value;
+    unsigned int i;
+    
     printf("\nAlceOSD config %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
 
-    /* video config */
-    dump_mavlink_param_text(&mavparams_video);
-
+    for (i = 0; i < params_get_total(); i++) {
+        value = params_get_value(i, param_name);
+        printf("%s = %f\n", param_name, value);
+    }
 
 }
 
 
-
-void load_config_text(void)
+#define MAX_LINE_LEN    (100)
+static void load_config_text(void)
 {
+    char buf[MAX_LINE_LEN];
+    char param[20];
+    float value;
+    unsigned char len = 0;
+    
+    printf("\nWaiting for AlceOSD config\n");
 
+    while (1) {
+        while (uart_getc2(&buf[len]) == 0);
+        LED = ~LED;
+        if (buf[len] == '\n') {
+            /* process line */
+
+            /* the end */
+            if ((len == 1) && (buf[0] == '.'))
+                break;
+
+            /* terminate string */
+            buf[len] = '\0';
+            sscanf(buf, "%s = %f", param, &value);
+            params_set_value(param, value, 0);
+            printf("got: '%s' = '%f'\n", param, value);
+
+            len = 0;
+        } else {
+            if (len < MAX_LINE_LEN)
+                len++;
+        }
+        
+    }
 }
 
 

@@ -19,7 +19,6 @@
 #include "alce-osd.h"
 
 #define MAX_MAVLINK_CALLBACKS 50
-#define MAX_MAVLINK_PARAMS 50
 
 #ifdef DEBUG_MAVLINK
 #define DMAV(x...) \
@@ -37,17 +36,13 @@ static unsigned char nr_callbacks = 0;
 
 static unsigned char uav_sysid = 1, osd_sysid = 200;
 
-static struct config_param *all_params[MAX_MAVLINK_PARAMS];
-static unsigned int nr_params = 0, pidx = 0, total_params = 0;
+static unsigned int pidx = 0, total_params = 0;
 
 
-static struct mavlink_dynamic_param_def *dynamic_params;
-
-
-const struct config_param mavparams_mavlink[] = {
-    CFGPARAM("OSD_MAV_UAVSYSID", MAV_PARAM_TYPE_UINT8, &uav_sysid, NULL),
-    CFGPARAM("OSD_MAV_OSDSYSID", MAV_PARAM_TYPE_UINT8, &osd_sysid, NULL),
-    CFGPARAM_END,
+const struct param_def mavparams_mavlink[] = {
+    PARAM("OSD_MAV_UAVSYSID", MAV_PARAM_TYPE_UINT8, &uav_sysid, NULL),
+    PARAM("OSD_MAV_OSDSYSID", MAV_PARAM_TYPE_UINT8, &osd_sysid, NULL),
+    PARAM_END,
 };
 
 
@@ -213,22 +208,11 @@ static void mav_heartbeat(struct timer *t, void *d)
 
 
 
-static unsigned int find_param(char *id)
-{
-    unsigned int idx;
-    for (idx = 0; idx < nr_params; idx++) {
-        if (strcmp(id, all_params[idx]->name) == 0)
-            break;
-    }
-    return idx;
-}
-
-
 static void send_param_list_cbk(struct timer *t, void *d)
 {
     mavlink_message_t msg;
-    struct config_param sp, *p = &sp;
-    struct mavlink_param_value pv;
+    float param_value;
+    char param_name[17];
 
     if (pidx == total_params) {
         console_printf("send param end\n", pidx);
@@ -236,14 +220,9 @@ static void send_param_list_cbk(struct timer *t, void *d)
         return;
     }
 
-    if (pidx < nr_params) {
-        p = all_params[pidx];
-    } else if (pidx < total_params) {
-        sp.value = (void*) &pv;
-        dynamic_params->get(pidx - nr_params, &sp);
-    }
+    param_value = params_get_value(pidx, param_name);
     mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_ALCEOSD, &msg,
-                                    p->name, cast2float(p), MAVLINK_TYPE_FLOAT, //p->type,
+                                    param_name, param_value, MAVLINK_TYPE_FLOAT,
                                     total_params, pidx++);
     mavlink_send_msg(&msg);
 }
@@ -261,7 +240,7 @@ void mav_param_request_list(mavlink_message_t *msg, mavlink_status_t *status, vo
         return;
     
     pidx = 0;
-    total_params = dynamic_params->count() + nr_params;
+    total_params = params_get_total();
     add_timer(TIMER_ALWAYS | TIMER_10MS, 1, send_param_list_cbk, d);
 
     console_printf("plist:sysid=%d compid=%d\n", sys, comp);
@@ -272,10 +251,9 @@ void mav_param_request_read(mavlink_message_t *msg, mavlink_status_t *status, vo
 {
     unsigned char sys, comp;
     mavlink_message_t msg2;
-    char buf[17];
+    char param_name[17];
+    float param_value;
     int idx;
-    struct config_param sp, *p;
-    struct mavlink_param_value pv;
 
     sys = mavlink_msg_param_request_read_get_target_system(msg);
     comp = mavlink_msg_param_request_read_get_target_component(msg);
@@ -283,31 +261,19 @@ void mav_param_request_read(mavlink_message_t *msg, mavlink_status_t *status, vo
     if ((comp != MAV_COMP_ID_ALCEOSD) || (sys != osd_sysid))
         return;
 
-    //total_params = dynamic_params->count() + nr_params;
-
     idx = mavlink_msg_param_request_read_get_param_index(msg);
     if (idx == -1) {
-        console_printf("N.I param_req_read by id\n");
-        mavlink_msg_param_request_read_get_param_id(msg, buf);
-        buf[16]= '\0';
-        idx = find_param(buf);
+        mavlink_msg_param_request_read_get_param_id(msg, param_name);
+        param_name[16]= '\0';
     }
 
-    if (idx < nr_params) {
-        p = all_params[idx];
-    } else {
-        sp.value = (void*) &pv;
-        dynamic_params->get(idx - nr_params, &sp);
-        p = &sp;
-    }
-
-    console_printf("param_req_read %d %s=%f\n", idx, p->name, cast2float(p));
-    
+    param_value = params_get_value(idx, param_name);
     mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_ALCEOSD, &msg2,
-                                    p->name, cast2float(p), MAVLINK_TYPE_FLOAT, //p->type,
+                                    param_name, param_value, MAVLINK_TYPE_FLOAT,
                                     total_params, idx);
-
     mavlink_send_msg(&msg2);
+
+    console_printf("param_req_read %d %s=%f\n", idx, param_name, param_value);
 }
 
 
@@ -316,9 +282,8 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
     unsigned char sys, comp;
     mavlink_message_t msg2;
     unsigned int len;
-    struct config_param *p, sp;
-    struct mavlink_param_value pv;
-    char buf[17];
+    char param_name[17];
+    float param_value;
     int idx;
 
     sys = mavlink_msg_param_set_get_target_system(msg);
@@ -327,49 +292,27 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
     if ((comp != MAV_COMP_ID_ALCEOSD) || (sys != osd_sysid))
         return;
 
-    len = mavlink_msg_param_set_get_param_id(msg, buf);
-    buf[16] = '\0';
+    len = mavlink_msg_param_set_get_param_id(msg, param_name);
+    param_name[16] = '\0';
 
-    console_printf("set_param: %s\n", buf);
+    param_value = mavlink_msg_param_set_get_param_value(msg);
 
-    idx = find_param(buf);
+    console_printf("set_param: %s\n", param_name);
 
-    if (idx < nr_params) {
-        p = all_params[idx];
-        cast2param(p, mavlink_msg_param_set_get_param_value(msg));
-        if (p->cbk != NULL)
-            p->cbk();
-    } else {
-        strcpy(sp.name, buf);
-        sp.value = (void*) &pv;
-        //sp.type = MAVLINK_TYPE_FLOAT; //mavlink_msg_param_set_get_param_type(msg);
-        p = &sp;
-        //cast2param(p, mavlink_msg_param_set_get_param_value(msg));
-        pv.param_float = mavlink_msg_param_set_get_param_value(msg);
-        idx = dynamic_params->set(p) + nr_params;
-    }
+    idx = params_set_value(param_name, param_value, 1);
 
+    /* broadcast new parameter value */
     mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_ALCEOSD, &msg2,
-                                    p->name, pv.param_float, MAVLINK_TYPE_FLOAT, //p->type,
+                                    param_name, param_value, MAVLINK_TYPE_FLOAT,
                                     total_params, idx);
     mavlink_send_msg(&msg2);
 }
 
-void mavlink_add_params(const struct config_param *p)
-{
-    while (p->name[0] != '\0')
-        all_params[nr_params++] = (struct config_param*) p++;
-}
-
-void mavlink_set_dynamic_params(struct mavlink_dynamic_param_def *p)
-{
-    dynamic_params = p;
-}
 
 void mavlink_init(void)
 {
     /* register module parameters */
-    mavlink_add_params(mavparams_mavlink);
+    params_add(mavparams_mavlink);
 
     /* heartbeat sender task */
     add_timer(TIMER_ALWAYS, 10, mav_heartbeat, NULL);

@@ -27,25 +27,6 @@
 #define MAV_TYPE_ALCEOSD        (27)
 
 
-struct mavlink_param_value {
-    union {
-            float param_float;
-            int32_t param_int32;
-            uint32_t param_uint32;
-            int16_t param_int16;
-            uint16_t param_uint16;
-            int8_t param_int8;
-            uint8_t param_uint8;
-    };
-};
-
-struct mavlink_dynamic_param_def {
-    int (*set)(struct config_param *p);
-    void (*get)(int idx, struct config_param *p);
-    unsigned int (*count)(void);
-};
-
-
 struct mavlink_callback {
     unsigned char msgid;
     unsigned char sysid;
@@ -63,8 +44,6 @@ struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid,
         unsigned char msgid,
         void *cbk, unsigned char ctype, void *data);
 void del_mavlink_callbacks(unsigned char ctype);
-void mavlink_add_params(const struct config_param *p);
-void mavlink_set_dynamic_params(struct mavlink_dynamic_param_def *p);
 
 
 /* aditional helper functions */

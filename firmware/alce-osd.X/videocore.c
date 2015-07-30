@@ -56,14 +56,14 @@ extern struct alceosd_config config;
 
 void video_apply_config_cbk(void);
 
-const struct config_param mavparams_video[] = {
-    CFGPARAM("OSD_VID_STD", MAV_PARAM_TYPE_UINT8, &config.video.standard, NULL),
-    CFGPARAM("OSD_VID_XSIZE", MAV_PARAM_TYPE_UINT8, &config.video.x_size_id, video_apply_config_cbk),
-    CFGPARAM("OSD_VID_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video.y_size, NULL),
-    CFGPARAM("OSD_VID_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video.x_offset, NULL),
-    CFGPARAM("OSD_VID_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video.y_offset, NULL),
-    CFGPARAM("OSD_VID_BRIGHT", MAV_PARAM_TYPE_UINT16, &config.video.brightness, video_apply_config_cbk),
-    CFGPARAM_END,
+const struct param_def mavparams_video[] = {
+    PARAM("OSD_VID_STD", MAV_PARAM_TYPE_UINT8, &config.video.standard, NULL),
+    PARAM("OSD_VID_XSIZE", MAV_PARAM_TYPE_UINT8, &config.video.x_size_id, video_apply_config_cbk),
+    PARAM("OSD_VID_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video.y_size, NULL),
+    PARAM("OSD_VID_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video.x_offset, NULL),
+    PARAM("OSD_VID_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video.y_offset, NULL),
+    PARAM("OSD_VID_BRIGHT", MAV_PARAM_TYPE_UINT16, &config.video.brightness, video_apply_config_cbk),
+    PARAM_END,
 };
 
 
@@ -332,7 +332,7 @@ void init_video(void)
     video_init_sram();
     video_init_hw();
 
-    mavlink_add_params(mavparams_video);
+    params_add(mavparams_video);
 }
 
 static int ipl;

@@ -198,9 +198,9 @@ const char widget_param_lut[WID_PARAM_END][10] = {
 
 /* appends a param to the name */
 static void get_widget_param(unsigned int pidx,
-            struct widget_config *wcfg, struct config_param *p)
+            struct widget_config *wcfg, struct param_def *p)
 {
-    struct mavlink_param_value *pv = p->value;
+    struct param_value *pv = p->value;
     if (pidx >= WID_PARAM_END)
         return;
 
@@ -251,10 +251,10 @@ static void get_widget_param(unsigned int pidx,
 
 }
 
-static int set_widget_param(struct widget_config *wcfg, struct config_param *p, char *pname)
+static int set_widget_param(struct widget_config *wcfg, struct param_def *p, char *pname)
 {
     unsigned char i;
-    struct mavlink_param_value *pv = p->value;
+    struct param_value *pv = p->value;
     /* mavlink param protocol is broken - messages always have the param as float */
     float v = pv->param_float;
     
@@ -306,7 +306,7 @@ static int set_widget_param(struct widget_config *wcfg, struct config_param *p, 
     return (int) i;
 }
 
-static unsigned int count_widget_params(void)
+static unsigned int widgets_total_params(void)
 {
     struct widget_config *wcfg = config.widgets;
     unsigned int total = 0;
@@ -319,7 +319,7 @@ static unsigned int count_widget_params(void)
 }
 
 
-static void get_widget_params(int idx, struct config_param *p)
+static void widgets_get_params(int idx, struct param_def *p)
 {
     struct widget_config *wcfg = config.widgets;
     const struct widget_ops *wops;
@@ -343,10 +343,11 @@ static void get_widget_params(int idx, struct config_param *p)
 }
 
 
-static int set_widget_params(struct config_param *p)
+static int widgets_set_params(struct param_def *p)
 {
     struct widget_config *wcfg = config.widgets;
     const struct widget_ops *wops;
+    const struct widget_ops **w = all_widget_ops;
 
     unsigned int idx = 0;
     int ret = -1;
@@ -359,35 +360,49 @@ static int set_widget_params(struct config_param *p)
     *pname++ = '\0';
     uid = *(pname-2) - '0';
     *(pname-2) = '\0';
+
+    /* find widget_ops */
+    while ((*w) != NULL) {
+        if (strcmp(buf, (*w)->mavname) == 0)
+            break;
+        w++;
+    }
+    if ((*w) == NULL)
+        return -1;
+
+    wops = (*w);
     while (wcfg->tab != TABS_END) {
-        wops = get_widget_ops(wcfg->widget_id);
-        if ((uid == wcfg->uid) && (strcmp(buf, wops->mavname) == 0)) {
+        if ((uid == wcfg->uid) && (wops->id == wcfg->widget_id)) {
             ret = set_widget_param(wcfg, p, pname);
             break;
         }
         idx++;
         wcfg++;
     }
-    if (ret == -1)
-        return ret;
-    else
-        return idx * ret;
+    if (ret == -1) {
+        /* TODO: check space for new widget */
+        /* widget+uid not found in config*/
+        memset(wcfg, 0, sizeof(struct widget_config));
+        wcfg->uid = uid;
+        wcfg->widget_id = wops->id;
+        ret = set_widget_param(wcfg, p, pname);
+        (wcfg+1)->tab = TABS_END;
+    }
+
+    return idx * ret;
 }
 
-
-
-struct mavlink_dynamic_param_def mavparams_widgets = {
-    .get = get_widget_params,
-    .set = set_widget_params,
-    .count = count_widget_params,
+const struct param_dynamic_def widget_dynamic_params = {
+    .set = widgets_set_params,
+    .get = widgets_get_params,
+    .total = widgets_total_params,
 };
-
 
 void widgets_init(void)
 {
     const struct widget_ops **w = all_widget_ops;
 
-    mavlink_set_dynamic_params(&mavparams_widgets);
+    params_set_dynamic_params(&widget_dynamic_params);
 
     while ((*w) != NULL) {
         if ((*w)->init != NULL)

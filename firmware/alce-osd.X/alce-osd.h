@@ -40,6 +40,7 @@
 #include "adc.h"
 #include "tabs.h"
 #include "flash.h"
+#include "params.h"
 
 
 #define VERSION_MAJOR   0
