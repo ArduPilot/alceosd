@@ -168,12 +168,12 @@ void uart_set_baudrate1(unsigned char b)
 
 unsigned char uart_getc1(char *c)
 {
-  unsigned char ret = (rx1_fifo.rd != rx1_fifo.wr);
-  if (ret) {
-    *c = rx1_fifo.buf[rx1_fifo.rd++];
-    rx1_fifo.rd &= UART_FIFO_MASK;
-  }
-  return ret;
+    unsigned char ret = (rx1_fifo.rd != rx1_fifo.wr);
+    if (ret) {
+        *c = rx1_fifo.buf[rx1_fifo.rd++];
+        rx1_fifo.rd &= UART_FIFO_MASK;
+    }
+    return ret;
 }
 
 unsigned int uart_read1(char **buf)
@@ -291,12 +291,12 @@ void uart_set_baudrate2(unsigned char b)
 
 unsigned char uart_getc2(char *c)
 {
-  unsigned char ret = (rx2_fifo.rd != rx2_fifo.wr);
-  if (ret) {
-    *c = rx2_fifo.buf[rx2_fifo.rd++];
-    rx2_fifo.rd &= UART_FIFO_MASK;
-  }
-  return ret;
+    unsigned char ret = (rx2_fifo.rd != rx2_fifo.wr);
+    if (ret) {
+        *c = rx2_fifo.buf[rx2_fifo.rd++];
+        rx2_fifo.rd &= UART_FIFO_MASK;
+    }
+    return ret;
 }
 
 unsigned int uart_read2(char **buf)
