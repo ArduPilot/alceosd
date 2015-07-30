@@ -32,11 +32,6 @@ enum {
     UART_PORT_CON2,
 };
 
-struct baudrate_tbl {
-    unsigned long baudrate;
-    unsigned int brg;
-};
-
 
 unsigned long uart_get_baudrate(unsigned char b);
 

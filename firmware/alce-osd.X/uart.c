@@ -25,7 +25,12 @@
 
 #define DMA_BUF_SIZE    (128)
 
-const struct baudrate_tbl baudrates[] = {
+struct baudrate_tbl {
+    unsigned long baudrate;
+    unsigned int brg;
+};
+
+static const struct baudrate_tbl baudrates[] = {
     { .baudrate = 19200,  .brg = 227 },
     { .baudrate = 57600,  .brg = 76 },
     { .baudrate = 115200, .brg = 37 },
