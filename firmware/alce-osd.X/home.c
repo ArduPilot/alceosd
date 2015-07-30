@@ -114,7 +114,7 @@ void find_home(struct timer *t, void *d)
 }
 
 
-void init_home_process(void)
+void init_home(void)
 {
     home.lock = 0;
     home.lock_sec = 0;

@@ -103,7 +103,7 @@ static void find_launch_heading(struct timer *t, void *d)
 }
 
 
-void init_flight_stats_process(void)
+void init_flight_stats(void)
 {
     stats.launch_heading = NO_HEADING;
 

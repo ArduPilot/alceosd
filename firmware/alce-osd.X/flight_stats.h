@@ -30,7 +30,7 @@ struct flight_stats {
     unsigned int max_home_distance;
 };
 
-void init_flight_stats_process(void);
+void init_flight_stats(void);
 struct flight_stats* get_flight_stats(void);
 
 #endif	/* FLIGHT_STATS_H */
