@@ -49,6 +49,7 @@
         <itemPath>widgets/wind.c</itemPath>
         <itemPath>widgets/flight_info.c</itemPath>
         <itemPath>widgets/console.c</itemPath>
+        <itemPath>widgets/gimbal.c</itemPath>
       </logicalFolder>
       <itemPath>uart.c</itemPath>
       <itemPath>main.c</itemPath>
