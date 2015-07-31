@@ -82,8 +82,7 @@ struct alceosd_config {
 };
 
 
-void load_config(void);
-void config_process(void);
+void config_init(void);
 
 unsigned char get_units(struct widget_config *cfg);
 

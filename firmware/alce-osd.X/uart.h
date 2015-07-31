@@ -20,6 +20,10 @@
 #define	UART_H
 
 enum {
+    UART_PORT1 = 0,
+    UART_PORT2,
+};
+enum {
     UART_19200,
     UART_57600,
     UART_115200,
@@ -32,6 +36,25 @@ enum {
     UART_PORT_CON2,
 };
 
+enum {
+    UART_CLIENT_MAVLINK = 0,
+    UART_CLIENT_UAVTALK,
+    UART_CLIENT_CONFIG,
+};
+
+struct uart_client {
+    /* received data is feed to this function */
+    unsigned int (*read)(unsigned char *buf, unsigned int len);
+
+    /* modules should use this function to send data */
+    /* pointer is set by client request function */
+    void (*write)(unsigned char *buf, unsigned int len);
+};
+
+void uart_init(void);
+//void uart_set_client(unsigned char port, struct uart_client *c);
+void uart_set_client(unsigned char port, unsigned char client_id);
+void uart_add_client_map(unsigned char id, unsigned char port, struct uart_client *c);
 
 unsigned long uart_get_baudrate(unsigned char b);
 

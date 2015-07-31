@@ -71,8 +71,10 @@ unsigned int mavlink_msg_rc_channels_raw_get_chan(mavlink_message_t *msg, unsign
 }
 /* *************** */
 
+static void mavlink_send_msg(mavlink_message_t *msg);
 
-void mavlink_parse_msg(mavlink_message_t *msg, mavlink_status_t *status)
+
+void mavlink_handle_msg(mavlink_message_t *msg, mavlink_status_t *status)
 {
     struct mavlink_callback *c;
     unsigned char i;
@@ -83,7 +85,9 @@ void mavlink_parse_msg(mavlink_message_t *msg, mavlink_status_t *status)
     //    console_printf("heartbeat:type=%d\n", mavlink_msg_heartbeat_get_type(msg));
     //}
 
-
+    /* TODO: properly route to other ports */
+    //mavlink_send_msg(msg);
+            
     for (i = 0; i < nr_callbacks; i++) {
         c = &callbacks[i];
         if ((msg->msgid == c->msgid) && ((msg->sysid == c->sysid) || (c->sysid == MAV_SYS_ID_ANY)))
@@ -91,6 +95,43 @@ void mavlink_parse_msg(mavlink_message_t *msg, mavlink_status_t *status)
     }
     LED = 1;
 }
+
+
+static unsigned int mavlink_receive0(unsigned char *buf, unsigned int len)
+{
+    mavlink_message_t msg __attribute__ ((aligned(2)));
+    mavlink_status_t status;
+    unsigned int i = len;
+    while (i--) {
+        if (mavlink_parse_char(MAVLINK_COMM_0, *(buf++), &msg, &status)) {
+            mavlink_handle_msg(&msg, &status);
+        }
+    }
+    return len;
+}
+
+static unsigned int mavlink_receive1(unsigned char *buf, unsigned int len)
+{
+    mavlink_message_t msg __attribute__ ((aligned(2)));
+    mavlink_status_t status;
+    unsigned int i = len;
+    while (i--) {
+        if (mavlink_parse_char(MAVLINK_COMM_1, *(buf++), &msg, &status)) {
+            mavlink_handle_msg(&msg, &status);
+        }
+    }
+    return len;
+}
+
+struct uart_client mavlink_uart_client0 = {
+    .read = mavlink_receive0,
+    .write = NULL,
+};
+
+struct uart_client mavlink_uart_client1 = {
+    .read = mavlink_receive1,
+    .write = NULL,
+};
 
 
 static void mavlink_send_msg(mavlink_message_t *msg)
@@ -101,47 +142,14 @@ static void mavlink_send_msg(mavlink_message_t *msg)
     len = mavlink_msg_to_send_buffer(buf, msg);
 
     /* TODO: implement routing tables */
-    uart_write2(buf, len);
-    //uart_write1(buf, len);
+
+    if (mavlink_uart_client0.write != NULL)
+        mavlink_uart_client0.write(buf, len);
+
+    if (mavlink_uart_client1.write != NULL)
+        mavlink_uart_client1.write(buf, len);
 }
 
-
-static void mavlink_process(void)
-{
-    mavlink_message_t msg __attribute__ ((aligned(2)));
-    mavlink_status_t status;
-    char *buf;
-    int count, i, len;
-
-    unsigned char msg_buf[MAVLINK_MAX_PACKET_LEN];
-
-    i = count = uart_read2(&buf);
-    while (i--) {    
-        if (mavlink_parse_char(MAVLINK_COMM_0, *(buf++), &msg, &status)) {
-
-            /* forward to uart1 */
-            len = mavlink_msg_to_send_buffer(msg_buf, &msg);
-            //uart_write1(msg_buf, len);
-
-            mavlink_parse_msg(&msg, &status);
-        }
-    }
-    uart_discard2(count);
-
-#if 0
-    i = count = uart_read1(&buf);
-    while (i--) {
-        if (mavlink_parse_char(MAVLINK_COMM_1, *(buf++), &msg, &status)) {
-            /* forward to uart2 */
-            len = mavlink_msg_to_send_buffer(msg_buf, &msg);
-            uart_write2(msg_buf, len);
-
-            mavlink_parse_msg(&msg, &status);
-        }
-    }
-    uart_discard1(count);
-#endif
-}
 
 struct mavlink_callback* add_mavlink_callback(unsigned char msgid,
             void *cbk, unsigned char ctype, void *data)
@@ -205,7 +213,6 @@ static void mav_heartbeat(struct timer *t, void *d)
 
     mavlink_send_msg(&msg);
 }
-
 
 
 static void send_param_list_cbk(struct timer *t, void *d)
@@ -314,13 +321,15 @@ void mavlink_init(void)
     /* register module parameters */
     params_add(params_mavlink);
 
-    /* heartbeat sender task */
-    //add_timer(TIMER_ALWAYS, 10, mav_heartbeat, NULL);
+    /* heartbeat timer */
+    add_timer(TIMER_ALWAYS, 10, mav_heartbeat, NULL);
 
     /* parameter request handlers */
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_LIST, mav_param_request_list, CALLBACK_PERSISTENT, NULL);
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_READ, mav_param_request_read, CALLBACK_PERSISTENT, NULL);
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_SET, mav_param_set, CALLBACK_PERSISTENT, NULL);
 
-    process_add(mavlink_process);
+    /* register serial port clients */
+    uart_add_client_map(UART_CLIENT_MAVLINK, UART_PORT1, &mavlink_uart_client0);
+    uart_add_client_map(UART_CLIENT_MAVLINK, UART_PORT2, &mavlink_uart_client1);
 }

@@ -34,7 +34,6 @@
 
 static unsigned long valid_config_addr = 0;
 
-
 /* default configuration */
 struct alceosd_config config = {
     .baudrate = UART_57600,
@@ -90,25 +89,32 @@ const struct param_def params_config[] = {
     PARAM_END,
 };
 
+static struct uart_client config_uart_client;
 
-void load_config(void)
+
+unsigned char get_units(struct widget_config *cfg)
+{
+    if (cfg->props.units == UNITS_DEFAULT)
+        return config.default_units;
+    else
+        return cfg->props.units;
+}
+
+static void load_config(void)
 {
     unsigned long status;
     unsigned long addr;
     unsigned char buf[3];
     int ipl;
 
-    /* TODO: params_add should be moved to some other place */
-    params_add(params_config);
-
     SET_AND_SAVE_CPU_IPL(ipl, 7);
-    
+
     /* find first valid config */
-    addr = CONFIG_ADDR_START;    
+    addr = CONFIG_ADDR_START;
 
     while (addr < CONFIG_ADDR_END) {
         read_flash(addr, 3, buf);
-        status = ((unsigned long) buf[0]) | 
+        status = ((unsigned long) buf[0]) |
                  ((unsigned long) buf[1] << 8) |
                  ((unsigned long) buf[2] << 16);
         //printf("signature: %4x%4x\n", (unsigned int) (status>>16), (unsigned int) status);
@@ -123,14 +129,14 @@ void load_config(void)
         valid_config_addr = addr;
         read_flash(addr + 4, sizeof(struct alceosd_config), (unsigned char *) &config);
     }
-    
+
     video_apply_config(&config.video);
 
     RESTORE_CPU_IPL(ipl);
-    return;
 }
 
-void write_config(void)
+
+static void write_config(void)
 {
     unsigned long addr;
     unsigned char *b;
@@ -242,12 +248,15 @@ static void load_config_text(void)
     }
 }
 
-
-
-
-
-
-
+static void exit_config(void)
+{
+    /* TODO: create and get settings from config */
+    //uart_set_baudrate2(config.baudrate);
+    //uart_set_baudrate1(UART_19200);
+    uart_set_baudrate1(UART_57600);
+    uart_set_client(UART_PORT1, UART_CLIENT_UAVTALK);
+    uart_set_client(UART_PORT2, UART_CLIENT_MAVLINK);
+}
 
 
 enum {
@@ -310,9 +319,9 @@ const char menu_edit_widget[] = "\n\nAlceOSD :: Edit widget\n\n"
 
 extern const struct widget_ops *all_widget_ops[];
 
-void config_process(void)
+static unsigned int config_process(unsigned char *buf, unsigned int len)
 {
-    static unsigned char state = MENU_MAIN, refresh_disp = 1;
+    static unsigned char state = MENU_MAIN;
     unsigned int osdxsize, osdysize;
     static unsigned int options[30];
     static unsigned char nr_opt = 0;
@@ -322,117 +331,10 @@ void config_process(void)
     static unsigned char current_tab = 1;
     static struct widget_config *wcfg;
 
-    char c;
-
-    if (refresh_disp) {
+    char c = *buf;
 
     //printf("cfg size=%d\n", (unsigned int) sizeof (struct alceosd_config));
-        switch (state) {
-            case MENU_MAIN:
-            default:
-                printf(menu_main,
-                        (unsigned int) (uart_get_baudrate(config.baudrate) / 1000),
-                        (unsigned int) (uart_get_baudrate(config.baudrate) % 1000),
-                        (config.default_units == UNITS_METRIC) ? "METRIC" : "IMPERIAL",
-                        config.home_lock_sec);
-                break;
-            case MENU_VIDEO:
-                printf(menu_video,
-                        (config.video.standard == VIDEO_STANDARD_PAL_P) ? "PAL progressive" :
-                        (config.video.standard == VIDEO_STANDARD_PAL_I) ? "PAL interlaced" :
-                        (config.video.standard == VIDEO_STANDARD_NTSC_P) ? "NTSC progressive" : "NTSC interlaced",
-                        config.video.brightness,
-                        config.video.y_offset,
-                        config.video.x_offset,
-                        osdxsize,
-                        osdysize);
 
-                break;
-            case MENU_TABS:
-                printf(menu_tabs, current_tab,
-                        (config.tab_change.mode == TAB_CHANGE_CHANNEL) ? "RC CHANNEL PERCENT" :
-                        (config.tab_change.mode == TAB_CHANGE_FLIGHTMODE) ? "FLIGHT MODE" :
-                        (config.tab_change.mode == TAB_CHANGE_TOGGLE) ? "RC CHANNEL TOGGLE" :
-                        (config.tab_change.mode == TAB_CHANGE_DEMO) ? "DEMO" : "????");
-
-                switch (config.tab_change.mode) {
-                    case TAB_CHANGE_CHANNEL:
-                    default:
-                        printf(menu_tabs_mode_ch, config.tab_change.ch + 1);
-                        break;
-                    case TAB_CHANGE_FLIGHTMODE:
-                    case TAB_CHANGE_DEMO:
-                        printf(menu_tabs_mode_tmr, config.tab_change.time_window);
-                        break;
-                    case TAB_CHANGE_TOGGLE:
-                        printf(menu_tabs_mode_ch, config.tab_change.ch + 1);
-                        printf(menu_tabs_mode_tmr, config.tab_change.time_window);
-                        break;
-                }
-                printf(menu_tabs_end);
-                break;
-            case MENU_TAB_WIDGETS: {
-                wcfg = &config.widgets[0];
-                const struct widget_ops *w_ops;
-                char c = '1';
-                nr_opt = 0;
-
-                printf(menu_tab_widgets, current_tab);
-                while (wcfg->tab != TABS_END) {
-                    if (wcfg->tab == current_tab) {
-                        w_ops = get_widget_ops(wcfg->widget_id);
-                        if (w_ops != NULL) {
-                            printf("%c - %s\n", c++, w_ops->name);
-                            if (c == ('9'+1))
-                                c = 'a';
-                            options[nr_opt++] = (int) wcfg;
-                        }
-                    }
-                    wcfg++;
-                }
-                break;
-            }
-
-            case MENU_ADD_WIDGET: {
-                const struct widget_ops **w_ops;
-                char c = '1';
-                nr_opt = 0;
-
-                printf(menu_add_widgets);
-
-                w_ops = all_widget_ops;
-                while (*w_ops != NULL) {
-                    printf("%c - %s\n", c++, (*w_ops)->name);
-                    if (c == ('9'+1))
-                        c = 'a';
-                    options[nr_opt++] = (*w_ops)->id;
-                    w_ops++;
-                }
-                break;
-            }
-            case MENU_EDIT_WIDGET: {
-                wcfg = (struct widget_config*) options[nr_opt];
-                // struct widget_ops *w_ops = get_widget_ops(wcfg->widget_id);
-
-                printf(menu_edit_widget,
-                    wcfg->props.hjust,
-                    wcfg->props.vjust,
-                    wcfg->props.mode,
-                    wcfg->props.units,
-                    wcfg->props.source,
-                    wcfg->x,
-                    wcfg->y);
-                break;
-            }
-
-        }
-        refresh_disp = 0;
-    }
-
-    if (uart_getc2(&c) == 0)
-        return;
-
-    refresh_disp = 1;
     switch (state) {
         case MENU_MAIN:
         default:
@@ -478,17 +380,11 @@ void config_process(void)
                     load_config_text();
                     break;
                 case 'x':
-                    process_remove(config_process);
-
-                    /* TODO: rework serial handling */
+                    exit_config();
                     
-                    uart_set_baudrate2(config.baudrate);
-                    //uart_set_baudrate1(UART_19200);
-                    uart_set_baudrate1(UART_57600);
-
                     /* re-init tabs */
                     tabs_init();
-                    return;
+                    return 1;
                 default:
                     break;
             }
@@ -717,14 +613,135 @@ void config_process(void)
             load_tab(current_tab);
             break;
     }
-    
+
+
+    switch (state) {
+        case MENU_MAIN:
+        default:
+            printf(menu_main,
+                    (unsigned int) (uart_get_baudrate(config.baudrate) / 1000),
+                    (unsigned int) (uart_get_baudrate(config.baudrate) % 1000),
+                    (config.default_units == UNITS_METRIC) ? "METRIC" : "IMPERIAL",
+                    config.home_lock_sec);
+            break;
+        case MENU_VIDEO:
+            printf(menu_video,
+                    (config.video.standard == VIDEO_STANDARD_PAL_P) ? "PAL progressive" :
+                    (config.video.standard == VIDEO_STANDARD_PAL_I) ? "PAL interlaced" :
+                    (config.video.standard == VIDEO_STANDARD_NTSC_P) ? "NTSC progressive" : "NTSC interlaced",
+                    config.video.brightness,
+                    config.video.y_offset,
+                    config.video.x_offset,
+                    osdxsize,
+                    osdysize);
+
+            break;
+        case MENU_TABS:
+            printf(menu_tabs, current_tab,
+                    (config.tab_change.mode == TAB_CHANGE_CHANNEL) ? "RC CHANNEL PERCENT" :
+                    (config.tab_change.mode == TAB_CHANGE_FLIGHTMODE) ? "FLIGHT MODE" :
+                    (config.tab_change.mode == TAB_CHANGE_TOGGLE) ? "RC CHANNEL TOGGLE" :
+                    (config.tab_change.mode == TAB_CHANGE_DEMO) ? "DEMO" : "????");
+
+            switch (config.tab_change.mode) {
+                case TAB_CHANGE_CHANNEL:
+                default:
+                    printf(menu_tabs_mode_ch, config.tab_change.ch + 1);
+                    break;
+                case TAB_CHANGE_FLIGHTMODE:
+                case TAB_CHANGE_DEMO:
+                    printf(menu_tabs_mode_tmr, config.tab_change.time_window);
+                    break;
+                case TAB_CHANGE_TOGGLE:
+                    printf(menu_tabs_mode_ch, config.tab_change.ch + 1);
+                    printf(menu_tabs_mode_tmr, config.tab_change.time_window);
+                    break;
+            }
+            printf(menu_tabs_end);
+            break;
+        case MENU_TAB_WIDGETS: {
+            wcfg = &config.widgets[0];
+            const struct widget_ops *w_ops;
+            char c = '1';
+            nr_opt = 0;
+
+            printf(menu_tab_widgets, current_tab);
+            while (wcfg->tab != TABS_END) {
+                if (wcfg->tab == current_tab) {
+                    w_ops = get_widget_ops(wcfg->widget_id);
+                    if (w_ops != NULL) {
+                        printf("%c - %s\n", c++, w_ops->name);
+                        if (c == ('9'+1))
+                            c = 'a';
+                        options[nr_opt++] = (int) wcfg;
+                    }
+                }
+                wcfg++;
+            }
+            break;
+        }
+
+        case MENU_ADD_WIDGET: {
+            const struct widget_ops **w_ops;
+            char c = '1';
+            nr_opt = 0;
+
+            printf(menu_add_widgets);
+
+            w_ops = all_widget_ops;
+            while (*w_ops != NULL) {
+                printf("%c - %s\n", c++, (*w_ops)->name);
+                if (c == ('9'+1))
+                    c = 'a';
+                options[nr_opt++] = (*w_ops)->id;
+                w_ops++;
+            }
+            break;
+        }
+        case MENU_EDIT_WIDGET: {
+            wcfg = (struct widget_config*) options[nr_opt];
+            // struct widget_ops *w_ops = get_widget_ops(wcfg->widget_id);
+
+            printf(menu_edit_widget,
+                wcfg->props.hjust,
+                wcfg->props.vjust,
+                wcfg->props.mode,
+                wcfg->props.units,
+                wcfg->props.source,
+                wcfg->x,
+                wcfg->y);
+            break;
+        }
+
+    }
     return 1;
 }
 
-unsigned char get_units(struct widget_config *cfg)
+
+
+static unsigned int config_starter(unsigned char *buf, unsigned int len)
 {
-    if (cfg->props.units == UNITS_DEFAULT)
-        return config.default_units;
-    else
-        return cfg->props.units;
+    char s[9];
+    memset(s, '\0', 9);
+    memcpy(s, buf, min(len, 8));
+    if (strncmp(s, "!!!!!!!!", min(len, 8)) != 0) {
+        exit_config();
+        return len;
+    } else if (len > 7) {
+        config_uart_client.read = config_process;
+        return len;
+    }
+    return 0;
+}
+
+
+void config_init(void)
+{
+    params_add(params_config);
+
+    config_uart_client.read = config_starter;
+    uart_add_client_map(UART_CLIENT_CONFIG, UART_PORT2, &config_uart_client);
+    uart_set_client(UART_PORT2, UART_CLIENT_CONFIG);
+
+    load_config();
 }

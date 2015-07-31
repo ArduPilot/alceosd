@@ -19,9 +19,7 @@
 #ifndef UAVTALK_H
 #define	UAVTALK_H
 
-
-void uavtalk_process(void);
-
+void uavtalk_init(void);
 
 #endif	/* UAVTALK_H */
 

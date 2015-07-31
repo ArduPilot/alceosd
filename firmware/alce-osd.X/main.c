@@ -163,8 +163,6 @@ void hw_init(void)
 
 int main(void) {
     extern int __C30_UART; __C30_UART = 2;
-    unsigned char i;
-    char c;
 
     /* generic hw init */
     hw_init();
@@ -176,6 +174,8 @@ int main(void) {
     adc_init();
 
     /* init uart2 */
+    uart_init();
+    
     uart_init2(UART_PORT_TELEMETRY);
     uart_init1(UART_PORT_CON2);
 
@@ -183,7 +183,7 @@ int main(void) {
     init_video();
 
     /* try to load config from flash */
-    load_config();
+    config_init();
 
     /* init widget modules */
     widgets_init();
@@ -203,22 +203,13 @@ int main(void) {
     /* init mavlink module */
     mavlink_init();
 
+    /* init uavtalk module */
+    uavtalk_init();
+
     /* enable all interrupts */
     _IPL = 0;
     _IPL3 = 1;
-    
 
-    /* TODO: rework config entry */
-    /* check for config entry */
-    for (i = 0; i < 8; i++) {
-        while (uart_getc2(&c) == 0);
-        if (c != '!')
-            break;
-    }
-
-    if (i == 8)
-        process_add(config_process);
-    process_add(uavtalk_process);
 
     /* main loop */
     process_run();

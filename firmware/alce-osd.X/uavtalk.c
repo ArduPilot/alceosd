@@ -173,20 +173,30 @@ static void uavtalk_handle_msg(struct uavtalk_message *msg)
                     DEG2RAD(uavtalk_get_float(msg, UAVTALK_OBJID_ATTITUDESTATE_PITCH)),
                     DEG2RAD(uavtalk_get_float(msg, UAVTALK_OBJID_ATTITUDESTATE_YAW)),
                     0, 0, 0);
-            mavlink_parse_msg(&mav_msg, NULL);
+            mavlink_handle_msg(&mav_msg, NULL);
             break;
     }
 }
 
-
-void uavtalk_process(void)
+static unsigned int uavtalk_receive(unsigned char *buf, unsigned int len)
 {
     static struct uavtalk_message msg;
-    char c;
-    
-    while (uart_getc1(&c) != 0) {
-        if (uavtalk_parse_byte(c, &msg)) {
+    unsigned int i = len;
+    while (i--) {
+        if (uavtalk_parse_byte(*(buf++), &msg)) {
             uavtalk_handle_msg(&msg);
         }
     }
+    return len;
+}
+
+struct uart_client uavtalk_uart_client = {
+    .read = uavtalk_receive,
+    .write = NULL,
+};
+
+void uavtalk_init(void)
+{
+    uart_add_client_map(UART_CLIENT_UAVTALK, UART_PORT1, &uavtalk_uart_client);
+    uart_add_client_map(UART_CLIENT_UAVTALK, UART_PORT2, &uavtalk_uart_client);
 }

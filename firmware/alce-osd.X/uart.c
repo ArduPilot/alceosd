@@ -36,6 +36,22 @@ static const struct baudrate_tbl baudrates[] = {
     { .baudrate = 115200, .brg = 37 },
 };
 
+struct uart_ops {
+    void (*init)(unsigned char pins);
+    void (*set_baudrate)(unsigned char b);
+    unsigned int (*count)(void);
+    unsigned int (*read)(unsigned char **buf);
+    void (*discard)(unsigned int count);
+    void (*write)(unsigned char *buf, unsigned int len);
+};
+
+#define UART_CLIENT_MAP_MAX 10
+struct uart_client_map {
+    unsigned char id;
+    unsigned char port;
+    struct uart_client *c;
+} client_map [UART_CLIENT_MAP_MAX];
+
 
 struct uart_fifo {
   char buf[UART_FIFO_MASK+1];
@@ -194,6 +210,13 @@ unsigned int uart_read1(char **buf)
     return ret;
 }
 
+static inline unsigned int uart_count1(void)
+{
+    return (rx1_fifo.wr - rx1_fifo.rd) & UART_FIFO_MASK;
+}
+
+
+
 void uart_discard1(unsigned int count)
 {
     rx1_fifo.rd += count;
@@ -317,6 +340,11 @@ unsigned int uart_read2(char **buf)
     return ret;
 }
 
+static inline unsigned int uart_count2(void)
+{
+    return (rx2_fifo.wr - rx2_fifo.rd) & UART_FIFO_MASK;
+}
+
 void uart_discard2(unsigned int count)
 {
     rx2_fifo.rd += count;
@@ -347,4 +375,78 @@ void uart_write2(unsigned char *buf, unsigned int len)
     DMA1CONbits.CHEN = 1; // DMA one-shot mode requires the CHEN bit be set every time
     DMA1REQbits.FORCE = 1; // Force the DMA to start transferring data.
 #endif
+}
+
+
+const struct uart_ops uart[2] = {
+    {
+        .init = uart_init1,
+        .count = uart_count1,
+        .read = uart_read1,
+        .discard = uart_discard1,
+        .write = uart_write1,
+    },
+    {
+        .init = uart_init2,
+        .count = uart_count2,
+        .read = uart_read2,
+        .discard = uart_discard2,
+        .write = uart_write2,
+    },
+};
+
+
+static struct uart_client *clients[2] = {NULL, NULL};
+
+
+static void uart_process(void)
+{
+    int i;
+    unsigned char *b;
+    unsigned int len;
+
+    for (i = 0; i < 2; i++) {
+        if ((clients[i] != NULL) && (uart[i].count() > 0)) {
+            len = uart[i].read(&b);
+            len = clients[i]->read(b, len);
+            uart[i].discard(len);
+        }
+    }
+}
+
+
+void uart_set_client(unsigned char port, unsigned char client_id)
+{
+    struct uart_client_map *cmap = client_map;
+
+    if (port > 1) {
+        return;
+    }
+
+    while (cmap->id != 0xff) {
+        if ((cmap->id == client_id) && (cmap->port == port)) {
+            clients[port] = cmap->c;
+            cmap->c->write = (port == 0) ? uart_write1 : uart_write2;
+            break;
+        }
+        cmap++;
+    }
+}
+
+void uart_add_client_map(unsigned char id, unsigned char port, struct uart_client *c)
+{
+    struct uart_client_map *cmap = client_map;
+    while (cmap->id != 0xff)
+        cmap++;
+
+    cmap->id = id;
+    cmap->port = port;
+    (cmap++)->c = c;
+    cmap->id = 0xff;
+}
+
+void uart_init(void)
+{
+    client_map[0].id = 0xff;
+    process_add(uart_process);
 }
