@@ -20,11 +20,12 @@
 #define	CONFIG_H
 
 #include "videocore.h"
+#include "uart.h"
 #include "widgets.h"
 #include "tabs.h"
 
 
-#define CONFIG_MAX_WIDGETS      (100)
+#define CONFIG_MAX_WIDGETS      (80)
 
 
 /* widget config */
@@ -62,8 +63,8 @@ enum {
 
 
 struct alceosd_config {
-    /* telemetry baudrate */
-    unsigned char baudrate;
+    /* uart config */
+    struct uart_config uart[2];
 
     /* video config */
     struct video_config video;

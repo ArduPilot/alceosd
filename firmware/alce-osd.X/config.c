@@ -36,8 +36,11 @@ static unsigned long valid_config_addr = 0;
 
 /* default configuration */
 struct alceosd_config config = {
-    .baudrate = UART_57600,
-    
+    .uart = {
+        { .mode = UART_CLIENT_MAVLINK, .baudrate = UART_BAUD_115200, .pins = UART_PINS_TELEMETRY },
+        { .mode = UART_CLIENT_MAVLINK, .baudrate = UART_BAUD_115200, .pins = UART_PINS_CON2 },
+    },
+  
     .video.standard = VIDEO_STANDARD_PAL_P,
     .video.brightness = 600, //0x50,
     .video.x_offset = 85,
@@ -58,6 +61,7 @@ struct alceosd_config config = {
 
     .widgets = {
         { 5, 0, WIDGET_CONSOLE_ID,         0,   0, {JUST_VCENTER | JUST_HCENTER}},
+        { 5, 0, WIDGET_GIMBAL_ID,          0,   0, {JUST_TOP | JUST_RIGHT}},
 
         { 1, 0, WIDGET_ALTITUDE_ID,        0,   0, {JUST_VCENTER | JUST_RIGHT}},
         { 1, 0, WIDGET_BATTERY_INFO_ID,    0,   0, {JUST_TOP     | JUST_LEFT}},
@@ -170,6 +174,7 @@ static void write_config(void)
 
     /* write config */
     /* flag valid config */
+    printf("last_addr=%04x%04x\n", (unsigned int) (valid_config_addr>>16), (unsigned int) (valid_config_addr));
     write_word(valid_config_addr, CONFIG_VERSION_SIG);
 
     b = (unsigned char*) &config;
@@ -193,6 +198,8 @@ static void write_config(void)
         addr += 2;
     }
 
+    printf("last_addr=%04x%04x\n", (unsigned int) (addr>>16), (unsigned int) (addr));
+
     RESTORE_CPU_IPL(ipl);
 }
 
@@ -212,56 +219,58 @@ static void dump_config_text(void)
 
 }
 
+static unsigned int config_process(unsigned char *buf, unsigned int len);
 
-#define MAX_LINE_LEN    (100)
-static void load_config_text(void)
+#define MAX_LINE_LEN 50
+static unsigned int load_config_text(unsigned char *buf, unsigned int len)
 {
-    char buf[MAX_LINE_LEN];
+    static unsigned char line[MAX_LINE_LEN];
     char param[20];
     float value;
-    unsigned char len = 0;
-    
-    printf("\nWaiting for AlceOSD config\n");
+    unsigned char i = 0;
 
-    while (1) {
-        while (uart_getc2(&buf[len]) == 0);
-        LED = ~LED;
-        if (buf[len] == '\n') {
-            /* process line */
+    LED = ~LED;
 
-            /* the end */
-            if ((len == 1) && (buf[0] == '.'))
-                break;
 
-            /* terminate string */
-            buf[len] = '\0';
-            sscanf(buf, "%s = %f", param, &value);
-            params_set_value(param, value, 0);
-            printf("got: '%s' = '%f'\n", param, value);
 
-            len = 0;
-        } else {
-            if (len < MAX_LINE_LEN)
-                len++;
+    if (buf[len-1] == '\n') {
+        /* process line */
+
+        /* the end */
+        if ((len == 1) && (buf[0] == '.')) {
+            config_uart_client.read = config_process;
+            return len;
         }
-        
+
+        /* terminate string */
+        //memcpy(line, buf,)
+        buf[len] = '\0';
+        sscanf(buf, "%s = %f", param, &value);
+        params_set_value(param, value, 0);
+        printf("got: '%s' = '%f'\n", param, value);
+
+        len = 0;
+    } else {
+        if (len < MAX_LINE_LEN)
+            len++;
     }
+        
+    return 0;
 }
 
 static void exit_config(void)
 {
-    /* TODO: create and get settings from config */
-    //uart_set_baudrate2(config.baudrate);
-    //uart_set_baudrate1(UART_19200);
-    uart_set_baudrate1(UART_57600);
-    uart_set_client(UART_PORT1, UART_CLIENT_UAVTALK);
-    uart_set_client(UART_PORT2, UART_CLIENT_MAVLINK);
+    uart_set_config_pins();
+    uart_set_config_baudrates();
+    uart_set_config_clients();
 }
 
 
 enum {
     MENU_MAIN,
     MENU_VIDEO,
+    MENU_UART,
+    MENU_UART_CONFIG,
     MENU_TABS,
     MENU_TAB_WIDGETS,
     MENU_ADD_WIDGET,
@@ -271,7 +280,7 @@ enum {
 const char menu_main[] = "\n\n"
                          "AlceOSD setup\n\n"
                          "1 - Video config\n"
-                         "2 - Telemetry UART speed: %u%u\n"
+                         "2 - Serial port config\n"
                          "3 - Configure tabs\n"
                          "4 - Units (global setting): %s\n"
                          "q/w - Decrease/increase home locking timer: %d\n"
@@ -289,6 +298,18 @@ const char menu_video[] = "\n\nAlceOSD :: VIDEO setup\n\n"
                           "e/r - Decrease/increase video X size: %d\n"
                           "s/w - Decrease/increase video Y size: %d\n"
                           "x - Go back\n";
+
+const char menu_uart[] = "\n\nAlceOSD :: SERIAL PORT setup\n\n"
+                          "1 - Serial port 1\n"
+                          "2 - Serial port 2\n"
+                          "x - Go back\n";
+
+const char menu_uart_config[] = "\n\nAlceOSD :: SERIAL PORT %d setup\n\n"
+                                "1/2 - Mode: %s\n"
+                                "3/4 - Baudrate: %u%u\n"
+                                "5/6 - Pins: %s\n"
+                                "x - Go back\n";
+
 
 const char menu_tabs[] = "\n\nAlceOSD :: TAB config\n\n"
                          "1/2 - Change active tab: %d\n"
@@ -333,7 +354,7 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
 
     char c = *buf;
 
-    //printf("cfg size=%d\n", (unsigned int) sizeof (struct alceosd_config));
+    printf("cfg size=%d\n", (unsigned int) sizeof (struct alceosd_config));
 
     switch (state) {
         case MENU_MAIN:
@@ -343,9 +364,7 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
                     state = MENU_VIDEO;
                     break;
                 case '2':
-                    config.baudrate++;
-                    if (config.baudrate >= UART_BAUDRATES)
-                            config.baudrate = 0;
+                    state = MENU_UART;
                     break;
                 case '3':
                     state = MENU_TABS;
@@ -377,7 +396,9 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
                     break;
                 case 'l':
                     printf("Loading config from console...\n");
-                    load_config_text();
+                    config_uart_client.read = load_config_text;
+                    return;
+                    //load_config_text();
                     break;
                 case 'x':
                     exit_config();
@@ -454,6 +475,54 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
                     break;
             }
             break;
+
+        case MENU_UART:
+            switch (c) {
+                case '1':
+                    state = MENU_UART_CONFIG;
+                    nr_opt = 0;
+                    break;
+                case '2':
+                    state = MENU_UART_CONFIG;
+                    nr_opt = 1;
+                    break;
+                case 'x':
+                    state = MENU_MAIN;
+                    break;
+            }
+            break;
+        case MENU_UART_CONFIG:
+            switch (c) {
+                case '1':
+                    if (config.uart[nr_opt].mode > 0)
+                        config.uart[nr_opt].mode--;
+                    break;
+                case '2':
+                    if (config.uart[nr_opt].mode < UART_CLIENTS-1)
+                        config.uart[nr_opt].mode++;
+                    break;
+                case '3':
+                    if (config.uart[nr_opt].baudrate > 0)
+                        config.uart[nr_opt].baudrate--;
+                    break;
+                case '4':
+                    if (config.uart[nr_opt].baudrate < UART_BAUDRATES-1)
+                        config.uart[nr_opt].baudrate++;
+                    break;
+                case '5':
+                    if (config.uart[nr_opt].pins > 0)
+                        config.uart[nr_opt].pins--;
+                    break;
+                case '6':
+                    if (config.uart[nr_opt].pins < UART_PINS-1)
+                        config.uart[nr_opt].pins++;
+                    break;
+                case 'x':
+                    state = MENU_UART;
+                    break;
+            }
+            break;
+                
         case MENU_TABS:
             switch (c) {
                 case '1':
@@ -619,8 +688,6 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
         case MENU_MAIN:
         default:
             printf(menu_main,
-                    (unsigned int) (uart_get_baudrate(config.baudrate) / 1000),
-                    (unsigned int) (uart_get_baudrate(config.baudrate) % 1000),
                     (config.default_units == UNITS_METRIC) ? "METRIC" : "IMPERIAL",
                     config.home_lock_sec);
             break;
@@ -635,6 +702,18 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
                     osdxsize,
                     osdysize);
 
+            break;
+        case MENU_UART:
+            printf(menu_uart);
+            break;
+        case MENU_UART_CONFIG:
+            printf(menu_uart_config, nr_opt+1,
+                    config.uart[nr_opt].mode == 0 ? "DISABLED" :
+                    config.uart[nr_opt].mode == 1 ? "MAVLINK" :
+                    config.uart[nr_opt].mode == 2 ? "UAVTALK" : "CONSOLE",
+                    (unsigned int) (uart_get_baudrate(config.uart[nr_opt].baudrate) / 1000),
+                    (unsigned int) (uart_get_baudrate(config.uart[nr_opt].baudrate) % 1000),
+                    config.uart[nr_opt].pins == 0 ? "TELEMETRY" : "CON2");
             break;
         case MENU_TABS:
             printf(menu_tabs, current_tab,
@@ -737,11 +816,19 @@ static unsigned int config_starter(unsigned char *buf, unsigned int len)
 
 void config_init(void)
 {
+    const struct uart_ops *u = uart_get(UART_PORT1);
+    
     params_add(params_config);
 
     config_uart_client.read = config_starter;
-    uart_add_client_map(UART_CLIENT_CONFIG, UART_PORT2, &config_uart_client);
-    uart_set_client(UART_PORT2, UART_CLIENT_CONFIG);
+    uart_add_client_map(UART_CLIENT_CONFIG, UART_PORT1, &config_uart_client);
+
+    uart_set_config_baudrates();
+
+
+    /* force config on init */
+    u->set_baudrate(config.uart[UART_PORT1].baudrate);
+    uart_set_client(UART_PORT1, UART_CLIENT_CONFIG);
 
     load_config();
 }

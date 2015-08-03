@@ -89,23 +89,7 @@ void __attribute__((interrupt,no_auto_psv)) _MathError(void)
 }
 
 
-extern struct alceosd_config config;
-
 //#define DEBUG_INIT
-
-#ifdef REDIRECT_TO_CONSOLE
-int __attribute__((__weak__, __section__(".libc"))) write(int handle, void *buf, unsigned int len)
-{
-    switch (handle) {
-        case 0:
-        case 1:
-        case 2:
-            console_printn((char *) buf, len);
-            break;
-    }
-    return len;
-}
-#endif
 
 
 void hw_init(void)
@@ -162,22 +146,17 @@ void hw_init(void)
 
 
 int main(void) {
-    extern int __C30_UART; __C30_UART = 2;
-
     /* generic hw init */
     hw_init();
     
+    /* init uart */
+    uart_init();
+
     /* real time clock init */
     clock_init();
 
     /* adc init */
     adc_init();
-
-    /* init uart2 */
-    uart_init();
-    
-    uart_init2(UART_PORT_TELEMETRY);
-    uart_init1(UART_PORT_CON2);
 
     /* init video driver */
     init_video();
@@ -209,7 +188,6 @@ int main(void) {
     /* enable all interrupts */
     _IPL = 0;
     _IPL3 = 1;
-
 
     /* main loop */
     process_run();

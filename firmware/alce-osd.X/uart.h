@@ -23,23 +23,43 @@ enum {
     UART_PORT1 = 0,
     UART_PORT2,
 };
+
 enum {
-    UART_19200,
-    UART_57600,
-    UART_115200,
+    UART_BAUD_19200,
+    UART_BAUD_57600,
+    UART_BAUD_115200,
     UART_BAUDRATES,
 };
 
 enum {
-    UART_PORT_TELEMETRY = 0,
-    UART_PORT_ICSP,
-    UART_PORT_CON2,
+    UART_PINS_TELEMETRY = 0,
+    UART_PINS_CON2,
+    UART_PINS,
 };
 
 enum {
-    UART_CLIENT_MAVLINK = 0,
+    UART_CLIENT_NONE = 0,
+    UART_CLIENT_MAVLINK,
     UART_CLIENT_UAVTALK,
     UART_CLIENT_CONFIG,
+    UART_CLIENTS,
+};
+
+
+struct uart_config {
+    unsigned char mode;
+    unsigned char baudrate;
+    unsigned char pins;
+};
+
+struct uart_ops {
+    void (*init)(void);
+    void (*set_baudrate)(unsigned char b);
+    void (*set_pins)(unsigned char pins);
+    unsigned int (*count)(void);
+    unsigned int (*read)(unsigned char **buf);
+    void (*discard)(unsigned int count);
+    void (*write)(unsigned char *buf, unsigned int len);
 };
 
 struct uart_client {
@@ -52,25 +72,17 @@ struct uart_client {
 };
 
 void uart_init(void);
-//void uart_set_client(unsigned char port, struct uart_client *c);
 void uart_set_client(unsigned char port, unsigned char client_id);
 void uart_add_client_map(unsigned char id, unsigned char port, struct uart_client *c);
+inline const struct uart_ops* uart_get(unsigned char port);
 
-unsigned long uart_get_baudrate(unsigned char b);
+inline unsigned long uart_get_baudrate(unsigned char b);
+void uart_set_config_clients(void);
+void uart_set_config_baudrates(void);
+void uart_set_config_pins(void);
 
-void uart_init1(unsigned char pins);
-void uart_set_baudrate1(unsigned char b);
+
 unsigned char uart_getc1(char *c);
-unsigned int uart_read1(char **buf);
-void uart_discard1(unsigned int count);
-void uart_write1(unsigned char *buf, unsigned int len);
-
-
-void uart_init2(unsigned char pins);
-void uart_set_baudrate2(unsigned char b);
 unsigned char uart_getc2(char *c);
-unsigned int uart_read2(char **buf);
-void uart_discard2(unsigned int count);
-void uart_write2(unsigned char *buf, unsigned int len);
 
 #endif

@@ -25,6 +25,21 @@
 
 #define DMA_BUF_SIZE    (128)
 
+extern struct alceosd_config config;
+
+
+const struct param_def params_uart[] = {
+    PARAM("SERIAL1_MODE", MAV_PARAM_TYPE_UINT8, &config.uart[0].mode, uart_set_config_clients),
+    PARAM("SERIAL1_BAUD", MAV_PARAM_TYPE_UINT8, &config.uart[0].baudrate, uart_set_config_baudrates),
+    PARAM("SERIAL1_PINS", MAV_PARAM_TYPE_UINT8, &config.uart[0].pins, uart_set_config_pins),
+    PARAM("SERIAL2_MODE", MAV_PARAM_TYPE_UINT8, &config.uart[1].mode, uart_set_config_clients),
+    PARAM("SERIAL2_BAUD", MAV_PARAM_TYPE_UINT8, &config.uart[1].baudrate, uart_set_config_baudrates),
+    PARAM("SERIAL2_PINS", MAV_PARAM_TYPE_UINT8, &config.uart[1].pins, uart_set_config_pins),
+    PARAM_END,
+};
+
+
+
 struct baudrate_tbl {
     unsigned long baudrate;
     unsigned int brg;
@@ -36,25 +51,17 @@ static const struct baudrate_tbl baudrates[] = {
     { .baudrate = 115200, .brg = 37 },
 };
 
-struct uart_ops {
-    void (*init)(unsigned char pins);
-    void (*set_baudrate)(unsigned char b);
-    unsigned int (*count)(void);
-    unsigned int (*read)(unsigned char **buf);
-    void (*discard)(unsigned int count);
-    void (*write)(unsigned char *buf, unsigned int len);
-};
 
 #define UART_CLIENT_MAP_MAX 10
 struct uart_client_map {
     unsigned char id;
     unsigned char port;
     struct uart_client *c;
-} client_map [UART_CLIENT_MAP_MAX];
+} client_map [UART_CLIENT_MAP_MAX] = { { .id = 0xff } };
 
 
 struct uart_fifo {
-  char buf[UART_FIFO_MASK+1];
+  unsigned char buf[UART_FIFO_MASK+1];
   unsigned char rd, wr;
 };
 
@@ -67,7 +74,7 @@ __eds__ unsigned char uart1TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma)
 __eds__ unsigned char uart2TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x4000-(DMA_BUF_SIZE*2))));
 
 
-unsigned long uart_get_baudrate(unsigned char b)
+inline unsigned long uart_get_baudrate(unsigned char b)
 {
     if (b < UART_BAUDRATES)
         return baudrates[b].baudrate;
@@ -125,28 +132,10 @@ void __attribute__((__interrupt__, auto_psv)) _U2RXInterrupt(void)
 }
 
 
-void uart_init1(unsigned char pins)
+
+static void uart1_init(void)
 {
-
-    // set pins
-    switch (pins) {
-        case UART_PORT_TELEMETRY:
-            // U2TX
-            //_RP37R = 3;
-            // U2RX
-            //_U2RXR = 38;
-            break;
-        case UART_PORT_ICSP:
-        case UART_PORT_CON2:
-        default:
-            // TX
-            _RP41R = 1;
-            // RX
-            _U1RXR = 20;
-            break;
-    }
-
-    U1BRG = baudrates[UART_115200].brg;
+    U1BRG = baudrates[UART_BAUD_115200].brg;
     U1MODE = 0;              //clear mode register
     //U2MODEbits.BRGH = 1;     //use high precision baud generator
     U1STA = 0;               //clear status register
@@ -180,102 +169,9 @@ void uart_init1(unsigned char pins)
     U1STAbits.UTXEN = 1;
 }
 
-
-void uart_set_baudrate1(unsigned char b)
+static void uart2_init(void)
 {
-    if (b < UART_BAUDRATES)
-        U1BRG = baudrates[b].brg;
-}
-
-unsigned char uart_getc1(char *c)
-{
-    unsigned char ret = (rx1_fifo.rd != rx1_fifo.wr);
-    if (ret) {
-        *c = rx1_fifo.buf[rx1_fifo.rd++];
-        rx1_fifo.rd &= UART_FIFO_MASK;
-    }
-    return ret;
-}
-
-unsigned int uart_read1(char **buf)
-{
-    unsigned int wr = rx1_fifo.wr;
-    unsigned int ret = (wr - rx1_fifo.rd) & UART_FIFO_MASK;
-    if (ret) {
-        *buf = &rx1_fifo.buf[rx1_fifo.rd];
-        if (rx1_fifo.rd > wr) {
-            ret = UART_FIFO_MASK + 1 - rx1_fifo.rd;
-        }
-    }
-    return ret;
-}
-
-static inline unsigned int uart_count1(void)
-{
-    return (rx1_fifo.wr - rx1_fifo.rd) & UART_FIFO_MASK;
-}
-
-
-
-void uart_discard1(unsigned int count)
-{
-    rx1_fifo.rd += count;
-    rx1_fifo.rd &= UART_FIFO_MASK;
-}
-
-void uart_write1(unsigned char *buf, unsigned int len)
-{
-#ifndef DMA_UART1
-    while (len) {
-        while (!U1STAbits.TRMT);
-        U1TXREG = *buf++;
-        len--;
-    }
-#else
-    unsigned int count;
-    if (len == 0)
-        return;
-
-    /* TODO: split in 2 buffers and send data later */
-    while ((DMA0CONbits.CHEN == 1) || (U1STAbits.TRMT == 0));
-
-    count = 0;
-    while ((len-- > 0) && (count < sizeof(uart1TxDataBuf))) {
-        uart1TxDataBuf[count++] = *buf++;
-    }
-    DMA0CNT = count - 1; // DMAxCNT is N-1
-    DMA0CONbits.CHEN = 1; // DMA one-shot mode requires the CHEN bit be set every time
-    DMA0REQbits.FORCE = 1; // Force the DMA to start transferring data.
-#endif
-}
-
-
-
-
-
-
-
-
-
-
-void uart_init2(unsigned char pins)
-{
-
-    // set pins
-    switch (pins) {
-        case UART_PORT_TELEMETRY:
-        default:
-            // U2TX
-            _RP37R = 3;
-            // U2RX
-            _U2RXR = 38;
-            break;
-        case UART_PORT_ICSP:
-        case UART_PORT_CON2:
-            break;
-    }
-
-    U2BRG = baudrates[UART_115200].brg;
+    U2BRG = baudrates[UART_BAUD_115200].brg;
     U2MODE = 0;              //clear mode register
     //U2MODEbits.BRGH = 1;     //use high precision baud generator
     U2STA = 0;               //clear status register
@@ -311,23 +207,73 @@ void uart_init2(unsigned char pins)
 }
 
 
-void uart_set_baudrate2(unsigned char b)
+static void uart1_set_pins(unsigned char pins)
+{
+    // set pins
+    switch (pins) {
+        default:
+        case UART_PINS_TELEMETRY:
+            // TX
+            _RP37R = 1;
+            // RX
+            _U1RXR = 38;
+            break;
+        case UART_PINS_CON2:
+            // TX
+            _RP41R = 1;
+            // RX
+            _U1RXR = 20;
+            break;
+    }
+}
+
+static void uart2_set_pins(unsigned char pins)
+{
+    switch (pins) {
+        case UART_PINS_TELEMETRY:
+            // TX
+            _RP37R = 3;
+            // RX
+            _U2RXR = 38;
+            break;
+        default:
+        case UART_PINS_CON2:
+            // TX
+            _RP41R = 3;
+            // RX
+            _U2RXR = 20;
+            break;
+    }
+}
+
+
+static inline void uart1_set_baudrate(unsigned char b)
+{
+    if (b < UART_BAUDRATES)
+        U1BRG = baudrates[b].brg;
+}
+
+static inline void uart2_set_baudrate(unsigned char b)
 {
     if (b < UART_BAUDRATES)
         U2BRG = baudrates[b].brg;
 }
 
-unsigned char uart_getc2(char *c)
+
+static unsigned int uart1_read(unsigned char **buf)
 {
-    unsigned char ret = (rx2_fifo.rd != rx2_fifo.wr);
+    unsigned int wr = rx1_fifo.wr;
+    unsigned int ret = (wr - rx1_fifo.rd) & UART_FIFO_MASK;
     if (ret) {
-        *c = rx2_fifo.buf[rx2_fifo.rd++];
-        rx2_fifo.rd &= UART_FIFO_MASK;
+        *buf = &rx1_fifo.buf[rx1_fifo.rd];
+        if (rx1_fifo.rd > wr) {
+            ret = UART_FIFO_MASK + 1 - rx1_fifo.rd;
+        }
     }
     return ret;
 }
 
-unsigned int uart_read2(char **buf)
+static unsigned int uart2_read(unsigned char **buf)
 {
     unsigned int wr = rx2_fifo.wr;
     unsigned int ret = (wr - rx2_fifo.rd) & UART_FIFO_MASK;
@@ -340,18 +286,57 @@ unsigned int uart_read2(char **buf)
     return ret;
 }
 
-static inline unsigned int uart_count2(void)
+static inline unsigned int uart1_count(void)
+{
+    return (rx1_fifo.wr - rx1_fifo.rd) & UART_FIFO_MASK;
+}
+
+static inline unsigned int uart2_count(void)
 {
     return (rx2_fifo.wr - rx2_fifo.rd) & UART_FIFO_MASK;
 }
 
-void uart_discard2(unsigned int count)
+
+static inline void uart1_discard(unsigned int count)
+{
+    rx1_fifo.rd += count;
+    rx1_fifo.rd &= UART_FIFO_MASK;
+}
+
+static inline void uart2_discard(unsigned int count)
 {
     rx2_fifo.rd += count;
     rx2_fifo.rd &= UART_FIFO_MASK;
 }
 
-void uart_write2(unsigned char *buf, unsigned int len)
+
+void uart1_write(unsigned char *buf, unsigned int len)
+{
+#ifndef DMA_UART1
+    while (len) {
+        while (!U1STAbits.TRMT);
+        U1TXREG = *buf++;
+        len--;
+    }
+#else
+    unsigned int count;
+    if (len == 0)
+        return;
+
+    /* TODO: split in 2 buffers and send data later */
+    while ((DMA0CONbits.CHEN == 1) || (U1STAbits.TRMT == 0));
+
+    count = 0;
+    while ((len-- > 0) && (count < sizeof(uart1TxDataBuf))) {
+        uart1TxDataBuf[count++] = *buf++;
+    }
+    DMA0CNT = count - 1; // DMAxCNT is N-1
+    DMA0CONbits.CHEN = 1; // DMA one-shot mode requires the CHEN bit be set every time
+    DMA0REQbits.FORCE = 1; // Force the DMA to start transferring data.
+#endif
+}
+
+void uart2_write(unsigned char *buf, unsigned int len)
 {
 #ifndef DMA_UART2
     while (len) {
@@ -378,23 +363,69 @@ void uart_write2(unsigned char *buf, unsigned int len)
 }
 
 
+
+unsigned char uart_getc1(char *c)
+{
+    unsigned char ret = (rx1_fifo.rd != rx1_fifo.wr);
+    if (ret) {
+        *c = rx1_fifo.buf[rx1_fifo.rd++];
+        rx1_fifo.rd &= UART_FIFO_MASK;
+    }
+    return ret;
+}
+
+unsigned char uart_getc2(char *c)
+{
+    unsigned char ret = (rx2_fifo.rd != rx2_fifo.wr);
+    if (ret) {
+        *c = rx2_fifo.buf[rx2_fifo.rd++];
+        rx2_fifo.rd &= UART_FIFO_MASK;
+    }
+    return ret;
+}
+
+
+#ifdef REDIRECT_LIBC_WRITE
+int __attribute__((__weak__, __section__(".libc"))) write(int handle, void *buf, unsigned int len)
+{
+    switch (handle) {
+        case 0:
+        case 1:
+        case 2:
+            console_printn((char *) buf, len);
+            break;
+    }
+    return len;
+}
+#endif
+
+
 const struct uart_ops uart[2] = {
     {
-        .init = uart_init1,
-        .count = uart_count1,
-        .read = uart_read1,
-        .discard = uart_discard1,
-        .write = uart_write1,
+        .init = uart1_init,
+        .count = uart1_count,
+        .read = uart1_read,
+        .discard = uart1_discard,
+        .write = uart1_write,
+        .set_baudrate = uart1_set_baudrate,
+        .set_pins = uart1_set_pins,
     },
     {
-        .init = uart_init2,
-        .count = uart_count2,
-        .read = uart_read2,
-        .discard = uart_discard2,
-        .write = uart_write2,
+        .init = uart2_init,
+        .count = uart2_count,
+        .read = uart2_read,
+        .discard = uart2_discard,
+        .write = uart2_write,
+        .set_baudrate = uart2_set_baudrate,
+        .set_pins = uart2_set_pins,
     },
 };
 
+
+inline const struct uart_ops* uart_get(unsigned char port)
+{
+    return &uart[port];
+}
 
 static struct uart_client *clients[2] = {NULL, NULL};
 
@@ -418,19 +449,47 @@ static void uart_process(void)
 void uart_set_client(unsigned char port, unsigned char client_id)
 {
     struct uart_client_map *cmap = client_map;
+    struct uart_client **c = &clients[port];
 
-    if (port > 1) {
+    if (port > 1)
         return;
-    }
+
+    /* disable current client write op */
+    if ((*c) != NULL)
+        (*c)->write = NULL;
 
     while (cmap->id != 0xff) {
         if ((cmap->id == client_id) && (cmap->port == port)) {
-            clients[port] = cmap->c;
-            cmap->c->write = (port == 0) ? uart_write1 : uart_write2;
+            (*c) = cmap->c;
+            cmap->c->write = uart[port].write;
             break;
         }
         cmap++;
     }
+
+    /* client not found or none */
+    if (cmap->id == 0xff) {
+        (*c) = NULL;
+    }
+
+}
+
+void uart_set_config_clients(void)
+{
+    uart_set_client(UART_PORT1, config.uart[0].mode);
+    uart_set_client(UART_PORT2, config.uart[1].mode);
+}
+
+void uart_set_config_baudrates(void)
+{
+    uart[0].set_baudrate(config.uart[0].baudrate);
+    uart[1].set_baudrate(config.uart[1].baudrate);
+}
+
+void uart_set_config_pins(void)
+{
+    uart[0].set_pins(config.uart[0].pins);
+    uart[1].set_pins(config.uart[1].pins);
 }
 
 void uart_add_client_map(unsigned char id, unsigned char port, struct uart_client *c)
@@ -447,6 +506,13 @@ void uart_add_client_map(unsigned char id, unsigned char port, struct uart_clien
 
 void uart_init(void)
 {
-    client_map[0].id = 0xff;
+    extern int __C30_UART;
+    __C30_UART = 1;
+
+    uart_set_config_pins();
+
+    uart[0].init();
+    uart[1].init();
+
     process_add(uart_process);
 }
