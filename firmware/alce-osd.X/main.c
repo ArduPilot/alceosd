@@ -27,7 +27,7 @@
 // DSPIC33EP512GP504 Configuration Bit Settings
 
 // FICD
-#pragma config ICS = PGD3 //NONE               // ICD Communication Channel Select bits (Reserved, do not use)
+#pragma config ICS = PGD1 //NONE               // ICD Communication Channel Select bits (Reserved, do not use)
 #pragma config JTAGEN = OFF             // JTAG Enable bit (JTAG is disabled)
 
 // FPOR
@@ -91,9 +91,11 @@ void __attribute__((interrupt,no_auto_psv)) _MathError(void)
 
 //#define DEBUG_INIT
 
+unsigned char hw_rev;
 
 void hw_init(void)
 {
+    volatile unsigned int i;
     /* LED */
     LED_DIR = 0;
     LED = 0;
@@ -141,6 +143,17 @@ void hw_init(void)
 #endif
 
     LED = 1;
+
+    /* detect hw revision */
+    _TRISA9 = 1;
+    _CNPUA9 = 0;
+    _CNPDA9 = 1;
+    for (i = 0; i < 10000; i++);
+    if (_RA9 == 1)
+        hw_rev = 0x02;
+    else
+        hw_rev = 0x01;
+    _CNPDA9 = 0;
 }
 
 
@@ -171,7 +184,7 @@ int main(void) {
     tabs_init();
 
     /* welcome message */
-    console_printf("AlceOSD %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
+    console_printf("AlceOSD hw%dv%d fw%d.%d.%d\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
 
     /* init home tracking */
     init_home();
