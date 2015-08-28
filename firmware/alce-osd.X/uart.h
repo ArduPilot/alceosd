@@ -34,6 +34,7 @@ enum {
 enum {
     UART_PINS_TELEMETRY = 0,
     UART_PINS_CON2,
+    UART_PINS_ICSP, /* hw_rev 0v2 only */
     UART_PINS,
 };
 

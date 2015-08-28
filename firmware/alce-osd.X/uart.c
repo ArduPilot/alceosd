@@ -206,6 +206,7 @@ static void uart2_init(void)
     U2STAbits.UTXEN = 1;
 }
 
+extern unsigned char hw_rev;
 
 static void uart1_set_pins(unsigned char pins)
 {
@@ -220,9 +221,20 @@ static void uart1_set_pins(unsigned char pins)
             break;
         case UART_PINS_CON2:
             // TX
-            _RP41R = 1;
+            if (hw_rev == 0x01)
+                _RP41R = 1;
+            else
+                _RP36R = 1;
             // RX
             _U1RXR = 20;
+            break;
+        case UART_PINS_ICSP:
+            if (hw_rev == 0x01)
+                break;
+            // TX
+            _RP35R = 1;
+            // RX
+            _U1RXR = 34;
             break;
     }
 }
@@ -239,9 +251,20 @@ static void uart2_set_pins(unsigned char pins)
         default:
         case UART_PINS_CON2:
             // TX
-            _RP41R = 3;
+            if (hw_rev == 0x01)
+                _RP41R = 3;
+            else
+                _RP36R = 3;
             // RX
             _U2RXR = 20;
+            break;
+        case UART_PINS_ICSP:
+            if (hw_rev == 0x01)
+                break;
+            // TX
+            _RP35R = 3;
+            // RX
+            _U2RXR = 34;
             break;
     }
 }

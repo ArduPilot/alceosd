@@ -27,7 +27,7 @@
 // DSPIC33EP512GP504 Configuration Bit Settings
 
 // FICD
-#pragma config ICS = PGD1 //NONE               // ICD Communication Channel Select bits (Reserved, do not use)
+#pragma config ICS = NONE               // ICD Communication Channel Select bits (Reserved, do not use)
 #pragma config JTAGEN = OFF             // JTAG Enable bit (JTAG is disabled)
 
 // FPOR
