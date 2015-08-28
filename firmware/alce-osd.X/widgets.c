@@ -277,10 +277,10 @@ static int set_widget_param(struct widget_config *wcfg, struct param_def *p, cha
             wcfg->tab = (unsigned char) v; //pv->param_uint8;
             break;
         case WID_PARAM_X:
-            wcfg->x = (unsigned int) v; //pv->param_int16;
+            wcfg->x = (int) v; //pv->param_int16;
             break;
         case WID_PARAM_Y:
-            wcfg->y = (unsigned int) v; //pv->param_int16;
+            wcfg->y = (int) v; //pv->param_int16;
             break;
         case WID_PARAM_VJUST:
             wcfg->props.vjust = (unsigned char) v; //pv->param_uint8;
