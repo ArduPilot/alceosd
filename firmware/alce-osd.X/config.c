@@ -42,8 +42,8 @@ struct alceosd_config config = {
     },
   
     .video.standard = VIDEO_STANDARD_PAL_P,
-    .video.brightness = 600, //0x50,
-    .video.x_offset = 85,
+    .video.brightness = 200, //0x50,
+    .video.x_offset = 120,
     .video.y_offset = 40,
 
     .video.x_size_id = VIDEO_XSIZE_480,
@@ -60,8 +60,8 @@ struct alceosd_config config = {
     .home_lock_sec = 15,
 
     .widgets = {
-        { 5, 0, WIDGET_CONSOLE_ID,         0,   0, {JUST_VCENTER | JUST_HCENTER}},
-        { 5, 0, WIDGET_GIMBAL_ID,          0,   0, {JUST_TOP | JUST_RIGHT}},
+        //{ 5, 0, WIDGET_CONSOLE_ID,         0,   0, {JUST_VCENTER | JUST_HCENTER}},
+        //{ 5, 0, WIDGET_GIMBAL_ID,          0,   0, {JUST_TOP | JUST_RIGHT}},
 
         { 1, 0, WIDGET_ALTITUDE_ID,        0,   0, {JUST_VCENTER | JUST_RIGHT}},
         { 1, 0, WIDGET_BATTERY_INFO_ID,    0,   0, {JUST_TOP     | JUST_LEFT}},
@@ -225,37 +225,39 @@ static unsigned int config_process(unsigned char *buf, unsigned int len);
 static unsigned int load_config_text(unsigned char *buf, unsigned int len)
 {
     static unsigned char line[MAX_LINE_LEN];
+    static unsigned char llen = 0;
+
     char param[20];
     float value;
-    unsigned char i = 0;
+    unsigned int i = 0;
 
-    LED = ~LED;
-
-
-
-    if (buf[len-1] == '\n') {
-        /* process line */
-
-        /* the end */
-        if ((len == 1) && (buf[0] == '.')) {
-            config_uart_client.read = config_process;
+    while (*buf != '\n') {
+        line[llen++] = *(buf++);
+        if (++i == len)
             return len;
-        }
-
-        /* terminate string */
-        //memcpy(line, buf,)
-        buf[len] = '\0';
-        sscanf(buf, "%s = %f", param, &value);
-        params_set_value(param, value, 0);
-        printf("got: '%s' = '%f'\n", param, value);
-
-        len = 0;
-    } else {
-        if (len < MAX_LINE_LEN)
-            len++;
     }
-        
-    return 0;
+    line[llen] = *buf;
+    i++;
+
+    /* process line */
+    if (llen == 0)
+        return i;
+
+    /* the end */
+    if (line[0] == '.') {
+        config_uart_client.read = config_process;
+        llen = 0;
+        return i;
+    }
+
+    /* terminate string */
+    line[llen] = '\0';
+    sscanf(line, "%s = %f", param, &value);
+    params_set_value(param, value, 0);
+    printf("got: '%s' = '%f'\n", param, value);
+
+    llen = 0;
+    return i;
 }
 
 static void exit_config(void)
@@ -397,7 +399,7 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
                 case 'l':
                     printf("Loading config from console...\n");
                     config_uart_client.read = load_config_text;
-                    return;
+                    return 1;
                     //load_config_text();
                     break;
                 case 'x':
