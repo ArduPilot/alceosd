@@ -52,7 +52,7 @@ union sram_addr {
         unsigned char b2:8;
         unsigned char b3:8;
     };
-};
+} __attribute__((aligned(2)));
 
 
 struct osd_xsize_tbl {

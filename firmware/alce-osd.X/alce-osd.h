@@ -63,7 +63,7 @@ typedef union {
     unsigned long l;
     unsigned int  w[2];
     unsigned char b[4];
-} u32union;
+} u32union __attribute__((aligned(2)));
 
 
 extern void console_print(char *str);
