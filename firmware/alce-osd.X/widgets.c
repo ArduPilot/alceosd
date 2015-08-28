@@ -359,6 +359,9 @@ static int widgets_set_params(struct param_def *p)
 
     strcpy(buf, p->name);
     pname = strchr(buf, '_');
+    if (pname == NULL)
+        return -1;
+    
     *pname++ = '\0';
     uid = *(pname-2) - '0';
     *(pname-2) = '\0';
