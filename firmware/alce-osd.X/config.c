@@ -204,18 +204,22 @@ static void write_config(void)
 }
 
 
+extern unsigned char hw_rev;
+
 static void dump_config_text(void)
 {
     char param_name[17];
     float value;
     unsigned int i;
     
-    printf("\nAlceOSD config %d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
+    printf("\nAlceOSD config hw%dv%d fw%d.%d.%d\n==\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
 
     for (i = 0; i < params_get_total(); i++) {
         value = params_get_value(i, param_name);
         printf("%s = %f\n", param_name, value);
     }
+
+    printf("--\n");
 
 }
 
@@ -252,6 +256,12 @@ static unsigned int load_config_text(unsigned char *buf, unsigned int len)
 
     /* terminate string */
     line[llen] = '\0';
+
+    /* reset widgets config*/
+    if (memcmp("==", line, 2) == 0)
+        config.widgets[0].tab = TABS_END;
+
+
     sscanf(line, "%s = %f", param, &value);
     params_set_value(param, value, 0);
     printf("got: '%s' = '%f'\n", param, value);
