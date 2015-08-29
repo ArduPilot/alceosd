@@ -174,7 +174,9 @@ static void write_config(void)
 
     /* write config */
     /* flag valid config */
+#ifdef DEBUG_CONFIG
     printf("last_addr=%04x%04x\n", (unsigned int) (valid_config_addr>>16), (unsigned int) (valid_config_addr));
+#endif
     write_word(valid_config_addr, CONFIG_VERSION_SIG);
 
     b = (unsigned char*) &config;
@@ -198,8 +200,9 @@ static void write_config(void)
         addr += 2;
     }
 
+#ifdef DEBUG_CONFIG
     printf("last_addr=%04x%04x\n", (unsigned int) (addr>>16), (unsigned int) (addr));
-
+#endif
     RESTORE_CPU_IPL(ipl);
 }
 
@@ -366,7 +369,9 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
 
     char c = *buf;
 
+#ifdef DEBUG_CONFIG
     printf("cfg size=%d\n", (unsigned int) sizeof (struct alceosd_config));
+#endif
 
     switch (state) {
         case MENU_MAIN:
@@ -725,7 +730,8 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
                     config.uart[nr_opt].mode == 2 ? "UAVTALK" : "CONSOLE",
                     (unsigned int) (uart_get_baudrate(config.uart[nr_opt].baudrate) / 1000),
                     (unsigned int) (uart_get_baudrate(config.uart[nr_opt].baudrate) % 1000),
-                    config.uart[nr_opt].pins == 0 ? "TELEMETRY" : "CON2");
+                    config.uart[nr_opt].pins == UART_PINS_TELEMETRY ? "TELEMETRY" :
+                    config.uart[nr_opt].pins == UART_PINS_CON2 ? "CON2" : "ICSP");
             break;
         case MENU_TABS:
             printf(menu_tabs, current_tab,
