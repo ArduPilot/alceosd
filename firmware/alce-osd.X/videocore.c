@@ -53,7 +53,7 @@
 #define SCK2_O 0x09
 
 
-#define LINE_TMR (279*12)
+#define LINE_TMR (278*12)+5
 
 extern struct alceosd_config config;
 
@@ -659,11 +659,13 @@ static inline void render_line(void)
             last_line = last_line_cnt - 20;
 
         /* auto detect video standard */
+#if 0
         if (last_line_cnt < 300)
             config.video.standard |= VIDEO_STANDARD_MASK;
         else
             config.video.standard &= ~VIDEO_STANDARD_MASK;
-
+#endif
+        
         sram_busy = 1;
         addr.l = 0;
 
