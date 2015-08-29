@@ -30,7 +30,7 @@
 #define CONFIG_ADDR_PAGE    (0x800)
 #define CONFIG_PAGE_SIZE    (0x400)
 
-#define CONFIG_VERSION_SIG  (0xfffff-5)
+#define CONFIG_VERSION_SIG  (0xfffff-6)
 
 static unsigned long valid_config_addr = 0;
 
