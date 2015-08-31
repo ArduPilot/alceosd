@@ -54,6 +54,7 @@
 
 
 #define LINE_TMR (278*12)+5
+//#define COMP_SYNC
 
 extern struct alceosd_config config;
 
@@ -70,7 +71,7 @@ const struct param_def params_video[] = {
 };
 
 
-static volatile unsigned int int_sync_cnt = 0;
+static volatile unsigned int ext_sync_cnt = 0, int_sync_cnt = 0;
 volatile unsigned char sram_busy = 0;
 volatile unsigned int line, last_line_cnt = 0;
 volatile unsigned char odd = 0;
@@ -199,14 +200,25 @@ void clear_sram(void)
 
 void clear_video(void)
 {
-    int ipl;
-
     while (sram_busy);
-    SET_AND_SAVE_CPU_IPL(ipl, 7);
+    _INT2IE = 0;
+    _INT1IE = 0;
+
     clear_sram();
-    RESTORE_CPU_IPL(ipl);
+    _INT1IE = 1;
 }
 
+void video_pause(void)
+{
+    while (sram_busy);
+    _INT2IE = 0;
+    _INT1IE = 0;
+}
+
+void video_resume(void)
+{
+    _INT1IE = 1;
+}
 
 static void video_init_sram(void)
 {
@@ -253,8 +265,6 @@ static void video_init_sram(void)
 }
 
 
-
-
 extern unsigned char hw_rev;
 
 static void video_init_hw(void)
@@ -289,8 +299,9 @@ static void video_init_hw(void)
     /* priority */
     _INT2IP = 4;
     /* enable */
+#ifndef COMP_SYNC
     _INT2IE = 1;
-
+#endif
     /* VSYNC - INT1 */
     RPINR0bits.INT1R = 46;
     /* falling edge */
@@ -298,8 +309,10 @@ static void video_init_hw(void)
     /* priority */
     _INT1IP = 3;
     /* enable int1 */
+#ifndef COMP_SYNC
     _INT1IE = 1;
-
+#endif
+    
     /* generic line timer */
     T2CONbits.T32 = 0;
     T2CONbits.TCKPS = 0;
@@ -346,7 +359,9 @@ static void video_init_hw(void)
         PR4 = 56;
 
 
-#if 0
+#ifdef COMP_SYNC
+        _TRISB9 = 0;
+
         /* analog input */
         TRISBbits.TRISB0 = 1;
         ANSELBbits.ANSB0 = 1;
@@ -357,7 +372,7 @@ static void video_init_hw(void)
         CVRCONbits.VREFSEL = 0;
         CVRCONbits.CVRR = 1;
         CVRCONbits.CVRSS = 0;
-        CVRCONbits.CVR = 3;
+        CVRCONbits.CVR = 4;
         CVRCONbits.CVREN = 1;
 
         /* comp */
@@ -373,33 +388,15 @@ static void video_init_hw(void)
 
         CMSTATbits.PSIDL = 0;
 
-        IPC4bits.CMIP = 4;
+        _CMIP = 4;
 
         CM2CONbits.CEVT = 0;
         IFS1bits.CMIF = 0;
         IEC1bits.CMIE = 1;
         CM2CONbits.CON = 1;
-
-        TRISBbits.TRISB4 = 0;
 #endif
     }
 }
-
-
-
-static int ipl;
-
-void video_pause(void)
-{
-    while (sram_busy);
-    SET_AND_SAVE_CPU_IPL(ipl, 7);
-}
-
-void video_resume(void)
-{
-    RESTORE_CPU_IPL(ipl);
-}
-
 
 void video_apply_config(struct video_config *cfg)
 {
@@ -655,7 +652,7 @@ static inline void render_line(void)
         last_line = config.video.y_size + config.video.y_offset;
 
         /* avoid sram_busy soft-locks */
-        if (last_line > last_line_cnt)
+        if (last_line > last_line_cnt - 20)
             last_line = last_line_cnt - 20;
 
         /* auto detect video standard */
@@ -730,36 +727,47 @@ static inline void render_line(void)
 
 void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
 {
-    if (int_sync_cnt < 10 * 349) {
-        render_line();
+    if (int_sync_cnt < 10 * 350 - 1) {
         line++;
+        render_line();
     }
     _INT2IF = 0;
 }
 
-
-# if 0
+# ifdef COMP_SYNC
 void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
 {
-    IFS1bits.CMIF = 0;
-
+    static unsigned char cnt = 0;
 
     if(CMSTATbits.C2EVT)
     {
-        if (CMSTATbits.C2OUT == 0) {
-            int_sync_cnt = 0;
 
+        if (CMSTATbits.C2OUT == 0) {
+            _LATB9 = 0;
+            ext_sync_cnt = 0;
+
+            /* falling edge */
             line++;
             render_line();
-
-            if (line > 317) {
+        } else {
+            _LATB9 = 1;
+            /* rising edge */
+            if (ext_sync_cnt > 2) {
+                cnt++;
+            } else {
+                cnt = 0;
+            }
+            if ((cnt > 4) && (cnt < 6)) {
+                /* vsync */
                 last_line_cnt = line;
                 line = 0;
+                int_sync_cnt = 0;
             }
-
         }
         CM2CONbits.CEVT = 0;
     }
+
+    _CMIF = 0;
 }
 #endif
 
@@ -768,12 +776,14 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
 {
     static unsigned char cnt;
 
+    ext_sync_cnt++;
+    
     if (int_sync_cnt < 10 * 350) {
         /* ext sync */
         LED = 1;
         int_sync_cnt++;
         _T4IP = 1;
-    } else if (int_sync_cnt < 11 * 350) {
+    } else if (int_sync_cnt < 10 * 350 + 1) {
         /* prepare int sync */
         last_line_cnt = 310;
         line = 0;
