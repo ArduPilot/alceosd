@@ -19,14 +19,14 @@
 #include "alce-osd.h"
 
 
-float earth_distance(struct gps_coord *c1, struct gps_coord *c2) //float lat1, float lon1, float lat2, float lon2)
+float earth_distance(struct gps_coord *c1, struct gps_coord *c2)
 {
     float dphi, dlam, sin_dphi, sin_dlam;
     float a, c;
 
     dphi = c2->lat - c1->lat;
     dlam = c2->lon - c1->lon;
-    sin_dphi = sin(dphi);
+    sin_dphi = sin(dphi/2);
     sin_dlam = sin(dlam/2);
     a = sin_dphi * sin_dphi + cos(c1->lat) * cos(c2->lat) * sin_dlam * sin_dlam;
     c = 2 * atan2(sqrt(a), sqrt(1-a));
