@@ -397,6 +397,22 @@ static int widgets_set_params(struct param_def *p)
     return idx * ret;
 }
 
+
+unsigned char widget_get_uid(unsigned char wid)
+{
+    struct widget_config *wcfg = config.widgets;
+    unsigned char uid = 0;
+    while (wcfg->tab != TABS_END) {
+        if (wid == wcfg->widget_id) {
+            while (uid == wcfg->uid)
+                uid++;
+        }
+        wcfg++;
+    }
+    return uid;
+}
+
+
 const struct param_dynamic_def widget_dynamic_params = {
     .set = widgets_set_params,
     .get = widgets_get_params,

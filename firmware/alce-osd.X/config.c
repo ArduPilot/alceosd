@@ -621,6 +621,7 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
                     while (wcfg->tab != TABS_END)
                         wcfg++;
 
+                    wcfg->uid = widget_get_uid(options[nr_opt]);
                     wcfg->tab = current_tab;
                     wcfg->widget_id = options[nr_opt];
                     wcfg->x = 0;

@@ -92,5 +92,6 @@ void widgets_reset(void);
 void schedule_widget(struct widget *w);
 const struct widget_ops *get_widget_ops(unsigned int id);
 void* widget_malloc(unsigned int size);
+unsigned char widget_get_uid(unsigned char wid);
 
 #endif
