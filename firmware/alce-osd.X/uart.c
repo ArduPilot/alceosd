@@ -537,5 +537,6 @@ void uart_init(void)
     uart[0].init();
     uart[1].init();
 
+    params_add(params_uart);
     process_add(uart_process);
 }
