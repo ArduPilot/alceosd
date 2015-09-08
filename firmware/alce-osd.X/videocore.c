@@ -300,7 +300,7 @@ static void video_init_hw(void)
     _INT2IP = 4;
     /* enable */
 #ifndef COMP_SYNC
-    _INT2IE = 1;
+    //_INT2IE = 1;
 #endif
     /* VSYNC - INT1 */
     RPINR0bits.INT1R = 46;
@@ -372,23 +372,25 @@ static void video_init_hw(void)
         CVRCONbits.VREFSEL = 0;
         CVRCONbits.CVRR = 1;
         CVRCONbits.CVRSS = 0;
-        CVRCONbits.CVR = 4;
+        CVRCONbits.CVR = 3;
         CVRCONbits.CVREN = 1;
 
         /* comp */
         CM2CONbits.COE = 0;
         CM2CONbits.CPOL = 1;
         CM2CONbits.OPMODE = 0;
-        CM2CONbits.COUT = 0;
-        CM2CONbits.EVPOL = 0b11;
+        //CM2CONbits.COUT = 0;
+        CM2CONbits.EVPOL = 0b10;
         CM2CONbits.CREF = 1;
         CM2CONbits.CCH = 0b00;
 
-        CM2FLTRbits.CFLTREN = 0;
+        CM2FLTRbits.CFLTREN = 1;
+        CM2FLTRbits.CFSEL = 1;
+        CM2FLTRbits.CFDIV = 2;
 
         CMSTATbits.PSIDL = 0;
 
-        _CMIP = 4;
+        _CMIP = 5;
 
         CM2CONbits.CEVT = 0;
         IFS1bits.CMIF = 0;
@@ -629,11 +631,13 @@ void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
     line = 0;
     int_sync_cnt = 0;
     _INT2IE = 1;
+    LED = 1;
     IFS1bits.INT1IF = 0;
 }
 
 
 #define INT_X_OFFSET    (45)
+#define CNT_INT_MODE    (10 * 1000)
 
 static inline void render_line(void)
 {
@@ -667,13 +671,14 @@ static inline void render_line(void)
         addr.l = 0;
 
         if (config.video.standard && VIDEO_STANDARD_SCAN_MASK) {
-            if (int_sync_cnt < 10 * 350)
+            if (int_sync_cnt < CNT_INT_MODE)
                 odd = PORTBbits.RB15;
 
             if (odd == 0) {
                 addr.l += (osdxsize/4);
             }
         }
+        _LATA9 = 1;
     } else if (line < config.video.y_offset) {
         /* T-1: switch sram to sdi mode */
         sram_exit_sqi();
@@ -684,7 +689,7 @@ static inline void render_line(void)
         SRAM_OUT;
 
         x_offset = config.video.x_offset;
-        if (int_sync_cnt > 10 * 350)
+        if (int_sync_cnt > CNT_INT_MODE)
             x_offset += INT_X_OFFSET;
 
     } else if (line < last_line) {
@@ -727,45 +732,50 @@ static inline void render_line(void)
 
 void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
 {
-    if (int_sync_cnt < 10 * 350 - 1) {
+    //if (int_sync_cnt < CNT_INT_MODE - 1) {
         line++;
         render_line();
-    }
+    //}
     _INT2IF = 0;
 }
 
 # ifdef COMP_SYNC
 void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
 {
-    static unsigned char cnt = 0;
+    static unsigned int last_cnt = 0;
+    static unsigned char vcnt = 0;
 
-    if(CMSTATbits.C2EVT)
-    {
+    unsigned cnt = ext_sync_cnt - last_cnt;
 
-        if (CMSTATbits.C2OUT == 0) {
-            _LATB9 = 0;
-            ext_sync_cnt = 0;
+    //if(CMSTATbits.C2EVT)
+    //{
+        //ext_sync_cnt = 0;
+        //printf("%d\n", last_cnt);
 
-            /* falling edge */
-            line++;
-            render_line();
+        if ((cnt < 6) && (cnt > 3)) {
+            vcnt++;
         } else {
-            _LATB9 = 1;
-            /* rising edge */
-            if (ext_sync_cnt > 2) {
-                cnt++;
-            } else {
-                cnt = 0;
-            }
-            if ((cnt > 4) && (cnt < 6)) {
+            if (vcnt > 13) {
+                _LATB9 = 1;
+                //printf("%d\n", last_cnt);
                 /* vsync */
                 last_line_cnt = line;
-                line = 0;
+                line = 10;
                 int_sync_cnt = 0;
+                last_cnt = 0;
+                LED = 1;
+                _CMIP = 5;
+
+            } else {
+                _LATB9 = 0;
+                line++;
+                render_line();
             }
+            vcnt = 0;
         }
         CM2CONbits.CEVT = 0;
-    }
+    //}
+        last_cnt = ext_sync_cnt;
 
     _CMIF = 0;
 }
@@ -775,29 +785,41 @@ void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
 void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
 {
     static unsigned char cnt;
+#ifdef COMP_SYNC
+    static unsigned int recover_tmr;
+#endif
 
     ext_sync_cnt++;
-    
-    if (int_sync_cnt < 10 * 350) {
+
+    if (int_sync_cnt < CNT_INT_MODE) {
         /* ext sync */
-        LED = 1;
         int_sync_cnt++;
-        _T4IP = 1;
-    } else if (int_sync_cnt < 10 * 350 + 1) {
+    } else if (int_sync_cnt < CNT_INT_MODE + 1) {
         /* prepare int sync */
-        last_line_cnt = 310;
+        last_line_cnt = 312;
         line = 0;
         odd = 1;
         int_sync_cnt++;
         _INT2IE = 0;
-        _T4IP = 3;
+        LED = 0;
+        cnt = 0;
+        _CMIP = 2;
+#ifdef COMP_SYNC
+        recover_tmr = 0;
+#endif
     } else {
         /* int sync */
-        LED = 0;
         cnt++;
 
         if (odd == 1) {
             if (line < 2) {
+
+#ifdef COMP_SYNC
+                if (++recover_tmr > 1000) {
+                    if ((_CMIF == 0) && (CM2CONbits.CEVT == 1))
+                        CM2CONbits.CEVT = 0;
+                }
+#endif
                 /* vsync sync pulses */
                 if ((cnt == 1) || (cnt == 6)) {
                     _LATA9 = 0;
