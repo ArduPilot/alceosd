@@ -28,6 +28,9 @@ struct flight_stats {
     int max_altitude, max_home_altitude;
     unsigned int max_gnd_speed, max_air_speed;
     unsigned int max_home_distance;
+
+    unsigned int max_bat_current;
+    float total_mah;
 };
 
 void init_flight_stats(void);

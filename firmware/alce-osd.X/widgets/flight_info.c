@@ -31,7 +31,7 @@ static int open(struct widget *w)
     w->priv = (struct flight_stats*) get_flight_stats();
 
     w->ca.width = 4*60;
-    w->ca.height = 12*6;
+    w->ca.height = 12*8;
 
     /* refresh rate of 0.2 sec */
     add_timer(TIMER_WIDGET, 2, timer_callback, w);
@@ -62,6 +62,12 @@ static void render(struct widget *w)
 
     sprintf(buf, "Maximum home distance: %d m", priv->max_home_distance);
     draw_str(buf, 0, 12*5, ca, 1);
+
+    sprintf(buf, "Peak current:          %.2fA", ((float) priv->max_bat_current) / 100);
+    draw_str(buf, 0, 12*6, ca, 1);
+
+    sprintf(buf, "Total used current:    %dmAh", (unsigned int) priv->total_mah);
+    draw_str(buf, 0, 12*7, ca, 1);
 }
 
 

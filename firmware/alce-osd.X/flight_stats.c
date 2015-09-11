@@ -29,6 +29,8 @@ struct stats_priv {
     int airspeed, groundspeed;
     int alt;
     int heading;
+
+    unsigned int bat_current;
 } priv;
 
 
@@ -48,6 +50,9 @@ static void store_mavdata(mavlink_message_t *msg, mavlink_status_t *status)
             priv.alt = (int) mavlink_msg_vfr_hud_get_alt(msg);
             priv.heading = mavlink_msg_vfr_hud_get_heading(msg);
             break;
+        case MAVLINK_MSG_ID_SYS_STATUS:
+            priv.bat_current = mavlink_msg_sys_status_get_current_battery(msg);
+            break;
         default:
             break;
     }
@@ -58,12 +63,14 @@ static void calc_stats(struct timer *t, void *d)
 {
     /* accumulate distance */
     stats.total_distance += ((float) priv.groundspeed / 10);
+    stats.total_mah += ((float) priv.bat_current) / 3600;
 
     stats.max_air_speed = MAX(priv.airspeed, stats.max_air_speed);
     stats.max_gnd_speed = MAX(priv.groundspeed, stats.max_gnd_speed);
     stats.max_altitude  = MAX(priv.alt, stats.max_altitude);
     stats.max_home_distance = MAX((unsigned int) home.distance, stats.max_home_distance);
     stats.max_home_altitude = MAX((unsigned int) home.altitude, stats.max_home_altitude);
+    stats.max_bat_current = MAX(priv.bat_current, stats.max_bat_current);
 }
 
 
@@ -76,6 +83,9 @@ static void start_calc_stats(void)
     stats.max_altitude = 0;
     stats.max_home_distance = 0;
     stats.max_home_altitude = 0;
+
+    stats.max_bat_current = 0;
+    stats.total_mah = 0;
 
     /* start calcs in a 100ms interval */
     add_timer(TIMER_ALWAYS, 1, calc_stats, NULL);
@@ -113,4 +123,5 @@ void init_flight_stats(void)
     add_timer(TIMER_ALWAYS, 5, find_launch_heading, NULL);
 
     add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, store_mavdata, CALLBACK_PERSISTENT, NULL);
+    add_mavlink_callback(MAVLINK_MSG_ID_SYS_STATUS, store_mavdata, CALLBACK_PERSISTENT, NULL);
 }
