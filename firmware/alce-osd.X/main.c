@@ -202,6 +202,7 @@ int main(void) {
     _IPL = 0;
     _IPL3 = 1;
 
+    console_printf("Processes running...\n");
     /* main loop */
     process_run();
 

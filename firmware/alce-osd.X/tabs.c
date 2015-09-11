@@ -66,12 +66,38 @@ static unsigned char search_on_list(unsigned char *list, unsigned char tab)
 }
 
 
+static struct widget* load_widget(struct widget_config *w_cfg)
+{
+    const struct widget_ops *w_ops;
+    struct widget *w;
+    
+    w_ops = get_widget_ops(w_cfg->widget_id);
+    if (w_ops == NULL)
+        return NULL;
+
+    w = (struct widget*) widget_malloc(sizeof(struct widget));
+    if (w == NULL) {
+        DTABS("load_tab: no mem for widget %d exiting load tabs\n", w_cfg->widget_id);
+        return NULL;
+    }
+    w->ops = w_ops;
+    w->cfg = w_cfg;
+    w->status = 0;
+    if (w_ops->open(w))
+        return NULL;
+
+    alloc_canvas(&w->ca, w->cfg);
+    schedule_widget(w);
+
+    return w;
+}
+
+
 void load_tab(unsigned char tab)
 {
     struct widget_config *w_cfg = &config.widgets[0];
-    const struct widget_ops *w_ops;
     struct widget *w;
-
+    struct widget_config tmp_wcfg;
     struct widget **aw = active_widgets;
 
     DTABS("Loading tab %d\n", tab);
@@ -91,27 +117,34 @@ void load_tab(unsigned char tab)
     /* reset widgets module */
     widgets_reset();
 
-    /* load tab widgets */
-    while (w_cfg->tab != TABS_END) {
-        if (w_cfg->tab == tab) {
-            w_ops = get_widget_ops(w_cfg->widget_id);
-            if (w_ops != NULL) {
-                w = (struct widget*) widget_malloc(sizeof(struct widget));
-                if (w == NULL) {
-                    DTABS("load_tab: no mem for widget %d exiting load tabs\n", w_cfg->widget_id);
+
+    if (tab == 0) {
+        /* zero tab */
+        
+        /* console */
+        tmp_wcfg.widget_id = WIDGET_CONSOLE_ID;
+        tmp_wcfg.x = 0;
+        tmp_wcfg.y = 0;
+        tmp_wcfg.props.vjust = VJUST_TOP;
+        tmp_wcfg.props.hjust = HJUST_LEFT;
+        w = load_widget(&tmp_wcfg);
+
+        tmp_wcfg.widget_id = WIDGET_VIDEOLVL_ID;
+        tmp_wcfg.props.hjust = HJUST_RIGHT;
+        w = load_widget(&tmp_wcfg);
+
+
+    } else {
+        /* load tab widgets */
+        while (w_cfg->tab != TABS_END) {
+            if (w_cfg->tab == tab) {
+                w = load_widget(w_cfg);
+                if (w == NULL)
                     break;
-                }
-                w->ops = w_ops;
-                w->cfg = w_cfg;
-                w->status = 0;
-                if (w_ops->open(w))
-                    break;
-                alloc_canvas(&w->ca, w->cfg);
                 *(aw++) = w;
-                schedule_widget(w);
             }
+            w_cfg++;
         }
-        w_cfg++;
     }
     *aw = NULL;
     /* resume video rendering */
@@ -126,6 +159,14 @@ static void tab_switch_task(struct timer *t, void *d)
     struct tab_change_config *cfg = (struct tab_change_config*) d;
     unsigned int idx;
     unsigned char new_tab;
+
+
+    if (get_millis() < 10000) {
+        if (active_tab != 0)
+            load_tab(0);
+        return;
+    }
+
 
     switch (cfg->mode) {
         case TAB_CHANGE_CHANNEL:
@@ -366,3 +407,6 @@ void tabs_init(void)
         tab_timer = add_timer(TIMER_ALWAYS, 1, tab_switch_task,
                                 &config.tab_change);
 }
+
+
+
