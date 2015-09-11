@@ -25,7 +25,7 @@ struct flight_stats {
     float total_distance;
     unsigned long flight_start, flight_end;
 
-    int max_altitude;
+    int max_altitude, max_home_altitude;
     unsigned int max_gnd_speed, max_air_speed;
     unsigned int max_home_distance;
 };

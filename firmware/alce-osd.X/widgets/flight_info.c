@@ -31,7 +31,7 @@ static int open(struct widget *w)
     w->priv = (struct flight_stats*) get_flight_stats();
 
     w->ca.width = 4*60;
-    w->ca.height = 12*5;
+    w->ca.height = 12*6;
 
     /* refresh rate of 0.2 sec */
     add_timer(TIMER_WIDGET, 2, timer_callback, w);
@@ -50,15 +50,18 @@ static void render(struct widget *w)
 
     sprintf(buf, "Maximum altitude:      %d m", priv->max_altitude);
     draw_str(buf, 0, 12*1, ca, 1);
-
-    sprintf(buf, "Maximum ground speed:  %d m/s", priv->max_gnd_speed);
+    
+    sprintf(buf, "Maximum home altitude: %d m", priv->max_home_altitude);
     draw_str(buf, 0, 12*2, ca, 1);
 
-    sprintf(buf, "Maximum air speed:     %d m/s", priv->max_air_speed);
+    sprintf(buf, "Maximum ground speed:  %d m/s", priv->max_gnd_speed);
     draw_str(buf, 0, 12*3, ca, 1);
 
-    sprintf(buf, "Maximum home distance: %d m", priv->max_home_distance);
+    sprintf(buf, "Maximum air speed:     %d m/s", priv->max_air_speed);
     draw_str(buf, 0, 12*4, ca, 1);
+
+    sprintf(buf, "Maximum home distance: %d m", priv->max_home_distance);
+    draw_str(buf, 0, 12*5, ca, 1);
 }
 
 
