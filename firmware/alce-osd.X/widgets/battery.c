@@ -55,6 +55,16 @@ static void timer_callback(struct timer *t, void *d)
     schedule_widget(w);
 }
 
+static void current_tmr_callback(struct timer *t, void *d)
+{
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
+    struct flight_stats *f = get_flight_stats();
+
+    priv->bat_current = f->total_mah;
+    schedule_widget(w);
+}
+
 static int open(struct widget *w)
 {
     struct widget_priv *priv;
@@ -93,6 +103,11 @@ static int open(struct widget *w)
             adc_link_ch(1, &priv->adc_raw2);
             w->ca.height = 30;
             add_timer(TIMER_WIDGET, 2, timer_callback, w);
+            break;
+        case 4:
+            /* flight total current consumption */
+            w->ca.height = 15;
+            add_timer(TIMER_WIDGET, 2, current_tmr_callback, w);
             break;
     }
 
@@ -140,6 +155,10 @@ static void render(struct widget *w)
             break;
         case 3:
             sprintf(buf, "%5.2fV\n%5.2fV", priv->bat_voltage, priv->bat_voltage2);
+            draw_str(buf, 0, 0, ca, 2);
+            break;
+        case 4:
+            sprintf(buf, "%4dmAh", (unsigned int) priv->bat_current);
             draw_str(buf, 0, 0, ca, 2);
             break;
     }
