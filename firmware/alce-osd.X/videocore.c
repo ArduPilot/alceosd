@@ -54,7 +54,7 @@
 
 
 #define LINE_TMR (278*12)+5
-//#define COMP_SYNC
+#define COMP_SYNC
 
 extern struct alceosd_config config;
 
@@ -211,13 +211,28 @@ void clear_video(void)
 void video_pause(void)
 {
     while (sram_busy);
+    _T4IE = 0;
+#ifndef COMP_SYNC
     _INT2IE = 0;
     _INT1IE = 0;
+#else
+    _CMIE = 0;
+    CM2CONbits.CEVT = 0;
+    _CMIF = 0;
+#endif
 }
 
 void video_resume(void)
 {
+#ifndef COMP_SYNC
     _INT1IE = 1;
+#else
+    line = 0;
+    CM2CONbits.CEVT = 0;
+    _CMIF = 0;
+    _CMIE = 1;
+#endif
+    _T4IE = 1;
 }
 
 static void video_init_sram(void)
@@ -292,6 +307,7 @@ static void video_init_hw(void)
     TRISBbits.TRISB14 = 1;
     TRISBbits.TRISB15 = 1;
 
+#ifndef COMP_SYNC
     /* CSYNC - INT2 */
     RPINR1bits.INT2R = 45;
     /* falling edge */
@@ -299,9 +315,8 @@ static void video_init_hw(void)
     /* priority */
     _INT2IP = 4;
     /* enable */
-#ifndef COMP_SYNC
     //_INT2IE = 1;
-#endif
+
     /* VSYNC - INT1 */
     RPINR0bits.INT1R = 46;
     /* falling edge */
@@ -309,7 +324,6 @@ static void video_init_hw(void)
     /* priority */
     _INT1IP = 3;
     /* enable int1 */
-#ifndef COMP_SYNC
     _INT1IE = 1;
 #endif
     
@@ -320,7 +334,7 @@ static void video_init_hw(void)
     T2CONbits.TGATE = 0;
     PR2 = LINE_TMR;
     T2CONbits.TON = 0;
-    _T2IP = 4;
+    _T2IP = 6;
     IFS0bits.T2IF = 0;
     IEC0bits.T2IE = 1;
 
