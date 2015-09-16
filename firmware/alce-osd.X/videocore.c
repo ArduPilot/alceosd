@@ -54,7 +54,7 @@
 
 
 #define LINE_TMR (278*12)+5
-#define COMP_SYNC
+//#define COMP_SYNC
 
 extern struct alceosd_config config;
 
@@ -211,7 +211,8 @@ void clear_video(void)
 void video_pause(void)
 {
     while (sram_busy);
-    _T4IE = 0;
+    if (hw_rev == 0x02)
+        _T4IE = 0;
 #ifndef COMP_SYNC
     _INT2IE = 0;
     _INT1IE = 0;
@@ -232,7 +233,8 @@ void video_resume(void)
     _CMIF = 0;
     _CMIE = 1;
 #endif
-    _T4IE = 1;
+    if (hw_rev == 0x02)
+        _T4IE = 1;
 }
 
 static void video_init_sram(void)
