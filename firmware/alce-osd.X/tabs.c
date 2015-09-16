@@ -161,7 +161,7 @@ static void tab_switch_task(struct timer *t, void *d)
     unsigned char new_tab;
 
 
-    if (get_millis() < 10000) {
+    if (get_millis() < 5000) {
         if (active_tab != 0)
             load_tab(0);
         return;
