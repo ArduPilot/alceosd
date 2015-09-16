@@ -77,6 +77,7 @@ volatile unsigned int line, last_line_cnt = 0;
 volatile unsigned char odd = 0;
 static unsigned char render_state = 0;
 
+extern unsigned char hw_rev;
 
 
 const struct osd_xsize_tbl video_xsizes[] = {
@@ -281,8 +282,6 @@ static void video_init_sram(void)
 #endif
 }
 
-
-extern unsigned char hw_rev;
 
 static void video_init_hw(void)
 {

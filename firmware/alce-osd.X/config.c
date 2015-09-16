@@ -219,7 +219,7 @@ static void dump_config_text(void)
 
     for (i = 0; i < params_get_total(); i++) {
         value = params_get_value(i, param_name);
-        printf("%s = %f\n", param_name, value);
+        printf("%s = %f\n", param_name, (double) value);
     }
 
     printf("--\n");
@@ -265,9 +265,9 @@ static unsigned int load_config_text(unsigned char *buf, unsigned int len)
         config.widgets[0].tab = TABS_END;
 
 
-    sscanf(line, "%s = %f", param, &value);
+    sscanf((const char *) line, "%s = %f", param, &value);
     params_set_value(param, value, 0);
-    printf("got: '%s' = '%f'\n", param, value);
+    printf("got: '%s' = '%f'\n", param, (double) value);
 
     llen = 0;
     return i;
