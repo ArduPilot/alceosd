@@ -165,6 +165,8 @@ static void tab_switch_task(struct timer *t, void *d)
         if (active_tab != 0)
             load_tab(0);
         return;
+    } else if (active_tab == 0) {
+        load_tab(1);
     }
 
 
