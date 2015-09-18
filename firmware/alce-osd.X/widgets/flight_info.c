@@ -63,7 +63,7 @@ static void render(struct widget *w)
     sprintf(buf, "Maximum home distance: %d m", priv->max_home_distance);
     draw_str(buf, 0, 12*5, ca, 1);
 
-    sprintf(buf, "Peak current:          %.2fA", ((float) priv->max_bat_current) / 100);
+    sprintf(buf, "Peak current:          %.2fA", ((double) priv->max_bat_current) / 100);
     draw_str(buf, 0, 12*6, ca, 1);
 
     sprintf(buf, "Total used current:    %dmAh", (unsigned int) priv->total_mah);
