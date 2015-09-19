@@ -58,7 +58,7 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
 }
 
 
-int open(struct widget *w)
+static int open(struct widget *w)
 {
     struct widget_priv *priv;
 
