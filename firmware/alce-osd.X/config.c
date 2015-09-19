@@ -254,6 +254,10 @@ static unsigned int load_config_text(unsigned char *buf, unsigned int len)
     if (line[0] == '.') {
         config_uart_client.read = config_process;
         llen = 0;
+
+        load_tab(0);
+        video_apply_config(&config.video);
+
         return i;
     }
 
