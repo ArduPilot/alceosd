@@ -92,12 +92,16 @@ static void render(struct widget *w)
     struct canvas *ca = &w->ca;
     unsigned int i, x;
     char buf[5];
-
-    unsigned int value;
+    int value;
 
     value = (( ((long) priv->rssi - w->cfg->params[RSSI_PARAM_MIN]) * 100) /
                (w->cfg->params[RSSI_PARAM_MAX] - w->cfg->params[RSSI_PARAM_MIN]));
-  
+
+    if (value < 0)
+        value = 0;
+    else if (value > 100)
+        value = 100;
+
     x = 0;
     for (i = 0; i < (5 * value)/(100-100/5); i++) {
         draw_vline(x, Y_SIZE-1 - i*3, Y_SIZE-1, 3, ca);
