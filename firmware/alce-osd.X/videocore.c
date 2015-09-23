@@ -642,6 +642,18 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
 /* vsync interrupt */
 void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
 {
+    if (sram_busy) {
+        T2CONbits.TON = 0;
+        sram_busy = 0;
+        if (line >= config.video.y_offset) {
+            sram_exit_sdi();
+            CS_LOW;
+            sram_byte_spi(SRAM_QIO);
+            CS_HIGH;
+            SRAM_OUTQ;
+        }
+    }
+    
     last_line_cnt = line;
     line = 0;
     int_sync_cnt = 0;
@@ -747,10 +759,10 @@ static inline void render_line(void)
 
 void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
 {
-    //if (int_sync_cnt < CNT_INT_MODE - 1) {
+    if (T2CONbits.TON == 0) {
         line++;
         render_line();
-    //}
+    }
     _INT2IF = 0;
 }
 
