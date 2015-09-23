@@ -1,15 +1,12 @@
-# AlceOSD - Graphical OSD for APM/PX4 (mavlink)
+# AlceOSD
 
-## firmware/alce-osd.X
-The AlceOSD firmware
+## Repository organization
 
-## firmware/bootloader.X
-Bootloader allows to update the AlceOSD firmware using a serial port
+- firmware/alce-osd.X (AlceOSD firmware)
+- firmware/bootloader.X (bootloader allows to update the AlceOSD firmware using the serial port)
+- firmware/bootloader_updater.X (bootloader self-updater)
 
-## firmware/bootloader_updater.X
-Bootloader self-updater. Steps to update the bootloader are:
-* Build the bootloader itself
-* Convert the bootloader hex file to C header file
-* Build the bootloader updater
+## Check the [wiki](https://github.com/diydrones/alceosd/wiki) for more info
 
-https://sites.google.com/site/alceosd/news
+## [Google groups discussion forum](https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!forum/alceosd)
+
