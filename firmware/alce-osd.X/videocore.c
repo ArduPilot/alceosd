@@ -54,7 +54,13 @@
 
 
 #define LINE_TMR (278*12)+5
-//#define COMP_SYNC
+
+
+#define CTRL_SYNCGEN        0x01
+#define CTRL_COMPSYNC       0x02
+#define CTRL_PWMBRIGHT      0x04
+#define CTRL_DACBRIGHT      0x08
+
 
 extern struct alceosd_config config;
 
@@ -75,10 +81,11 @@ static volatile unsigned int ext_sync_cnt = 0, int_sync_cnt = 0;
 volatile unsigned char sram_busy = 0;
 volatile unsigned int line, last_line_cnt = 0;
 volatile unsigned char odd = 0;
-
 static struct canvas *rendering_canvas = NULL;
 
-extern unsigned char hw_rev;
+static unsigned char videocore_ctrl = 0;
+
+
 
 
 const struct osd_xsize_tbl video_xsizes[] = {
@@ -150,7 +157,8 @@ void sram_exit_sdi(void)
 
 unsigned char sram_byte_spi(unsigned char b)
 {
-    unsigned char i, out = 0;
+    register unsigned char i;
+    unsigned char out = 0;
 
     for (i = 0; i < 8; i++) {
         out <<= 1;
@@ -187,7 +195,7 @@ void sram_byteo_sdi(unsigned char b)
 
 void clear_sram(void)
 {
-    unsigned long i;
+    register unsigned long i;
 
     CS_LOW;
     sram_byteo_sqi(SRAM_WRITE);
@@ -213,30 +221,35 @@ void clear_video(void)
 void video_pause(void)
 {
     while (sram_busy);
-    if (hw_rev == 0x02)
+
+    if (videocore_ctrl & CTRL_SYNCGEN) {
         _T4IE = 0;
-#ifndef COMP_SYNC
-    _INT2IE = 0;
-    _INT1IE = 0;
-#else
-    _CMIE = 0;
-    CM2CONbits.CEVT = 0;
-    _CMIF = 0;
-#endif
+    }
+
+    if (videocore_ctrl & CTRL_COMPSYNC) {
+        _CMIE = 0;
+        CM2CONbits.CEVT = 0;
+        _CMIF = 0;
+    } else {
+        _INT2IE = 0;
+        _INT1IE = 0;
+    }
 }
 
 void video_resume(void)
 {
-#ifndef COMP_SYNC
-    _INT1IE = 1;
-#else
-    line = 0;
-    CM2CONbits.CEVT = 0;
-    _CMIF = 0;
-    _CMIE = 1;
-#endif
-    if (hw_rev == 0x02)
+    if (videocore_ctrl & CTRL_COMPSYNC) {
+        line = 0;
+        CM2CONbits.CEVT = 0;
+        _CMIF = 0;
+        _CMIE = 1;
+    } else {
+        _INT1IE = 1;
+    }
+    
+    if (videocore_ctrl & CTRL_SYNCGEN) {
         _T4IE = 1;
+    }
 }
 
 static void video_init_sram(void)
@@ -283,9 +296,27 @@ static void video_init_sram(void)
 #endif
 }
 
+extern unsigned char hw_rev;
 
 static void video_init_hw(void)
 {
+    switch (hw_rev) {
+        case 0x01:
+        default:
+            videocore_ctrl |= CTRL_PWMBRIGHT;
+            break;
+        case 0x02:
+            videocore_ctrl |= CTRL_PWMBRIGHT;
+            videocore_ctrl |= CTRL_SYNCGEN;
+            break;
+        case 0x03:
+            videocore_ctrl |= CTRL_SYNCGEN;
+            videocore_ctrl |= CTRL_DACBRIGHT;
+            videocore_ctrl |= CTRL_COMPSYNC;
+            break;
+    }
+
+
     SPI2CON1bits.CKP = 0; /* idle low */
     SPI2CON1bits.CKE = 1;
     SPI2CON1bits.MSTEN = 1;
@@ -304,31 +335,7 @@ static void video_init_hw(void)
     OE_RAM_DIR = 0;
     OE_RAM = 1;
 
-    /* csync, vsync, frame */
-    TRISBbits.TRISB13 = 1;
-    TRISBbits.TRISB14 = 1;
-    TRISBbits.TRISB15 = 1;
 
-#ifndef COMP_SYNC
-    /* CSYNC - INT2 */
-    RPINR1bits.INT2R = 45;
-    /* falling edge */
-    INTCON2bits.INT2EP = 1;
-    /* priority */
-    _INT2IP = 4;
-    /* enable */
-    //_INT2IE = 1;
-
-    /* VSYNC - INT1 */
-    RPINR0bits.INT1R = 46;
-    /* falling edge */
-    INTCON2bits.INT1EP = 1;
-    /* priority */
-    _INT1IP = 3;
-    /* enable int1 */
-    _INT1IE = 1;
-#endif
-    
     /* generic line timer */
     T2CONbits.T32 = 0;
     T2CONbits.TCKPS = 0;
@@ -341,27 +348,53 @@ static void video_init_hw(void)
     IEC0bits.T2IE = 1;
 
 
-    /* brightness */
-    /* OC1 pin */
-    TRISBbits.TRISB7 = 0;
-    _RP39R = 0x10;
+    if ((videocore_ctrl & CTRL_COMPSYNC) == 0) {
+        /* csync, vsync, frame */
+        TRISBbits.TRISB13 = 1;
+        TRISBbits.TRISB14 = 1;
+        TRISBbits.TRISB15 = 1;
 
-    T3CONbits.TCKPS = 0;
-    T3CONbits.TCS = 0;
-    T3CONbits.TGATE = 0;
-    TMR3 = 0x00;
-    PR3 = 0x7fff;
-    T3CONbits.TON = 1;
+        /* CSYNC - INT2 */
+        RPINR1bits.INT2R = 45;
+        /* falling edge */
+        INTCON2bits.INT2EP = 1;
+        /* priority */
+        _INT2IP = 4;
 
-    OC1CON1bits.OCM = 0;
-    OC1CON1bits.OCTSEL = 1;
-    OC1CON2bits.SYNCSEL = 0x1f;
-    OC1R = 0x100;
-    OC1RS = 0x100 + config.video.brightness;
-    OC1CON1bits.OCM = 0b110;
+        /* VSYNC - INT1 */
+        RPINR0bits.INT1R = 46;
+        /* falling edge */
+        INTCON2bits.INT1EP = 1;
+        /* priority */
+        _INT1IP = 3;
+        /* enable int1 */
+        _INT1IE = 1;
+    }
 
-    if (hw_rev == 0x02) {
-        /* hw 0v2 */
+
+    if (videocore_ctrl & CTRL_PWMBRIGHT) {
+        /* brightness */
+        /* OC1 pin */
+        TRISBbits.TRISB7 = 0;
+        _RP39R = 0x10;
+
+        T3CONbits.TCKPS = 0;
+        T3CONbits.TCS = 0;
+        T3CONbits.TGATE = 0;
+        TMR3 = 0x00;
+        PR3 = 0x7fff;
+        T3CONbits.TON = 1;
+
+        OC1CON1bits.OCM = 0;
+        OC1CON1bits.OCTSEL = 1;
+        OC1CON2bits.SYNCSEL = 0x1f;
+        OC1R = 0x100;
+        OC1RS = 0x100 + config.video.brightness;
+        OC1CON1bits.OCM = 0b110;
+    }
+
+    
+    if (videocore_ctrl & CTRL_SYNCGEN) {
         /* sync pin */
         _TRISA9 = 0;
         _LATA9 = 1;
@@ -373,11 +406,9 @@ static void video_init_hw(void)
         _T4IF = 0;
         /* period = 1 / (70000000 / 8) * 56 = 6.4us */
         PR4 = 56;
+    }
 
-
-#ifdef COMP_SYNC
-        _TRISB9 = 0;
-
+    if (videocore_ctrl & CTRL_COMPSYNC) {
         /* analog input */
         TRISBbits.TRISB0 = 1;
         ANSELBbits.ANSB0 = 1;
@@ -412,7 +443,6 @@ static void video_init_hw(void)
         IFS1bits.CMIF = 0;
         IEC1bits.CMIE = 1;
         CM2CONbits.CON = 1;
-#endif
     }
 }
 
@@ -762,7 +792,7 @@ void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
     _INT2IF = 0;
 }
 
-# ifdef COMP_SYNC
+
 void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
 {
     static unsigned int last_cnt = 0;
@@ -802,15 +832,12 @@ void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
 
     _CMIF = 0;
 }
-#endif
 
 
 void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
 {
     static unsigned char cnt;
-#ifdef COMP_SYNC
     static unsigned int recover_tmr;
-#endif
 
     ext_sync_cnt++;
 
@@ -827,22 +854,19 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
         LED = 0;
         cnt = 0;
         _CMIP = 2;
-#ifdef COMP_SYNC
         recover_tmr = 0;
-#endif
     } else {
         /* int sync */
         cnt++;
 
         if (odd == 1) {
             if (line < 2) {
-
-#ifdef COMP_SYNC
-                if (++recover_tmr > 1000) {
-                    if ((_CMIF == 0) && (CM2CONbits.CEVT == 1))
-                        CM2CONbits.CEVT = 0;
+                if (videocore_ctrl & CTRL_COMPSYNC) {
+                    if (++recover_tmr > 1000) {
+                        if ((_CMIF == 0) && (CM2CONbits.CEVT == 1))
+                            CM2CONbits.CEVT = 0;
+                    }
                 }
-#endif
                 /* vsync sync pulses */
                 if ((cnt == 1) || (cnt == 6)) {
                     _LATA9 = 0;
