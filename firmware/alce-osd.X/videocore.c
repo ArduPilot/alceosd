@@ -192,7 +192,6 @@ void sram_byteo_sdi(unsigned char b)
     CLK_LOW;
 }
 
-
 void clear_sram(void)
 {
     register unsigned long i;
@@ -208,15 +207,6 @@ void clear_sram(void)
     CS_HIGH;
 }
 
-void clear_video(void)
-{
-    while (sram_busy);
-    _INT2IE = 0;
-    _INT1IE = 0;
-
-    clear_sram();
-    _INT1IE = 1;
-}
 
 void video_pause(void)
 {

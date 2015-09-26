@@ -96,7 +96,6 @@ void render_canvas(struct canvas *ca);
 void free_mem(void);
 
 /* clear up display */
-void clear_video(void);
 void clear_sram(void);
 
 
