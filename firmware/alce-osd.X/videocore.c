@@ -75,7 +75,8 @@ static volatile unsigned int ext_sync_cnt = 0, int_sync_cnt = 0;
 volatile unsigned char sram_busy = 0;
 volatile unsigned int line, last_line_cnt = 0;
 volatile unsigned char odd = 0;
-static unsigned char render_state = 0;
+
+static struct canvas *rendering_canvas = NULL;
 
 extern unsigned char hw_rev;
 
@@ -443,8 +444,9 @@ void free_mem(void)
     scratchpad[1].alloc_size = 0;
 
     canvas_pipe.prd = canvas_pipe.pwr = 0;
-    render_state = 0;
+    rendering_canvas = NULL;
 }
+
 
 void video_get_size(unsigned int *xsize, unsigned int *ysize)
 {
@@ -510,10 +512,8 @@ int alloc_canvas(struct canvas *c, void *widget_cfg)
 
 int init_canvas(struct canvas *ca, unsigned char b)
 {
-    if (ca->lock) {
-        //U1TXREG = 'l';
+    if (ca->lock)
         return -1;
-    }
     clear_canvas(ca->buf, ca->size, b);
     return 0;
 }
@@ -529,7 +529,6 @@ void schedule_canvas(struct canvas *ca)
 
 static void render_process(void)
 {
-    static struct canvas *ca;
     static unsigned int y1, y;
     __eds__ static unsigned char *b;
     static union sram_addr addr;
@@ -538,22 +537,20 @@ static void render_process(void)
     unsigned int x;
 
     for (;;) {
-        if (render_state == 0) {
+        if (rendering_canvas == NULL) {
             if (canvas_pipe.prd == canvas_pipe.pwr)
                 return;
 
-            ca = canvas_pipe.ca[canvas_pipe.prd];
+            rendering_canvas = canvas_pipe.ca[canvas_pipe.prd];
 
-            y = ca->y;
-            y1 = ca->y + ca->height;
-            x = ca->x >> 2;
-            b = ca->buf;
+            y = rendering_canvas->y;
+            y1 = rendering_canvas->y + rendering_canvas->height;
+            x = rendering_canvas->x >> 2;
+            b = rendering_canvas->buf;
 
             xsize = (video_xsizes[config.video.x_size_id].xsize) >> 2;
             addr.l = x + ((unsigned long) xsize *  y);
-            render_state = 1;
-        }
-        if (render_state == 1) {
+        } else {
             /* render */
             for (;;) {
                 if (sram_busy)
@@ -564,7 +561,7 @@ static void render_process(void)
                 sram_byteo_sqi(addr.b2);
                 sram_byteo_sqi(addr.b1);
                 sram_byteo_sqi(addr.b0);
-                b = copy_line(b, ca->rwidth);
+                b = copy_line(b, rendering_canvas->rwidth);
                 CS_HIGH;
 
                 if (++y == y1)
@@ -572,11 +569,10 @@ static void render_process(void)
 
                 addr.l += xsize;
             }
-            ca->lock = 0;
-            //U1TXREG = 'U';
+            rendering_canvas->lock = 0;
             canvas_pipe.prd++;
             canvas_pipe.prd &= MAX_CANVAS_PIPE_MASK;
-            render_state = 0;
+            rendering_canvas = NULL;
         }
     }
 }
@@ -644,7 +640,6 @@ void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
 {
     if (sram_busy) {
         T2CONbits.TON = 0;
-        sram_busy = 0;
         if (line >= config.video.y_offset) {
             sram_exit_sdi();
             CS_LOW;
@@ -652,6 +647,7 @@ void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
             CS_HIGH;
             SRAM_OUTQ;
         }
+        sram_busy = 0;
     }
     
     last_line_cnt = line;
