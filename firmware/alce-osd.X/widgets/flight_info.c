@@ -31,7 +31,7 @@ static int open(struct widget *w)
     w->priv = (struct flight_stats*) get_flight_stats();
 
     w->ca.width = 4*60;
-    w->ca.height = 12*8;
+    w->ca.height = 12*9;
 
     /* refresh rate of 0.2 sec */
     add_timer(TIMER_WIDGET, 2, timer_callback, w);
@@ -44,6 +44,7 @@ static void render(struct widget *w)
     struct flight_stats *priv = w->priv;
     struct canvas *ca = &w->ca;
     char buf[50];
+    unsigned long duration = (priv->flight_end - priv->flight_start) / 1000;
 
     sprintf(buf, "Distance traveled:     %ld m", (unsigned long) priv->total_distance);
     draw_str(buf, 0, 0, ca, 1);
@@ -68,6 +69,9 @@ static void render(struct widget *w)
 
     sprintf(buf, "Total used current:    %dmAh", (unsigned int) priv->total_mah);
     draw_str(buf, 0, 12*7, ca, 1);
+
+    sprintf(buf, "Fight duration:        %02dm%02ds", (unsigned int) duration / 60, (unsigned int) duration % 60);
+    draw_str(buf, 0, 12*8, ca, 1);
 }
 
 

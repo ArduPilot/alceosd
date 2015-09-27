@@ -39,7 +39,6 @@ struct flight_stats* get_flight_stats(void)
     return &stats;
 }
 
-
 static void store_mavdata(mavlink_message_t *msg, mavlink_status_t *status)
 {
     switch (msg->msgid) {
@@ -58,9 +57,12 @@ static void store_mavdata(mavlink_message_t *msg, mavlink_status_t *status)
     }
 }
 
+static void find_launch_heading(struct timer *t, void *d);
 
 static void calc_stats(struct timer *t, void *d)
 {
+    struct home_data *home = get_home_data();
+    
     /* accumulate distance */
     stats.total_distance += ((float) priv.groundspeed / 10);
     stats.total_mah += ((float) priv.bat_current) / 3600;
@@ -68,11 +70,27 @@ static void calc_stats(struct timer *t, void *d)
     stats.max_air_speed = MAX(priv.airspeed, stats.max_air_speed);
     stats.max_gnd_speed = MAX(priv.groundspeed, stats.max_gnd_speed);
     stats.max_altitude  = MAX(priv.alt, stats.max_altitude);
-    stats.max_home_distance = MAX((unsigned int) home.distance, stats.max_home_distance);
-    stats.max_home_altitude = MAX((unsigned int) home.altitude, stats.max_home_altitude);
+    stats.max_home_distance = MAX((unsigned int) home->distance, stats.max_home_distance);
+    stats.max_home_altitude = MAX((unsigned int) home->altitude, stats.max_home_altitude);
     stats.max_bat_current = MAX(priv.bat_current, stats.max_bat_current);
-}
 
+    stats.flight_end = get_millis();
+
+
+    /* try to guess a landing */
+    if ((priv.throttle < 5) &&
+        (priv.airspeed < 5) &&
+        (home->distance < 50) &&
+        (abs(home->altitude) < 10)) {
+
+        remove_timer(t);
+        stats.launch_heading = NO_HEADING;
+
+        /* determine launch heading */
+        add_timer(TIMER_ALWAYS, 5, find_launch_heading, NULL);
+    }
+
+}
 
 static void start_calc_stats(void)
 {
@@ -90,7 +108,6 @@ static void start_calc_stats(void)
     /* start calcs in a 100ms interval */
     add_timer(TIMER_ALWAYS, 1, calc_stats, NULL);
 }
-
 
 static void find_launch_heading(struct timer *t, void *d)
 {
@@ -113,7 +130,6 @@ static void find_launch_heading(struct timer *t, void *d)
         start_calc_stats();
     }
 }
-
 
 void init_flight_stats(void)
 {
