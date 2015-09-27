@@ -142,7 +142,7 @@ static void sram_exit_sqi(void)
     SRAM_SPI;
 }
 
-void sram_exit_sdi(void)
+static void sram_exit_sdi(void)
 {
     CS_LOW;
     SRAM_OUTQ;
@@ -205,41 +205,6 @@ void clear_sram(void)
         sram_byteo_sqi(0x00);
     }
     CS_HIGH;
-}
-
-
-void video_pause(void)
-{
-    while (sram_busy);
-
-    if (videocore_ctrl & CTRL_SYNCGEN) {
-        _T4IE = 0;
-    }
-
-    if (videocore_ctrl & CTRL_COMPSYNC) {
-        _CMIE = 0;
-        CM2CONbits.CEVT = 0;
-        _CMIF = 0;
-    } else {
-        _INT2IE = 0;
-        _INT1IE = 0;
-    }
-}
-
-void video_resume(void)
-{
-    if (videocore_ctrl & CTRL_COMPSYNC) {
-        line = 0;
-        CM2CONbits.CEVT = 0;
-        _CMIF = 0;
-        _CMIE = 1;
-    } else {
-        _INT1IE = 1;
-    }
-    
-    if (videocore_ctrl & CTRL_SYNCGEN) {
-        _T4IE = 1;
-    }
 }
 
 static void video_init_sram(void)
@@ -457,6 +422,49 @@ void video_apply_config_cbk(void)
     video_apply_config(c);
 }
 
+void video_get_size(unsigned int *xsize, unsigned int *ysize)
+{
+    *xsize = video_xsizes[config.video.x_size_id].xsize;
+    *ysize = config.video.y_size;
+    if (config.video.standard & VIDEO_STANDARD_SCAN_MASK)
+        *ysize *= 2;
+}
+
+void video_pause(void)
+{
+    while (sram_busy);
+
+    if (videocore_ctrl & CTRL_SYNCGEN) {
+        _T4IE = 0;
+    }
+
+    if (videocore_ctrl & CTRL_COMPSYNC) {
+        _CMIE = 0;
+        CM2CONbits.CEVT = 0;
+        _CMIF = 0;
+    } else {
+        _INT2IE = 0;
+        _INT1IE = 0;
+    }
+}
+
+void video_resume(void)
+{
+    if (videocore_ctrl & CTRL_COMPSYNC) {
+        line = 0;
+        CM2CONbits.CEVT = 0;
+        _CMIF = 0;
+        _CMIE = 1;
+    } else {
+        _INT1IF = 0;
+        _INT1IE = 1;
+    }
+
+    if (videocore_ctrl & CTRL_SYNCGEN) {
+        _T4IF = 0;
+        _T4IE = 1;
+    }
+}
 
 void free_mem(void)
 {
@@ -467,14 +475,6 @@ void free_mem(void)
     rendering_canvas = NULL;
 }
 
-
-void video_get_size(unsigned int *xsize, unsigned int *ysize)
-{
-    *xsize = video_xsizes[config.video.x_size_id].xsize;
-    *ysize = config.video.y_size;
-    if (config.video.standard & VIDEO_STANDARD_SCAN_MASK)
-        *ysize *= 2;
-}
 
 
 int alloc_canvas(struct canvas *c, void *widget_cfg)
@@ -646,7 +646,7 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
         T2CONbits.TON = 1;
     } else {
         OE_RAM = 1;
-        _RP56R = 0x0;
+        _RP56R = 0;
         CS_HIGH;
         SRAM_OUT;
         SPI2STATbits.SPIEN = 0;
@@ -659,7 +659,16 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
 void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
 {
     if (sram_busy) {
-        T2CONbits.TON = 0;
+        if (T2CONbits.TON == 1) {
+            T2CONbits.TON = 0;
+            _T2IF = 0;
+            OE_RAM = 1;
+            _RP56R = 0;
+            CS_HIGH;
+            SRAM_OUT;
+            SPI2STATbits.SPIEN = 0;
+        }
+
         if (line >= config.video.y_offset) {
             sram_exit_sdi();
             CS_LOW;
@@ -669,13 +678,15 @@ void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
         }
         sram_busy = 0;
     }
+
     
     last_line_cnt = line;
     line = 0;
     int_sync_cnt = 0;
+    _INT2IF = 0;
     _INT2IE = 1;
     LED = 1;
-    IFS1bits.INT1IF = 0;
+    _INT1IF = 0;
 }
 
 
@@ -713,6 +724,7 @@ static inline void render_line(void)
         sram_busy = 1;
         addr.l = 0;
 
+        /* TODO: Fix for compsync mode */
         if (config.video.standard && VIDEO_STANDARD_SCAN_MASK) {
             if (int_sync_cnt < CNT_INT_MODE)
                 odd = PORTBbits.RB15;
@@ -775,10 +787,8 @@ static inline void render_line(void)
 
 void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
 {
-    if (T2CONbits.TON == 0) {
-        line++;
-        render_line();
-    }
+    line++;
+    render_line();
     _INT2IF = 0;
 }
 
