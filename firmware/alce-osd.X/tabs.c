@@ -347,8 +347,8 @@ static void build_tab_list(void)
         if (tab_list[0] > (MAX_TABS-2))
             break;
     }
-    /* add an empty tab (tab 0) at the end */
-    *p++ = 0;
+    /* add an empty tab (tab 255) at the end */
+    *p++ = 255;
     tab_list[0]++;
 
 #if 0
@@ -365,8 +365,6 @@ static void build_tab_list(void)
 
 void tabs_init(void)
 {
-    static struct mavlink_callback *mav_cbk = NULL;
-    static struct timer *tab_timer = NULL;
     unsigned char msgid;
     void *cbk;
 
@@ -394,20 +392,11 @@ void tabs_init(void)
     }
 
     /* track required mavlink data */
-    if (cbk != NULL) {
-        if (mav_cbk == NULL) {
-            mav_cbk = add_mavlink_callback(msgid, cbk,
-                        CALLBACK_PERSISTENT, &config.tab_change);
-        } else {
-            mav_cbk->msgid = msgid;
-            mav_cbk->cbk = cbk;
-        }
-    }
+    if (cbk != NULL)
+        add_mavlink_callback(msgid, cbk, CALLBACK_PERSISTENT, &config.tab_change);
     
     /* tab switching task (100ms) */
-    if (tab_timer == NULL)
-        tab_timer = add_timer(TIMER_ALWAYS, 1, tab_switch_task,
-                                &config.tab_change);
+    add_timer(TIMER_ALWAYS, 1, tab_switch_task, &config.tab_change);
 }
 
 
