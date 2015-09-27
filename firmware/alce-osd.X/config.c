@@ -423,9 +423,6 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
                     break;
                 case 'x':
                     exit_config();
-                    
-                    /* re-init tabs */
-                    tabs_init();
                     return 1;
                 default:
                     break;
