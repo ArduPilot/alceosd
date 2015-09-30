@@ -31,6 +31,8 @@
 #endif
 
 
+struct mav_statistics mav_stats;
+
 static struct mavlink_callback callbacks[MAX_MAVLINK_CALLBACKS];
 static unsigned char nr_callbacks = 0;
 
@@ -78,6 +80,9 @@ void mavlink_handle_msg(mavlink_message_t *msg, mavlink_status_t *status)
 {
     struct mavlink_callback *c;
     unsigned char i;
+
+
+    mav_statistics.total_msgs++;
 
     LED = 0;
     //console_printf("rcv:sys=%d cmp=%d msg=%d\n", msg->sysid, msg->compid, msg->msgid);
@@ -316,10 +321,20 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 }
 
 
+static void mavlink_calc_stats(struct timer *t, void *d)
+{
+    static unsigned long last_total_msgs;
+    mav_stats.msg_sec = mav_stats.total_msgs - last_total_msgs;
+    last_total_msgs += mav_stats.msg_sec;
+}
+
 void mavlink_init(void)
 {
     /* register module parameters */
     params_add(params_mavlink);
+
+    /* heartbeat timer */
+    add_timer(TIMER_ALWAYS, 10, mavlink_calc_stats, NULL);
 
     /* heartbeat timer */
     add_timer(TIMER_ALWAYS, 10, mav_heartbeat, NULL);
