@@ -82,7 +82,7 @@ void mavlink_handle_msg(mavlink_message_t *msg, mavlink_status_t *status)
     unsigned char i;
 
 
-    mav_statistics.total_msgs++;
+    mav_stats.total_msgs++;
 
     LED = 0;
     //console_printf("rcv:sys=%d cmp=%d msg=%d\n", msg->sysid, msg->compid, msg->msgid);
