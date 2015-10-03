@@ -4,6 +4,11 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>flash.h</itemPath>
+      <itemPath>ihex_loader.h</itemPath>
+      <itemPath>bootloader.h</itemPath>
+      <itemPath>uart.h</itemPath>
+      <itemPath>bin_loader.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -14,6 +19,10 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>main.c</itemPath>
+      <itemPath>ihex_loader.c</itemPath>
+      <itemPath>bin_loader.c</itemPath>
+      <itemPath>flash.c</itemPath>
+      <itemPath>uart.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -32,10 +41,10 @@
         <targetDevice>dsPIC33EP512GP504</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>Simulator</platformTool>
+        <platformTool>PICkit3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
         <languageToolchainVersion>1.24</languageToolchainVersion>
-        <platform>2</platform>
+        <platform>3</platform>
       </toolsSet>
       <compileType>
         <linkerTool>
@@ -176,7 +185,81 @@
         <property key="relaxed-math" value="false"/>
         <property key="save-temps" value="false"/>
       </C30Global>
+      <PICkit3PlatformTool>
+        <property key="ADC 1" value="true"/>
+        <property key="AutoSelectMemRanges" value="auto"/>
+        <property key="COMPARATOR" value="true"/>
+        <property key="CRC" value="true"/>
+        <property key="CTMU" value="true"/>
+        <property key="Freeze All Other Peripherals" value="true"/>
+        <property key="I2C1" value="true"/>
+        <property key="I2C2" value="true"/>
+        <property key="INPUT CAPTURE 1" value="true"/>
+        <property key="INPUT CAPTURE 2" value="true"/>
+        <property key="INPUT CAPTURE 3" value="true"/>
+        <property key="INPUT CAPTURE 4" value="true"/>
+        <property key="OUTPUT COMPARE 1" value="true"/>
+        <property key="OUTPUT COMPARE 2" value="true"/>
+        <property key="OUTPUT COMPARE 3" value="true"/>
+        <property key="OUTPUT COMPARE 4" value="true"/>
+        <property key="PTG" value="true"/>
+        <property key="SPI 1" value="true"/>
+        <property key="SPI 2" value="true"/>
+        <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
+        <property key="TIMER1" value="true"/>
+        <property key="TIMER2" value="true"/>
+        <property key="TIMER3" value="true"/>
+        <property key="TIMER4" value="true"/>
+        <property key="TIMER5" value="true"/>
+        <property key="ToolFirmwareFilePath"
+                  value="Press to browse for a specific firmware version"/>
+        <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
+        <property key="UART 1" value="true"/>
+        <property key="UART 2" value="true"/>
+        <property key="hwtoolclock.frcindebug" value="false"/>
+        <property key="memories.aux" value="false"/>
+        <property key="memories.bootflash" value="true"/>
+        <property key="memories.configurationmemory" value="true"/>
+        <property key="memories.configurationmemory2" value="true"/>
+        <property key="memories.dataflash" value="true"/>
+        <property key="memories.eeprom" value="true"/>
+        <property key="memories.flashdata" value="true"/>
+        <property key="memories.id" value="true"/>
+        <property key="memories.programmemory" value="true"/>
+        <property key="memories.programmemory.end" value="0x557eb"/>
+        <property key="memories.programmemory.partition2" value="true"/>
+        <property key="memories.programmemory.partition2.end"
+                  value="${memories.programmemory.partition2.end.value}"/>
+        <property key="memories.programmemory.partition2.start"
+                  value="${memories.programmemory.partition2.start.value}"/>
+        <property key="memories.programmemory.start" value="0x0"/>
+        <property key="poweroptions.powerenable" value="false"/>
+        <property key="programmertogo.imagename" value=""/>
+        <property key="programoptions.donoteraseauxmem" value="false"/>
+        <property key="programoptions.eraseb4program" value="true"/>
+        <property key="programoptions.pgmspeed" value="2"/>
+        <property key="programoptions.preservedataflash" value="false"/>
+        <property key="programoptions.preserveeeprom" value="false"/>
+        <property key="programoptions.preserveprogramrange" value="false"/>
+        <property key="programoptions.preserveprogramrange.end" value="0x557eb"/>
+        <property key="programoptions.preserveprogramrange.start" value="0x0"/>
+        <property key="programoptions.preserveuserid" value="false"/>
+        <property key="programoptions.programcalmem" value="false"/>
+        <property key="programoptions.programuserotp" value="false"/>
+        <property key="programoptions.testmodeentrymethod" value="VPPFirst"/>
+        <property key="programoptions.usehighvoltageonmclr" value="false"/>
+        <property key="programoptions.uselvpprogramming" value="false"/>
+        <property key="voltagevalue" value="3.25"/>
+      </PICkit3PlatformTool>
       <Simulator>
+        <property key="breakoptions.coreerrors" value="Ignore"/>
+        <property key="breakoptions.corewarnings" value="Ignore"/>
+        <property key="breakoptions.peripheralerrors" value="Ignore"/>
+        <property key="breakoptions.peripheralwarnings" value="Ignore"/>
+        <property key="breakoptions.stimulusmessages.notes" value="Ignore"/>
+        <property key="breakoptions.stimulusmessags.errors" value="Ignore"/>
+        <property key="breakoptions.stimulusmessags.warnings" value="Ignore"/>
+        <property key="breakoptions.wdtwarnings" value="Ignore"/>
         <property key="codecoverage.enabled" value="Disable"/>
         <property key="codecoverage.enableoutputtofile" value="false"/>
         <property key="codecoverage.outputfile" value=""/>
@@ -193,13 +276,7 @@
         <property key="periphADC2.altscl" value="false"/>
         <property key="periphADC2.minTacq" value=""/>
         <property key="periphADC2.tacqunits" value="microseconds"/>
-        <property key="periphComp1.gte" value="gt"/>
-        <property key="periphComp2.gte" value="gt"/>
-        <property key="periphComp3.gte" value="gt"/>
-        <property key="periphComp4.gte" value="gt"/>
-        <property key="periphComp5.gte" value="gt"/>
-        <property key="periphComp6.gte" value="gt"/>
-        <property key="tracecontrol.include.timestamp" value="timestampenabled"/>
+        <property key="tracecontrol.include.timestamp" value="false"/>
         <property key="tracecontrol.select" value="0"/>
         <property key="tracecontrol.stallontracebufferfull" value="false"/>
         <property key="tracecontrol.timestamp" value="0"/>
@@ -236,135 +313,6 @@
         <property key="uart9io.output" value="window"/>
         <property key="uart9io.outputfile" value=""/>
         <property key="uart9io.uartioenabled" value="false"/>
-        <property key="warningmessagebreakoptions.W0001_CORE_BITREV_MODULO_EN"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0002_CORE_SECURE_MEMORYACCESS"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0003_CORE_SW_RESET" value="report"/>
-        <property key="warningmessagebreakoptions.W0004_CORE_WDT_RESET" value="report"/>
-        <property key="warningmessagebreakoptions.W0005_CORE_IOPUW_RESET"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0006_CORE_CODE_GUARD_PFC_RESET"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0007_CORE_DO_LOOP_STACK_UNDERFLOW"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0008_CORE_DO_LOOP_STACK_OVERFLOW"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0009_CORE_NESTED_DO_LOOP_RANGE"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0010_CORE_SIM32_ODD_WORDACCESS"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0011_CORE_SIM32_UNIMPLEMENTED_RAMACCESS"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0012_CORE_STACK_OVERFLOW_RESET"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0013_CORE_STACK_UNDERFLOW_RESET"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0101_SIM_UPDATE_FAILED"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0102_SIM_PERIPH_MISSING"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0103_SIM_PERIPH_FAILED"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0104_SIM_FAILED_TO_INIT_TOOL"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0201_ADC_NO_STIMULUS_FILE"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0202_ADC_GO_DONE_BIT" value="report"/>
-        <property key="warningmessagebreakoptions.W0203_ADC_MINIMUM_2_TAD"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0204_ADC_TAD_TOO_SMALL"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0205_ADC_UNEXPECTED_TRANSITION"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0206_ADC_SAMP_TIME_TOO_SHORT"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0207_ADC_NO_PINS_SCANNED"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0208_ADC_UNSUPPORTED_CLOCK_SOURCE"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0209_ADC_ANALOG_CHANNEL_DIGITAL"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0210_ADC_ANALOG_CHANNEL_OUTPUT"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0211_ADC_PIN_INVALID_CHANNEL"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0212_ADC_BAND_GAP_NOT_SUPPORTED"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0213_ADC_RESERVED_SSRC"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0214_ADC_POSITIVE_INPUT_DIGITAL"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0215_ADC_POSITIVE_INPUT_OUTPUT"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0216_ADC_NEGATIVE_INPUT_DIGITAL"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0217_ADC_NEGATIVE_INPUT_OUTPUT"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0218_ADC_REFERENCE_HIGH_DIGITAL"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0219_ADC_REFERENCE_HIGH_OUTPUT"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0220_ADC_REFERENCE_LOW_DIGITAL"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0221_ADC_REFERENCE_LOW_OUTPUT"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0222_ADC_OVERFLOW" value="report"/>
-        <property key="warningmessagebreakoptions.W0223_ADC_UNDERFLOW" value="report"/>
-        <property key="warningmessagebreakoptions.W0224_ADC_CTMU_NOT_SUPPORTED"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0225_ADC_INVALID_CH0S"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0226_ADC_VBAT_NOT_SUPPORTED"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W0227_ADC_INVALID_ADCS"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W1201_DATAFLASH_MEM_OUTSIDE_RANGE"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W1202_DATAFLASH_ERASE_WHILE_LOCKED"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W1203_DATAFLASH_WRITE_WHILE_LOCKED"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W1401_DMA_PERIPH_NOT_AVAIL"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W1402_DMA_INVALID_IRQ" value="report"/>
-        <property key="warningmessagebreakoptions.W1403_DMA_INVALID_SFR" value="report"/>
-        <property key="warningmessagebreakoptions.W1404_DMA_INVALID_DMA_ADDR"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W1405_DMA_IRQ_DIR_MISMATCH"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W2001_INPUTCAPTURE_TMR3_UNAVAILABLE"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W2002_INPUTCAPTURE_CAPTURE_EMPTY"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W9001_TMR_GATE_AND_EXTCLOCK_ENABLED"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W9002_TMR_NO_PIN_AVAILABLE"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W9003_TMR_INVALID_CLOCK_SOURCE"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W9201_UART_TX_OVERFLOW"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W9202_UART_TX_CAPTUREFILE"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W9203_UART_TX_INVALIDINTERRUPTMODE"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W9204_UART_RX_EMPTY_QUEUE"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W9205_UART_TX_BADFILE" value="report"/>
-        <property key="warningmessagebreakoptions.W9801_SCL_BAD_SUBTYPE_INDICATION"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W9802_SCL_FILE_NOT_FOUND"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W9803_SCL_FAILED_TO_READ_FILE"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W9804_SCL_UNRECOGNIZED_LABEL"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.W9805_SCL_UNRECOGNIZED_VAR"
-                  value="report"/>
-        <property key="warningmessagebreakoptions.displaywarningmessagesoption"
-                  value=""/>
-        <property key="warningmessagebreakoptions.warningmessages" value="holdstate"/>
       </Simulator>
     </conf>
   </confs>
