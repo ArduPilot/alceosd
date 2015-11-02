@@ -115,6 +115,7 @@ int main(void)
     TMR2 = 0x0000;
     T2CONbits.TON = 1;
 
+    uart_init();
 
     mode = IHEX_MODE | BIN_MODE;
 

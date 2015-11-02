@@ -19,9 +19,102 @@
 #include "bootloader.h"
 
 
+static u32union page[PAGE_SIZE];
+
+
+
 void load_bin(void)
 {
+    unsigned char c;
+    int ret;
+    u32union page_addr;
+    unsigned int crc, rcrc, i;
+
+    for (i = 0; i < PAGE_SIZE; i++)
+        page[i].b[3] = 0xff;
 
 
+    while (1) {
+
+        /* request page */
+
+        /* 3 bytes - msb first */
+        page_addr.b[3] = 0;
+        ret = get_char((char*) &page_addr.b[2]);
+        ret |= get_char((char*) &page_addr.b[1]);
+        ret |= get_char((char*) &page_addr.b[0]);
+
+        if (page_addr.l == 0x00ffffff) {
+            put_char('e');
+            break;
+        } else {
+            put_char('p');
+        }
+
+        page_addr.l &= ~((PAGE_SIZE << 1)-1);
+
+        if ( ((page_addr.l >= BOOT_FLASH_START_ADDR) && (page_addr.l < BOOT_FLASH_END_ADDR)) ) {
+           // || (page_addr.l >= DEV_CONFIG_REG_BASE_ADDRESS) ) {
+            put_char('s');
+            continue;
+        } else {
+            put_char('d');
+        }
+
+        /* load page to sram */
+        ret = 0;
+        crc = 0;
+        for (i = 0; i < PAGE_SIZE; i++) {
+            ret |= get_char((char*) &c);
+            crc += c;
+            page[i].b[2] = c;
+                    
+            ret |= get_char((char*) &c);
+            crc += c;
+            page[i].b[1] = c;
+
+            ret |= get_char((char*) &c);
+            crc += c;
+            page[i].b[0] = c;
+        }
+
+        /* get crc */
+        put_char('c');
+        rcrc = 0;
+        ret |= get_char((char*) &c);
+        rcrc = c << 8;
+        ret |= get_char((char*) &c);
+        rcrc |= c;
+
+        if (rcrc != crc) {
+            ret = 100;
+            put_char('x');
+        }
+
+        if (ret)
+            break;
+
+        erase_page(page_addr.l);
+        put_char('e');
+
+        /* protect bootloader start addr */
+        if (page_addr.l == 0) {
+            page[0].l = 0x040800;
+            page[1].l = 0x000000;
+        }
+
+        for (i = 0; i < PAGE_SIZE/2; i++) {
+            write_dword(page_addr.l + i*4, page[i*2].l, page[i*2 + 1].l);
+        }
+
+        put_char('w');
+
+    }
+
+    if (ret) {
+        // error
+    }
+
+    goto_usercode();
 
 }
