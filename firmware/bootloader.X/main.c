@@ -60,8 +60,8 @@
 #define BIN_MODE                        0x02
 
 
-const char magic_word_ihex[] = "alceosd";
-const char magic_word_bin[] = "alceOSD";
+const char magic_word_ihex[] = "alceOSD";
+const char magic_word_bin[] = "alceosd";
 const char msg[] = "\r\nAlceOSD bootloader v0.3\r\n";
 const char msg_ihex[] = "IHEX\r\n";
 const char msg_bin[] = "BIN\r\n";
