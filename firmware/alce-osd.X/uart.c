@@ -214,19 +214,31 @@ static void uart1_set_pins(unsigned char pins)
     switch (pins) {
         default:
         case UART_PINS_TELEMETRY:
-            // TX
-            _RP37R = 1;
-            // RX
-            _U1RXR = 38;
+            if (hw_rev == 0x03) {
+                // TX
+                _RP42R = 1;
+                // RX
+                _U1RXR = 43;
+            } else {
+                // TX
+                _RP37R = 1;
+                // RX
+                _U1RXR = 38;
+            }
             break;
         case UART_PINS_CON2:
-            // TX
-            if (hw_rev == 0x01)
-                _RP41R = 1;
-            else
-                _RP36R = 1;
-            // RX
-            _U1RXR = 20;
+            if (hw_rev == 0x03) {
+                _RP37R = 1;
+                _U1RXR = 38;
+            } else {
+                // TX
+                if (hw_rev == 0x01)
+                    _RP41R = 1;
+                else
+                    _RP36R = 1;
+                // RX
+                _U1RXR = 20;
+            }
             break;
         case UART_PINS_ICSP:
             if (hw_rev == 0x01)
@@ -243,20 +255,32 @@ static void uart2_set_pins(unsigned char pins)
 {
     switch (pins) {
         case UART_PINS_TELEMETRY:
-            // TX
-            _RP37R = 3;
-            // RX
-            _U2RXR = 38;
+            if (hw_rev == 0x03) {
+                // TX
+                _RP42R = 3;
+                // RX
+                _U2RXR = 43;
+            } else {
+                // TX
+                _RP37R = 3;
+                // RX
+                _U2RXR = 38;
+            }
             break;
         default:
         case UART_PINS_CON2:
-            // TX
-            if (hw_rev == 0x01)
-                _RP41R = 3;
-            else
-                _RP36R = 3;
-            // RX
-            _U2RXR = 20;
+            if (hw_rev == 0x03) {
+                _RP37R = 3;
+                _U2RXR = 38;
+            } else {
+                // TX
+                if (hw_rev == 0x01)
+                    _RP41R = 3;
+                else
+                    _RP36R = 3;
+                // RX
+                _U2RXR = 20;
+            }
             break;
         case UART_PINS_ICSP:
             if (hw_rev == 0x01)
