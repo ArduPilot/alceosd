@@ -49,9 +49,14 @@ void adc_init(void)
     AD1CHS0bits.CH0NA = 0;
 
     /* ch1,2,3 = an0,1,2*/
+#if defined (__dsPIC33EP512GM604__)
+//    AD1CHS123bits.CH123SA = 0;
+    AD1CHS123bits.CH123NA = 0;
+#else
     AD1CHS123bits.CH123SA = 0;
     AD1CHS123bits.CH123NA = 0;
-
+#endif
+    
     AD1CON1bits.ADON = 1;
 
     AD1CON1bits.ASAM = 1;

@@ -369,6 +369,15 @@ static void video_init_hw(void)
         ANSELBbits.ANSB0 = 1;
 
         /* vref */
+#if defined (__dsPIC33EP512GM604__)
+        CVR1CONbits.CVR1OE = 0;
+//        CVR1CONbits.CVR2OE = 0;
+        CVR1CONbits.VREFSEL = 0;
+        CVR1CONbits.CVRR = 1;
+        CVR1CONbits.CVRSS = 0;
+        CVR1CONbits.CVR = 3;
+        CVR1CONbits.CVREN = 1;
+#else
         CVRCONbits.CVR1OE = 0;
         CVRCONbits.CVR2OE = 0;
         CVRCONbits.VREFSEL = 0;
@@ -376,7 +385,8 @@ static void video_init_hw(void)
         CVRCONbits.CVRSS = 0;
         CVRCONbits.CVR = 3;
         CVRCONbits.CVREN = 1;
-
+#endif
+        
         /* comp */
         CM2CONbits.COE = 0;
         CM2CONbits.CPOL = 1;
