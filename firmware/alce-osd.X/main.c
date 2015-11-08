@@ -24,37 +24,41 @@
 
 #ifndef WITH_BOOTLOADER
 
-// DSPIC33EP512GP504 Configuration Bit Settings
-
 // FICD
-#pragma config ICS = NONE               // ICD Communication Channel Select bits (Reserved, do not use)
-#pragma config JTAGEN = OFF             // JTAG Enable bit (JTAG is disabled)
+#pragma config ICS = NONE
+#pragma config JTAGEN = OFF
 
 // FPOR
-#pragma config ALTI2C1 = OFF            // Alternate I2C1 pins (I2C1 mapped to SDA1/SCL1 pins)
-#pragma config ALTI2C2 = OFF            // Alternate I2C2 pins (I2C2 mapped to SDA2/SCL2 pins)
-#pragma config WDTWIN = WIN25           // Watchdog Window Select bits (WDT Window is 25% of WDT period)
+#if defined(__dsPIC33EP512GM604__)
+#pragma config BOREN = OFF
+#endif
+#pragma config ALTI2C1 = ON
+#pragma config ALTI2C2 = OFF
+#pragma config WDTWIN = WIN25
 
 // FWDT
-#pragma config WDTPOST = PS32768        // Watchdog Timer Postscaler bits (1:32,768)
-#pragma config WDTPRE = PR128           // Watchdog Timer Prescaler bit (1:128)
-#pragma config PLLKEN = OFF             // PLL Lock Enable bit (Clock switch to PLL source will wait until the PLL lock signal is valid.)
-#pragma config WINDIS = OFF             // Watchdog Timer Window Enable bit (Watchdog Timer in Non-Window mode)
-#pragma config FWDTEN = OFF             // Watchdog Timer Enable bit (Watchdog timer enabled/disabled by user software)
+#pragma config WDTPOST = PS32768
+#pragma config WDTPRE = PR128
+#pragma config PLLKEN = OFF
+#pragma config WINDIS = OFF
+#pragma config FWDTEN = OFF
 
 // FOSC
-#pragma config POSCMD = NONE            // Primary Oscillator Mode Select bits (Primary Oscillator disabled)
-#pragma config OSCIOFNC = ON            // OSC2 Pin Function bit (OSC2 is general purpose digital I/O pin)
-#pragma config IOL1WAY = OFF            // Peripheral pin select configuration (Allow multiple reconfigurations)
-#pragma config FCKSM = CSECMD           // Clock Switching Mode bits (Both Clock switching and Fail-safe Clock Monitor are enabled)
+#pragma config POSCMD = NONE
+#pragma config OSCIOFNC = ON
+#pragma config IOL1WAY = OFF
+#pragma config FCKSM = CSECMD
 
 // FOSCSEL
-#pragma config FNOSC = FRC              // Oscillator Source Selection (Internal Fast RC (FRC) Oscillator)
-#pragma config IESO = OFF               // Two-speed Oscillator Start-up Enable bit (Start up device with FRC, then switch to user-selected oscillator source)
+#pragma config FNOSC = FRC
+#if (defined(__dsPIC33EP512MC504__) || defined(__dsPIC33EP512GM604__))
+#pragma config PWMLOCK = OFF
+#endif
+#pragma config IESO = OFF
 
 // FGS
-#pragma config GWRP = OFF               // General Segment Write-Protect bit (General Segment may be written)
-#pragma config GCP = OFF                // General Segment Code-Protect bit (General Segment Code protect is Disabled)
+#pragma config GWRP = OFF
+#pragma config GCP = OFF
 
 #endif
 
@@ -145,14 +149,28 @@ void hw_init(void)
     LED = 1;
 
     /* detect hw revision */
+    /* hw 0v1 has RA9 and RB9 floating */
+    /* hw 0v2 has RB9 floating and RA9 pull-up */
+    /* hw 0v3 has external pull-up on RA9 and RB9 */
+
+    /* set RB9 internal pull down */
+    _TRISB9 = 1;
+    _CNPUB9 = 0;
+    _CNPDB9 = 1;
+
+    /* set RA9 internal pull down */
     _TRISA9 = 1;
     _CNPUA9 = 0;
     _CNPDA9 = 1;
     for (i = 0; i < 10000; i++);
-    if (_RA9 == 1)
+    
+    if (_RB9 == 1)
+        hw_rev = 0x03;
+    else if (_RA9 == 1)
         hw_rev = 0x02;
     else
         hw_rev = 0x01;
+    _CNPDB9 = 0;
     _CNPDA9 = 0;
 }
 
