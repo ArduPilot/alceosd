@@ -21,6 +21,7 @@
 
 #define BOOT_FLASH_START_ADDR           (0x000800)
 #define BOOT_FLASH_END_ADDR             (0x000fff)
+#define DEV_CONFIG_PAGE_ADDRESS         (0x055000)
 #define DEV_CONFIG_REG_BASE_ADDRESS 	(0x0557EC)
 //#define DEV_CONFIG_REG_END_ADDRESS   	(0x0557FE)
 #define USER_APP_RESET_ADDRESS          (0x004000)

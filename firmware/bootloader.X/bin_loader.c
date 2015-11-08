@@ -53,8 +53,8 @@ void load_bin(void)
 
         page_addr.l &= ~((PAGE_SIZE << 1)-1);
 
-        if ( ((page_addr.l >= BOOT_FLASH_START_ADDR) && (page_addr.l < BOOT_FLASH_END_ADDR)) ) {
-           // || (page_addr.l >= DEV_CONFIG_REG_BASE_ADDRESS) ) {
+        if ( ((page_addr.l >= BOOT_FLASH_START_ADDR) && (page_addr.l < BOOT_FLASH_END_ADDR)) 
+           || (page_addr.l == DEV_CONFIG_PAGE_ADDRESS) ) {
             put_char('s');
             continue;
         } else {
@@ -112,9 +112,10 @@ void load_bin(void)
     }
 
     if (ret) {
-        // error
+        put_char('X');
+        while (1);
+    } else {
+        put_char('K');
+        goto_usercode();
     }
-
-    goto_usercode();
-
 }
