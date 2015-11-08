@@ -24,12 +24,29 @@
 
 void uart_init(void)
 {
+    unsigned int i;
+    
     /* uart setup */
     TRISBbits.TRISB5 = 0;
 
-    /* TODO: adjust for hw0v3 */
-    _RP37R = 3;
-    _U2RXR = 38;
+    /* detect hw_rev */
+    
+    /* set RB9 internal pull down */
+    _TRISB9 = 1;
+    _CNPUB9 = 0;
+    _CNPDB9 = 1;
+
+    for (i = 0; i < 10000; i++);
+    
+    if (_RB9 == 1) {
+        /* hv_rev 0v3 */
+        _RP42R = 3;
+        _U2RXR = 43;
+    } else {
+        /* hw_rev 0v1 and 0v2 */
+        _RP37R = 3;
+        _U2RXR = 38;
+    }
 
     /* set baudrate  */
     U2BRG = BRGVAL;

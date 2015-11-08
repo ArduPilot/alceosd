@@ -24,6 +24,9 @@
 #pragma config JTAGEN = OFF
 
 // FPOR
+#if defined(__dsPIC33EP512GM604__)
+#pragma config BOREN = OFF
+#endif
 #pragma config ALTI2C1 = ON
 #pragma config ALTI2C2 = OFF
 #pragma config WDTWIN = WIN25
@@ -43,7 +46,7 @@
 
 // FOSCSEL
 #pragma config FNOSC = FRC
-#if defined(__dsPIC33EP512MC504__)
+#if (defined(__dsPIC33EP512MC504__) || defined(__dsPIC33EP512GM604__))
 #pragma config PWMLOCK = OFF
 #endif
 #pragma config IESO = OFF
