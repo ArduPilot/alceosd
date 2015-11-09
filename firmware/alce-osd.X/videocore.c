@@ -309,17 +309,79 @@ static void video_init_sram(void)
 #endif
 }
 
+static void video_dac_read(void)
+{
+    unsigned char dac_status[3*2*4];
+    unsigned char i;
+    
+    printf("Reading DAC values...\n");
+    
+    I2C1CONbits.SEN = 1;
+    while (I2C1CONbits.SEN == 1);
+    
+    I2C1TRN = 0xc1;
+    while (I2C1STATbits.TRSTAT == 1);
+
+    for (i = 0; i < 3*2*4; i++) {
+        I2C1CONbits.RCEN = 1;
+        while (I2C1CONbits.RCEN == 1);
+        
+        dac_status[i] = I2C1RCV;
+        
+        I2C1CONbits.ACKEN = 1;
+        while (I2C1CONbits.ACKEN == 1);
+    }
+
+    I2C1CONbits.PEN = 1;
+    while (I2C1CONbits.PEN == 1);
+    
+    for (i = 0; i < 3*2*4; i++) {
+        printf("0x%02x ", dac_status[i]);
+        if (((i+1) % 3) == 0)
+            printf("\n");
+    }
+    
+    
+}
+
 static void video_init_dac(void)
 {
     /* init (a)i2c1*/
+    _ODCB8 = 1;
+    _ODCB9 = 1;
+    
     I2C1CON = 0x8000;
     
+    I2C1ADD = 0;
+    I2C1MSK = 0;
+    
+    I2C1BRG = 0x1ff;
 }
 
 
 static void video_update_dac(void)
 {
+    unsigned int dac_values[4] = { 0x3ff, 0x2d0, 0x190, 0x000};
+    unsigned char i;
     
+    printf("Setting DAC values...\n");
+    
+    I2C1CONbits.SEN = 1;
+    while (I2C1CONbits.SEN == 1);
+    
+    I2C1TRN = 0xc0;
+    while (I2C1STATbits.TRSTAT == 1);
+
+    for (i = 0; i < 4; i++) {
+        I2C1TRN = (dac_values[i] >> 8) & 0x0f;
+        while (I2C1STATbits.TRSTAT == 1);
+    
+        I2C1TRN = dac_values[i] & 0xff;
+        while (I2C1STATbits.TRSTAT == 1);
+
+    }
+    I2C1CONbits.PEN = 1;
+    while (I2C1CONbits.PEN == 1);
 }
 
 
@@ -452,6 +514,13 @@ static void video_init_hw(void)
         /* analog input */
         TRISBbits.TRISB0 = 1;
         ANSELBbits.ANSB0 = 1;
+        
+        /* pull downs */
+        _CNPUA2 = 0;
+        _CNPDA2 = 1;
+        _CNPUA3 = 0;
+        _CNPDA3 = 1;
+        
 
         /* vref */
 #if defined (__dsPIC33EP512GM604__)
@@ -493,6 +562,14 @@ static void video_init_hw(void)
         IFS1bits.CMIF = 0;
         IEC1bits.CMIE = 1;
         CM2CONbits.CON = 1;
+    }
+    
+    if (videocore_ctrl & CTRL_DACBRIGHT) {
+        video_init_dac();
+        
+        video_dac_read();
+        video_update_dac();
+        video_dac_read();
     }
 }
 
