@@ -18,6 +18,26 @@
 
 .text
 
+.global _sram_bytei_sqi
+_sram_bytei_sqi:
+;unsigned char sram_bytei_sqi(void)
+    MOV #0x000F, W1
+;   CLK_HIGH;
+    BSET LATC, #8
+    MOV PORTC, W2
+    AND W1, W2, W2
+;   CLK_LOW;
+    BCLR LATC, #8
+    MOV.B W2, W0
+    SL W0, #4, W0
+;   CLK_HIGH;
+    BSET LATC, #8
+    MOV PORTC, W2
+    AND W1, W2, W2
+;   CLK_LOW;
+    BCLR LATC, #8
+    IOR.B W2, W0, W0
+    RETURN
 
 .global _sram_byteo_sqi
 _sram_byteo_sqi:

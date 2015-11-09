@@ -22,6 +22,9 @@
 /* enable ram output */
 #define OE_RAM      LATBbits.LATB8
 #define OE_RAM_DIR  TRISBbits.TRISB8
+#define OE_RAM2     LATAbits.LATA9
+#define OE_RAM_DIR2 TRISAbits.TRISA9
+
 
 /* sram commands */
 #define SRAM_READ   0x03
@@ -126,6 +129,7 @@ struct scratchpad_s scratchpad[2] = {
 
 unsigned char sram_byte_spi(unsigned char b);
 extern void sram_byteo_sqi(unsigned char b);
+extern unsigned char sram_bytei_sqi(void);
 extern __eds__ unsigned char* copy_line(__eds__ unsigned char *buf, unsigned int count);
 extern void clear_canvas(__eds__ unsigned char *buf, unsigned int count, unsigned char v);
 
@@ -207,6 +211,57 @@ void clear_sram(void)
     CS_HIGH;
 }
 
+static unsigned char test_sram_0(unsigned char b)
+{
+    register unsigned long i;
+    register unsigned char r;
+
+    CS_LOW;
+    sram_byteo_sqi(SRAM_WRITE);
+    sram_byteo_sqi(0);
+    sram_byteo_sqi(0);
+    sram_byteo_sqi(0);
+    for (i = 0; i < SRAM_SIZE; i++) {
+        sram_byteo_sqi(b);
+    }
+    CS_HIGH;
+    
+    CS_LOW;
+    sram_byteo_sqi(SRAM_READ);
+    sram_byteo_sqi(0);
+    sram_byteo_sqi(0);
+    sram_byteo_sqi(0);
+    SRAM_IN;
+    r = sram_bytei_sqi();
+    for (i = 0; i < SRAM_SIZE; i++) {
+        r = sram_bytei_sqi();
+        if (r != b) {
+            CS_HIGH;
+            SRAM_OUTQ;
+            printf("test_ram: expected = 0x%02x read = 0x%02x\n", b, r);
+            return 1;
+        }
+    }
+    CS_HIGH;
+    SRAM_OUTQ;
+    return 0;
+}
+
+static void test_sram(void)
+{
+    unsigned char test[4] = {0x00, 0x5a, 0xa5, 0xff};
+    unsigned char i, j;
+    printf("Testing SRAM\n");
+    
+    for (i = 0; i < 4; i++) {
+        j = test[i];
+        if (test_sram_0(j))
+            printf("0x%02x (fail)\n", j);
+        else
+            printf("0x%02x (pass)\n", j);
+    }
+}
+
 static void video_init_sram(void)
 {
     /* cs as output, set high */
@@ -229,6 +284,9 @@ static void video_init_sram(void)
     CS_HIGH;
     SRAM_OUTQ;
 
+    /* test SRAM */
+    test_sram();
+
     /* set ram to zeros */
     clear_sram();
 
@@ -250,6 +308,21 @@ static void video_init_sram(void)
     CS_HIGH;
 #endif
 }
+
+static void video_init_dac(void)
+{
+    /* init (a)i2c1*/
+    I2C1CON = 0x8000;
+    
+}
+
+
+static void video_update_dac(void)
+{
+    
+}
+
+
 
 extern unsigned char hw_rev;
 
@@ -287,10 +360,17 @@ static void video_init_hw(void)
     SPI2STATbits.SPIROV = 0;
     SPI2STATbits.SPIEN = 0;
 
-    OE_RAM_DIR = 0;
-    OE_RAM = 1;
-
-
+    if (hw_rev <= 0x02) {
+        OE_RAM_DIR = 0;
+        OE_RAM = 1;
+    } else {
+        OE_RAM_DIR2 = 0;
+        OE_RAM2 = 1;
+        /* mux as input */
+        _TRISA2 = 1;
+        _TRISA3 = 1;
+    }
+    
     /* generic line timer */
     T2CONbits.T32 = 0;
     T2CONbits.TCKPS = 0;
@@ -351,8 +431,13 @@ static void video_init_hw(void)
     
     if (videocore_ctrl & CTRL_SYNCGEN) {
         /* sync pin */
-        _TRISA9 = 0;
-        _LATA9 = 1;
+        if (hw_rev <= 0x02) {
+            _TRISA9 = 0;
+            _LATA9 = 1;
+        } else {
+            _TRISA4 = 0;
+            _LATA4 = 1;
+        }
 
         /* timer */
         T4CON = 0x8010;
@@ -414,7 +499,11 @@ static void video_init_hw(void)
 void video_apply_config(struct video_config *cfg)
 {
     /* brightness */
-    OC1RS = 0x100 + cfg->brightness;
+    if (hw_rev < 0x03) {
+        OC1RS = 0x100 + cfg->brightness;
+    } else {
+        video_update_dac();
+    }
 
     /* pixel clock */
     INTCON2bits.GIE = 0;
@@ -650,12 +739,18 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
 {
     if (PR2 != LINE_TMR) {
         T2CONbits.TON = 0;
-        OE_RAM = 0;
+        if (hw_rev <= 0x02)
+            OE_RAM = 0;
+        else
+            OE_RAM2 = 0;
         SPI2STATbits.SPIEN = 1;
         PR2 = LINE_TMR;
         T2CONbits.TON = 1;
     } else {
-        OE_RAM = 1;
+        if (hw_rev <= 0x02)
+            OE_RAM = 1;
+        else
+            OE_RAM2 = 1;
         _RP56R = 0;
         CS_HIGH;
         SRAM_OUT;
@@ -689,7 +784,6 @@ void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
         sram_busy = 0;
     }
 
-    
     last_line_cnt = line;
     line = 0;
     int_sync_cnt = 0;
@@ -743,7 +837,10 @@ static inline void render_line(void)
                 addr.l += (osdxsize/4);
             }
         }
-        _LATA9 = 1;
+        if (hw_rev <= 0x02)
+            _LATA9 = 1;
+        else
+            _LATA4 = 1;
     } else if (line < config.video.y_offset) {
         /* T-1: switch sram to sdi mode */
         sram_exit_sqi();
@@ -868,72 +965,137 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
     } else {
         /* int sync */
         cnt++;
-
-        if (odd == 1) {
-            if (line < 2) {
-                if (videocore_ctrl & CTRL_COMPSYNC) {
-                    if (++recover_tmr > 1000) {
-                        if ((_CMIF == 0) && (CM2CONbits.CEVT == 1))
-                            CM2CONbits.CEVT = 0;
+        
+        if (hw_rev <= 0x02) {
+            if (odd == 1) {
+                if (line < 2) {
+                    if (videocore_ctrl & CTRL_COMPSYNC) {
+                        if (++recover_tmr > 1000) {
+                            if ((_CMIF == 0) && (CM2CONbits.CEVT == 1))
+                                CM2CONbits.CEVT = 0;
+                        }
+                    }
+                    /* vsync sync pulses */
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA9 = 0;
+                    } else if ((cnt == 5) || (cnt == 10)) {
+                        _LATA9 = 1;
+                    }
+                } else if (line < 3) {
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA9 = 0;
+                    } else if ((cnt == 5) || (cnt == 7)) {
+                        _LATA9 = 1;
+                    }
+                } else if ((line < 5) || (line > 309)) {
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA9 = 0;
+                    } else if ((cnt == 2) || (cnt == 7)) {
+                        _LATA9 = 1;
+                    }
+                } else {
+                    /* normal sync pulse */
+                    if (cnt == 1) {
+                        _LATA9 = 0;
+                    } else if (cnt == 2) {
+                        _LATA9 = 1;
                     }
                 }
-                /* vsync sync pulses */
-                if ((cnt == 1) || (cnt == 6)) {
-                    _LATA9 = 0;
-                } else if ((cnt == 5) || (cnt == 10)) {
-                    _LATA9 = 1;
-                }
-            } else if (line < 3) {
-                if ((cnt == 1) || (cnt == 6)) {
-                    _LATA9 = 0;
-                } else if ((cnt == 5) || (cnt == 7)) {
-                    _LATA9 = 1;
-                }
-            } else if ((line < 5) || (line > 309)) {
-                if ((cnt == 1) || (cnt == 6)) {
-                    _LATA9 = 0;
-                } else if ((cnt == 2) || (cnt == 7)) {
-                    _LATA9 = 1;
-                }
             } else {
-                /* normal sync pulse */
-                if (cnt == 1) {
-                    _LATA9 = 0;
-                } else if (cnt == 2) {
-                    _LATA9 = 1;
+                if (line < 1) {
+                    /* vsync sync pulses */
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA9 = 0;
+                    } else if ((cnt == 2) || (cnt == 10)) {
+                        _LATA9 = 1;
+                    }
+                } else if (line < 3) {
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA9 = 0;
+                    } else if ((cnt == 5) || (cnt == 10)) {
+                        _LATA9 = 1;
+                    }
+
+                } else if ((line < 5) || (line > 308)) {
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA9 = 0;
+                    } else if ((cnt == 2) || (cnt == 7)) {
+                        _LATA9 = 1;
+                    }
+                } else {
+                    /* normal sync pulse */
+                    if (cnt == 1) {
+                        _LATA9 = 0;
+                    } else if (cnt == 2) {
+                        _LATA9 = 1;
+                    }
                 }
             }
         } else {
-            if (line < 1) {
-                /* vsync sync pulses */
-                if ((cnt == 1) || (cnt == 6)) {
-                    _LATA9 = 0;
-                } else if ((cnt == 2) || (cnt == 10)) {
-                    _LATA9 = 1;
-                }
-            } else if (line < 3) {
-                if ((cnt == 1) || (cnt == 6)) {
-                    _LATA9 = 0;
-                } else if ((cnt == 5) || (cnt == 10)) {
-                    _LATA9 = 1;
-                }
-
-            } else if ((line < 5) || (line > 308)) {
-                if ((cnt == 1) || (cnt == 6)) {
-                    _LATA9 = 0;
-                } else if ((cnt == 2) || (cnt == 7)) {
-                    _LATA9 = 1;
+            if (odd == 1) {
+                if (line < 2) {
+                    if (videocore_ctrl & CTRL_COMPSYNC) {
+                        if (++recover_tmr > 1000) {
+                            if ((_CMIF == 0) && (CM2CONbits.CEVT == 1))
+                                CM2CONbits.CEVT = 0;
+                        }
+                    }
+                    /* vsync sync pulses */
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA4 = 0;
+                    } else if ((cnt == 5) || (cnt == 10)) {
+                        _LATA4 = 1;
+                    }
+                } else if (line < 3) {
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA4 = 0;
+                    } else if ((cnt == 5) || (cnt == 7)) {
+                        _LATA4 = 1;
+                    }
+                } else if ((line < 5) || (line > 309)) {
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA4 = 0;
+                    } else if ((cnt == 2) || (cnt == 7)) {
+                        _LATA4 = 1;
+                    }
+                } else {
+                    /* normal sync pulse */
+                    if (cnt == 1) {
+                        _LATA4 = 0;
+                    } else if (cnt == 2) {
+                        _LATA4 = 1;
+                    }
                 }
             } else {
-                /* normal sync pulse */
-                if (cnt == 1) {
-                    _LATA9 = 0;
-                } else if (cnt == 2) {
-                    _LATA9 = 1;
+                if (line < 1) {
+                    /* vsync sync pulses */
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA4 = 0;
+                    } else if ((cnt == 2) || (cnt == 10)) {
+                        _LATA4 = 1;
+                    }
+                } else if (line < 3) {
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA4 = 0;
+                    } else if ((cnt == 5) || (cnt == 10)) {
+                        _LATA4 = 1;
+                    }
+                } else if ((line < 5) || (line > 308)) {
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA4 = 0;
+                    } else if ((cnt == 2) || (cnt == 7)) {
+                        _LATA4 = 1;
+                    }
+                } else {
+                    /* normal sync pulse */
+                    if (cnt == 1) {
+                        _LATA4 = 0;
+                    } else if (cnt == 2) {
+                        _LATA4 = 1;
+                    }
                 }
             }
         }
-        
         if (cnt == 1)
             render_line();
 
