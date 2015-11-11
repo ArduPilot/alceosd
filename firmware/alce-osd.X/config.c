@@ -821,9 +821,10 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
 static unsigned int config_starter(unsigned char *buf, unsigned int len)
 {
     char s[9];
+    unsigned int l = min(len, 8);
     memset(s, '\0', 9);
-    memcpy(s, buf, min(len, 8));
-    if (strncmp(s, "!!!!!!!!", min(len, 8)) != 0) {
+    memcpy(s, buf, l);
+    if (strncmp(s, "!!!!!!!!", l) != 0) {
         exit_config();
         return len;
     } else if (len > 7) {
