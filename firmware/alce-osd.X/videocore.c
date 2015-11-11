@@ -989,9 +989,9 @@ void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
         if ((cnt > 3) && (cnt < 7)) {
             vcnt++;
         } else if ((cnt > 8) && (cnt < 12)) {
-            if (vcnt > 13) {
+            if (vcnt > (13)) {
                 /* vsync */
-                last_line_cnt = line;
+                last_line_cnt = line + 13;
                 line = 10;
                 int_sync_cnt = 0;
                 last_cnt = 0;
@@ -1057,12 +1057,6 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
         if (hw_rev <= 0x02) {
             if (odd == 1) {
                 if (line < 2) {
-                    if (videocore_ctrl & CTRL_COMPSYNC) {
-                        if (++recover_tmr > 1000) {
-                            if ((_CMIF == 0) && (CM2CONbits.CEVT == 1))
-                                CM2CONbits.CEVT = 0;
-                        }
-                    }
                     /* vsync sync pulses */
                     if ((cnt == 1) || (cnt == 6)) {
                         _LATA9 = 0;
