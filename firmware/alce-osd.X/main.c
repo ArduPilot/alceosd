@@ -133,7 +133,7 @@ void hw_init(void)
 #endif
 
 #ifdef DEBUG_INIT
-    printf("AlceOSD\r\n");
+    printf("AlceOSD hw%dv%d fw%d.%d.%d\r\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
     if (RCONbits.WDTO)
         printf("watchdog reset\r\n");
     if (RCONbits.EXTR)
