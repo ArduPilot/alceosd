@@ -560,7 +560,7 @@ static void video_init_hw(void)
 
         CM2CONbits.CEVT = 0;
         IFS1bits.CMIF = 0;
-        IEC1bits.CMIE = 1;
+        _CMIE = 1;
         CM2CONbits.CON = 1;
     }
     
@@ -914,10 +914,6 @@ static inline void render_line(void)
                 addr.l += (osdxsize/4);
             }
         }
-        if (hw_rev <= 0x02)
-            _LATA9 = 1;
-        else
-            _LATA4 = 1;
     } else if (line < config.video.y_offset) {
         /* T-1: switch sram to sdi mode */
         sram_exit_sqi();
@@ -982,19 +978,18 @@ void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
     static unsigned int last_cnt = 0;
     static unsigned char vcnt = 0;
 
-    unsigned cnt = ext_sync_cnt - last_cnt;
-
+    unsigned int cnt = ext_sync_cnt - last_cnt;
+    last_cnt = ext_sync_cnt;
+    
     //if(CMSTATbits.C2EVT)
     //{
         //ext_sync_cnt = 0;
         //printf("%d\n", last_cnt);
 
-        if ((cnt < 6) && (cnt > 3)) {
+        if ((cnt > 3) && (cnt < 7)) {
             vcnt++;
-        } else {
+        } else if ((cnt > 8) && (cnt < 12)) {
             if (vcnt > 13) {
-                _LATB9 = 1;
-                //printf("%d\n", last_cnt);
                 /* vsync */
                 last_line_cnt = line;
                 line = 10;
@@ -1002,17 +997,25 @@ void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
                 last_cnt = 0;
                 LED = 1;
                 _CMIP = 5;
-
+                _T4IP = 4;
+                
+                /* pull downs */
+                _CNPUA2 = 0;
+                _CNPDA2 = 1;
+                _CNPUA3 = 0;
+                _CNPDA3 = 1;
             } else {
-                _LATB9 = 0;
                 line++;
                 render_line();
             }
             vcnt = 0;
+        } else {
+            vcnt = 0;
+            if (_CMIP == 4)
+                _CMIE = 0;
         }
         CM2CONbits.CEVT = 0;
     //}
-        last_cnt = ext_sync_cnt;
 
     _CMIF = 0;
 }
@@ -1021,7 +1024,6 @@ void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
 void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
 {
     static unsigned char cnt;
-    static unsigned int recover_tmr;
 
     ext_sync_cnt++;
 
@@ -1037,8 +1039,17 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
         _INT2IE = 0;
         LED = 0;
         cnt = 0;
-        _CMIP = 2;
-        recover_tmr = 0;
+        _CMIP = 4;
+        _T4IP = 5;
+
+        /* pull ups */
+        _CNPDA2 = 0;
+        _CNPUA2 = 1;
+        _CNPDA3 = 0;
+        _CNPUA3 = 1;
+
+        _CMIE = 0;
+        _CMIF = 0;
     } else {
         /* int sync */
         cnt++;
@@ -1111,12 +1122,6 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
         } else {
             if (odd == 1) {
                 if (line < 2) {
-                    if (videocore_ctrl & CTRL_COMPSYNC) {
-                        if (++recover_tmr > 1000) {
-                            if ((_CMIF == 0) && (CM2CONbits.CEVT == 1))
-                                CM2CONbits.CEVT = 0;
-                        }
-                    }
                     /* vsync sync pulses */
                     if ((cnt == 1) || (cnt == 6)) {
                         _LATA4 = 0;
@@ -1184,8 +1189,16 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
                 line = 0;
                 odd = odd ^ 1;
             }
+
+            if (odd && (line > 100) && (line < 140)) {
+                CM2CONbits.CEVT = 0;
+                _CMIF = 0;
+                _CMIE = 1;
+            } else {
+                _CMIE = 0;
+            }
         }
     }
-    
+
     _T4IF = 0;
 }
