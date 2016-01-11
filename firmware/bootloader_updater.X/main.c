@@ -1,5 +1,5 @@
  /*
-    AlceOSD - UART bootloader updater
+    AlceOSD - Bootloader self-updater
     Copyright (C) 2015  Luis Alves
 
     This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@
 #define TRIS_LED                        (TRISAbits.TRISA10)
 #define LED                             (LATAbits.LATA10)
 
-#define VERSION 0xfffffffe
+#define VERSION 0xfffffffd
 
 
 typedef union {
