@@ -50,7 +50,9 @@ void adc_init(void)
 
     /* ch1,2,3 = an0,1,2*/
 #if defined (__dsPIC33EP512GM604__)
-//    AD1CHS123bits.CH123SA = 0;
+    AD1CHS123bits.CH123SA0 = 0;
+    AD1CHS123bits.CH123SA1 = 0;
+    AD1CHS123bits.CH123SA2 = 0;
     AD1CHS123bits.CH123NA = 0;
 #else
     AD1CHS123bits.CH123SA = 0;
