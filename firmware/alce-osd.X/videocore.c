@@ -811,6 +811,9 @@ void init_video(void)
     process_add(render_process);
 }
 
+
+static char line_busy = 0;
+
 /* line timer */
 void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
 {
@@ -833,6 +836,7 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
         SRAM_OUT;
         SPI2STATbits.SPIEN = 0;
         T2CONbits.TON = 0;
+        line_busy = 0;
     }
     _T2IF = 0;
 }
@@ -929,6 +933,7 @@ static inline void render_line(void)
 
     } else if (line < last_line) {
         /* render */
+        line_busy = 1;
         
         /* setup sram for video output */
         CS_LOW;
@@ -980,7 +985,14 @@ void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
 
     unsigned int cnt = ext_sync_cnt - last_cnt;
     last_cnt = ext_sync_cnt;
-    
+
+    if (line_busy) {
+        CM2CONbits.CEVT = 0;
+        _CMIF = 0;
+        _CMIE = 0;
+        return;
+    }
+
     //if(CMSTATbits.C2EVT)
     //{
         //ext_sync_cnt = 0;
@@ -989,7 +1001,18 @@ void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
         if ((cnt > 3) && (cnt < 7)) {
             vcnt++;
         } else if ((cnt > 8) && (cnt < 12)) {
-            if (vcnt > (13)) {
+            if (vcnt > 13) {
+                
+                if (sram_busy) {
+                    sram_exit_sdi();
+                    CS_LOW;
+                    sram_byte_spi(SRAM_QIO);
+                    CS_HIGH;
+                    SRAM_OUTQ;
+                    sram_busy = 0;
+                }
+                
+                
                 /* vsync */
                 last_line_cnt = line + 13;
                 line = 10;
@@ -1011,8 +1034,13 @@ void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
             vcnt = 0;
         } else {
             vcnt = 0;
-            if (_CMIP == 4)
+            if (_CMIP == 4) {
+                _CNPDA2 = 0;
+                _CNPUA2 = 1;
+                _CNPDA3 = 0;
+                _CNPUA3 = 1;
                 _CMIE = 0;
+            }
         }
         CM2CONbits.CEVT = 0;
     //}
@@ -1184,7 +1212,7 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
                 odd = odd ^ 1;
             }
 
-            if (odd && (line > 100) && (line < 140)) {
+            if (odd && (line < 100) ) {
                 CM2CONbits.CEVT = 0;
                 _CMIF = 0;
                 _CMIE = 1;
