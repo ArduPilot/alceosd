@@ -879,6 +879,7 @@ void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
     _INT2IE = 1;
     LED = 1;
     _INT1IF = 0;
+    _T4IP = 3;
 }
 
 
