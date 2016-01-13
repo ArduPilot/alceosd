@@ -132,20 +132,6 @@ void hw_init(void)
     while (OSCCONbits.LOCK != 1);
 #endif
 
-#ifdef DEBUG_INIT
-    printf("AlceOSD hw%dv%d fw%d.%d.%d\r\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
-    if (RCONbits.WDTO)
-        printf("watchdog reset\r\n");
-    if (RCONbits.EXTR)
-        printf("external reset\r\n");
-    if (RCONbits.SWR)
-        printf("software reset\r\n");
-    if (RCONbits.IOPUWR)
-        printf("ill opcode / uninit W reset\r\n");
-    if (RCONbits.WDTO)
-        printf("trap conflict reset\r\n");
-#endif
-
     LED = 1;
 
     /* detect hw revision */
@@ -182,6 +168,20 @@ int main(void) {
     
     /* init uart */
     uart_init();
+
+#ifdef DEBUG_INIT
+    printf("AlceOSD hw%dv%d fw%d.%d.%d\r\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
+    if (RCONbits.WDTO)
+        printf("watchdog reset\r\n");
+    if (RCONbits.EXTR)
+        printf("external reset\r\n");
+    if (RCONbits.SWR)
+        printf("software reset\r\n");
+    if (RCONbits.IOPUWR)
+        printf("ill opcode / uninit W reset\r\n");
+    if (RCONbits.WDTO)
+        printf("trap conflict reset\r\n");
+#endif
 
     /* real time clock init */
     clock_init();
