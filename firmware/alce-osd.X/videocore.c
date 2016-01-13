@@ -289,7 +289,7 @@ static void video_init_sram(void)
     SRAM_OUTQ;
 
     /* test SRAM */
-    test_sram();
+    //test_sram();
 
     /* set ram to zeros */
     clear_sram();
