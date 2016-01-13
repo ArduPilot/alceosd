@@ -24,11 +24,9 @@
 
 void uart_init(void)
 {
-    unsigned int i;
+    volatile unsigned int i;
     
     /* uart setup */
-    TRISBbits.TRISB5 = 0;
-
     /* detect hw_rev */
     
     /* set RB9 internal pull down */
