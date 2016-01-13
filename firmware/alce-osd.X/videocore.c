@@ -66,6 +66,7 @@
 
 
 extern struct alceosd_config config;
+extern unsigned char hw_rev;
 
 void video_apply_config_cbk(void);
 
@@ -270,7 +271,10 @@ static void video_init_sram(void)
     /* clock as output, set low */
     CLK_DIR = 0;
     CLK_LOW;
-    _RP56R = 0;
+    if (hw_rev == 0x03)
+        _RP56R = 0;
+    else
+        _RP54R = 0;
 
     /* force a spi mode from sdi */
     sram_exit_sdi();
@@ -384,9 +388,6 @@ static void video_update_dac(void)
     while (I2C1CONbits.PEN == 1);
 }
 
-
-
-extern unsigned char hw_rev;
 
 static void video_init_hw(void)
 {
@@ -831,7 +832,10 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
             OE_RAM = 1;
         else
             OE_RAM2 = 1;
-        _RP56R = 0;
+        if (hw_rev == 0x03)
+            _RP56R = 0;
+        else
+            _RP54R = 0;
         CS_HIGH;
         SRAM_OUT;
         SPI2STATbits.SPIEN = 0;
@@ -849,7 +853,10 @@ void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
             T2CONbits.TON = 0;
             _T2IF = 0;
             OE_RAM = 1;
-            _RP56R = 0;
+            if (hw_rev == 0x03)
+                _RP56R = 0;
+            else
+                _RP54R = 0;
             CS_HIGH;
             SRAM_OUT;
             SPI2STATbits.SPIEN = 0;
@@ -946,7 +953,10 @@ static inline void render_line(void)
         CLK_HIGH; CLK_LOW;
         CLK_HIGH; CLK_LOW;
         CLK_HIGH; CLK_LOW;
-        _RP56R = SCK2_O;
+        if (hw_rev == 0x03)
+            _RP56R = SCK2_O;
+        else
+            _RP54R = SCK2_O;
 
         /* start x_offset timer */
         PR2 = x_offset * 5;
