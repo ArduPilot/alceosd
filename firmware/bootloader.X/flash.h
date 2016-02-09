@@ -40,6 +40,7 @@ void init_flash(void);
 int erase_page(unsigned long erase_address);
 int write_dword(unsigned long addr, unsigned long data0, unsigned long data1);
 int erase_addr(unsigned long addr);
+void read_flash(unsigned long addr, unsigned long *buf);
 void goto_usercode(void);
 
 #endif	/* FLASH_H */

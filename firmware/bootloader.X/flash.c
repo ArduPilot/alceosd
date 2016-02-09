@@ -20,6 +20,19 @@
 
 static unsigned long erased_page[TOTAL_PAGES];
 
+void read_flash(unsigned long addr, unsigned long *buf)
+{
+    unsigned int tmp;
+    u32union data;
+
+    tmp = TBLPAG;
+    TBLPAG = addr >> 16;
+    data.w[0] = __builtin_tblrdl(addr & 0xFFFF);
+    data.w[1] = __builtin_tblrdh(addr & 0xFFFF);
+    TBLPAG = tmp;
+    *buf = data.l & 0xffffff;
+}
+
 void init_flash(void)
 {
     unsigned int i;
@@ -27,20 +40,29 @@ void init_flash(void)
         erased_page[i] = 0;
 }
 
+extern unsigned long devid;
+
+static void erase_page0(u32union addr)
+{
+    NVMADRU = addr.w[1];
+    NVMADR = addr.w[0];
+    NVMCON = 0x4003;
+
+    __builtin_write_NVM();
+    while (NVMCONbits.WR == 1) {}
+}
+
 int erase_page(unsigned long erase_address)
 {
     u32union addr;
     addr.l = erase_address & 0xfff800;
 
-    NVMADRU = addr.w[1];
-    NVMADR = addr.w[0];
-    NVMCON = 0x4003;
-
-    INTCON2bits.GIE = 0;
-    __builtin_write_NVM();
-    while (NVMCONbits.WR == 1) {}
-    INTCON2bits.GIE = 1;
-
+    erase_page0(addr);
+    if (devid == 0x1bc8) {
+        addr.l += 0x400;
+        erase_page0(addr);
+    }
+    
     return NVMCONbits.WRERR;
 }
 
@@ -63,10 +85,8 @@ int write_dword(unsigned long addr, unsigned long data0, unsigned long data1)
     __builtin_tblwtl(2, wr_data1.w[0]);
     __builtin_tblwth(3, wr_data1.w[1]);
 
-    INTCON2bits.GIE = 0;
     __builtin_write_NVM();
     while(NVMCONbits.WR == 1);
-    INTCON2bits.GIE = 1;
 
     return NVMCONbits.WRERR;
 }
@@ -92,6 +112,8 @@ int erase_addr(unsigned long addr)
 void goto_usercode(void)
 {
     void (*fptr)(void);
+    RCONbits.SWDTEN = 1;
+
     LED = 1;
     fptr = (void (*)(void)) USER_APP_RESET_ADDRESS;
     fptr();
