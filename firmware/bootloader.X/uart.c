@@ -40,6 +40,11 @@ void uart_init(void)
         /* hv_rev 0v3 */
         _RP42R = 3;
         _U2RXR = 43;
+
+#ifdef DEBUG
+        _RP37R = 1;
+        _U1RXR = 38;
+#endif
     } else {
         /* hw_rev 0v1 and 0v2 */
         _RP37R = 3;
@@ -51,6 +56,15 @@ void uart_init(void)
     U2MODE = 0x8000;
     U2MODEbits.BRGH = 0;
     U2STA = 0x0400;
+
+#ifdef DEBUG
+    U1BRG = BRGVAL;
+    U1MODE = 0x8000;
+    U1MODEbits.BRGH = 0;
+    U1STA = 0x0400;
+    extern int __C30_UART;
+    __C30_UART = 1;
+#endif
 }
 
 int get_char(char *c)
