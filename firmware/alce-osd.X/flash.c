@@ -18,21 +18,30 @@
 
 #include "alce-osd.h"
 
-
+extern unsigned char hw_rev;
 
 /* flash operation functions */
-int erase_page(unsigned long erase_address)
+static void erase_page0(u32union addr)
 {
-    u32union addr;
-    addr.l = erase_address & 0xfff800;
-
     NVMADRU = addr.w[1];
     NVMADR = addr.w[0];
     NVMCON = 0x4003;
 
     __builtin_write_NVM();
     while (NVMCONbits.WR == 1) {}
+}
 
+int erase_page(unsigned long erase_address)
+{
+    u32union addr;
+    addr.l = erase_address & 0xfff800;
+
+    erase_page0(addr);
+    if (hw_rev == 0x03) {
+        addr.l += 0x400;
+        erase_page0(addr);
+    }
+    
     return NVMCONbits.WRERR;
 }
 
