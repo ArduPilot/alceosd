@@ -65,10 +65,11 @@
 
 const char magic_word_ihex[] = "alceOSD";
 const char magic_word_bin[] = "alceosd";
-const char msg[] = "\r\nAlceOSD bootloader v0.3\r\n";
+const char msg[] = "\r\nAlceOSD bootloader v0.4\r\n";
 const char msg_ihex[] = "IHEX\r\n";
 const char msg_bin[] = "BIN\r\n";
 
+unsigned long devid;
 
 int main(void)
  {
@@ -76,6 +77,8 @@ int main(void)
     unsigned char i;
     int ret, mode;
     u32union delay;
+
+    RCONbits.SWDTEN = 0;
 
     /* 70 MIPS; 140MHz */
     CLKDIVbits.PLLPRE = 0;
@@ -98,6 +101,9 @@ int main(void)
     TRIS_LED = 0;
     LED = 0;
 
+    /* get devid */
+    read_flash(0xff0000, &devid);
+    
     delay.l = BOOT_DELAY;
 
     if (delay.b[0] == 0)
