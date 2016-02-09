@@ -30,8 +30,9 @@
 #define TRIS_LED                        (TRISAbits.TRISA10)
 #define LED                             (LATAbits.LATA10)
 
-#define VERSION 0xfffffffd
+#define VERSION 0xfffffffc
 
+unsigned long devid;
 
 typedef union {
     unsigned long l;
@@ -40,20 +41,28 @@ typedef union {
 } u32union;
 
 
+static void erase_page0(u32union addr)
+{
+    NVMADRU = addr.w[1];
+    NVMADR = addr.w[0];
+    NVMCON = 0x4003;
+
+    __builtin_write_NVM();
+    while (NVMCONbits.WR == 1) {}
+}
 
 
 int erase_page(unsigned long erase_address)
 {
     u32union addr;
     addr.l = erase_address & 0xfff800;
-
-    NVMADRU = addr.w[1];
-    NVMADR = addr.w[0];
-    NVMCON = 0x4003;
-
-    __builtin_write_NVM();
-    while (NVMCONbits.WR == 1);
-
+  
+    erase_page0(addr);
+    if (devid == 0x1bc8) {
+        addr.l += 0x400;
+        erase_page0(addr);
+    }
+    
     return NVMCONbits.WRERR;
 }
 
@@ -99,6 +108,10 @@ unsigned long read_word(unsigned long addr)
     return data;
 }
 
+void __attribute__((address(0x4000))) boot(void) 
+{
+    asm("GOTO 0x20000");
+}
 
 int main(void)
  {
@@ -106,6 +119,17 @@ int main(void)
     unsigned long w0, w1;
     volatile long delay;
 
+#ifdef DEBUG
+    _RP37R = 1;
+    _U1RXR = 38;
+    U1BRG = 37;
+    U1MODE = 0x8000;
+    U1MODEbits.BRGH = 0;
+    U1STA = 0x0400;
+    extern int __C30_UART;
+    __C30_UART = 1;
+#endif
+    
     TRIS_LED = 0;
     LED = 0;
 
@@ -116,6 +140,8 @@ int main(void)
             for (delay = 0; delay < 100000; delay++);
         }
     }
+
+    devid = read_word(0xff0000) & 0xffffff;
 
     erase_page(0x800);
 
@@ -137,8 +163,10 @@ int main(void)
     }
 
     write_dword(BOOT_FLASH_END_ADDR - 3, 0xffffffff, VERSION);
-    LED = 1;
 
-    for (;;);
+    for(;;) {
+        LED =  ~LED;
+        for (delay = 0; delay < 500000; delay++);
+    }
     return 0;
 }
