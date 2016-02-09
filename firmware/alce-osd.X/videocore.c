@@ -281,8 +281,13 @@ static void video_init_sram(void)
     /* force a spi mode from sqi */
     sram_exit_sqi();
 
+    /* set mode register (sequential rw mode) */
+    CS_LOW;
+    sram_byte_spi(SRAM_WMODE);
+    sram_byte_spi(0x40);
+    CS_HIGH;
+
     /* IOs are now in spi mode, set SQI */
-    SRAM_SPI;
     CS_LOW;
     sram_byte_spi(SRAM_QIO);
     CS_HIGH;
@@ -367,8 +372,6 @@ static void video_update_dac(void)
 {
     unsigned int dac_values[4] = { 0x3ff, 0x2d0, 0x190, 0x000};
     unsigned char i;
-    
-    printf("Setting DAC values...\n");
     
     I2C1CONbits.SEN = 1;
     while (I2C1CONbits.SEN == 1);
@@ -567,10 +570,10 @@ static void video_init_hw(void)
     
     if (videocore_ctrl & CTRL_DACBRIGHT) {
         video_init_dac();
-        
-        video_dac_read();
         video_update_dac();
+#ifdef DEBUG_DAC
         video_dac_read();
+#endif
     }
 }
 
