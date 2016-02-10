@@ -41,8 +41,13 @@ struct alceosd_config config = {
         { .mode = UART_CLIENT_MAVLINK, .baudrate = UART_BAUD_115200, .pins = UART_PINS_CON2 },
     },
   
-    .video.standard = VIDEO_STANDARD_PAL_P,
-    .video.brightness = 200, //0x50,
+    .video.mode = VIDEO_STANDARD_PAL_P,
+    .video.brightness = 200,
+
+    .video.white_lvl = 0x3ff >> 4,
+    .video.gray_lvl = 0x2d0 >> 4,
+    .video.black_lvl = 0x190 >> 4,
+          
     .video.x_offset = 120,
     .video.y_offset = 40,
 
@@ -311,7 +316,11 @@ const char menu_main[] = "\n\n"
 
 const char menu_video[] = "\n\nAlceOSD :: VIDEO setup\n\n"
                           "1 - Video standard: %s\n"
+                          "    Internal sync generator: %s\n"
                           "2/3 - Adjust video brightness: %u\n"
+                          "4/5 - Video white lvl: %u\n"
+                          "6/7 - Video gray lvl: %u\n"
+                          "8/9 - Video black lvl: %u\n"
                           "q/a - Adjust video window vertically: %d\n"
                           "d/f - Adjust video window horizontally: %d\n"
                           "e/r - Decrease/increase video X size: %d\n"
@@ -432,9 +441,9 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
         case MENU_VIDEO:
             switch (c) {
                 case '1':
-                    config.video.standard += 1;
-                    if (config.video.standard >= VIDEO_STANDARD_END)
-                        config.video.standard = 0;
+                    config.video.mode += 1;
+                    if (config.video.mode >= VIDEO_STANDARD_END)
+                        config.video.mode = 0;
                     load_tab(current_tab);
                     break;
                 case '2':
@@ -446,6 +455,30 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
                     config.video.brightness += 10;
                     if (config.video.brightness > 1000)
                         config.video.brightness = 1000;
+                    video_apply_config(&config.video);
+                    break;
+                case '4':
+                    config.video.white_lvl -= 1;
+                    video_apply_config(&config.video);
+                    break;
+                case '5':
+                    config.video.white_lvl += 1;
+                    video_apply_config(&config.video);
+                    break;
+                case '6':
+                    config.video.gray_lvl -= 1;
+                    video_apply_config(&config.video);
+                    break;
+                case '7':
+                    config.video.gray_lvl += 1;
+                    video_apply_config(&config.video);
+                    break;
+                case '8':
+                    config.video.black_lvl -= 1;
+                    video_apply_config(&config.video);
+                    break;
+                case '9':
+                    config.video.black_lvl += 1;
                     video_apply_config(&config.video);
                     break;
                 case 'q':
@@ -712,10 +745,14 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
             break;
         case MENU_VIDEO:
             printf(menu_video,
-                    (config.video.standard == VIDEO_STANDARD_PAL_P) ? "PAL progressive" :
-                    (config.video.standard == VIDEO_STANDARD_PAL_I) ? "PAL interlaced" :
-                    (config.video.standard == VIDEO_STANDARD_NTSC_P) ? "NTSC progressive" : "NTSC interlaced",
+                    ((config.video.mode & 0x3) == VIDEO_STANDARD_PAL_P) ? "PAL progressive" :
+                    ((config.video.mode & 0x3) == VIDEO_STANDARD_PAL_I) ? "PAL interlaced" :
+                    ((config.video.mode & 0x3) == VIDEO_STANDARD_NTSC_P) ? "NTSC progressive" : "NTSC interlaced",
+                    (config.video.mode & VIDEO_MODE_SYNC_MASK) ? "Enabled" : "Disabled",
                     config.video.brightness,
+                    config.video.white_lvl,
+                    config.video.gray_lvl,
+                    config.video.black_lvl,
                     config.video.y_offset,
                     config.video.x_offset,
                     osdxsize,

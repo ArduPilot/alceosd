@@ -56,7 +56,7 @@
 #define SCK2_O 0x09
 
 
-#define LINE_TMR (278*12)+5
+#define LINE_TMR (277*12)+5
 
 
 #define CTRL_SYNCGEN        0x01
@@ -71,12 +71,15 @@ extern unsigned char hw_rev;
 void video_apply_config_cbk(void);
 
 const struct param_def params_video[] = {
-    PARAM("VIDEO_STD", MAV_PARAM_TYPE_UINT8, &config.video.standard, NULL),
+    PARAM("VIDEO_STD", MAV_PARAM_TYPE_UINT8, &config.video.mode, NULL),
     PARAM("VIDEO_XSIZE", MAV_PARAM_TYPE_UINT8, &config.video.x_size_id, video_apply_config_cbk),
     PARAM("VIDEO_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video.y_size, NULL),
     PARAM("VIDEO_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video.x_offset, NULL),
     PARAM("VIDEO_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video.y_offset, NULL),
     PARAM("VIDEO_BRIGHT", MAV_PARAM_TYPE_UINT16, &config.video.brightness, video_apply_config_cbk),
+    PARAM("VIDEO_WHITE", MAV_PARAM_TYPE_UINT16, &config.video.white_lvl, video_apply_config_cbk),
+    PARAM("VIDEO_GRAY", MAV_PARAM_TYPE_UINT16, &config.video.gray_lvl, video_apply_config_cbk),
+    PARAM("VIDEO_BLACK", MAV_PARAM_TYPE_UINT16, &config.video.black_lvl, video_apply_config_cbk),
     PARAM_END,
 };
 
@@ -318,7 +321,7 @@ static void video_init_sram(void)
 #endif
 }
 
-static void video_dac_read(void)
+static void video_read_dac(void)
 {
     unsigned char dac_status[3*2*4];
     unsigned char i;
@@ -368,11 +371,16 @@ static void video_init_dac(void)
 }
 
 
-static void video_update_dac(void)
+static void video_update_dac(struct video_config *cfg)
 {
-    unsigned int dac_values[4] = { 0x3ff, 0x2d0, 0x190, 0x000};
+    unsigned int dac_values[4];
     unsigned char i;
     
+    dac_values[0] = cfg->white_lvl << 4;
+    dac_values[1] = cfg->gray_lvl << 4;
+    dac_values[2] = cfg->black_lvl << 4;
+    dac_values[3] = 0;
+
     I2C1CONbits.SEN = 1;
     while (I2C1CONbits.SEN == 1);
     
@@ -570,9 +578,9 @@ static void video_init_hw(void)
     
     if (videocore_ctrl & CTRL_DACBRIGHT) {
         video_init_dac();
-        video_update_dac();
 #ifdef DEBUG_DAC
-        video_dac_read();
+        video_update_dac(&config.video);
+        video_read_dac();
 #endif
     }
 }
@@ -583,7 +591,7 @@ void video_apply_config(struct video_config *cfg)
     if (hw_rev < 0x03) {
         OC1RS = 0x100 + cfg->brightness;
     } else {
-        video_update_dac();
+        video_update_dac(cfg);
     }
 
     /* pixel clock */
@@ -606,7 +614,7 @@ void video_get_size(unsigned int *xsize, unsigned int *ysize)
 {
     *xsize = video_xsizes[config.video.x_size_id].xsize;
     *ysize = config.video.y_size;
-    if (config.video.standard & VIDEO_STANDARD_SCAN_MASK)
+    if (config.video.mode & VIDEO_MODE_SCAN_MASK)
         *ysize *= 2;
 }
 
@@ -843,6 +851,12 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
         SRAM_OUT;
         SPI2STATbits.SPIEN = 0;
         T2CONbits.TON = 0;
+        
+        if (hw_rev == 0x03) {
+            CM2CONbits.CEVT = 0;
+            _CMIF = 0;
+            _CMIE = 1;
+        }
         line_busy = 0;
     }
     _T2IF = 0;
@@ -912,16 +926,16 @@ static inline void render_line(void)
         /* auto detect video standard */
 #if 0
         if (last_line_cnt < 300)
-            config.video.standard |= VIDEO_STANDARD_MASK;
+            config.video.mode |= VIDEO_MODE_STANDARD_MASK;
         else
-            config.video.standard &= ~VIDEO_STANDARD_MASK;
+            config.video.mode &= ~VIDEO_MODE_STANDARD_MASK;
 #endif
         
         sram_busy = 1;
         addr.l = 0;
 
         /* TODO: Fix for compsync mode */
-        if (config.video.standard && VIDEO_STANDARD_SCAN_MASK) {
+        if (config.video.mode && VIDEO_MODE_SCAN_MASK) {
             if (int_sync_cnt < CNT_INT_MODE)
                 odd = PORTBbits.RB15;
 
@@ -967,7 +981,7 @@ static inline void render_line(void)
         T2CONbits.TON = 1;
 
         /* calc next address */
-        if (config.video.standard & VIDEO_STANDARD_SCAN_MASK) {
+        if (config.video.mode & VIDEO_MODE_SCAN_MASK) {
             addr.l += (unsigned long) ((osdxsize/4) * 2);
         } else {
             addr.l += (unsigned long) (osdxsize/4);
@@ -1069,7 +1083,9 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
 
     ext_sync_cnt++;
 
-    if (int_sync_cnt < CNT_INT_MODE) {
+    if ((config.video.mode & VIDEO_MODE_SYNC_MASK) == 0) {
+        /* no sync generator */
+    } else if (int_sync_cnt < CNT_INT_MODE) {
         /* ext sync */
         int_sync_cnt++;
     } else if (int_sync_cnt < CNT_INT_MODE + 1) {
