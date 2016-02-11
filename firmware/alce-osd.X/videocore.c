@@ -56,7 +56,7 @@
 #define SCK2_O 0x09
 
 
-#define LINE_TMR (278*12)+1
+#define LINE_TMR (278*12)-2
 
 
 #define CTRL_SYNCGEN        0x01
@@ -443,6 +443,13 @@ static void video_init_hw(void)
         /* mux as input */
         _TRISA2 = 1;
         _TRISA3 = 1;
+        _LATA2 = 0;
+        _LATA3 = 0;
+        /* pull downs */
+        _CNPUA2 = 0;
+        _CNPDA2 = 1;
+        _CNPUA3 = 0;
+        _CNPDA3 = 1;
     }
     
     /* generic line timer */
@@ -523,13 +530,6 @@ static void video_init_hw(void)
         /* analog input */
         TRISBbits.TRISB0 = 1;
         ANSELBbits.ANSB0 = 1;
-        
-        /* pull downs */
-        _CNPUA2 = 0;
-        _CNPDA2 = 1;
-        _CNPUA3 = 0;
-        _CNPDA3 = 1;
-        
 
         /* vref */
 #if defined (__dsPIC33EP512GM604__)
@@ -829,8 +829,11 @@ void init_video(void)
 /* line timer */
 void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
 {
+    /* stop timer */
+    T2CONbits.TON = 0;
+    _T2IF = 0;
+    
     if (PR2 != LINE_TMR) {
-        T2CONbits.TON = 0;
         if (hw_rev <= 0x02)
             OE_RAM = 0;
         else
@@ -839,20 +842,21 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
         PR2 = LINE_TMR;
         T2CONbits.TON = 1;
     } else {
-        if (hw_rev <= 0x02)
+        if (hw_rev <= 0x02) {
             OE_RAM = 1;
-        else
+        } else {
             OE_RAM2 = 1;
+            TRISA &= 0xfff3;
+            TRISA |= 0xc;
+        }
+        CS_HIGH;
+        SRAM_OUT;
         if (hw_rev == 0x03)
             _RP56R = 0;
         else
             _RP54R = 0;
-        CS_HIGH;
-        SRAM_OUT;
         SPI2STATbits.SPIEN = 0;
-        T2CONbits.TON = 0;
     }
-    _T2IF = 0;
 }
 
 
