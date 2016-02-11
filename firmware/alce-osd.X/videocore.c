@@ -56,7 +56,7 @@
 #define SCK2_O 0x09
 
 
-#define LINE_TMR (277*12)+5
+#define LINE_TMR (278*12)+1
 
 
 #define CTRL_SYNCGEN        0x01
@@ -84,7 +84,7 @@ const struct param_def params_video[] = {
 };
 
 
-static volatile unsigned int ext_sync_cnt = 0, int_sync_cnt = 0;
+static volatile unsigned int int_sync_cnt = 0;
 volatile unsigned char sram_busy = 0;
 volatile unsigned int line, last_line_cnt = 0;
 volatile unsigned char odd = 0;
@@ -450,7 +450,6 @@ static void video_init_hw(void)
     T2CONbits.TCKPS = 0;
     T2CONbits.TCS = 0;
     T2CONbits.TGATE = 0;
-    PR2 = LINE_TMR;
     T2CONbits.TON = 0;
     _T2IP = 6;
     IFS0bits.T2IF = 0;
@@ -516,8 +515,6 @@ static void video_init_hw(void)
         /* timer */
         T4CON = 0x8010;
         _T4IP = 3;
-        _T4IE = 1;
-        _T4IF = 0;
         /* period = 1 / (70000000 / 8) * 56 = 6.4us */
         PR4 = 56;
     }
@@ -552,27 +549,29 @@ static void video_init_hw(void)
         CVRCONbits.CVR = 3;
         CVRCONbits.CVREN = 1;
 #endif
-        
+
+        _RP54R = 0x19;
+        _IC1R = 54;
+        /* input capture */
+        IC1CON1bits.ICM = 0b000;
+        IC1CON1bits.ICTSEL = 7;
+        IC1CON2bits.ICTRIG = 0;
+        IC1CON2bits.SYNCSEL = 0;
+        IC1CON1bits.ICI = 0;
+        IPC0bits.IC1IP = 4;
+        IFS0bits.IC1IF = 0;
+        IEC0bits.IC1IE = 1;
+        IC1CON1bits.ICM = 0b001;
+
         /* comp */
-        CM2CONbits.COE = 0;
+        CM2CONbits.COE = 1;
         CM2CONbits.CPOL = 1;
         CM2CONbits.OPMODE = 0;
-        //CM2CONbits.COUT = 0;
-        CM2CONbits.EVPOL = 0b10;
+        CM2CONbits.COUT = 0;
+        CM2CONbits.EVPOL = 0b00;
         CM2CONbits.CREF = 1;
         CM2CONbits.CCH = 0b00;
-
-        CM2FLTRbits.CFLTREN = 1;
-        CM2FLTRbits.CFSEL = 1;
-        CM2FLTRbits.CFDIV = 2;
-
-        CMSTATbits.PSIDL = 0;
-
-        _CMIP = 5;
-
-        CM2CONbits.CEVT = 0;
-        IFS1bits.CMIF = 0;
-        _CMIE = 1;
+        CM2FLTRbits.CFLTREN = 0;
         CM2CONbits.CON = 1;
     }
     
@@ -600,6 +599,12 @@ void video_apply_config(struct video_config *cfg)
     SPI2CON1bits.SPRE = video_xsizes[cfg->x_size_id].clk_ps;
     INTCON2bits.GIE = 1;
 
+    if (config.video.mode & VIDEO_MODE_SYNC_MASK) {
+        _T4IF = 0;
+        _T4IE = 1;
+    } else {
+        _T4IE = 0;
+    }
 }
 
 void video_apply_config_cbk(void)
@@ -627,9 +632,7 @@ void video_pause(void)
     }
 
     if (videocore_ctrl & CTRL_COMPSYNC) {
-        _CMIE = 0;
-        CM2CONbits.CEVT = 0;
-        _CMIF = 0;
+        _IC1IE = 0;
     } else {
         _INT2IE = 0;
         _INT1IE = 0;
@@ -639,16 +642,15 @@ void video_pause(void)
 void video_resume(void)
 {
     if (videocore_ctrl & CTRL_COMPSYNC) {
-        line = 0;
-        CM2CONbits.CEVT = 0;
-        _CMIF = 0;
-        _CMIE = 1;
+        _IC1IF = 0;
+        _IC1IE = 1;
     } else {
         _INT1IF = 0;
         _INT1IE = 1;
     }
 
-    if (videocore_ctrl & CTRL_SYNCGEN) {
+    if ((videocore_ctrl & CTRL_SYNCGEN) && (config.video.mode & VIDEO_MODE_SYNC_MASK)) {
+        int_sync_cnt = 0;
         _T4IF = 0;
         _T4IE = 1;
     }
@@ -824,8 +826,6 @@ void init_video(void)
 }
 
 
-static char line_busy = 0;
-
 /* line timer */
 void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
 {
@@ -851,69 +851,27 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
         SRAM_OUT;
         SPI2STATbits.SPIEN = 0;
         T2CONbits.TON = 0;
-        
-        if (hw_rev == 0x03) {
-            CM2CONbits.CEVT = 0;
-            _CMIF = 0;
-            _CMIE = 1;
-        }
-        line_busy = 0;
     }
     _T2IF = 0;
-}
-
-/* vsync interrupt */
-void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
-{
-    if (sram_busy) {
-        if (T2CONbits.TON == 1) {
-            T2CONbits.TON = 0;
-            _T2IF = 0;
-            OE_RAM = 1;
-            if (hw_rev == 0x03)
-                _RP56R = 0;
-            else
-                _RP54R = 0;
-            CS_HIGH;
-            SRAM_OUT;
-            SPI2STATbits.SPIEN = 0;
-        }
-
-        if (line >= config.video.y_offset) {
-            sram_exit_sdi();
-            CS_LOW;
-            sram_byte_spi(SRAM_QIO);
-            CS_HIGH;
-            SRAM_OUTQ;
-        }
-        sram_busy = 0;
-    }
-
-    last_line_cnt = line;
-    line = 0;
-    int_sync_cnt = 0;
-    _INT2IF = 0;
-    _INT2IE = 1;
-    LED = 1;
-    _INT1IF = 0;
-    _T4IP = 3;
 }
 
 
 #define INT_X_OFFSET    (45)
 #define CNT_INT_MODE    (10 * 1000)
 
-static inline void render_line(void)
+static void render_line(void)
 {
     static union sram_addr addr __attribute__((aligned(2)));
     static unsigned int osdxsize;
     static unsigned int x_offset;
     static unsigned int last_line = 200;
+    
+    line++;
 
     if (line < config.video.y_offset-2) {
         /* do nothing */
     } else if (line < config.video.y_offset-1) {
-        /* T-2: setup vars */
+        /* setup vars */
         osdxsize = video_xsizes[config.video.x_size_id].xsize;
 
         /* calc last_line */
@@ -934,22 +892,27 @@ static inline void render_line(void)
         sram_busy = 1;
         addr.l = 0;
 
-        /* TODO: Fix for compsync mode */
-        if (config.video.mode && VIDEO_MODE_SCAN_MASK) {
+        if ((videocore_ctrl & CTRL_COMPSYNC) == 0) {
             if (int_sync_cnt < CNT_INT_MODE)
                 odd = PORTBbits.RB15;
-
+        }
+            
+        if (config.video.mode && VIDEO_MODE_SCAN_MASK) {
             if (odd == 0) {
                 addr.l += (osdxsize/4);
             }
         }
     } else if (line < config.video.y_offset) {
-        /* T-1: switch sram to sdi mode */
         sram_exit_sqi();
+        /* make sure we are in sequential mode */
+        CS_LOW;
+        sram_byte_spi(SRAM_WMODE);
+        sram_byte_spi(0x40);
+        CS_HIGH;
+        /* switch sram to sdi mode */
         CS_LOW;
         sram_byte_spi(SRAM_DIO);
         CS_HIGH;
-        SRAM_IN;
         SRAM_OUT;
 
         x_offset = config.video.x_offset;
@@ -958,9 +921,6 @@ static inline void render_line(void)
 
     } else if (line < last_line) {
         /* render */
-        line_busy = 1;
-        
-        /* setup sram for video output */
         CS_LOW;
         sram_byteo_sdi(SRAM_READ);
         sram_byteo_sdi(addr.b2);
@@ -976,7 +936,7 @@ static inline void render_line(void)
         else
             _RP54R = SCK2_O;
 
-        /* start x_offset timer */
+        /* line start timer - x_offset */
         PR2 = x_offset * 5;
         T2CONbits.TON = 1;
 
@@ -998,118 +958,119 @@ static inline void render_line(void)
 }
 
 
+/* external sync */
+void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
+{
+    last_line_cnt = line;
+    line = 0;
+    int_sync_cnt = 0;
+    _INT2IF = 0;
+    _INT2IE = 1;
+    _INT1IF = 0;
+    _T4IP = 3;
+}
 void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
 {
-    line++;
     render_line();
     _INT2IF = 0;
 }
 
 
-void __attribute__((interrupt, auto_psv)) _CM1Interrupt(void)
+/* comparator + input capture sync */
+void __attribute__(( interrupt, auto_psv )) _IC1Interrupt(void)
 {
-    static unsigned int last_cnt = 0;
-    static unsigned char vcnt = 0;
+    static unsigned int tp = 0xffff, last_cnt;
+    static unsigned char vsync = 0;
+    unsigned int cnt, t;
 
-    unsigned int cnt = ext_sync_cnt - last_cnt;
-    last_cnt = ext_sync_cnt;
-
-    if (line_busy) {
-        CM2CONbits.CEVT = 0;
-        _CMIF = 0;
-        _CMIE = 0;
-        return;
+    /* fifo overflow means no sync */
+    if (IC1CON1bits.ICOV) {
+        IC1CON1bits.ICOV = 0;
+        vsync = 0;
     }
+    /* empty fifo */
+    do {
+        cnt = IC1BUF;
+    } while (IC1CON1bits.ICBNE != 0);
+    IFS0bits.IC1IF = 0;
+    
+    t = cnt - last_cnt;
+    last_cnt = cnt;
 
-    //if(CMSTATbits.C2EVT)
-    //{
-        //ext_sync_cnt = 0;
-        //printf("%d\n", last_cnt);
+    if (PORTCbits.RC6) {
+        /* rising edge */
+        /* vsync detector */
+        if (abs(((long) t) - 1900) < 100)
+            tp = (tp << 1) | 1;
+        else if (abs(((long) t) - 170) < 50)
+            tp = (tp << 1);
+        else {
+            tp = 0xffff;
+        }
 
-        if ((cnt > 3) && (cnt < 7)) {
-            vcnt++;
-        } else if ((cnt > 8) && (cnt < 12)) {
-            if (vcnt > 13) {
-                
-                if (sram_busy) {
-                    sram_exit_sdi();
-                    CS_LOW;
-                    sram_byte_spi(SRAM_QIO);
-                    CS_HIGH;
-                    SRAM_OUTQ;
-                    sram_busy = 0;
+        /* pal / ntsc */
+        if ((tp == 0b1000001111100000) || (tp == 0b0000111111000000)) {
+            /* pull downs - input video */
+            _CNPUA2 = 0;
+            _CNPDA2 = 1;
+            _CNPUA3 = 0;
+            _CNPDA3 = 1;
+            _T4IP = 3;
+            vsync = 1;
+            last_line_cnt = line+10;
+            line = 9;
+            int_sync_cnt = 0;
+            tp = 0xffff;
+        }
+    } else {
+        /* falling edge */
+        if (vsync) {
+            if (abs(((long) t) - 4200) < 300) {
+                if (line == 9) {
+                    odd = 0;
                 }
-                
-                
-                /* vsync */
-                last_line_cnt = line + 13;
-                line = 10;
-                int_sync_cnt = 0;
-                last_cnt = 0;
-                LED = 1;
-                _CMIP = 5;
-                _T4IP = 4;
-                
-                /* pull downs */
-                _CNPUA2 = 0;
-                _CNPDA2 = 1;
-                _CNPUA3 = 0;
-                _CNPDA3 = 1;
-            } else {
-                line++;
                 render_line();
-            }
-            vcnt = 0;
-        } else {
-            vcnt = 0;
-            if (_CMIP == 4) {
-                _CNPDA2 = 0;
-                _CNPUA2 = 1;
-                _CNPDA3 = 0;
-                _CNPUA3 = 1;
-                _CMIE = 0;
+            } else if ((abs(((long) t) - 2050) < 100) && (line == 9)) {
+                line++;
+                odd = 1;
+            } else {
+                /* sync lost */
+                vsync = 0;
             }
         }
-        CM2CONbits.CEVT = 0;
-    //}
-
-    _CMIF = 0;
+    }
 }
 
 
+/* internal sync generator */
 void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
 {
     static unsigned char cnt;
 
-    ext_sync_cnt++;
+    _T4IF = 0;
 
-    if ((config.video.mode & VIDEO_MODE_SYNC_MASK) == 0) {
-        /* no sync generator */
-    } else if (int_sync_cnt < CNT_INT_MODE) {
+    if (int_sync_cnt < CNT_INT_MODE) {
         /* ext sync */
         int_sync_cnt++;
     } else if (int_sync_cnt < CNT_INT_MODE + 1) {
-        /* prepare int sync */
+        /* prepare internal sync */
         last_line_cnt = 312;
         line = 0;
         odd = 1;
         int_sync_cnt++;
-        _INT2IE = 0;
-        LED = 0;
+        if (hw_rev < 0x03) {
+            _INT2IE = 0;
+        } else {
+            /* pull ups - black level */
+            _CNPDA2 = 0;
+            _CNPUA2 = 1;
+            _CNPDA3 = 0;
+            _CNPUA3 = 1;
+        }
         cnt = 0;
-        _CMIP = 4;
         _T4IP = 5;
-
-        /* pull ups */
-        _CNPDA2 = 0;
-        _CNPUA2 = 1;
-        _CNPDA3 = 0;
-        _CNPUA3 = 1;
-
-        _CMIE = 0;
-        _CMIF = 0;
     } else {
-        /* int sync */
+        /* internal sync */
         cnt++;
         
         if (hw_rev <= 0x02) {
@@ -1234,23 +1195,12 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
             render_line();
 
         if (cnt > 9) {
-            line++;
             cnt = 0;
             if (line == 312) {
                 last_line_cnt = line;
                 line = 0;
                 odd = odd ^ 1;
             }
-
-            if (odd && (line < 100) ) {
-                CM2CONbits.CEVT = 0;
-                _CMIF = 0;
-                _CMIE = 1;
-            } else {
-                _CMIE = 0;
-            }
         }
     }
-
-    _T4IF = 0;
 }
