@@ -70,7 +70,7 @@ static void render(struct widget *w)
     sprintf(buf, "Total used current:    %dmAh", (unsigned int) priv->total_mah);
     draw_str(buf, 0, 12*7, ca, 1);
 
-    sprintf(buf, "Fight duration:        %02dm%02ds", (unsigned int) duration / 60, (unsigned int) duration % 60);
+    sprintf(buf, "Flight duration:       %02dm%02ds", (unsigned int) duration / 60, (unsigned int) duration % 60);
     draw_str(buf, 0, 12*8, ca, 1);
 }
 
