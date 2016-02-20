@@ -32,8 +32,8 @@ static int open(struct widget *w)
 {
     w->priv = (struct home_data*) get_home_data();
 
-    w->ca.width = 92;
-    w->ca.height = 12*3;
+    w->ca.width = 80;
+    w->ca.height = 50;
 
     /* refresh rate of 0.2 sec */
     add_timer(TIMER_WIDGET, 2, timer_callback, w);
@@ -55,7 +55,7 @@ static void render(struct widget *w)
 
     if (priv->lock != HOME_LOCKED) {
         sprintf(buf, "No Home");
-        draw_str(buf, 0, 9, ca, 1);
+        draw_str(buf, 0, 0, ca, 2);
         if (priv->lock & HOME_LOCK_FIX)
             buf[0] = 'F';
         else
@@ -69,32 +69,31 @@ static void render(struct widget *w)
         else
             buf[2] = ' ';
         buf[3] = 0;
-        draw_str(buf, 0, 9*2, ca, 1);
+        draw_str(buf, 0, 16, ca, 1);
         sprintf(buf, "Lock in %d", config.home_lock_sec - priv->lock_sec);
-        draw_str(buf, 0, 9*3, ca, 1);
+        draw_str(buf, 0, 30, ca, 1);
     } else {
-        sprintf(buf, "Home");
-        draw_str(buf, 0, 0, ca, 2);
-
         switch (get_units(w->cfg)) {
             case UNITS_METRIC:
             default:
-                sprintf(buf, "Alt %dm\nDis %dm",
+                sprintf(buf, "Alt %dm\nDis %dm\n%d",
                         priv->altitude,
-                        (unsigned int) priv->distance);
+                        (unsigned int) priv->distance,
+                        priv->direction);
                 break;
             case UNITS_IMPERIAL:
                 d = (float) priv->altitude * M2FEET;
                 a = (float) priv->distance * M2FEET;
-                sprintf(buf, "Alt %df\nDis %df",
+                sprintf(buf, "Alt %df\nDis %df\n%d",
                         (unsigned int) a,
-                        (unsigned int) d);
+                        (unsigned int) d,
+                        priv->direction);
                 break;
         }
 
-        draw_str(buf, 0, 15, ca, 1);
+        draw_str(buf, 0, 0, ca, 1);
 
-        transform_polygon(&arrow, 4 * 12 + 6, 7, priv->direction + 180);
+        transform_polygon(&arrow, 50, 34, priv->direction + 180);
         draw_polygon(&arrow, 3, ca);
         move_polygon(&arrow, -1, -1);
         draw_polygon(&arrow, 1, ca);

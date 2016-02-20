@@ -19,7 +19,7 @@
 #include "alce-osd.h"
 
 #define X_SIZE  64
-#define Y_SIZE  16
+#define Y_SIZE  17
 
 
 #define RSSI_PARAM_MIN      (0)
@@ -62,8 +62,6 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
     if (priv->rssi ==  priv->last_rssi)
         return;
     priv->last_rssi = priv->rssi;
-
-
 
     schedule_widget(w);
 }
@@ -111,7 +109,7 @@ static void render(struct widget *w)
     }
 
     sprintf(buf, "%3d", value);
-    draw_str(buf, 25, 4, ca, 2);
+    draw_jstr(buf, X_SIZE, Y_SIZE/2, JUST_RIGHT | JUST_VCENTER, ca, 2);
 }
 
 

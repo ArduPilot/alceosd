@@ -113,8 +113,8 @@ static void render(struct widget *w)
     draw_vline(x, 0, r*2, 2, ca);
     draw_hline(0, r*2, y, 2, ca);
 
-    draw_circle(x, y, r+1, 3, ca);
-    draw_circle(x, y, r  , 1, ca);
+    //draw_circle(x, y, r+1, 3, ca);
+    draw_circle(x, y, r  , 2, ca);
 
 
     /* auto scale */

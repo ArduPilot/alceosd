@@ -105,8 +105,8 @@ static void render(struct widget *w)
         j = priv->altitude + i - priv->range/2;
         if (j % major_tick == 0) {
             draw_ohline(X_CENTER + 2, X_CENTER - 4, y, 1, 3, ca);
-            sprintf(buf, "%4d", j);
-            draw_str(buf, X_CENTER + 13, y-3, ca, 0);
+            sprintf(buf, "%d", j);
+            draw_jstr(buf, X_SIZE-2, y, JUST_RIGHT | JUST_VCENTER, ca, 0);
             d = 1;
         } else if (j % minor_tick == 0) {
             draw_ohline(X_CENTER + 2, X_CENTER - 2, y, 1, 3, ca);
@@ -116,17 +116,18 @@ static void render(struct widget *w)
         }
     }
 
-    draw_frect(X_CENTER + 10, Y_CENTER-4, X_SIZE-2, Y_CENTER + 4, 0, ca);
-    sprintf(buf, "%4ld", priv->altitude);
-    draw_str(buf, X_CENTER + 13, Y_CENTER - 3, ca, 0);
+    draw_frect(X_CENTER + 11, Y_CENTER-5, X_SIZE-2, Y_CENTER + 5, 0, ca);
 
-    draw_hline(X_CENTER + 10, X_SIZE - 1, Y_CENTER-5, 1, ca);
-    draw_hline(X_CENTER + 10, X_SIZE - 1, Y_CENTER+5, 1, ca);
-    draw_vline(X_SIZE - 1, Y_CENTER-4, Y_CENTER+4, 1, ca);
+    draw_hline(X_CENTER + 10, X_SIZE - 1, Y_CENTER-6, 1, ca);
+    draw_hline(X_CENTER + 10, X_SIZE - 1, Y_CENTER+6, 1, ca);
+    draw_vline(X_SIZE - 1, Y_CENTER-5, Y_CENTER+5, 1, ca);
 
     /* draw arrow */
-    draw_line(X_CENTER+10, Y_CENTER-5, X_CENTER+10-5, Y_CENTER, 1, ca);
-    draw_line(X_CENTER+10, Y_CENTER+5, X_CENTER+10-5, Y_CENTER, 1, ca);
+    draw_line(X_CENTER+10, Y_CENTER-6, X_CENTER+10-5, Y_CENTER, 1, ca);
+    draw_line(X_CENTER+10, Y_CENTER+6, X_CENTER+10-5, Y_CENTER, 1, ca);
+
+    sprintf(buf, "%d", (unsigned int) priv->altitude);
+    draw_jstr(buf, X_SIZE-2, Y_CENTER, JUST_RIGHT | JUST_VCENTER, ca, 0);
 }
 
 

@@ -77,8 +77,8 @@ static void render(struct widget *w)
         if(j < 0)
             continue;
         if (j % major_tick == 0) {
-            sprintf(buf, "%3d", j);
-            draw_str(buf, 2, y - 2, ca, 0);
+            sprintf(buf, "%d", j);
+            draw_jstr(buf, 2, y, JUST_VCENTER, ca, 0);
             draw_ohline(X_CENTER - 2, X_CENTER + 4, y, 1, 3, ca);
             d = 1;
         } else if (j % minor_tick == 0) {
@@ -89,16 +89,16 @@ static void render(struct widget *w)
         }
     }
 
-    draw_frect(1, Y_CENTER-4, X_CENTER - 10, Y_CENTER + 4, 0, ca);
-    sprintf(buf, "%3d", (int) priv->speed_i);
-    draw_str(buf, 2, Y_CENTER - 3, ca, 0);
+    draw_frect(1, Y_CENTER-5, X_CENTER - 10, Y_CENTER + 5, 0, ca);
+    sprintf(buf, "%d", (int) priv->speed_i);
+    draw_jstr(buf, 2, Y_CENTER, JUST_VCENTER, ca, 0);
 
-    draw_hline(0, X_CENTER - 10, Y_CENTER - 5, 1, ca);
-    draw_hline(0, X_CENTER - 10, Y_CENTER + 5, 1, ca);
-    draw_vline(0, Y_CENTER - 3 , Y_CENTER + 3, 1, ca);
+    draw_hline(0, X_CENTER - 10, Y_CENTER - 6, 1, ca);
+    draw_hline(0, X_CENTER - 10, Y_CENTER + 6, 1, ca);
+    draw_vline(0, Y_CENTER - 5 , Y_CENTER + 5, 1, ca);
 
-    draw_line(X_CENTER-10, Y_CENTER-5, X_CENTER-10+5, Y_CENTER, 1, ca);
-    draw_line(X_CENTER-10, Y_CENTER+5, X_CENTER-10+5, Y_CENTER, 1, ca);
+    draw_line(X_CENTER-10, Y_CENTER-6, X_CENTER-10+5, Y_CENTER, 1, ca);
+    draw_line(X_CENTER-10, Y_CENTER+6, X_CENTER-10+5, Y_CENTER, 1, ca);
 }
 
 

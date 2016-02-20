@@ -19,7 +19,7 @@
 #include "alce-osd.h"
 
 #define X_SIZE  100
-#define Y_SIZE  30
+#define Y_SIZE  35
 
 /* range in degrees */
 #define RANGE       90
@@ -69,7 +69,7 @@ static void render(struct widget *w)
     const char cardinals[] = {'N', 'E', 'S', 'W'};
     int i, j, x;
 
-    draw_str(priv->heading_s, X_CENTER-12, 0, ca, 1);
+    draw_jstr(priv->heading_s, X_CENTER, 0, JUST_HCENTER, ca, 1);
     set_pixel(X_CENTER, Y_CENTER-1, 1, ca);
     draw_hline(X_CENTER-1, X_CENTER+1, Y_CENTER-2, 1, ca);
     draw_hline(X_CENTER-2, X_CENTER+2, Y_CENTER-3, 1, ca);
@@ -80,7 +80,7 @@ static void render(struct widget *w)
             draw_vline(x,   Y_CENTER, Y_CENTER + 5, 1, ca);
             draw_vline(x-1, Y_CENTER, Y_CENTER + 5, 3, ca);
             draw_vline(x+1, Y_CENTER, Y_CENTER + 5, 3, ca);
-            draw_chr(cardinals[j / 90], x-2, Y_CENTER + 6, ca, 0);
+            draw_chr(cardinals[j / 90], x-3, Y_CENTER + 6, ca, 0);
         } else if(j % MAJOR_TICK == 0) {
             draw_vline(x,   Y_CENTER, Y_CENTER + 5, 1, ca);
             draw_vline(x-1, Y_CENTER, Y_CENTER + 5, 3, ca);

@@ -28,10 +28,11 @@ static void timer_callback(struct timer *t, void *d)
 
 static int open(struct widget *w)
 {
+    const struct font *f = get_font(1);
     w->priv = (struct flight_stats*) get_flight_stats();
 
     w->ca.width = 4*60;
-    w->ca.height = 12*9;
+    w->ca.height = f->size*9+4;
 
     /* refresh rate of 0.2 sec */
     add_timer(TIMER_WIDGET, 2, timer_callback, w);

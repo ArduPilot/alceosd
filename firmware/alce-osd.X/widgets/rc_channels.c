@@ -18,6 +18,8 @@
 
 #include "alce-osd.h"
 
+#define BAR_SIZE 8
+
 struct widget_priv {
     unsigned int ch_raw[8];
     unsigned char bar_size;
@@ -45,6 +47,7 @@ static int open(struct widget *w)
 {
     struct widget_priv *priv;
     unsigned int i;
+    const struct font *f = get_font(0);
 
     priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
     if (priv == NULL)
@@ -74,7 +77,7 @@ static int open(struct widget *w)
             w->ca.width = 80;
             break;
     }
-    w->ca.height = 64;
+    w->ca.height = f->size * 8 + 2;
     add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET, w);
     return 0;
 }
@@ -86,15 +89,16 @@ static void render(struct widget *w)
     struct canvas *ca = &w->ca;
     unsigned char i;
     unsigned int width = ca->width;
-    int x;
+    int x, y;
     char buf[10];
+    const struct font *f = get_font(0);
 
     for (i = 0; i < 8; i++) {
         if ((w->cfg->props.mode == 0) || (w->cfg->props.mode == 1))
             sprintf(buf, "CH%u %4d", i+1, priv->ch_raw[i]);
         else
             sprintf(buf, "CH%u", i+1);
-        draw_str(buf, 0, i*8+1, ca, 0);
+        draw_str(buf, 0, i*f->size, ca, 0);
 
         if ((w->cfg->props.mode == 0) || (w->cfg->props.mode == 2)) {
             x = priv->ch_raw[i] - 1000;
@@ -104,13 +108,14 @@ static void render(struct widget *w)
                 x = 1000;
 
             x = (x * (unsigned int) priv->bar_size) / 1000;
+            y = i * f->size;
 
-            draw_rect(width-priv->bar_size-1,      i*8, width-1, i*8+6, 3, ca);
-            draw_rect(width-priv->bar_size,      i*8+1, width-2, i*8+5, 1, ca);
+            draw_rect(width-priv->bar_size-1, y,   width-1, y+BAR_SIZE, 3, ca);
+            draw_rect(width-priv->bar_size,   y+1, width-2, y+BAR_SIZE-1, 1, ca);
 
-            draw_vline(width-priv->bar_size-1+x,   i*8+1, i*8+5, 1, ca);
-            draw_vline(width-priv->bar_size-1+x-1, i*8+1, i*8+5, 3, ca);
-            draw_vline(width-priv->bar_size-1+x+1, i*8+1, i*8+5, 3, ca);
+            draw_vline(width-priv->bar_size-1+x,   y+1, y+BAR_SIZE-1, 1, ca);
+            draw_vline(width-priv->bar_size-1+x-1, y+1, y+BAR_SIZE-1, 3, ca);
+            draw_vline(width-priv->bar_size-1+x+1, y+1, y+BAR_SIZE-1, 3, ca);
         }
     }
 }

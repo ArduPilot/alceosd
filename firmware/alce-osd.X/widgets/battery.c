@@ -21,7 +21,7 @@
 #define BAT_BAR_X   3
 #define BAT_BAR_Y   0
 #define BAT_BAR_W   58
-#define BAT_BAR_H   11
+#define BAT_BAR_H   14
 
 
 struct widget_priv {
@@ -73,7 +73,6 @@ static int open(struct widget *w)
     if (priv == NULL)
         return -1;
     w->priv = priv;
-
     w->ca.width = 64;
 
     switch (w->cfg->props.mode) {
@@ -133,7 +132,7 @@ static void render(struct widget *w)
         case 0:
         default:
             sprintf(buf, "%5.2fV\n%5.2fA", priv->bat_voltage, priv->bat_current);
-            draw_str(buf, 4, BAT_BAR_Y + BAT_BAR_H + 3, ca, 2);
+            draw_jstr(buf, BAT_BAR_X + BAT_BAR_W, BAT_BAR_Y + BAT_BAR_H, JUST_RIGHT, ca, 2);
 
             draw_rect(BAT_BAR_X, BAT_BAR_Y, BAT_BAR_X + BAT_BAR_W, BAT_BAR_Y + BAT_BAR_H, 3, ca);
             draw_rect(BAT_BAR_X+1, BAT_BAR_Y+1, BAT_BAR_X + BAT_BAR_W-1, BAT_BAR_Y + BAT_BAR_H-1, 1, ca);
@@ -145,8 +144,9 @@ static void render(struct widget *w)
                 draw_vline(BAT_BAR_X + 2 + i, BAT_BAR_Y + 2, BAT_BAR_Y + BAT_BAR_H - 2, 2, ca);
             }
 
-            sprintf(buf, "%d", priv->bat_remaining);
-            draw_str(buf, BAT_BAR_X + BAT_BAR_W/2 - 6, BAT_BAR_Y + 3, ca, 0);
+            sprintf(buf, "%d%%", priv->bat_remaining);
+            draw_jstr(buf, BAT_BAR_X + BAT_BAR_W/2, BAT_BAR_Y+BAT_BAR_H/2,
+                            JUST_VCENTER | JUST_HCENTER, ca, 0);
             break;
         case 1:
         case 2:

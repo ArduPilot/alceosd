@@ -19,21 +19,16 @@
 #ifndef FONTS_H
 #define	FONTS_H
 
-
-struct font {
-    unsigned char start_chr;
-    unsigned char width, height;
-    unsigned char spacing;
-    const char *data;
+struct font_char {
+    unsigned char w, h, ox, oy;
+    unsigned int data;
 };
 
-
-/*extern const char font5x5[] __attribute__((space(auto_psv)));
-extern const char font6x8[] __attribute__((space(auto_psv)));
-extern const char font7x8[] __attribute__((space(auto_psv)));*/
-extern const char font5x8[] __attribute__((space(auto_psv)));
-extern const char font8x8[] __attribute__((space(auto_psv)));
-extern const char font8x13[] __attribute__((space(auto_psv)));
+struct font {
+    unsigned char size;
+    const struct font_char *chars;
+    const char *font_data;
+};
 
 #endif	/* FONTS_H */
 

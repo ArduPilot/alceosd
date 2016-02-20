@@ -108,6 +108,10 @@ static void render(struct widget *w)
             cx = X_CENTER + (int) (i * priv->sin_roll);
             cy = y + i - (int) (i * priv->cos_roll);
 
+            if ((j != 0) && (j % (MAJOR_TICK*SCALE) == 0)) {
+                sprintf(buf, "%d", j / SCALE);
+                draw_jstr(buf, cx, cy, JUST_HCENTER | JUST_VCENTER, ca, 0);
+            }
             
             offset = (int) gap * priv->cos_roll;
             x0 = cx + offset;
@@ -127,12 +131,6 @@ static void render(struct widget *w)
             draw_line(x0-1, y0+1, x1+1, y1+1, 3, ca);
             draw_line(x0, y0, x1, y1, 1, ca);
 
-            if ((j != 0) && (j % (MAJOR_TICK*SCALE) == 0)) {
-                sprintf(buf, "% d", j / SCALE);
-                draw_str(buf, x1, y1, ca, 0);
-            }
-
-
             offset = (int) gap * priv->cos_roll;
             x0 = cx - offset;
             offset = (int) size * priv->cos_roll;
@@ -150,6 +148,7 @@ static void render(struct widget *w)
             }
             draw_line(x0-1, y0+1, x1+1, y1+1, 3, ca);
             draw_line(x0, y0, x1, y1, 1, ca);
+
         }
     }
 
@@ -198,7 +197,7 @@ static void render(struct widget *w)
 
             if ((i != 0) && (i % (MAJOR_ROLL_TICK) == 0)) {
                 sprintf(buf, "%d", i);
-                draw_str(buf, x1, y1, ca, 0);
+                draw_jstr(buf, x1, y1, JUST_VCENTER, ca, 0);
             }
         }
     }

@@ -168,12 +168,16 @@ static void render(struct widget *w)
 {
     struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
-    unsigned char x, y;
+    char buf[COLS+1];
+    unsigned char y;
 
+    
     for (y = 0; y < ROWS; y++) {
-        for (x = 0; x < COLS; x++)
-            draw_chr(priv->buf[y][x], x*8, y*8, ca, 1);
+        memcpy(buf, priv->buf[y], COLS);
+        buf[COLS+1] = '\0';
+        draw_str(buf, 0, y*12, ca, 1);
     }
+    
 }
 
 

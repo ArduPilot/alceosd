@@ -30,7 +30,7 @@
 #define CONFIG_ADDR_PAGE    (0x800)
 #define CONFIG_PAGE_SIZE    (0x400)
 
-#define CONFIG_VERSION_SIG  (0xfffff-6)
+#define CONFIG_VERSION_SIG  (0xfffff-7)
 
 static unsigned long valid_config_addr = 0;
 
@@ -368,6 +368,8 @@ const char menu_edit_widget[] = "\n\nAlceOSD :: Edit widget\n\n"
 
 extern const struct widget_ops *all_widget_ops[];
 
+extern unsigned char font_idx;
+
 static unsigned int config_process(unsigned char *buf, unsigned int len)
 {
     static unsigned char state = MENU_MAIN;
@@ -433,6 +435,15 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
                 case 'x':
                     exit_config();
                     return 1;
+                    
+                case '+':
+                    font_idx ++;
+                    break;
+                case '-':
+                    font_idx --;
+                    break;
+                    
+                    
                 default:
                     break;
             }

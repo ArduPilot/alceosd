@@ -19,31 +19,28 @@
 #include "alce-osd.h"
 
 
-#define NUM_FONTS   3
-const struct font fonts[] = {
-/*    {   .width = 5, .height = 5,
-        .spacing = 1, .start_chr = 0x20,
-        .data = font5x5 },*/
-/*    {   .width = 6, .height = 8,
-        .spacing = 1, .start_chr = 0x20,
-        .data = font6x8 },*/
-    {   .width = 5, .height = 8,
-        .spacing = 1, .start_chr = 0x20,
-        .data = font5x8 },
-    {   .width = 8, .height = 8,
-        .spacing = 0, .start_chr = 0x20,
-        .data = font8x8 },
-    {   .width = 8, .height = 13,
-        .spacing = 1, .start_chr = 0x20,
-        .data = font8x13 },
-};
+extern const struct font font_ab[];
+extern const struct font font_ar[];
+extern const struct font font_vb[];
 
 
-const struct font* get_font(unsigned char idx)
+unsigned char font_idx = 0;
+
+const struct font* get_font(unsigned char size)
 {
-    return &fonts[idx];
+    if (size > 2)
+        size = 2;
+    
+    switch (font_idx) {
+        case 0:
+        default:
+            return &font_ab[size];
+        case 1:
+            return &font_ar[size];
+        case 2:
+            return &font_vb[size];
+    }
 }
-
 
 void draw_line(int x0, int y0, int x1, int y1,
         unsigned char v, struct canvas *ca)
@@ -191,72 +188,112 @@ void draw_polygon(struct polygon *p, unsigned char v, struct canvas *ca)
 
 
 
-
-static void draw_chr0(char c, int x, int y, struct canvas *ca, const struct font *f)
+static unsigned char draw_chr0(char c, int x, int y, struct canvas *ca, const struct font *f)
 {
-    unsigned char i, j, b;
-    unsigned int idx = (c - f->start_chr) * f->height;
+    unsigned int ch = (c - 0x20);
+    const struct font_char *fc = &f->chars[ch];
+    unsigned int idx = fc->data;
+    const char *b = &f->font_data[idx];
+    
+    unsigned char i, j, k, p;
     int x0;
 
-    for (i = 0; i < f->height; i++) {
-        b = f->data[idx++];
-        x0 = x;
-        for (j = 0; j < ((f->width+1) >> 1); j++) {
-            if (b & 0x80) {
-                set_pixel(x0, y, 1, ca);
-                draw_hline(x0, x0+1, y+1, 3, ca);
-            }
+    k = 8;
+    y = y + (char) fc->oy;
+    for (i = 0; i < fc->h; i++) {
+        x0 = x;// + (char) fc->ox;
+        for (j = 0; j < fc->w; j++) {
+            k = k - 2;
+            p = (*b >> k) & 3;
+            if (p > 0)
+                set_pixel(x0, y, p, ca);
+            
             x0++;
-            b <<= 1;
-            if (b & 0x80) {
-                set_pixel(x0, y, 1, ca);
-                draw_hline(x0, x0+1, y+1, 3, ca);
+            if (k == 0) {
+                k = 8;
+                b++;
             }
-            x0++;
-            b <<= 1;
         }
         y++;
     }
+    return fc->w;
 }
 
 
-void draw_chr(char c, int x, int y, struct canvas *ca, unsigned char font_idx)
+
+
+
+void draw_chr(char c, int x, int y, struct canvas *ca, unsigned char size)
 {
-    const struct font *f;
-    if (font_idx >= NUM_FONTS)
-        return;
-    f = &fonts[font_idx];
+    const struct font *f = get_font(size);
     draw_chr0(c, x, y, ca, f);
 }
 
 
 void draw_str(char *buf, int x, int y, struct canvas *ca,
-    unsigned char font_idx)
+    unsigned char size)
 {
-    const struct font *f;
+    const struct font *f = get_font(size);
     int x0 = x;
-
-    if (font_idx >= NUM_FONTS)
-        return;
-
-    f = &fonts[font_idx];
 
     while (*buf != '\0') {
         if (*buf == '\n') {
             x = x0;
-            y += f->height + f->spacing;
+            y += f->size;
             buf++;
         } else {
-            draw_chr0(*buf++, x, y, ca, f);
-            x += (f->width + f->spacing);
+            x += draw_chr0(*buf++, x, y, ca, f);
         }
     }
 }
 
 
+static unsigned int get_str_width(char *buf, const struct font *f)
+{
+    unsigned char ch;
+    unsigned int wid = 0;
+    
+    while ((*buf != '\0') && (*buf != '\n')) {
+        ch = (*buf - 0x20);
+        wid += f->chars[ch].w;
+        buf++;
+    }
+    return wid-1;
+}
 
 
+void draw_jstr(char *buf, int x, int y, unsigned char just, struct canvas *ca,
+    unsigned char size)
+{
+    const struct font *f = get_font(size);
+    int sw = get_str_width(buf, f);
+    int x0 = x;
 
+    if (just & JUST_VCENTER)    
+        y -= f->size/2 + 1;
+    else if (just & JUST_BOT)
+        y -= f->size;
+
+    if (just & JUST_HCENTER)    
+        x -= sw/2;
+    else if (just & JUST_RIGHT)
+        x -= sw;
+    
+    while (*buf != '\0') {
+        if (*buf == '\n') {
+            buf++;
+            sw = get_str_width(buf, f);
+            if (just & JUST_HCENTER)    
+                x = x0 - sw/2;
+            else if (just & JUST_RIGHT)
+                x = x0 - sw;
+            
+            y += f->size;
+        } else {
+            x += draw_chr0(*buf++, x, y, ca, f);
+        }
+    }
+}
 
 
 #if 0

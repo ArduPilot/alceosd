@@ -20,7 +20,7 @@
 
 struct widget_priv {
     unsigned int custom_mode, prev_custom_mode;
-    unsigned char font_id;
+    unsigned char font_size;
     unsigned char mav_type;
 };
 
@@ -52,11 +52,11 @@ static int open(struct widget *w)
     if (m > 2)
         m = 2;
 
-    priv->font_id = m;
+    priv->font_size = m;
 
     f = get_font(m);
-    w->ca.height = f->height + 1;
-    w->ca.width = 120;
+    w->ca.height = f->size + 2;
+    w->ca.width = f->size * 12;
 
     priv->prev_custom_mode = 0xff;
     add_mavlink_callback(MAVLINK_MSG_ID_HEARTBEAT, mav_callback, CALLBACK_WIDGET, w);
@@ -151,7 +151,7 @@ static void render(struct widget *w)
         break;
     }
 
-    draw_str(mode, 0, 0, ca, priv->font_id);
+    draw_str(mode, 0, 0, ca, priv->font_size);
 }
 
 
