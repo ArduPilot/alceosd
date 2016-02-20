@@ -135,10 +135,6 @@ void hw_init(void)
     LED = 1;
 
     /* detect hw revision */
-    /* hw 0v1 has RA9 and RB9 floating */
-    /* hw 0v2 has RB9 floating and RA9 pull-up */
-    /* hw 0v3 has external pull-up on RA9 and RB9 */
-
     /* set RB9 internal pull down */
     _TRISB9 = 1;
     _CNPUB9 = 0;
@@ -151,10 +147,13 @@ void hw_init(void)
     for (i = 0; i < 10000; i++);
     
     if (_RB9 == 1)
+        /* hw 0v3 has external pull-up on RB9 */
         hw_rev = 0x03;
     else if (_RA9 == 1)
+        /* hw 0v2 has RB9 floating and RA9 pull-up */
         hw_rev = 0x02;
     else
+        /* hw 0v1 has RA9 and RB9 floating */
         hw_rev = 0x01;
     _CNPDB9 = 0;
     _CNPDA9 = 0;
