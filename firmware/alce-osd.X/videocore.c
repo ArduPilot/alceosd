@@ -827,7 +827,7 @@ void init_video(void)
 
 
 /* line timer */
-void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
+void __attribute__((__interrupt__, no_auto_psv )) _T2Interrupt()
 {
     /* stop timer */
     T2CONbits.TON = 0;
@@ -963,7 +963,7 @@ static void render_line(void)
 
 
 /* external sync */
-void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
+void __attribute__((__interrupt__, no_auto_psv )) _INT1Interrupt()
 {
     last_line_cnt = line;
     line = 0;
