@@ -139,7 +139,12 @@ static void load_config(void)
         read_flash(addr + 4, sizeof(struct alceosd_config), (unsigned char *) &config);
     }
 
+    /* setup video */
     video_apply_config(&config.video);
+
+    /* setup serial ports */
+    uart_set_config_pins();
+    uart_set_config_baudrates();
 
     RESTORE_CPU_IPL(ipl);
 }
@@ -286,7 +291,7 @@ static void exit_config(void)
 {
     uart_set_config_pins();
     uart_set_config_baudrates();
-    uart_set_config_clients();
+    uart_set_config_clients(0);
 }
 
 
@@ -885,19 +890,10 @@ static unsigned int config_starter(unsigned char *buf, unsigned int len)
 
 void config_init(void)
 {
-    const struct uart_ops *u = uart_get(UART_PORT1);
-    
     params_add(params_config);
+
+    load_config();
 
     config_uart_client.read = config_starter;
     uart_add_client_map(UART_CLIENT_CONFIG, UART_PORT1, &config_uart_client);
-
-    uart_set_config_baudrates();
-
-
-    /* force config on init */
-    u->set_baudrate(config.uart[UART_PORT1].baudrate);
-    uart_set_client(UART_PORT1, UART_CLIENT_CONFIG);
-
-    load_config();
 }

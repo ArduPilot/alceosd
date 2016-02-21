@@ -64,7 +64,7 @@ enum {
 
 struct alceosd_config {
     /* uart config */
-    struct uart_config uart[2];
+    struct uart_config uart[4];
 
     /* video config */
     struct video_config video;

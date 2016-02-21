@@ -215,6 +215,9 @@ int main(void) {
     /* init uavtalk module */
     uavtalk_init();
 
+    /* link serial ports to processes */
+    uart_set_config_clients(1);
+
     /* enable all interrupts */
     _IPL = 0;
     _IPL3 = 1;

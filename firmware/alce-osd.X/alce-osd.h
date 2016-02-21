@@ -46,8 +46,8 @@
 
 
 #define VERSION_MAJOR   0
-#define VERSION_MINOR   7
-#define VERSION_DEV     2
+#define VERSION_MINOR   8
+#define VERSION_DEV     0
 
 #define WITH_BOOTLOADER
 

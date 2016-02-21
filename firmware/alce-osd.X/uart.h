@@ -22,6 +22,8 @@
 enum {
     UART_PORT1 = 0,
     UART_PORT2,
+    UART_PORT3,
+    UART_PORT4,
 };
 
 enum {
@@ -35,6 +37,8 @@ enum {
     UART_PINS_TELEMETRY = 0,
     UART_PINS_CON2,
     UART_PINS_ICSP, /* hw_rev 0v2 only */
+    UART_PINS_CON3, /* hw_rev 0v3b only : DF13*/
+    UART_PINS_OFF,
     UART_PINS,
 };
 
@@ -53,16 +57,6 @@ struct uart_config {
     unsigned char pins;
 };
 
-struct uart_ops {
-    void (*init)(void);
-    void (*set_baudrate)(unsigned char b);
-    void (*set_pins)(unsigned char pins);
-    unsigned int (*count)(void);
-    unsigned int (*read)(unsigned char **buf);
-    void (*discard)(unsigned int count);
-    void (*write)(unsigned char *buf, unsigned int len);
-};
-
 struct uart_client {
     /* received data is feed to this function */
     unsigned int (*read)(unsigned char *buf, unsigned int len);
@@ -75,15 +69,14 @@ struct uart_client {
 void uart_init(void);
 void uart_set_client(unsigned char port, unsigned char client_id);
 void uart_add_client_map(unsigned char id, unsigned char port, struct uart_client *c);
-inline const struct uart_ops* uart_get(unsigned char port);
 
 inline unsigned long uart_get_baudrate(unsigned char b);
-void uart_set_config_clients(void);
+void uart_set_config_clients(unsigned char boot);
 void uart_set_config_baudrates(void);
 void uart_set_config_pins(void);
 
 
-unsigned char uart_getc1(char *c);
-unsigned char uart_getc2(char *c);
+//unsigned char uart_getc1(char *c);
+//unsigned char uart_getc2(char *c);
 
 #endif
