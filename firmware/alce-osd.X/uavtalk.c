@@ -39,6 +39,20 @@
 #define UAVTALK_OBJID_ATTITUDESTATE_PITCH                   20
 #define UAVTALK_OBJID_ATTITUDESTATE_YAW                     24
 
+#define	UAVTALK_OBJID_MANUALCONTROLCOMMAND                  0x1E82C2D2
+#define UAVTALK_OBJID_MANUALCONTROLCOMMAND_001              0xB8C7F78A
+#define UAVTALK_OBJID_MANUALCONTROLCOMMAND_002              0x161A2C98
+#define	UAVTALK_OBJID_MANUALCONTROLCOMMAND_THROTTLE         0
+#define	UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_0        24
+#define	UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_1        26
+#define	UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_2        28
+#define	UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_3        30
+#define	UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_4        32
+#define	UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_5        34
+#define	UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_6        36
+#define	UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_7        38
+#define	UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_8        40
+
 enum {
     UAVTALK_STATE_SYNC = 0,
     UAVTALK_STATE_TYPE,
@@ -173,6 +187,21 @@ static void uavtalk_handle_msg(struct uavtalk_message *msg)
                     DEG2RAD(uavtalk_get_float(msg, UAVTALK_OBJID_ATTITUDESTATE_PITCH)),
                     DEG2RAD(uavtalk_get_float(msg, UAVTALK_OBJID_ATTITUDESTATE_YAW)),
                     0, 0, 0);
+            mavlink_handle_msg(&mav_msg, NULL);
+            break;
+        case UAVTALK_OBJID_MANUALCONTROLCOMMAND:
+        case UAVTALK_OBJID_MANUALCONTROLCOMMAND_001:
+        case UAVTALK_OBJID_MANUALCONTROLCOMMAND_002:
+            mavlink_msg_rc_channels_raw_pack(1, 1, &mav_msg, 0, 0,
+                    (unsigned int) uavtalk_get_int16(msg, UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_1),
+                    (unsigned int) uavtalk_get_int16(msg, UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_2),
+                    (unsigned int) uavtalk_get_int16(msg, UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_3),
+                    (unsigned int) uavtalk_get_int16(msg, UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_4),
+                    (unsigned int) uavtalk_get_int16(msg, UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_5),
+                    (unsigned int) uavtalk_get_int16(msg, UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_6),
+                    (unsigned int) uavtalk_get_int16(msg, UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_7),
+                    (unsigned int) uavtalk_get_int16(msg, UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_8),
+                    0);
             mavlink_handle_msg(&mav_msg, NULL);
             break;
     }
