@@ -18,7 +18,7 @@
 
 #include "alce-osd.h"
 
-#define MAX_TIMERS  (50)
+#define MAX_TIMERS  (30)
 
 volatile unsigned long millis = 0;
 volatile unsigned int ms10 = 0;
