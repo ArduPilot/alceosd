@@ -32,6 +32,8 @@
 
 #define CONFIG_VERSION_SIG  (0xfffff-7)
 
+//#define DEBUG_CONFIG
+
 static unsigned long valid_config_addr = 0;
 
 /* default configuration */
@@ -377,8 +379,6 @@ const char menu_edit_widget[] = "\n\nAlceOSD :: Edit widget\n\n"
 
 extern const struct widget_ops *all_widget_ops[];
 
-extern unsigned char font_idx;
-
 static unsigned int config_process(unsigned char *buf, unsigned int len)
 {
     static unsigned char state = MENU_MAIN;
@@ -439,19 +439,14 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
                     printf("Loading config from console...\n");
                     config_uart_client.read = load_config_text;
                     return 1;
-                    //load_config_text();
-                    break;
                 case 'x':
                     exit_config();
                     return 1;
                     
                 case '+':
-                    font_idx ++;
                     break;
                 case '-':
-                    font_idx --;
                     break;
-                    
                     
                 default:
                     break;

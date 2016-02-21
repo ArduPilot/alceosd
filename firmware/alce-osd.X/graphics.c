@@ -20,26 +20,13 @@
 
 
 extern const struct font font_ab[];
-extern const struct font font_ar[];
-extern const struct font font_vb[];
-
-
-unsigned char font_idx = 0;
 
 const struct font* get_font(unsigned char size)
 {
     if (size > 2)
         size = 2;
     
-    switch (font_idx) {
-        case 0:
-        default:
-            return &font_ab[size];
-        case 1:
-            return &font_ar[size];
-        case 2:
-            return &font_vb[size];
-    }
+    return &font_ab[size];
 }
 
 void draw_line(int x0, int y0, int x1, int y1,
