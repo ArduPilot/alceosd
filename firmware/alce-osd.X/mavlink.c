@@ -128,6 +128,32 @@ static unsigned int mavlink_receive1(unsigned char *buf, unsigned int len)
     return len;
 }
 
+static unsigned int mavlink_receive2(unsigned char *buf, unsigned int len)
+{
+    mavlink_message_t msg __attribute__ ((aligned(2)));
+    mavlink_status_t status;
+    unsigned int i = len;
+    while (i--) {
+        if (mavlink_parse_char(MAVLINK_COMM_2, *(buf++), &msg, &status)) {
+            mavlink_handle_msg(&msg, &status);
+        }
+    }
+    return len;
+}
+
+static unsigned int mavlink_receive3(unsigned char *buf, unsigned int len)
+{
+    mavlink_message_t msg __attribute__ ((aligned(2)));
+    mavlink_status_t status;
+    unsigned int i = len;
+    while (i--) {
+        if (mavlink_parse_char(MAVLINK_COMM_3, *(buf++), &msg, &status)) {
+            mavlink_handle_msg(&msg, &status);
+        }
+    }
+    return len;
+}
+
 struct uart_client mavlink_uart_client0 = {
     .read = mavlink_receive0,
     .write = NULL,
@@ -138,6 +164,15 @@ struct uart_client mavlink_uart_client1 = {
     .write = NULL,
 };
 
+struct uart_client mavlink_uart_client2 = {
+    .read = mavlink_receive2,
+    .write = NULL,
+};
+
+struct uart_client mavlink_uart_client3 = {
+    .read = mavlink_receive3,
+    .write = NULL,
+};
 
 static void mavlink_send_msg(mavlink_message_t *msg)
 {
@@ -153,6 +188,12 @@ static void mavlink_send_msg(mavlink_message_t *msg)
 
     if (mavlink_uart_client1.write != NULL)
         mavlink_uart_client1.write(buf, len);
+
+    if (mavlink_uart_client2.write != NULL)
+        mavlink_uart_client2.write(buf, len);
+
+    if (mavlink_uart_client3.write != NULL)
+        mavlink_uart_client3.write(buf, len);
 }
 
 
@@ -347,4 +388,6 @@ void mavlink_init(void)
     /* register serial port clients */
     uart_add_client_map(UART_CLIENT_MAVLINK, UART_PORT1, &mavlink_uart_client0);
     uart_add_client_map(UART_CLIENT_MAVLINK, UART_PORT2, &mavlink_uart_client1);
+    uart_add_client_map(UART_CLIENT_MAVLINK, UART_PORT3, &mavlink_uart_client2);
+    uart_add_client_map(UART_CLIENT_MAVLINK, UART_PORT4, &mavlink_uart_client3);
 }

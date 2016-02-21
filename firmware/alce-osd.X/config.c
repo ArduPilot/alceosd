@@ -39,6 +39,8 @@ struct alceosd_config config = {
     .uart = {
         { .mode = UART_CLIENT_MAVLINK, .baudrate = UART_BAUD_115200, .pins = UART_PINS_TELEMETRY },
         { .mode = UART_CLIENT_MAVLINK, .baudrate = UART_BAUD_115200, .pins = UART_PINS_CON2 },
+        { .mode = UART_CLIENT_NONE,    .baudrate = UART_BAUD_115200, .pins = UART_PINS_OFF },
+        { .mode = UART_CLIENT_NONE,    .baudrate = UART_BAUD_115200, .pins = UART_PINS_OFF },
     },
   
     .video.mode = VIDEO_STANDARD_PAL_P,
@@ -335,6 +337,8 @@ const char menu_video[] = "\n\nAlceOSD :: VIDEO setup\n\n"
 const char menu_uart[] = "\n\nAlceOSD :: SERIAL PORT setup\n\n"
                           "1 - Serial port 1\n"
                           "2 - Serial port 2\n"
+                          "3 - Serial port 3\n"
+                          "4 - Serial port 4\n"
                           "x - Go back\n";
 
 const char menu_uart_config[] = "\n\nAlceOSD :: SERIAL PORT %d setup\n\n"
@@ -546,12 +550,11 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
         case MENU_UART:
             switch (c) {
                 case '1':
-                    state = MENU_UART_CONFIG;
-                    nr_opt = 0;
-                    break;
                 case '2':
+                case '3':
+                case '4':
                     state = MENU_UART_CONFIG;
-                    nr_opt = 1;
+                    nr_opt = c - '1';
                     break;
                 case 'x':
                     state = MENU_MAIN;
@@ -786,7 +789,9 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
                     (unsigned int) (uart_get_baudrate(config.uart[nr_opt].baudrate) / 1000),
                     (unsigned int) (uart_get_baudrate(config.uart[nr_opt].baudrate) % 1000),
                     config.uart[nr_opt].pins == UART_PINS_TELEMETRY ? "TELEMETRY" :
-                    config.uart[nr_opt].pins == UART_PINS_CON2 ? "CON2" : "ICSP");
+                    config.uart[nr_opt].pins == UART_PINS_CON2 ? "CON2" : 
+                    config.uart[nr_opt].pins == UART_PINS_ICSP ? "ICSP" :
+                    config.uart[nr_opt].pins == UART_PINS_CON3 ? "CON3" : "OFF");
             break;
         case MENU_TABS:
             printf(menu_tabs, current_tab,
