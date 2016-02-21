@@ -111,8 +111,6 @@ void adc_stop(void)
 {
     remove_timer(adc_sampler_timer);
     adc_sampler_timer = NULL;
-    buf[0] = NULL;
-    buf[1] = NULL;
     ANSELAbits.ANSA0 = 0;
     ANSELAbits.ANSA1 = 0;
 }
