@@ -77,9 +77,9 @@ const struct param_def params_video[] = {
     PARAM("VIDEO_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video.x_offset, NULL),
     PARAM("VIDEO_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video.y_offset, NULL),
     PARAM("VIDEO_BRIGHT", MAV_PARAM_TYPE_UINT16, &config.video.brightness, video_apply_config_cbk),
-    PARAM("VIDEO_WHITE", MAV_PARAM_TYPE_UINT16, &config.video.white_lvl, video_apply_config_cbk),
-    PARAM("VIDEO_GRAY", MAV_PARAM_TYPE_UINT16, &config.video.gray_lvl, video_apply_config_cbk),
-    PARAM("VIDEO_BLACK", MAV_PARAM_TYPE_UINT16, &config.video.black_lvl, video_apply_config_cbk),
+    PARAM("VIDEO_WHITE", MAV_PARAM_TYPE_UINT8, &config.video.white_lvl, video_apply_config_cbk),
+    PARAM("VIDEO_GRAY", MAV_PARAM_TYPE_UINT8, &config.video.gray_lvl, video_apply_config_cbk),
+    PARAM("VIDEO_BLACK", MAV_PARAM_TYPE_UINT8, &config.video.black_lvl, video_apply_config_cbk),
     PARAM_END,
 };
 
