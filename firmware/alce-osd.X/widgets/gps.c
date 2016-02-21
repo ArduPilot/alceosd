@@ -56,7 +56,7 @@ static int open(struct widget *w)
     priv->font_id = m;
     f = get_font(m);
     w->ca.height = (f->size + 2) * 2;
-    w->ca.width = f->size * 12;
+    w->ca.width = f->size * 13;
     add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET, w);
     return 0;
 }
@@ -67,30 +67,26 @@ static void render(struct widget *w)
     struct widget_priv *priv = w->priv;
     const struct font *f = get_font(priv->font_id);
     struct canvas *ca = &w->ca;
-    char buf[100];
+    char buf[100], buf2[5];
 
-    sprintf(buf, "%10.6f\n%10.6f", priv->gps_lat, priv->gps_lon);
+    sprintf(buf, "%10.6f\n%10.6f", (double) priv->gps_lat, (double) priv->gps_lon);
     draw_str(buf, 0, 0, ca, priv->font_id);
 
-    buf[1] = 'D';
-    switch (priv->gps_fix_type) {
-    default:
-    case 0:
-    case 1:
-        buf[0] = ' ';
-        buf[1] = ' ';
-    break;
-    case 2:
-        buf[0] = '2';
-        break;
-    case 3:
-        buf[0] = '3';
-        break;
+    if (priv->gps_fix_type < 2) {
+        buf2[0] = '\0';
+    } else if (priv->gps_fix_type < 4) {
+        sprintf(buf2, "%dD", priv->gps_fix_type);
+    } else if (priv->gps_fix_type < 5) {
+        strcpy(buf2, "DGPS");
+    } else if (priv->gps_fix_type < 6) {
+        strcpy(buf2, "RTK");
+    } else {
+        strcpy(buf2, "?");
     }
 
-    sprintf(buf, "%d %c%c\n%2.1f HDP",
-                priv->gps_nrsats, buf[0], buf[1],
-                priv->gps_eph);
+    sprintf(buf, "%d %s\n%2.1f HDP",
+                priv->gps_nrsats, buf2,
+                (double) priv->gps_eph);
     draw_jstr(buf, ca->width, 0, JUST_RIGHT, ca, priv->font_id);
 }
 
