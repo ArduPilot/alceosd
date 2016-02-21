@@ -71,7 +71,7 @@ static void calc_stats(struct timer *t, void *d)
     stats.max_gnd_speed = MAX(priv.groundspeed, stats.max_gnd_speed);
     stats.max_altitude  = MAX(priv.alt, stats.max_altitude);
     stats.max_home_distance = MAX((unsigned int) home->distance, stats.max_home_distance);
-    stats.max_home_altitude = MAX((unsigned int) home->altitude, stats.max_home_altitude);
+    stats.max_home_altitude = MAX(home->altitude, stats.max_home_altitude);
     stats.max_bat_current = MAX(priv.bat_current, stats.max_bat_current);
 
     stats.flight_end = get_millis();
