@@ -505,16 +505,19 @@ void uart_set_client(unsigned char port, unsigned char client_id)
 {
     struct uart_client_map *cmap = client_map;
     struct uart_client **c = &clients[port];
+    extern int __C30_UART;
 
     if (port > 3)
         return;
-    
+
     /* disable current client write op */
     if ((*c) != NULL)
         (*c)->write = NULL;
 
     while (cmap->id != 0xff) {
         if ((cmap->id == client_id) && (cmap->c->write == NULL)) {
+            if (client_id == UART_CLIENT_CONFIG)
+                __C30_UART = port+1;
             (*c) = cmap->c;
             switch (port) {
                 case UART_PORT1:
@@ -532,7 +535,6 @@ void uart_set_client(unsigned char port, unsigned char client_id)
                 default:
                     break;
             }
-            
             break;
         }
         cmap++;
