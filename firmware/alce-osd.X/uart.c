@@ -112,7 +112,6 @@ static const struct baudrate_tbl baudrates[] = {
 #define UART_CLIENT_MAP_MAX 10
 struct uart_client_map {
     unsigned char id;
-    unsigned char port;
     struct uart_client *c;
 } client_map [UART_CLIENT_MAP_MAX] = { { .id = 0xff } };
 
@@ -509,13 +508,13 @@ void uart_set_client(unsigned char port, unsigned char client_id)
 
     if (port > 3)
         return;
-
+    
     /* disable current client write op */
     if ((*c) != NULL)
         (*c)->write = NULL;
 
     while (cmap->id != 0xff) {
-        if ((cmap->id == client_id) && (cmap->port == port)) {
+        if ((cmap->id == client_id) && (cmap->c->write == NULL)) {
             (*c) = cmap->c;
             switch (port) {
                 case UART_PORT1:
@@ -531,7 +530,6 @@ void uart_set_client(unsigned char port, unsigned char client_id)
                     cmap->c->write = uart4_write;
                     break;
                 default:
-                    cmap->c->write = NULL;
                     break;
             }
             
@@ -583,14 +581,13 @@ void uart_set_config_pins(void)
     }
 }
 
-void uart_add_client_map(unsigned char id, unsigned char port, struct uart_client *c)
+void uart_add_client_map(unsigned char id, struct uart_client *c)
 {
     struct uart_client_map *cmap = client_map;
     while (cmap->id != 0xff)
         cmap++;
 
     cmap->id = id;
-    cmap->port = port;
     (cmap++)->c = c;
     cmap->id = 0xff;
 }

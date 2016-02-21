@@ -900,5 +900,5 @@ void config_init(void)
     load_config();
 
     config_uart_client.read = config_starter;
-    uart_add_client_map(UART_CLIENT_CONFIG, UART_PORT1, &config_uart_client);
+    uart_add_client_map(UART_CLIENT_CONFIG, &config_uart_client);
 }

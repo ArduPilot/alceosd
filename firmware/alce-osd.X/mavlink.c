@@ -386,8 +386,8 @@ void mavlink_init(void)
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_SET, mav_param_set, CALLBACK_PERSISTENT, NULL);
 
     /* register serial port clients */
-    uart_add_client_map(UART_CLIENT_MAVLINK, UART_PORT1, &mavlink_uart_client0);
-    uart_add_client_map(UART_CLIENT_MAVLINK, UART_PORT2, &mavlink_uart_client1);
-    uart_add_client_map(UART_CLIENT_MAVLINK, UART_PORT3, &mavlink_uart_client2);
-    uart_add_client_map(UART_CLIENT_MAVLINK, UART_PORT4, &mavlink_uart_client3);
+    uart_add_client_map(UART_CLIENT_MAVLINK, &mavlink_uart_client0);
+    uart_add_client_map(UART_CLIENT_MAVLINK, &mavlink_uart_client1);
+    uart_add_client_map(UART_CLIENT_MAVLINK, &mavlink_uart_client2);
+    uart_add_client_map(UART_CLIENT_MAVLINK, &mavlink_uart_client3);
 }

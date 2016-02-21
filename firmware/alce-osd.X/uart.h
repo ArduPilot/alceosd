@@ -68,7 +68,7 @@ struct uart_client {
 
 void uart_init(void);
 void uart_set_client(unsigned char port, unsigned char client_id);
-void uart_add_client_map(unsigned char id, unsigned char port, struct uart_client *c);
+void uart_add_client_map(unsigned char id, struct uart_client *c);
 
 inline unsigned long uart_get_baudrate(unsigned char b);
 void uart_set_config_clients(unsigned char boot);

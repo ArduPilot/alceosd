@@ -197,6 +197,5 @@ struct uart_client uavtalk_uart_client = {
 
 void uavtalk_init(void)
 {
-    uart_add_client_map(UART_CLIENT_UAVTALK, UART_PORT1, &uavtalk_uart_client);
-    uart_add_client_map(UART_CLIENT_UAVTALK, UART_PORT2, &uavtalk_uart_client);
+    uart_add_client_map(UART_CLIENT_UAVTALK, &uavtalk_uart_client);
 }
