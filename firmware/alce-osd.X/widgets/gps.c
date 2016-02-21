@@ -39,6 +39,20 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
     schedule_widget(w);
 }
 
+static void mav_callback2(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+{
+    struct widget *w = d;
+    struct widget_priv *priv = w->priv;
+
+    priv->gps_lat = mavlink_msg_gps2_raw_get_lat(msg) / 10000000.0;
+    priv->gps_lon = mavlink_msg_gps2_raw_get_lon(msg) / 10000000.0;
+    priv->gps_fix_type = mavlink_msg_gps2_raw_get_fix_type(msg);
+    priv->gps_nrsats = mavlink_msg_gps2_raw_get_satellites_visible(msg);
+    priv->gps_eph = (float) mavlink_msg_gps2_raw_get_eph(msg) / 100.0;
+
+    schedule_widget(w);
+}
+
 static int open(struct widget *w)
 {
     struct widget_priv *priv;
@@ -57,7 +71,11 @@ static int open(struct widget *w)
     f = get_font(m);
     w->ca.height = (f->size + 2) * 2;
     w->ca.width = f->size * 13;
-    add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET, w);
+    
+    if (w->cfg->props.source == 0)
+        add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET, w);
+    else
+        add_mavlink_callback(MAVLINK_MSG_ID_GPS2_RAW, mav_callback2, CALLBACK_WIDGET, w);
     return 0;
 }
 
