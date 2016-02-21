@@ -61,11 +61,11 @@ const struct widget_ops *all_widget_ops[] = {
     NULL,
 };
 
-#define WIDGET_FIFO_MASK    (0x3f)
-#define MAX_WIDGET_ALLOC_MEM (0x1000)
+#define WIDGET_FIFO_MASK    (0x1f)
+#define MAX_WIDGET_ALLOC_MEM (0x400)
 
 struct widgets_mem_s {
-    unsigned int mem[MAX_WIDGET_ALLOC_MEM/2];
+    unsigned int mem[MAX_WIDGET_ALLOC_MEM];
     unsigned int alloc_size;
 } widgets_mem = {
     .alloc_size = 0,

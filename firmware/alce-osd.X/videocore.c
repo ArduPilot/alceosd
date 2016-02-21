@@ -103,7 +103,7 @@ const struct osd_xsize_tbl video_xsizes[] = {
 };
 
 
-#define MAX_CANVAS_PIPE_MASK (0x3f)
+#define MAX_CANVAS_PIPE_MASK (0x1f)
 
 static struct canvas_pipe_s {
     struct canvas *ca[MAX_CANVAS_PIPE_MASK+1];
