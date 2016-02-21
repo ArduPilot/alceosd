@@ -174,7 +174,7 @@ static void render(struct widget *w)
     
     for (y = 0; y < ROWS; y++) {
         memcpy(buf, priv->buf[y], COLS);
-        buf[COLS+1] = '\0';
+        buf[COLS] = '\0';
         draw_str(buf, 0, y*12, ca, 1);
     }
     
