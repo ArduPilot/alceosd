@@ -64,6 +64,7 @@
 #define CTRL_PWMBRIGHT      0x04
 #define CTRL_DACBRIGHT      0x08
 
+//#define DEBUG_DAC
 
 extern struct alceosd_config config;
 extern unsigned char hw_rev;
@@ -860,7 +861,7 @@ void __attribute__((__interrupt__, no_auto_psv )) _T2Interrupt()
 }
 
 
-#define INT_X_OFFSET    (45)
+#define INT_X_OFFSET    (125)
 #define CNT_INT_MODE    (10 * 1000)
 
 static void render_line(void)
@@ -920,8 +921,11 @@ static void render_line(void)
         SRAM_OUT;
 
         x_offset = config.video.x_offset;
-        if (int_sync_cnt > CNT_INT_MODE)
+        if (int_sync_cnt > CNT_INT_MODE) {
             x_offset += INT_X_OFFSET;
+            if (hw_rev < 0x03)
+                x_offset -= 80;
+        }
 
     } else if (line < last_line) {
         /* render */
@@ -1020,28 +1024,29 @@ void __attribute__(( interrupt, auto_psv )) _IC1Interrupt(void)
             _CNPUA3 = 0;
             _CNPDA3 = 1;
             _T4IP = 3;
-            vsync = 1;
+            vsync = 50;
             last_line_cnt = line+10;
-            line = 9;
+            line = 10;
+            odd = 0;
             int_sync_cnt = 0;
             tp = 0xffff;
+            return;
+        }
+
+        if (vsync) {
+            if (abs(((long) t) - 300) < 60) {
+                render_line();
+            } else {
+                /* loosing sync */
+                vsync--;
+            }
         }
     } else {
         /* falling edge */
-        if (vsync) {
-            if (abs(((long) t) - 4200) < 300) {
-                if (line == 9) {
-                    odd = 0;
-                }
-                render_line();
-            } else if ((abs(((long) t) - 2050) < 100) && (line == 9)) {
-                line++;
+        if (vsync && (line == 10))
+            if (abs(((long) t) - 2050) < 100)
                 odd = 1;
-            } else {
-                /* sync lost */
-                vsync = 0;
-            }
-        }
+
     }
 }
 

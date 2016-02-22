@@ -45,14 +45,14 @@ struct alceosd_config config = {
         { .mode = UART_CLIENT_NONE,    .baudrate = UART_BAUD_115200, .pins = UART_PINS_OFF },
     },
   
-    .video.mode = VIDEO_STANDARD_PAL_P,
+    .video.mode = VIDEO_STANDARD_PAL_P | VIDEO_MODE_SYNC_MASK,
     .video.brightness = 200,
 
     .video.white_lvl = 0x3ff >> 4,
     .video.gray_lvl = 0x2d0 >> 4,
     .video.black_lvl = 0x190 >> 4,
           
-    .video.x_offset = 120,
+    .video.x_offset = 40,
     .video.y_offset = 40,
 
     .video.x_size_id = VIDEO_XSIZE_480,
