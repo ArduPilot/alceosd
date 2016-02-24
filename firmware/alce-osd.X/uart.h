@@ -58,8 +58,20 @@ struct uart_config {
 };
 
 struct uart_client {
+    /* client ID */
+    unsigned char id;
+    
+    /* comm channel */
+    unsigned char ch;
+    
+    /* called when client is set */
+    void (*init)(struct uart_client *cli);
+    
+    /* called when client is removed */
+    void (*close)(struct uart_client *cli);
+
     /* received data is feed to this function */
-    unsigned int (*read)(unsigned char *buf, unsigned int len);
+    unsigned int (*read)(struct uart_client *cli, unsigned char *buf, unsigned int len);
 
     /* modules should use this function to send data */
     /* pointer is set by client request function */
@@ -68,7 +80,7 @@ struct uart_client {
 
 void uart_init(void);
 void uart_set_client(unsigned char port, unsigned char client_id);
-void uart_add_client_map(unsigned char id, struct uart_client *c);
+void uart_add_client(struct uart_client *c);
 
 inline unsigned long uart_get_baudrate(unsigned char b);
 void uart_set_config_clients(unsigned char boot);

@@ -207,7 +207,7 @@ static void uavtalk_handle_msg(struct uavtalk_message *msg)
     }
 }
 
-static unsigned int uavtalk_receive(unsigned char *buf, unsigned int len)
+static unsigned int uavtalk_receive(struct uart_client *cli, unsigned char *buf, unsigned int len)
 {
     static struct uavtalk_message msg;
     unsigned int i = len;
@@ -219,12 +219,12 @@ static unsigned int uavtalk_receive(unsigned char *buf, unsigned int len)
     return len;
 }
 
-struct uart_client uavtalk_uart_client = {
-    .read = uavtalk_receive,
-    .write = NULL,
-};
+struct uart_client uavtalk_uart_client;
 
 void uavtalk_init(void)
 {
-    uart_add_client_map(UART_CLIENT_UAVTALK, &uavtalk_uart_client);
+    memset(&uavtalk_uart_client, 0, sizeof(struct uart_client));
+    uavtalk_uart_client.id = UART_CLIENT_UAVTALK;
+    uavtalk_uart_client.read = uavtalk_receive;
+    uart_add_client(&uavtalk_uart_client);
 }

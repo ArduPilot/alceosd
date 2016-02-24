@@ -109,11 +109,8 @@ static const struct baudrate_tbl baudrates[] = {
 };
 
 
-#define UART_CLIENT_MAP_MAX 10
-struct uart_client_map {
-    unsigned char id;
-    struct uart_client *c;
-} client_map [UART_CLIENT_MAP_MAX] = { { .id = 0xff } };
+#define UART_CLIENTS_MAX 10
+static struct uart_client *uart_client_list[UART_CLIENTS_MAX] = { NULL };
 
 
 struct uart_fifo {
@@ -482,7 +479,7 @@ int __attribute__((__weak__, __section__(".libc"))) write(int handle, void *buf,
 #endif
 
 
-static struct uart_client *clients[4] = {NULL, NULL, NULL, NULL};
+static struct uart_client *port_clients[4] = {NULL, NULL, NULL, NULL};
 
 
 static void uart_process(void)
@@ -492,9 +489,9 @@ static void uart_process(void)
     unsigned int len;
 
     for (i = 0; i < 4; i++) {
-        if ((clients[i] != NULL) && (uart_count(i) > 0)) {
+        if ((port_clients[i] != NULL) && (uart_count(i) > 0)) {
             len = uart_read(i, &b);
-            len = clients[i]->read(b, len);
+            len = port_clients[i]->read(port_clients[i], b, len);
             uart_discard(i, len);
         }
     }
@@ -503,48 +500,57 @@ static void uart_process(void)
 
 void uart_set_client(unsigned char port, unsigned char client_id)
 {
-    struct uart_client_map *cmap = client_map;
-    struct uart_client **c = &clients[port];
+    struct uart_client **clist = uart_client_list;
+    struct uart_client **c = &port_clients[port];
     extern int __C30_UART;
 
     if (port > 3)
         return;
-
-    /* disable current client write op */
-    if ((*c) != NULL)
+    
+    /* detach client */
+    if ((*c) != NULL) {
+        /* client_id is already on this port */
+        if ((*c)->id == client_id)
+            return;
+        if ((*c)->close != NULL)
+            (*c)->close(*c);
         (*c)->write = NULL;
+    }
 
-    while (cmap->id != 0xff) {
-        if ((cmap->id == client_id) && (cmap->c->write == NULL)) {
+    if (client_id == UART_CLIENT_NONE)
+        return;
+    
+    while (*clist != NULL) {
+        if (((*clist)->id == client_id) && ((*clist)->write == NULL)) {
             if (client_id == UART_CLIENT_CONFIG)
                 __C30_UART = port+1;
-            (*c) = cmap->c;
+            *c = *clist;
             switch (port) {
                 case UART_PORT1:
-                    cmap->c->write = uart1_write;
+                    (*c)->write = uart1_write;
                     break;
                 case UART_PORT2:
-                    cmap->c->write = uart2_write;
+                    (*c)->write = uart2_write;
                     break;
                 case UART_PORT3:
-                    cmap->c->write = uart3_write;
+                    (*c)->write = uart3_write;
                     break;
                 case UART_PORT4:
-                    cmap->c->write = uart4_write;
+                    (*c)->write = uart4_write;
                     break;
                 default:
                     break;
             }
+            if ((*c)->init != NULL)
+                (*c)->init(*c);
             break;
         }
-        cmap++;
+        clist++;
     }
 
-    /* client not found or none */
-    if (cmap->id == 0xff) {
-        (*c) = NULL;
-    }
-
+    /* client not found or no clients */
+    if (*clist == NULL)
+        *c = NULL;
 }
 
 void uart_set_config_clients(unsigned char boot)
@@ -583,15 +589,14 @@ void uart_set_config_pins(void)
     }
 }
 
-void uart_add_client_map(unsigned char id, struct uart_client *c)
+void uart_add_client(struct uart_client *c)
 {
-    struct uart_client_map *cmap = client_map;
-    while (cmap->id != 0xff)
-        cmap++;
+    struct uart_client **clist = uart_client_list;
+    while (*clist != NULL)
+        clist++;
 
-    cmap->id = id;
-    (cmap++)->c = c;
-    cmap->id = 0xff;
+    *(clist++) = c;
+    *clist = NULL;
 }
 
 void uart_init(void)

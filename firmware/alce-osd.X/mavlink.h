@@ -26,10 +26,6 @@
 #define MAV_COMP_ID_ALCEOSD     (155)
 #define MAV_TYPE_ALCEOSD        (27)
 
-struct mav_statistics {
-    unsigned long total_msgs;
-    unsigned char msg_sec;
-};
 
 struct mavlink_callback {
     unsigned char msgid;

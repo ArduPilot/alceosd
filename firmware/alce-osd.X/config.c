@@ -240,10 +240,10 @@ static void dump_config_text(void)
 
 }
 
-static unsigned int config_process(unsigned char *buf, unsigned int len);
+static unsigned int config_process(struct uart_client *cli, unsigned char *buf, unsigned int len);
 
 #define MAX_LINE_LEN 50
-static unsigned int load_config_text(unsigned char *buf, unsigned int len)
+static unsigned int load_config_text(struct uart_client *cli, unsigned char *buf, unsigned int len)
 {
     static unsigned char line[MAX_LINE_LEN];
     static unsigned char llen = 0;
@@ -379,7 +379,7 @@ const char menu_edit_widget[] = "\n\nAlceOSD :: Edit widget\n\n"
 
 extern const struct widget_ops *all_widget_ops[];
 
-static unsigned int config_process(unsigned char *buf, unsigned int len)
+static unsigned int config_process(struct uart_client *cli, unsigned char *buf, unsigned int len)
 {
     static unsigned char state = MENU_MAIN;
     unsigned int osdxsize, osdysize;
@@ -871,7 +871,7 @@ static unsigned int config_process(unsigned char *buf, unsigned int len)
 
 
 
-static unsigned int config_starter(unsigned char *buf, unsigned int len)
+static unsigned int config_starter(struct uart_client *cli, unsigned char *buf, unsigned int len)
 {
     char s[9];
     unsigned int l = min(len, 8);
@@ -894,6 +894,8 @@ void config_init(void)
 
     load_config();
 
+    memset(&config_uart_client, 0, sizeof(struct uart_client));
     config_uart_client.read = config_starter;
-    uart_add_client_map(UART_CLIENT_CONFIG, &config_uart_client);
+    config_uart_client.id = UART_CLIENT_CONFIG;
+    uart_add_client(&config_uart_client);
 }
