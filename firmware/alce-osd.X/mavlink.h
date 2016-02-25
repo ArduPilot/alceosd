@@ -43,7 +43,7 @@ struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid,
         unsigned char msgid,
         void *cbk, unsigned char ctype, void *data);
 void del_mavlink_callbacks(unsigned char ctype);
-
+void mavlink_handle_msg(unsigned char ch, mavlink_message_t *msg, mavlink_status_t *status);
 
 /* aditional helper functions */
 unsigned int mavlink_msg_rc_channels_raw_get_chan(mavlink_message_t *msg, unsigned char ch);
