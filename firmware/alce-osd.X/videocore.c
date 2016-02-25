@@ -985,7 +985,7 @@ void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
 
 
 /* comparator + input capture sync */
-void __attribute__(( interrupt, auto_psv )) _IC1Interrupt(void)
+void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
 {
     static unsigned int tp = 0xffff, last_cnt;
     static unsigned char vsync = 0;
@@ -1003,6 +1003,9 @@ void __attribute__(( interrupt, auto_psv )) _IC1Interrupt(void)
     IFS0bits.IC1IF = 0;
     
     t = cnt - last_cnt;
+    if (t < 100)
+        return;
+    
     last_cnt = cnt;
 
     if (PORTCbits.RC6) {
