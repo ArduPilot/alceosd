@@ -51,8 +51,8 @@ void draw_line(int x0, int y0, int x1, int y1,
     int err = dx+dy, e2;
 
     for(;;){
-        if (x0==x1 && y0==y1) break;
         set_pixel(x0, y0, v, ca);
+        if (x0==x1 && y0==y1) break;
 
         e2 = 2*err;
         

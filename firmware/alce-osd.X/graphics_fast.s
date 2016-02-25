@@ -95,10 +95,8 @@ _set_pixel_fast:
 
 
 .global _draw_hline
-_draw_hline:
 ;void draw_hline(int x0, int x1, int y, unsigned char p, struct canvas *ca)
-    PUSH DSRPAG
-    PUSH DSWPAG
+_draw_hline:
 
     CP W1, W0
     BRA GEU, _no_swap_draw_hline
@@ -112,12 +110,21 @@ _no_swap_draw_hline:
     MOV [W4+4], W5 ; width
 
     CP W0, W5
-    BRA GEU, _exit_draw_hline
+    BRA GE, _exit_draw_hline
 
-    CP W1, W5
-    BRA LTU, _no_clip_x_draw_hline
+    CP0 W1
+    BRA LT, _exit_draw_hline
+
+    CP0 W0
+    BRA GE, _draw_hline_no_clip_x0
+    CLR W0
+_draw_hline_no_clip_x0:
+    
+    CPSLT W1, W5
     SUB W5, #1, W1 ; trim x1 with canvas width
-_no_clip_x_draw_hline:
+
+    PUSH DSRPAG
+    PUSH DSWPAG
 
     MOV [W4+8], W6 ; rwidth
     MUL.SS W6, W2, W6 ; y addr
@@ -151,9 +158,10 @@ _no_clip_x_draw_hline:
 _draw_hline_loop:
     INC W0, W0
 
-_exit_draw_hline:
     POP DSWPAG
     POP DSRPAG
+
+_exit_draw_hline:
     RETURN
 
 
@@ -161,34 +169,37 @@ _exit_draw_hline:
 
 
 .global _draw_vline
-_draw_vline:
 ; void draw_vline(int x, int y0, int y1, unsigned char p, struct canvas *ca)
-    PUSH DSRPAG
-    PUSH DSWPAG
-
+_draw_vline:
+    
     CP W2, W1
-    BRA GEU, _no_swap_draw_vline
+    BRA GE, _no_swap_draw_vline
     EXCH W1, W2
 _no_swap_draw_vline:
-
+    
     MOV [W4+4], W5 ; width
     CP W0, W5
     BRA GEU,_exit_draw_vline
     ;CPSLT W0, W5
     ;RETURN ; outside canvas width
-
+    
     MOV [W4+6], W5 ; height
-
     CP W1, W5
-    BRA GEU, _exit_draw_vline
+    BRA GE, _exit_draw_vline
 
-    CP W2, W5 ; height
-    ;CPSLT W2, W5
-    ;SUB W5, #1, W2 ; trim y1 to canvas height
-    BRA LTU,_no_clip_y_draw_vline
+    CP0 W2
+    BRA LT, _exit_draw_vline
+    
+    CP0 W1
+    BRA GE, _draw_vline_no_clip_y0
+    CLR W1
+_draw_vline_no_clip_y0:
+
+    CPSLT W2, W5
     SUB W5, #1, W2 ; trim y1 to canvas height
-_no_clip_y_draw_vline:
 
+    PUSH DSRPAG
+    PUSH DSWPAG
 
     MOV [W4+12], W7 ; buf
     MOV [W4+8], W6 ; rwidth
@@ -225,9 +236,10 @@ _no_clip_y_draw_vline:
 _draw_vline_loop:
     ADD W7, W6, W7
 
-_exit_draw_vline:
     POP DSWPAG
     POP DSRPAG
+
+_exit_draw_vline:
     RETURN
 
 
