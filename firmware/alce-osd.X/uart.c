@@ -30,16 +30,14 @@
 extern struct alceosd_config config;
 extern unsigned char hw_rev;
 
-struct uart_regs {
+const struct uart_regs {
     volatile unsigned int *BRG;
     unsigned int TXRP;
     volatile unsigned int *RXRP;
     volatile unsigned int *RX;
     volatile unsigned int *STA;
     volatile unsigned int *MODE;
-};
-
-static struct uart_regs UARTS[] = {
+} UARTS[] = {
     {
         .BRG = &U1BRG,
         .TXRP = 1,
@@ -164,18 +162,21 @@ void __attribute__((__interrupt__, no_auto_psv)) _DMA3Interrupt(void)
 
 inline static void handle_uart_int(unsigned char port)
 {
-    unsigned char n_wr = (rx_fifo[port].wr + 1) & UART_FIFO_MASK;
+    unsigned char n_wr = rx_fifo[port].wr;
 
     /* overflow bit */
     if (*(UARTS[port].STA) & 2) {
         *(UARTS[port].STA) &= ~2;
     }
 
-    if (n_wr == rx_fifo[port].rd) {
-        n_wr = *(UARTS[port].RX);
-    } else {
-        rx_fifo[port].buf[rx_fifo[port].wr] = *(UARTS[port].RX);
-        rx_fifo[port].wr = n_wr;
+    while (*(UARTS[port].STA) & 1) {
+        n_wr = (n_wr + 1) & UART_FIFO_MASK;
+        if (n_wr == rx_fifo[port].rd) {
+            n_wr = *(UARTS[port].RX);
+        } else {
+            rx_fifo[port].buf[rx_fifo[port].wr] = *(UARTS[port].RX);
+            rx_fifo[port].wr = n_wr;
+        }
     }
 }
 
