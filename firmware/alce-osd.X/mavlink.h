@@ -23,7 +23,6 @@
 #include "mavlink/v1.0/ardupilotmega/mavlink.h"
 
 #define MAV_SYS_ID_ANY          (0)
-#define MAV_COMP_ID_ALCEOSD     (155)
 #define MAV_TYPE_ALCEOSD        (27)
 
 

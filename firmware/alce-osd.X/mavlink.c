@@ -303,7 +303,7 @@ static void mavlink_learn_route(unsigned char ch, mavlink_message_t *msg)
 {
     unsigned char i;
     
-    if (msg->sysid == 0 || (msg->sysid == osd_sysid && msg->compid == MAV_COMP_ID_ALCEOSD))
+    if (msg->sysid == 0 || (msg->sysid == osd_sysid && msg->compid == MAV_COMP_ID_OSD))
         return;
 
     for(i = 0; i < total_routes; i++) {
@@ -354,7 +354,7 @@ static unsigned char mavlink_get_route(unsigned char ch, mavlink_message_t *msg)
     get_targets(msg, &target_sys, &target_comp);
 
     /* its for us - don't route */
-    if ((target_sys == osd_sysid) && (target_comp == MAV_COMP_ID_ALCEOSD))
+    if ((target_sys == osd_sysid) && (target_comp == MAV_COMP_ID_OSD))
         return 0;
 
     /* broadcast message - route to all active ports*/
@@ -476,7 +476,7 @@ static void mav_heartbeat(struct timer *t, void *d)
     mavlink_message_t msg;
 
     mavlink_msg_heartbeat_pack(osd_sysid,
-            MAV_COMP_ID_ALCEOSD, &msg, MAV_TYPE_ALCEOSD,
+            MAV_COMP_ID_OSD, &msg, MAV_TYPE_ALCEOSD,
             MAV_AUTOPILOT_INVALID,
             MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, // base_mode
             0, //custom_mode
@@ -499,7 +499,7 @@ static void send_param_list_cbk(struct timer *t, void *d)
     }
 
     param_value = params_get_value(pidx, param_name);
-    mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_ALCEOSD, &msg,
+    mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_OSD, &msg,
                                     param_name, param_value, MAVLINK_TYPE_FLOAT,
                                     total_params, pidx++);
     mavlink_send_msg(&msg);
@@ -513,7 +513,7 @@ void mav_param_request_list(mavlink_message_t *msg, mavlink_status_t *status, vo
     sys = mavlink_msg_param_request_list_get_target_system(msg);
     comp = mavlink_msg_param_request_list_get_target_component(msg);
     
-    //if ((comp != MAV_COMP_ID_ALCEOSD) || (sys != osd_sysid))
+    //if ((comp != MAV_COMP_ID_OSD) || (sys != osd_sysid))
     if (sys != osd_sysid)
         return;
     
@@ -536,7 +536,7 @@ void mav_param_request_read(mavlink_message_t *msg, mavlink_status_t *status, vo
     sys = mavlink_msg_param_request_read_get_target_system(msg);
     comp = mavlink_msg_param_request_read_get_target_component(msg);
     //console_printf("get_param_start %d,%d\n", sys, comp);
-    if ((comp != MAV_COMP_ID_ALCEOSD) || (sys != osd_sysid))
+    if ((comp != MAV_COMP_ID_OSD) || (sys != osd_sysid))
         return;
 
     idx = mavlink_msg_param_request_read_get_param_index(msg);
@@ -546,7 +546,7 @@ void mav_param_request_read(mavlink_message_t *msg, mavlink_status_t *status, vo
     }
 
     param_value = params_get_value(idx, param_name);
-    mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_ALCEOSD, &msg2,
+    mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_OSD, &msg2,
                                     param_name, param_value, MAVLINK_TYPE_FLOAT,
                                     total_params, idx);
     mavlink_send_msg(&msg2);
@@ -567,7 +567,7 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
     sys = mavlink_msg_param_set_get_target_system(msg);
     comp = mavlink_msg_param_set_get_target_component(msg);
     //console_printf("set_param_start %d,%d\n", sys, comp);
-    if ((comp != MAV_COMP_ID_ALCEOSD) || (sys != osd_sysid))
+    if ((comp != MAV_COMP_ID_OSD) || (sys != osd_sysid))
         return;
 
     len = mavlink_msg_param_set_get_param_id(msg, param_name);
@@ -580,7 +580,7 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
     idx = params_set_value(param_name, param_value, 1);
 
     /* broadcast new parameter value */
-    mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_ALCEOSD, &msg2,
+    mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_OSD, &msg2,
                                     param_name, param_value, MAVLINK_TYPE_FLOAT,
                                     total_params, idx);
     mavlink_send_msg(&msg2);
