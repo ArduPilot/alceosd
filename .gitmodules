@@ -1,0 +1,3 @@
+[submodule "firmware/alce-osd.X/modules/mavlink"]
+	path = firmware/alce-osd.X/modules/mavlink
+	url = https://github.com/mavlink/mavlink.git

@@ -8,6 +8,7 @@
 /firmware/alce-osd.X/nbproject/Package-*
 /firmware/alce-osd.X/build/default/
 /firmware/alce-osd.X/dist/default/
+/firmware/alce-osd.X/include/
 /firmware/bootloader_updater.X/nbproject/private/
 /firmware/bootloader_updater.X/nbproject/Makefile-*
 /firmware/bootloader_updater.X/nbproject/Package-*

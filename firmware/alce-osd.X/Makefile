@@ -104,7 +104,7 @@ help: .help-post
 .help-post: .help-impl
 # Add your post 'help' code here...
 
-
+include modules/mavgen.mk
 
 # include project implementation makefile
 include nbproject/Makefile-impl.mk
