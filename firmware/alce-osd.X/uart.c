@@ -542,6 +542,7 @@ void uart_set_client(unsigned char port, unsigned char client_id)
                 default:
                     break;
             }
+            (*c)->port = port;
             if ((*c)->init != NULL)
                 (*c)->init(*c);
             break;
@@ -552,6 +553,19 @@ void uart_set_client(unsigned char port, unsigned char client_id)
     /* client not found or no clients */
     if (*clist == NULL)
         *c = NULL;
+}
+
+void uart_set_props(unsigned char port, unsigned int props)
+{
+    if (props & UART_PROP_TX_INVERTED)
+        *(UARTS[port].STA) |= 0x4000;
+    else
+        *(UARTS[port].STA) &= ~0x4000;
+
+    if (props & UART_PROP_RX_INVERTED)
+        *(UARTS[port].MODE) |= 0x0100;
+    else
+        *(UARTS[port].MODE) &= ~0x0100;
 }
 
 void uart_set_config_clients(unsigned char boot)
