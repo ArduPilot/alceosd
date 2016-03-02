@@ -214,6 +214,9 @@ int main(void) {
 
     /* init uavtalk module */
     uavtalk_init();
+    
+    /* init frsky module */
+    frsky_init();
 
     /* link serial ports to processes */
     uart_set_config_clients(1);

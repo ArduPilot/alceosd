@@ -22,6 +22,7 @@
       <itemPath>params.h</itemPath>
       <itemPath>uavtalk.h</itemPath>
       <itemPath>process.h</itemPath>
+      <itemPath>frsky.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -72,6 +73,7 @@
       <itemPath>params.c</itemPath>
       <itemPath>uavtalk.c</itemPath>
       <itemPath>process.c</itemPath>
+      <itemPath>frsky.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -94,7 +96,7 @@
         <platformTool>PICkit3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
         <languageToolchainVersion>1.25</languageToolchainVersion>
-        <platform>2</platform>
+        <platform>3</platform>
       </toolsSet>
       <compileType>
         <linkerTool>

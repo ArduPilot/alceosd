@@ -42,6 +42,7 @@
 #include "flash.h"
 #include "params.h"
 #include "uavtalk.h"
+#include "frsky.h"
 #include "process.h"
 
 
