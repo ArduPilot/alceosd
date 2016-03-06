@@ -158,8 +158,8 @@ static void gps_mav_callback(mavlink_message_t *msg, mavlink_status_t *status, v
 static void frsky_init_client(struct uart_client *cli)
 {
     uart_set_props(cli->port,
-            //UART_PROP_TX_INVERTED | 
-            //UART_PROP_RX_INVERTED | 
+            UART_PROP_TX_INVERTED | 
+            UART_PROP_RX_INVERTED | 
             UART_PROP_HALF_DUPLEX);
 
     /* send GPS data */
