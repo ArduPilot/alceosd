@@ -51,10 +51,15 @@ enum {
     UART_CLIENTS,
 };
 
+enum {
+    UART_DIR_RX = 0,
+    UART_DIR_TX,
+};
 
 /* params */
 #define UART_PROP_TX_INVERTED       1
 #define UART_PROP_RX_INVERTED       2
+#define UART_PROP_HALF_DUPLEX       4
 
 
 struct uart_config {
@@ -96,8 +101,6 @@ void uart_set_config_clients(unsigned char boot);
 void uart_set_config_baudrates(void);
 void uart_set_config_pins(void);
 void uart_set_props(unsigned char port, unsigned int props);
-
-//unsigned char uart_getc1(char *c);
-//unsigned char uart_getc2(char *c);
+void uart_set_direction(unsigned char port, unsigned char direction);
 
 #endif

@@ -106,6 +106,18 @@ static const struct baudrate_tbl baudrates[] = {
     { .baudrate = 115200, .brg = 37 },
 };
 
+static const struct hw_pin_map_table {
+    unsigned int rx;
+    unsigned int tx;
+} hw_pin_map[3][4] = {
+    /* telemetry, con2, icsp, con3 */
+    /* hw0v1 */
+    { { .rx = 38, .tx = 37 }, { .rx = 20, .tx = 41 }, { .rx = 0,  .tx = 0 },  { .rx = 0,  .tx = 0 } },
+    /* hw0v2 */
+    { { .rx = 38, .tx = 37 }, { .rx = 20, .tx = 36 }, { .rx = 34, .tx = 35 }, { .rx = 0,  .tx = 0 } },
+    /* hw0v3 */
+    { { .rx = 43, .tx = 42 }, { .rx = 38, .tx = 37 }, { .rx = 34, .tx = 34 }, { .rx = 45, .tx = 39 } },
+};
 
 #define UART_CLIENTS_MAX 10
 static struct uart_client *uart_client_list[UART_CLIENTS_MAX] = { NULL };
@@ -204,6 +216,69 @@ void __attribute__((__interrupt__, auto_psv)) _U4RXInterrupt(void)
     IFS5bits.U4RXIF = 0;
 }
 
+void uart_set_direction(unsigned char port, unsigned char direction)
+{
+    unsigned char t;
+    
+    if ((hw_rev < 0x03) && (port > 1))
+        return;
+   
+    if (direction == UART_DIR_TX) {
+        /* disable rx */
+        switch (port) {
+            case 0:
+                _U1RXIE = 0;
+                break;
+            case 1:
+                _U2RXIE = 0;
+                break;
+            case 2:
+                _U3RXIE = 0;
+                break;
+            case 3:
+                _U4RXIE = 0;
+                break;
+            default:
+                break;
+        }
+        
+        /* enable tx */
+        *(UARTS[port].STA) |= 0x0400;
+    } else {
+        /* disable tx */
+        while ( (*(UARTS[port].STA) & 0x0100) == 0);
+        *(UARTS[port].STA) &= ~0x0400;
+        
+        /* enable rx */
+        while (*(UARTS[port].STA) & 1)
+            t = *(UARTS[port].RX);
+        if (*(UARTS[port].STA) & 2)
+            *(UARTS[port].STA) &= ~2;
+
+        switch (port) {
+            case 0:
+                _U1RXIF = 0;
+                _U1RXIE = 1;
+                break;
+            case 1:
+                _U2RXIF = 0;
+                _U2RXIE = 1;
+                break;
+            case 2:
+                _U3RXIF = 0;
+                _U3RXIE = 1;
+                break;
+            case 3:
+                _U4RXIF = 0;
+                _U4RXIE = 1;
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+
 static void uart_init_(unsigned char port)
 {
     uart_set_baudrate(port, UART_BAUD_115200);
@@ -215,59 +290,59 @@ static void uart_init_(unsigned char port)
     
     switch (port) {
         case UART_PORT1:
-            IPC2bits.U1RXIP = 1;
-            IFS0bits.U1RXIF = 0;
-            IEC0bits.U1RXIE = 1;
+            _U1RXIP = 1;
+            _U1RXIF = 0;
+            _U1RXIE = 1;
 #ifdef DMA_UART1
             DMA0CON = 0x6001; /* one-shot p-p disabled, ram to per, byte mode */
             DMA0REQ = 0x0c; // U1TX interrupt requests transfer
             DMA0PAD = (volatile unsigned int) &U1TXREG; // Transfer to U1TXREG
             DMA0STAL = __builtin_dmaoffset(&uart1TxDataBuf);
             DMA0STAH = __builtin_dmapage(&uart1TxDataBuf);
-            IFS0bits.DMA0IF = 0;
-            IEC0bits.DMA0IE = 1;
+            //_DMA0IF = 0;
+            //_DMA0IE = 1;
 #endif
             break;
         case UART_PORT2:
-            IPC7bits.U2RXIP = 1;
-            IFS1bits.U2RXIF = 0;
-            IEC1bits.U2RXIE = 1;
+            _U2RXIP = 1;
+            _U2RXIF = 0;
+            _U2RXIE = 1;
 #ifdef DMA_UART2
             DMA1CON = 0x6001; /* one-shot p-p disabled, ram to per, byte mode */
             DMA1REQ = 0x1f; // U2TX interrupt requests transfer
             DMA1PAD = (volatile unsigned int) &U2TXREG; // Transfer to U2TXREG
             DMA1STAL = __builtin_dmaoffset(&uart2TxDataBuf);
             DMA1STAH = __builtin_dmapage(&uart2TxDataBuf);
-            IFS0bits.DMA1IF = 0;
-            IEC0bits.DMA1IE = 1;
+            //_DMA1IF = 0;
+            //_DMA1IE = 1;
 #endif
             break;
         case UART_PORT3:
-            IPC20bits.U3RXIP = 1;
-            IFS5bits.U3RXIF = 0;
-            IEC5bits.U3RXIE = 1;
+            _U3RXIP = 1;
+            _U3RXIF = 0;
+            _U3RXIE = 1;
 #ifdef DMA_UART3
             DMA2CON = 0x6001; /* one-shot p-p disabled, ram to per, byte mode */
             DMA2REQ = 0x53; // U3TX interrupt requests transfer
             DMA2PAD = (volatile unsigned int) &U3TXREG; // Transfer to U3TXREG
             DMA2STAL = __builtin_dmaoffset(&uart3TxDataBuf);
             DMA2STAH = __builtin_dmapage(&uart3TxDataBuf);
-            IFS1bits.DMA2IF = 0;
-            IEC1bits.DMA2IE = 1;
+            //_DMA2IF = 0;
+            //_DMA2IE = 1;
 #endif            
             break;
         case UART_PORT4:
-            IPC22bits.U4RXIP = 1;
-            IFS5bits.U4RXIF = 0;
-            IEC5bits.U4RXIE = 1;
+            _U4RXIP = 1;
+            _U4RXIF = 0;
+            _U4RXIE = 1;
 #ifdef DMA_UART4
             DMA3CON = 0x6001; /* one-shot p-p disabled, ram to per, byte mode */
             DMA3REQ = 0x59; // U4TX interrupt requests transfer
             DMA3PAD = (volatile unsigned int) &U4TXREG; // Transfer to U4TXREG
             DMA3STAL = __builtin_dmaoffset(&uart4TxDataBuf);
             DMA3STAH = __builtin_dmapage(&uart4TxDataBuf);
-            IFS2bits.DMA3IF = 0;
-            IEC2bits.DMA3IE = 1;
+            //_DMA3IF = 0;
+            //_DMA3IE = 1;
 #endif
             break;
         default:
@@ -281,23 +356,25 @@ static void uart_init_(unsigned char port)
 
 static void uart_set_pins(unsigned char port, unsigned char pins)
 {
-    if ((hw_rev < 0x03) && (port > 1))
+    if (((hw_rev < 0x03) && (port > 1)) || (pins >= UART_PINS_OFF))
         return;
+
+    *(UARTS[port].RXRP) = hw_pin_map[hw_rev-1][pins].rx;
     
     switch (pins) {
         case UART_PINS_TELEMETRY:
             if (hw_rev == 0x03) {
                 _RP42R = UARTS[port].TXRP;
-                *(UARTS[port].RXRP) = 43;
+                //*(UARTS[port].RXRP) = 43;
             } else {
                 _RP37R = UARTS[port].TXRP;
-                *(UARTS[port].RXRP) = 38;
+                //*(UARTS[port].RXRP) = 38;
             }
             break;
         case UART_PINS_CON2:
             if (hw_rev == 0x03) {
                 _RP37R = UARTS[port].TXRP;
-                *(UARTS[port].RXRP) = 38;
+                //*(UARTS[port].RXRP) = 38;
             } else {
                 // TX
                 if (hw_rev == 0x01)
@@ -305,23 +382,23 @@ static void uart_set_pins(unsigned char port, unsigned char pins)
                 else
                     _RP36R = UARTS[port].TXRP;
                 // RX
-                *(UARTS[port].RXRP) = 20;
+                //*(UARTS[port].RXRP) = 20;
             }
             break;
         case UART_PINS_ICSP:
             if (hw_rev == 0x01)
                 break;
             _RP35R = UARTS[port].TXRP;
-            *(UARTS[port].RXRP) = 34;
+            //*(UARTS[port].RXRP) = 34;
             break;
         case UART_PINS_CON3:
             if (hw_rev < 0x03)
                 break;
             _RP39R = UARTS[port].TXRP;
-            *(UARTS[port].RXRP) = 45;
+            //*(UARTS[port].RXRP) = 45;
             break;
         default:
-            *(UARTS[port].RXRP) = 0;
+            //*(UARTS[port].RXRP) = 0;
             break;
     }
 }
@@ -557,15 +634,23 @@ void uart_set_client(unsigned char port, unsigned char client_id)
 
 void uart_set_props(unsigned char port, unsigned int props)
 {
+    if ((hw_rev < 0x03) && (port > 1))
+        return;
+
     if (props & UART_PROP_TX_INVERTED)
         *(UARTS[port].STA) |= 0x4000;
     else
         *(UARTS[port].STA) &= ~0x4000;
 
     if (props & UART_PROP_RX_INVERTED)
-        *(UARTS[port].MODE) |= 0x0100;
+        *(UARTS[port].MODE) |= 0x0010;
     else
-        *(UARTS[port].MODE) &= ~0x0100;
+        *(UARTS[port].MODE) &= ~0x0010;
+    
+    if (props & UART_PROP_HALF_DUPLEX) {
+        *(UARTS[port].RXRP) = hw_pin_map[hw_rev-1][config.uart[port].pins].tx;
+        uart_set_direction(port, UART_DIR_RX);
+    }
 }
 
 void uart_set_config_clients(unsigned char boot)
