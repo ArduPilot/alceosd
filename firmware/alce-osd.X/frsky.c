@@ -28,14 +28,53 @@
 #define FRSKY_BYTESTUFF             0x7d
 #define FRSKY_STUFF_MASK            0x20
 
+
+/* sensor id's */
+#define GPS_LAT_LON_DATA_ID         0x0800
+#define GPS_ALT_DATA_ID             0x0820
+
+
 struct frsky_sport_data {
     unsigned int id;
     unsigned long data;
 } __attribute__ ((packed, aligned(2)));
 
+#define FRSKY_FIFO_MASK   0xf
+static struct frsky_sport_data fifo[FRSKY_FIFO_MASK+1];
+static unsigned char fifo_rd = 0, fifo_wr = 0;
 
 struct uart_client frsky_uart_client;
 
+
+static int frsky_sport_queue_data(unsigned int id, unsigned long data)
+{
+    unsigned char n_wr, i = fifo_rd;
+    
+    while (i != fifo_wr) {
+        if (fifo[i].id == id) {
+            /* special case of same id for different data */
+            if (id == GPS_LAT_LON_DATA_ID) {
+                if (((fifo[i].data ^ data) & (1L << 31)) == 0) {
+                    fifo[i].data = data;
+                    return 0;
+                }
+            } else {
+                fifo[i].data = data;
+                return 0;
+            }
+        }
+        i = (i + 1) & FRSKY_FIFO_MASK;
+    }
+
+    n_wr = (fifo_wr+1) & FRSKY_FIFO_MASK;
+    if (n_wr == fifo_rd)
+        return -1;
+    
+    fifo[fifo_wr].id = id;
+    fifo[fifo_wr].data = data;
+    fifo_wr = n_wr;
+    return 1;
+}
 
 static unsigned int frsky_sport_msg_pack(unsigned char *buf, unsigned char type,
                         struct frsky_sport_data *d)
@@ -61,12 +100,10 @@ static unsigned int frsky_sport_msg_pack(unsigned char *buf, unsigned char type,
     return len;
 }
 
-void frsky_sport_send(struct frsky_sport_data *d)
+static void frsky_sport_send(struct frsky_sport_data *d)
 {
     unsigned char buf[FRSKY_SPORT_PACKET_SIZE * 2];
     unsigned int len = frsky_sport_msg_pack(buf, FRSKY_DATA_FRAME, d);
-    
-    /* TODO: set TX mode and back to RX after transmission finishes */
     frsky_uart_client.write(buf, len);
 }
 
@@ -74,9 +111,17 @@ static unsigned int frsky_receive(struct uart_client *cli, unsigned char *buf, u
 {
     static unsigned char last_ch;
     unsigned char ch = buf[len-1];
-    
+
     if (last_ch == FRSKY_START_STOP) {
-        /* send packet? */
+        /* send packet */
+        if (fifo_rd != fifo_wr) {
+            uart_set_direction(cli->port, UART_DIR_TX);
+            frsky_sport_send(&fifo[fifo_rd++]);
+            fifo_rd &= FRSKY_FIFO_MASK;
+            uart_set_direction(cli->port, UART_DIR_RX);
+        } else {
+            /* do we need to send a dummy packet? */
+        }
     }
     last_ch = ch;
     return len;
@@ -84,43 +129,41 @@ static unsigned int frsky_receive(struct uart_client *cli, unsigned char *buf, u
 
 
 /* GPS */
-#define GPS_LAT_LON_DATA_ID   0x0800
-#define GPS_ALT_DATA_ID       0x0820
 static void gps_mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    struct frsky_sport_data param;
+    unsigned long data;
     float tmp;
     
     /* send latitude */
-    param.id = GPS_LAT_LON_DATA_ID;
     tmp = ((float) mavlink_msg_gps_raw_int_get_lat(msg)) * 0.06;
-    param.data = ((unsigned long) abs(tmp)) & 0x3fffffff;
+    data = ((unsigned long) abs(tmp)) & 0x3fffffff;
     if (tmp < 0)
-        param.data |= 1L << 30;
-    frsky_sport_send(&param);
+        data |= 1L << 30;
+    frsky_sport_queue_data(GPS_LAT_LON_DATA_ID, data);
     
     /* send longitude */
     tmp = ((float) mavlink_msg_gps_raw_int_get_lon(msg)) * 0.06;
-    param.data = ((unsigned long) abs(tmp)) & 0x3fffffff;
-    param.data |= 1L << 31;
+    data = ((unsigned long) abs(tmp)) & 0x3fffffff;
+    data |= 1L << 31;
     if (tmp < 0)
-        param.data |= 1L << 30;
-    frsky_sport_send(&param);
+        data |= 1L << 30;
+    frsky_sport_queue_data(GPS_LAT_LON_DATA_ID, data);
 
     /* send altitude */
-    param.id = GPS_ALT_DATA_ID;
-    param.data = mavlink_msg_gps_raw_int_get_alt(msg) / 10.0;
-    frsky_sport_send(&param);
+    frsky_sport_queue_data(GPS_ALT_DATA_ID,
+            mavlink_msg_gps_raw_int_get_alt(msg) / 10);
 }
 
 
 static void frsky_init_client(struct uart_client *cli)
 {
-    /* invert TX logic */
-    uart_set_props(cli->port, UART_PROP_TX_INVERTED | UART_PROP_RX_INVERTED);
-    
+    uart_set_props(cli->port,
+            //UART_PROP_TX_INVERTED | 
+            //UART_PROP_RX_INVERTED | 
+            UART_PROP_HALF_DUPLEX);
+
     /* send GPS data */
-    //add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, gps_mav_callback, CALLBACK_PERSISTENT, NULL);
+    add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, gps_mav_callback, CALLBACK_PERSISTENT, NULL);
 }
 
 
@@ -132,4 +175,3 @@ void frsky_init(void)
     
     uart_add_client(&frsky_uart_client);
 }
-
