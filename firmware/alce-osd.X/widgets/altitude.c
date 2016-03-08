@@ -37,7 +37,7 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
     struct widget_priv *priv = w->priv;
     float altitude;
     
-    switch (w->cfg->props.mode) {
+    switch (w->cfg->props.source) {
         case 0:
         default:
             altitude = mavlink_msg_gps_raw_int_get_alt(msg) / 1000.0;
@@ -48,8 +48,14 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
             else
                 altitude = 0;
             break;
+        case 2:
+            altitude = mavlink_msg_gps2_raw_get_alt(msg) / 1000.0;
+            break;
+        case 3:
+            altitude = mavlink_msg_terrain_report_get_current_height(msg);
+            break;
     }
-
+    
     if (get_units(w->cfg) == UNITS_IMPERIAL)
         altitude *= M2FEET;
     
@@ -80,14 +86,37 @@ static int open(struct widget *w)
             break;
     }
 
-    add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET, w);
-    w->ca.width = X_SIZE;
-    w->ca.height = Y_SIZE;
+    switch (w->cfg->props.source) {
+        case 0:
+        case 1:
+        default:
+            add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET, w);
+            break;
+        case 2:
+            add_mavlink_callback(MAVLINK_MSG_ID_GPS2_RAW, mav_callback, CALLBACK_WIDGET, w);
+            break;
+        case 3:
+            add_mavlink_callback(MAVLINK_MSG_ID_TERRAIN_REPORT, mav_callback, CALLBACK_WIDGET, w);
+            break;
+    }
+    
+    switch (w->cfg->props.mode) {
+        case 0:
+        default:
+            w->ca.width = X_SIZE;
+            w->ca.height = Y_SIZE;
+            break;
+        case 1:
+            w->ca.width = 64;
+            w->ca.height = 20;
+            break;
+    }
+
     return 0;
 }
 
 
-static void render(struct widget *w)
+static void render_gauge(struct widget *w)
 {
     struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
@@ -128,6 +157,31 @@ static void render(struct widget *w)
 
     sprintf(buf, "%d", (unsigned int) priv->altitude);
     draw_jstr(buf, X_SIZE-2, Y_CENTER, JUST_RIGHT | JUST_VCENTER, ca, 0);
+}
+
+
+static void render_text(struct widget *w)
+{
+    struct widget_priv *priv = w->priv;
+    struct canvas *ca = &w->ca;
+    char buf[10];
+    
+    sprintf(buf, "%d", (unsigned int) priv->altitude);
+    draw_jstr(buf, 64, 10, JUST_RIGHT | JUST_VCENTER, ca, 1);
+}
+
+
+static void render(struct widget *w)
+{
+    switch (w->cfg->props.mode) {
+        case 0:
+        default:
+            render_gauge(w);
+            break;
+        case 1:
+            render_text(w);
+            break;
+    }
 }
 
 
