@@ -7,8 +7,8 @@
     <ProjectGuid>{6907F6CE-6663-4A7D-9410-999B23934B32}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>AlceOSDupdater</RootNamespace>
-    <AssemblyName>AlceOSDupdater</AssemblyName>
+    <RootNamespace>AlceOSD</RootNamespace>
+    <AssemblyName>AlceOSD</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <IsWebBootstrapper>false</IsWebBootstrapper>

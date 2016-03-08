@@ -564,7 +564,8 @@
             "Disabled",
             "Mavlink",
             "UAVTalk",
-            "Config"});
+            "Config",
+            "FrSky"});
             this.cb_mode4.Location = new System.Drawing.Point(153, 28);
             this.cb_mode4.Name = "cb_mode4";
             this.cb_mode4.Size = new System.Drawing.Size(121, 21);
@@ -648,7 +649,8 @@
             "Disabled",
             "Mavlink",
             "UAVTalk",
-            "Config"});
+            "Config",
+            "FrSky"});
             this.cb_mode3.Location = new System.Drawing.Point(153, 28);
             this.cb_mode3.Name = "cb_mode3";
             this.cb_mode3.Size = new System.Drawing.Size(121, 21);
@@ -732,7 +734,8 @@
             "Disabled",
             "Mavlink",
             "UAVTalk",
-            "Config"});
+            "Config",
+            "FrSky"});
             this.cb_mode2.Location = new System.Drawing.Point(158, 28);
             this.cb_mode2.Name = "cb_mode2";
             this.cb_mode2.Size = new System.Drawing.Size(121, 21);
@@ -816,7 +819,8 @@
             "Disabled",
             "Mavlink",
             "UAVTalk",
-            "Config"});
+            "Config",
+            "FrSky"});
             this.cb_mode1.Location = new System.Drawing.Point(153, 28);
             this.cb_mode1.Name = "cb_mode1";
             this.cb_mode1.Size = new System.Drawing.Size(121, 21);

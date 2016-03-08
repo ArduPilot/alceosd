@@ -697,10 +697,16 @@ namespace AlceOSD_updater
             {
                 case "ALTITUD":
                     lbl_wname.Text = "Altitude";
-                    cb_wmode.Items.Add("GPS (M.S.L.)");
-                    cb_wmode.Items.Add("Home altitude");
-                    lbl_wmode.Visible = true;
+                    cb_wmode.Items.Add("Dial");
+                    cb_wmode.Items.Add("Text");
                     cb_wmode.Visible = true;
+                    lbl_wmode.Visible = true;
+                    cb_wsource.Items.Add("GPS (M.S.L.)");
+                    cb_wsource.Items.Add("Home altitude");
+                    cb_wsource.Items.Add("GPS2 (M.S.L.)");
+                    cb_wsource.Items.Add("Terrain altitude");
+                    cb_wsource.Visible = true;
+                    lbl_wsource.Visible = true;
                     break;
                 case "BATTERY":
                     lbl_wname.Text = "Battery, voltage and current";
