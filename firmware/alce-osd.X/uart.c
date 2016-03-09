@@ -138,6 +138,9 @@ __eds__ unsigned char uart3TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma)
 __eds__ unsigned char uart4TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x4000-(DMA_BUF_SIZE*4))));
 
 
+static const char keywords[] = "I want to enter AlceOSD setup";
+static unsigned char key_idx[4] = {0, 0, 0, 0};
+
 inline unsigned long uart_get_baudrate(unsigned char b)
 {
     if (b < UART_BAUDRATES)
@@ -175,18 +178,30 @@ void __attribute__((__interrupt__, no_auto_psv)) _DMA3Interrupt(void)
 inline static void handle_uart_int(unsigned char port)
 {
     unsigned char n_wr = rx_fifo[port].wr;
+    unsigned char ch;
 
-    /* overflow bit */
+    /* if set, clear overflow bit */
     if (*(UARTS[port].STA) & 2) {
         *(UARTS[port].STA) &= ~2;
     }
 
     while (*(UARTS[port].STA) & 1) {
         n_wr = (n_wr + 1) & UART_FIFO_MASK;
-        if (n_wr == rx_fifo[port].rd) {
-            n_wr = *(UARTS[port].RX);
+        
+        ch = *(UARTS[port].RX);
+        if (keywords[key_idx[port]] == ch) {
+            key_idx[port]++;
+            if (key_idx[port] == (sizeof(keywords)-1)) {
+                uart_set_client(port, UART_CLIENT_CONFIG);
+                uart_set_baudrate(port, UART_BAUD_115200);
+            }
         } else {
-            rx_fifo[port].buf[rx_fifo[port].wr] = *(UARTS[port].RX);
+            key_idx[port] = 0;
+        }
+        
+        
+        if (n_wr != rx_fifo[port].rd) {
+            rx_fifo[port].buf[rx_fifo[port].wr] = ch;
             rx_fifo[port].wr = n_wr;
         }
     }
@@ -653,15 +668,9 @@ void uart_set_props(unsigned char port, unsigned int props)
     }
 }
 
-void uart_set_config_clients(unsigned char boot)
+void uart_set_config_clients(void)
 {
-    if (boot) {
-        uart_set_baudrate(0, UART_BAUD_115200);
-        uart_set_client(0, UART_CLIENT_CONFIG);
-    } else {
-        uart_set_client(0, config.uart[0].mode);
-    }
-    
+    uart_set_client(0, config.uart[0].mode);
     uart_set_client(1, config.uart[1].mode);
     if (hw_rev > 0x02) {
         uart_set_client(2, config.uart[2].mode);

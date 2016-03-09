@@ -97,7 +97,7 @@ void uart_set_client(unsigned char port, unsigned char client_id);
 void uart_add_client(struct uart_client *c);
 
 inline unsigned long uart_get_baudrate(unsigned char b);
-void uart_set_config_clients(unsigned char boot);
+void uart_set_config_clients(void);
 void uart_set_config_baudrates(void);
 void uart_set_config_pins(void);
 void uart_set_props(unsigned char port, unsigned int props);

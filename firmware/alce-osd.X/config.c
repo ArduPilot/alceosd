@@ -295,7 +295,7 @@ static void exit_config(void)
 {
     uart_set_config_pins();
     uart_set_config_baudrates();
-    uart_set_config_clients(0);
+    uart_set_config_clients();
 }
 
 
@@ -869,25 +869,6 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
     return 1;
 }
 
-
-
-static unsigned int config_starter(struct uart_client *cli, unsigned char *buf, unsigned int len)
-{
-    char s[9];
-    unsigned int l = min(len, 8);
-    memset(s, '\0', 9);
-    memcpy(s, buf, l);
-    if (strncmp(s, "!!!!!!!!", l) != 0) {
-        exit_config();
-        return len;
-    } else if (len > 7) {
-        config_uart_client.read = config_process;
-        return len;
-    }
-    return 0;
-}
-
-
 void config_init(void)
 {
     params_add(params_config);
@@ -895,7 +876,7 @@ void config_init(void)
     load_config();
 
     memset(&config_uart_client, 0, sizeof(struct uart_client));
-    config_uart_client.read = config_starter;
+    config_uart_client.read = config_process;
     config_uart_client.id = UART_CLIENT_CONFIG;
     uart_add_client(&config_uart_client);
 }

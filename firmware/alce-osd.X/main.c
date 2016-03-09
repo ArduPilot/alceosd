@@ -219,7 +219,7 @@ int main(void) {
     frsky_init();
 
     /* link serial ports to processes */
-    uart_set_config_clients(1);
+    uart_set_config_clients();
 
     /* enable all interrupts */
     _IPL = 0;
