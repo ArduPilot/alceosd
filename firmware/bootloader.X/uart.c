@@ -22,88 +22,125 @@
 #define BAUDRATE                        115200
 #define BRGVAL                          37 /* bgrval = ((FCY/BAUDRATE)/16)-1 */
 
+extern unsigned char hw_rev;
+
 void uart_init(void)
 {
-    volatile unsigned int i;
+    /* setup all ports */
+    /* and detect used port */
     
-    /* uart setup */
-    /* detect hw_rev */
-    
-    /* set RB9 internal pull down */
-    _TRISB9 = 1;
-    _CNPUB9 = 0;
-    _CNPDB9 = 1;
-
-    for (i = 0; i < 10000; i++);
-    
-    if (_RB9 == 1) {
-        /* hv_rev 0v3 */
-        _RP42R = 3;
-        _U2RXR = 43;
-
-#ifdef DEBUG
-        _RP37R = 1;
-        _U1RXR = 38;
-#endif
-    } else {
-        /* hw_rev 0v1 and 0v2 */
+    if (hw_rev == 0x03) {
+        /* u1 */
+        _RP42R = 1;
+        _U1RXR = 43;
+        /* u2 */
         _RP37R = 3;
         _U2RXR = 38;
+        /* u3 */
+        _RP35R = 0x1b;
+        _U3RXR = 34;
+        /* u4 */
+        _RP39R = 0x1d;
+        _U4RXR = 45;
+    } else if (hw_rev == 0x02) {
+        /* u1 */
+        _RP37R = 1;
+        _U1RXR = 38;
+        /* u2 */
+        _RP36R = 3;
+        _U2RXR = 20;
+    } else {
+        /* u1 */
+        _RP37R = 1;
+        _U1RXR = 38;
+        /* u2 */
+        _RP41R = 3;
+        _U2RXR = 20;
     }
 
-    /* set baudrate  */
-    U2BRG = BRGVAL;
-    U2MODE = 0x8000;
-    U2MODEbits.BRGH = 0;
-    U2STA = 0x0400;
-
-#ifdef DEBUG
     U1BRG = BRGVAL;
     U1MODE = 0x8000;
-    U1MODEbits.BRGH = 0;
     U1STA = 0x0400;
-    extern int __C30_UART;
-    __C30_UART = 1;
-#endif
+
+    U2BRG = BRGVAL;
+    U2MODE = 0x8000;
+    U2STA = 0x0400;
+
+    if (hw_rev > 0x03) {
+        U3BRG = BRGVAL;
+        U3MODE = 0x8000;
+        U3STA = 0x0400;
+
+        U4BRG = BRGVAL;
+        U4MODE = 0x8000;
+        U4STA = 0x0400;
+    }        
 }
+
+extern unsigned char used_port;
 
 int get_char(char *c)
 {
     int ret = 0;
-
-    while (1) {
-        if (_T3IF == 1) {
-            /* boot timer expired */
-            ret = 1;
-            T2CONbits.TON = 0;
-            *c = 0xff;
-        }
-        if (U2STAbits.FERR == 1) {
-            /* uart rx err */
-            ret = 2;
-        }
-        if (U2STAbits.OERR == 1) {
-            /* overrun error */
-            ret = 3;
-            /* clear to continue rx */
-            U2STAbits.OERR = 0;
-        }
-        if (ret)
+    switch (used_port) {
+        case 0:
+        default:
+            if (U1STAbits.OERR == 1)
+                U1STAbits.OERR = 0;
+            if (U1STAbits.URXDA == 1) {
+                *c = U1RXREG;
+                ret = 1;
+            }
             break;
-
-        if (U2STAbits.URXDA == 1) {
-            T2CONbits.TON = 0;
-            *c = U2RXREG;
+        case 1:
+            if (U2STAbits.OERR == 1)
+                U2STAbits.OERR = 0;
+            if (U2STAbits.URXDA == 1) {
+                *c = U2RXREG;
+                ret = 1;
+            }
             break;
-        }
+        case 2:
+            if (U3STAbits.OERR == 1)
+                U3STAbits.OERR = 0;
+            if (U3STAbits.URXDA == 1) {
+                *c = U3RXREG;
+                ret = 1;
+            }
+            break;
+        case 3:
+            if (U4STAbits.OERR == 1)
+                U4STAbits.OERR = 0;
+            if (U4STAbits.URXDA == 1) {
+                *c = U4RXREG;
+                ret = 1;
+            }
+            break;
     }
     return ret;
 }
 
 void put_char(char c)
 {
-    while (!U2STAbits.TRMT);
-    U2TXREG = c;
+    switch (used_port) {
+        case 0:
+        default:
+            while (!U1STAbits.TRMT);
+            U1TXREG = c;
+            break;
+        case 1:
+            while (!U2STAbits.TRMT);
+            U2TXREG = c;
+            break;
+        case 2:
+            while (!U3STAbits.TRMT);
+            U3TXREG = c;
+            break;
+        case 3:
+            while (!U4STAbits.TRMT);
+            U4TXREG = c;
+            break;
+    }
 }
 
 void put_str(char *c)

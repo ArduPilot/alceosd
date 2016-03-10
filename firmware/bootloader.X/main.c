@@ -59,23 +59,21 @@
 /* bootloader config */
 #define BOOT_DELAY                      2
 
-#define IHEX_MODE                       0x01
-#define BIN_MODE                        0x02
-
-
-const char magic_word_ihex[] = "alceOSD";
 const char magic_word_bin[] = "alceosd";
-const char msg[] = "\r\nAlceOSD bootloader v0.4\r\n";
-const char msg_ihex[] = "IHEX\r\n";
+const char msg[] = "\r\nAlceOSD bootloader v0.5\r\n";
 const char msg_bin[] = "BIN\r\n";
 
 unsigned long devid;
+unsigned char hw_rev;
+unsigned char used_port = 0;
 
 int main(void)
  {
     char c;
-    unsigned char i;
-    int ret, mode;
+    unsigned char idx[4] = {0, 0, 0, 0};
+    unsigned char port, total_ports = 2, valid_ports = 0x3;
+    volatile unsigned int i;
+    int ret = 0;
     u32union delay;
 
     RCONbits.SWDTEN = 0;
@@ -101,6 +99,28 @@ int main(void)
     TRIS_LED = 0;
     LED = 0;
 
+    /* detect hw revision */
+    _TRISB9 = 1;
+    _CNPUB9 = 0;
+    _CNPDB9 = 1;
+    _TRISA9 = 1;
+    _CNPUA9 = 0;
+    _CNPDA9 = 1;
+    for (i = 0; i < 10000; i++);
+    if (_RB9 == 1)
+        hw_rev = 0x03;
+    else if (_RA9 == 1)
+        hw_rev = 0x02;
+    else
+        hw_rev = 0x01;
+    _CNPDB9 = 0;
+    _CNPDA9 = 0;
+    
+    if (hw_rev == 0x03) {
+        total_ports = 4;
+        valid_ports = 0xf;
+    }
+    
     /* get devid */
     read_flash(0xff0000, &devid);
     
@@ -126,38 +146,45 @@ int main(void)
 
     uart_init();
 
-    mode = IHEX_MODE | BIN_MODE;
+    while (1) {
+        for (port = 0; port < total_ports; port++) {
+            if (valid_ports & (1 << port)) {
+                used_port = port;
+                if (get_char(&c)) {
+                    LED = ~LED;
+                    if (c != magic_word_bin[idx[port]])
+                        valid_ports &= ~(1 << port);
+                    else
+                        idx[port]++;
 
-    for (i = 0; i < 7; i++) {
-        ret = get_char(&c);
+                    if (idx[port] == (sizeof(magic_word_bin)-1)) {
+                        ret = 1;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (valid_ports == 0)
+            ret = 0xff;
+        if (_T3IF == 1) {
+            /* boot timer expired */
+            //ret = 0xff;
+        }
         if (ret)
             break;
-
-        if (c != magic_word_ihex[i])
-            mode &= ~IHEX_MODE;
-
-        if (c != magic_word_bin[i])
-            mode &= ~BIN_MODE;
-
-        if (mode == 0) {
-            ret = 5;
-            break;
-        }
     }
+    T2CONbits.TON = 0;
 
-    if (ret) {
+    LED = 1;
+    
+    if (ret == 0xff) {
         put_char('*');
         goto_usercode();
     }
     
     put_str((char*) msg);
-
-    if (mode == IHEX_MODE) {
-        put_str((char*) msg_ihex);
-        load_ihex();
-    } else {
-        put_str((char*) msg_bin);
-        load_bin();
-    }
+    put_str((char*) msg_bin);
+    load_bin();
     return 0;
 }

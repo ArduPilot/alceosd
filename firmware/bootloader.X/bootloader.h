@@ -24,7 +24,6 @@
 #include <p33Exxxx.h>
 #include "flash.h"
 #include "uart.h"
-#include "ihex_loader.h"
 #include "bin_loader.h"
 
 

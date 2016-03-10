@@ -40,9 +40,9 @@ void load_bin(void)
 
         /* 3 bytes - msb first */
         page_addr.b[3] = 0;
-        ret = get_char((char*) &page_addr.b[2]);
-        ret |= get_char((char*) &page_addr.b[1]);
-        ret |= get_char((char*) &page_addr.b[0]);
+        while( get_char((char*) &page_addr.b[2]) == 0);
+        while( get_char((char*) &page_addr.b[1]) == 0);
+        while( get_char((char*) &page_addr.b[0]) == 0);
 
         if (page_addr.l == 0x00ffffff) {
             put_char('e');
@@ -65,15 +65,15 @@ void load_bin(void)
         ret = 0;
         crc = 0;
         for (i = 0; i < PAGE_SIZE; i++) {
-            ret |= get_char((char*) &c);
+            while(get_char((char*) &c) == 0);
             crc += c;
             page[i].b[2] = c;
                     
-            ret |= get_char((char*) &c);
+            while(get_char((char*) &c) == 0);
             crc += c;
             page[i].b[1] = c;
 
-            ret |= get_char((char*) &c);
+            while(get_char((char*) &c) == 0);
             crc += c;
             page[i].b[0] = c;
         }
@@ -81,9 +81,9 @@ void load_bin(void)
         /* get crc */
         put_char('c');
         rcrc = 0;
-        ret |= get_char((char*) &c);
+        while(get_char((char*) &c) == 0);
         rcrc = c << 8;
-        ret |= get_char((char*) &c);
+        while(get_char((char*) &c) == 0);
         rcrc |= c;
 
         if (rcrc != crc) {
