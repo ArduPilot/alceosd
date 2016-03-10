@@ -57,7 +57,7 @@
 
 
 /* bootloader config */
-#define BOOT_DELAY                      2
+#define BOOT_DELAY                      1
 
 const char magic_word_bin[] = "alceosd";
 const char msg[] = "\r\nAlceOSD bootloader v0.5\r\n";
@@ -151,7 +151,6 @@ int main(void)
             if (valid_ports & (1 << port)) {
                 used_port = port;
                 if (get_char(&c)) {
-                    LED = ~LED;
                     if (c != magic_word_bin[idx[port]])
                         valid_ports &= ~(1 << port);
                     else
@@ -168,8 +167,7 @@ int main(void)
         if (valid_ports == 0)
             ret = 0xff;
         if (_T3IF == 1) {
-            /* boot timer expired */
-            //ret = 0xff;
+            ret = 0xff;
         }
         if (ret)
             break;
