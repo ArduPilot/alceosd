@@ -82,7 +82,8 @@ namespace AlceOSD_updater
             setup_comport();
             if (!open_comport())
                 return;
-            reset_board();
+            if (!reset_board(true))
+                return;
 
             comPort.Write("alceosd");
 
@@ -177,39 +178,75 @@ namespace AlceOSD_updater
                 return false;
             }
         }
-        private void reset_board()
+        private bool reset_board(bool flash)
         {
-            comPort.DtrEnable = true;
-            comPort.RtsEnable = true;
-            System.Threading.Thread.Sleep(50);
+            List<int> baudrates = new List<int> {115200, 57600, 19200};
+            bool in_setup = false;
 
-            comPort.DtrEnable = false;
-            comPort.RtsEnable = false;
-            System.Threading.Thread.Sleep(50);
-
-            comPort.DiscardInBuffer();
-        }
-        private bool enter_config()
-        {
-            int timeout = 0;
-
-            /* bypass bootloader */
-            comPort.Write("!");
-            System.Threading.Thread.Sleep(500);
-            comPort.Write("!!!!!!!!!");
-            while (comPort.BytesToRead < 1)
+            /* enter setup (fw0v9+ & bootloader0v5+) */
+            foreach (int b in baudrates)
             {
-                System.Threading.Thread.Sleep(10);
-                if (++timeout > 100)
+                comPort.BaudRate = b;
+                comPort.Write("I want to enter AlceOSD setup");
+                System.Threading.Thread.Sleep(100);
+                string ans = comPort.ReadExisting();
+                txt_log.AppendText(ans + "\n");
+                if (ans.EndsWith("AlceOSD setup starting"))
                 {
-                    MessageBox.Show("Error waiting for config", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    comPort.Close();
-                    return false;
+                    in_setup = true;
+                    break;
                 }
-            }
-            return true;
 
+            }
+
+            comPort.BaudRate = 115200;
+
+            if (in_setup)
+            {
+                txt_log.AppendText("soft-start\n");
+                System.Threading.Thread.Sleep(500);
+                comPort.DiscardInBuffer();
+                if (flash)
+                    comPort.Write("#");
+            }
+            else
+            {
+                /* bootloader < 0v5 */
+                comPort.DtrEnable = true;
+                comPort.RtsEnable = true;
+                System.Threading.Thread.Sleep(50);
+
+                comPort.DtrEnable = false;
+                comPort.RtsEnable = false;
+                System.Threading.Thread.Sleep(50);
+
+                comPort.DiscardInBuffer();
+
+                if (flash)
+                    return true;
+
+                /* enter config */
+                /* bypass bootloader */
+                comPort.Write("!");
+                System.Threading.Thread.Sleep(500);
+                comPort.Write("!!!!!!!!!");
+                int timeout = 0;
+                while (comPort.BytesToRead < 1)
+                {
+                    System.Threading.Thread.Sleep(10);
+                    if (++timeout > 100)
+                    {
+                        MessageBox.Show("Error waiting for config", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        comPort.Close();
+                        return false;
+                    }
+                }
+
+            }
+
+            return true;
         }
+
 
         private string[] dump_config()
         {
@@ -1169,8 +1206,7 @@ namespace AlceOSD_updater
             setup_comport();
             if (!open_comport())
                 return;
-            reset_board();
-            if (!enter_config())
+            if (! reset_board(false))
                 return;
 
             txt_log.AppendText("Port " + comPort.PortName + " opened for config read\n");
@@ -1199,6 +1235,7 @@ namespace AlceOSD_updater
                 }
                 //System.Threading.Thread.Sleep(10);
             }
+            comPort.Write("x");
             comPort.Close();
             MessageBox.Show("Config successfully read", "Config", MessageBoxButtons.OK, MessageBoxIcon.Information);
             
@@ -1211,8 +1248,7 @@ namespace AlceOSD_updater
             setup_comport();
             if (!open_comport())
                 return;
-            reset_board();
-            if (!enter_config())
+            if (!reset_board(false))
                 return;
 
             txt_log.AppendText("Port " + comPort.PortName + " opened for config upload\n");
@@ -1264,8 +1300,8 @@ namespace AlceOSD_updater
                 line = comPort.ReadLine();
                 txt_log.AppendText(line + '\n');
             }
+            comPort.Write("x");
             comPort.Close();
-
             MessageBox.Show("Config successfully uploaded", "Config", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
