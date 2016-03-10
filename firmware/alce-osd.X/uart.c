@@ -116,7 +116,7 @@ static const struct hw_pin_map_table {
     /* hw0v2 */
     { { .rx = 38, .tx = 37 }, { .rx = 20, .tx = 36 }, { .rx = 34, .tx = 35 }, { .rx = 0,  .tx = 0 } },
     /* hw0v3 */
-    { { .rx = 43, .tx = 42 }, { .rx = 38, .tx = 37 }, { .rx = 34, .tx = 34 }, { .rx = 45, .tx = 39 } },
+    { { .rx = 43, .tx = 42 }, { .rx = 38, .tx = 37 }, { .rx = 34, .tx = 35 }, { .rx = 45, .tx = 39 } },
 };
 
 #define UART_CLIENTS_MAX 10
