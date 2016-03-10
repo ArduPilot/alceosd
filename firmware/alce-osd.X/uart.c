@@ -139,6 +139,7 @@ __eds__ unsigned char uart4TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma)
 
 
 static const char keywords[] = "I want to enter AlceOSD setup";
+static const char answer[] = "AlceOSD setup starting";
 static unsigned char key_idx[4] = {0, 0, 0, 0};
 
 inline unsigned long uart_get_baudrate(unsigned char b)
@@ -193,7 +194,10 @@ inline static void handle_uart_int(unsigned char port)
             key_idx[port]++;
             if (key_idx[port] == (sizeof(keywords)-1)) {
                 uart_set_client(port, UART_CLIENT_CONFIG);
+                uart_get_client(port)->write(answer, sizeof(answer)-1);
+                while ( (*(UARTS[port].STA) & 0x0100) == 0);
                 uart_set_baudrate(port, UART_BAUD_115200);
+                return;
             }
         } else {
             key_idx[port] = 0;
@@ -645,6 +649,14 @@ void uart_set_client(unsigned char port, unsigned char client_id)
     /* client not found or no clients */
     if (*clist == NULL)
         *c = NULL;
+}
+
+struct uart_client* uart_get_client(unsigned char port)
+{
+    struct uart_client **c = &port_clients[port];
+    if (port > 3)
+        return NULL;
+    return *c;
 }
 
 void uart_set_props(unsigned char port, unsigned int props)
