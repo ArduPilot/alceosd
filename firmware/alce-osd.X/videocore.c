@@ -58,6 +58,8 @@
 
 #define LINE_TMR (278*12)-2
 
+#define INT_X_OFFSET    (125)
+#define CNT_INT_MODE    (10 * 1000)
 
 #define CTRL_SYNCGEN        0x01
 #define CTRL_COMPSYNC       0x02
@@ -657,7 +659,6 @@ void video_resume(void)
     }
 
     if ((videocore_ctrl & CTRL_SYNCGEN) && (config.video.mode & VIDEO_MODE_SYNC_MASK)) {
-        int_sync_cnt = 0;
         _T4IF = 0;
         _T4IE = 1;
     }
@@ -871,9 +872,6 @@ void __attribute__((__interrupt__, no_auto_psv )) _T2Interrupt()
 }
 
 
-#define INT_X_OFFSET    (125)
-#define CNT_INT_MODE    (10 * 1000)
-
 static void render_line(void)
 {
     static union sram_addr addr __attribute__((aligned(2)));
@@ -893,8 +891,8 @@ static void render_line(void)
         last_line = config.video.y_size + config.video.y_offset;
 
         /* avoid sram_busy soft-locks */
-        if (last_line > last_line_cnt - 20)
-            last_line = last_line_cnt - 20;
+        if (last_line > last_line_cnt - 10)
+            last_line = last_line_cnt - 10;
 
         /* auto detect video standard */
 #if 0
@@ -1021,9 +1019,9 @@ void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
     if (PORTCbits.RC6) {
         /* rising edge */
         /* vsync detector */
-        if (abs(((long) t) - 1900) < 100)
+        if (abs(((long) t) - 1900) < 200)
             tp = (tp << 1) | 1;
-        else if (abs(((long) t) - 170) < 50)
+        else if (abs(((long) t) - 170) < 70)
             tp = (tp << 1);
         else {
             tp = 0xffff;
@@ -1047,7 +1045,7 @@ void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
         }
 
         if (vsync) {
-            if (abs(((long) t) - 300) < 60) {
+            if (abs(((long) t) - 300) < 100) {
                 render_line();
             } else {
                 /* loosing sync */
