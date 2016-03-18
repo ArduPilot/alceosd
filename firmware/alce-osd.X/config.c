@@ -385,6 +385,7 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
     unsigned int osdxsize, osdysize;
     static unsigned int options[30];
     static unsigned char nr_opt = 0;
+    void (*fptr)(void);
 
     video_get_size(&osdxsize, &osdysize);
 
@@ -448,6 +449,11 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
                 case '-':
                     break;
                     
+                case '#':
+                    SET_CPU_IPL(7);
+                    fptr = (void (*)(void)) 0x800;
+                    fptr();
+                    break;
                 default:
                     break;
             }
