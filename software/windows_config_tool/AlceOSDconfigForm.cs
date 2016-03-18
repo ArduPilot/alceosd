@@ -85,8 +85,6 @@ namespace AlceOSD_updater
             if (!reset_board(true))
                 return;
 
-            comPort.Write("alceosd");
-
             bool ready = false;
             string ans = "";
             string ans2;
@@ -162,7 +160,7 @@ namespace AlceOSD_updater
             comPort.Parity = Parity.None;
             comPort.DtrEnable = false;
             comPort.RtsEnable = false;
-            comPort.ReadTimeout = 1000;
+            comPort.ReadTimeout = 5000;
         }
         private bool open_comport()
         {
@@ -187,6 +185,7 @@ namespace AlceOSD_updater
             foreach (int b in baudrates)
             {
                 comPort.BaudRate = b;
+                comPort.DiscardInBuffer();
                 comPort.Write("I want to enter AlceOSD setup");
                 System.Threading.Thread.Sleep(100);
                 string ans = comPort.ReadExisting();
@@ -207,7 +206,12 @@ namespace AlceOSD_updater
                 System.Threading.Thread.Sleep(500);
                 comPort.DiscardInBuffer();
                 if (flash)
+                {
+                    System.Threading.Thread.Sleep(10);
                     comPort.Write("#");
+                    System.Threading.Thread.Sleep(100);
+                    comPort.Write("alceosd");
+                }
             }
             else
             {
@@ -223,7 +227,11 @@ namespace AlceOSD_updater
                 comPort.DiscardInBuffer();
 
                 if (flash)
+                {
+                    System.Threading.Thread.Sleep(100);
+                    comPort.Write("alceosd");
                     return true;
+                }
 
                 /* enter config */
                 /* bypass bootloader */
