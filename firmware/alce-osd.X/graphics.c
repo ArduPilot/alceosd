@@ -235,7 +235,7 @@ void draw_str(char *buf, int x, int y, struct canvas *ca,
 }
 
 
-static unsigned int get_str_width(char *buf, const struct font *f)
+unsigned int get_str_width(char *buf, const struct font *f)
 {
     unsigned char ch;
     unsigned int wid = 0;

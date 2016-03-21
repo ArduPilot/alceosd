@@ -51,6 +51,7 @@ void draw_str(char *buf, int x, int y, struct canvas *ca, unsigned char size);
 void draw_chr(char c, int x, int y, struct canvas *ca, unsigned char size);
 void draw_jstr(char *buf, int x, int y, unsigned char just, struct canvas *ca, unsigned char size);
 const struct font* get_font(unsigned char idx);
+unsigned int get_str_width(char *buf, const struct font *f);
 
 void transform_polygon(struct polygon *p, int x, int y, int rot);
 void move_polygon(struct polygon *p, int x, int y);
