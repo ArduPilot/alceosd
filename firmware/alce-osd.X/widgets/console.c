@@ -20,11 +20,11 @@
 
 #define PERSISTENT_BUFFER
 
-#define ROWS    (15)
+#define ROWS    (10)
 #define COLS    (40)
 
 #define X_SIZE  (8*COLS)
-#define Y_SIZE  (8*ROWS)
+#define Y_SIZE  (12*ROWS)
 
 static struct widget *console = NULL;
 
@@ -121,6 +121,15 @@ int console_printf(const char *fmt, ...)
 }
 
 
+static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+{
+    mavlink_statustext_t s;
+    char buf[51];
+    
+    mavlink_msg_statustext_decode(msg, &s);
+    strncpy(buf, (const char*) s.text, 50);
+    console_printf("[%d] %s\n", s.severity, buf);
+}
 
 
 static int open(struct widget *w)
@@ -144,6 +153,7 @@ static int open(struct widget *w)
 
 #ifndef PERSISTENT_BUFFER
     memset(priv->buf, ' ', ROWS*COLS);
+    add_mavlink_callback(MAVLINK_MSG_ID_STATUSTEXT, mav_callback, CALLBACK_WIDGET, NULL);
 #endif
     
     console = w;
@@ -160,6 +170,7 @@ static void init(void)
 {
     console = NULL;
 #ifdef PERSISTENT_BUFFER
+    add_mavlink_callback(MAVLINK_MSG_ID_STATUSTEXT, mav_callback, CALLBACK_PERSISTENT, NULL);
     memset(priv.buf, ' ', ROWS*COLS);
 #endif
 }
