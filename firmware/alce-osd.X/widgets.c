@@ -37,6 +37,7 @@ extern const struct widget_ops flight_info_widget_ops;
 extern const struct widget_ops console_widget_ops;
 extern const struct widget_ops gimbal_widget_ops;
 extern const struct widget_ops videolvl_widget_ops;
+extern const struct widget_ops messages_widget_ops;
 
 
 const struct widget_ops *all_widget_ops[] = {
@@ -58,6 +59,7 @@ const struct widget_ops *all_widget_ops[] = {
     &console_widget_ops,
     &gimbal_widget_ops,
     &videolvl_widget_ops,
+    &messages_widget_ops,
     NULL,
 };
 

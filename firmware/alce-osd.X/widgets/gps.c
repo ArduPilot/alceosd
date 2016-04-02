@@ -83,7 +83,6 @@ static int open(struct widget *w)
 static void render(struct widget *w)
 {
     struct widget_priv *priv = w->priv;
-    const struct font *f = get_font(priv->font_id);
     struct canvas *ca = &w->ca;
     char buf[100], buf2[5];
 

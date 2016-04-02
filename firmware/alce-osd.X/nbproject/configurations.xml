@@ -52,6 +52,7 @@
         <itemPath>widgets/console.c</itemPath>
         <itemPath>widgets/gimbal.c</itemPath>
         <itemPath>widgets/videolevel.c</itemPath>
+        <itemPath>widgets/messages.c</itemPath>
       </logicalFolder>
       <itemPath>uart.c</itemPath>
       <itemPath>main.c</itemPath>
