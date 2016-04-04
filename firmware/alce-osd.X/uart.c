@@ -139,7 +139,7 @@ __eds__ unsigned char uart4TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma)
 
 
 static const char keywords[] = "I want to enter AlceOSD setup";
-static const char answer[] = "AlceOSD setup starting";
+static const unsigned char answer[] = "AlceOSD setup starting";
 static unsigned char key_idx[4] = {0, 0, 0, 0};
 
 inline unsigned long uart_get_baudrate(unsigned char b)

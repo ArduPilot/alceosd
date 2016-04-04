@@ -157,6 +157,17 @@ void hw_init(void)
         hw_rev = 0x01;
     _CNPDB9 = 0;
     _CNPDA9 = 0;
+
+    /* weak pull up on serial port rx pins */
+    if (hw_rev == 0x03) {
+        _CNPUB11 = 1;
+        _CNPUB6 = 1;
+        _CNPUB2 = 1;
+        _CNPUB13 = 1;
+    } else {
+        _CNPUB6 = 1;
+        _CNPUA4 = 1;
+    }
 }
 
 
