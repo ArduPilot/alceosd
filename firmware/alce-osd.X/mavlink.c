@@ -402,6 +402,8 @@ void mavlink_handle_msg(unsigned char ch, mavlink_message_t *msg, mavlink_status
     
     for (i = 0; i < nr_callbacks; i++) {
         c = &callbacks[i];
+        if (c->cbk == NULL)
+            continue;
         if ((msg->msgid == c->msgid) && ((msg->sysid == c->sysid) || (c->sysid == MAV_SYS_ID_ANY)))
             c->cbk(msg, status, c->data);
     }
@@ -422,54 +424,52 @@ static unsigned int mavlink_receive(struct uart_client *cli, unsigned char *buf,
     return len;
 }
 
-struct mavlink_callback* add_mavlink_callback(unsigned char msgid,
-            void *cbk, unsigned char ctype, void *data)
-{
-    struct mavlink_callback *c;
-    if (nr_callbacks == MAX_MAVLINK_CALLBACKS)
-        return NULL;
-    c = &callbacks[nr_callbacks++];
-    c->sysid = uav_sysid;
-    c->msgid = msgid;
-    c->cbk = cbk;
-    c->type = ctype;
-    c->data = data;
-    return c;
-}
-
-
 struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid, unsigned char msgid,
             void *cbk, unsigned char ctype, void *data)
 {
-    struct mavlink_callback *c;
-    if (nr_callbacks == MAX_MAVLINK_CALLBACKS)
+    struct mavlink_callback *c = callbacks;
+    unsigned char i;
+    
+    for (i = 0; i < nr_callbacks; i++) {
+        if (callbacks[i].cbk == NULL)
+            break;
+    }
+    
+    if (i == MAX_MAVLINK_CALLBACKS)
         return NULL;
-    c = &callbacks[nr_callbacks++];
+    
+    c = &callbacks[i];
     c->sysid = sysid;
     c->msgid = msgid;
     c->cbk = cbk;
     c->type = ctype;
     c->data = data;
+    nr_callbacks++;
     return c;
 }
 
+inline struct mavlink_callback* add_mavlink_callback(unsigned char msgid,
+            void *cbk, unsigned char ctype, void *data)
+{
+    return add_mavlink_callback_sysid(uav_sysid, msgid, cbk, ctype, data);
+}
 
 void del_mavlink_callbacks(unsigned char ctype)
 {
     struct mavlink_callback *c = callbacks;
-    unsigned char i = 0;
+    unsigned char i;
 
-    while (i < nr_callbacks) {
-        if (c->type == ctype) {
-            memcpy(c, c + 1, sizeof(struct mavlink_callback) * (nr_callbacks - i - 1));
-            nr_callbacks--;
-        } else {
-            c++;
-            i++;
-        }
+    for (i = 0; i < nr_callbacks; i++) {
+        if (c->type == ctype)
+            c->cbk = NULL;
+        c++;
     }
 }
 
+void inline del_mavlink_callback(struct mavlink_callback *c)
+{
+    c->cbk = NULL;
+}
 
 static void mav_heartbeat(struct timer *t, void *d)
 {
@@ -588,63 +588,60 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 
 static void mav_heartbeat_cbk(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
-    unsigned char s = mavlink_msg_heartbeat_get_system_status(msg);
-    static char uav_ready = 0;
     mavlink_message_t msg2;
-    
-    if (uav_ready == 0) {
-        /* SCALED_IMU2, SCALED_PRESSURE, SENSOR_OFFSETS */
-        mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                            uav_sysid, MAV_COMP_ID_ALL,
-                            MAV_DATA_STREAM_RAW_SENSORS, 3, 1);
-        mavlink_send_msg(&msg2);
-        
-        /* MEMINFO, MISSION_CURRENT, GPS_RAW_INT, NAV_CONTROLLER_OUTPUT, LIMITS_STATUS */
-        mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                            uav_sysid, MAV_COMP_ID_ALL,
-                            MAV_DATA_STREAM_EXTENDED_STATUS, 1, 1);
-        mavlink_send_msg(&msg2);
-        
-        /* SERVO_OUTPUT_RAW, RC_CHANNELS_RAW */
-        mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                            uav_sysid, MAV_COMP_ID_ALL,
-                            MAV_DATA_STREAM_RC_CHANNELS, 4, 1);
-        mavlink_send_msg(&msg2);
-        
-        /* RC_CHANNELS_SCALED (HIL) */
-        mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                            uav_sysid, MAV_COMP_ID_ALL,
-                            MAV_DATA_STREAM_RAW_CONTROLLER, 0, 0);
-        mavlink_send_msg(&msg2);
-        
-        /* GLOBAL_POSITION_INT */
-        mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                            uav_sysid, MAV_COMP_ID_ALL,
-                            MAV_DATA_STREAM_POSITION, 1, 1);
-        mavlink_send_msg(&msg2);
 
-        /* ATTITUDE, SIMSTATE (SITL) */
-        mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                            uav_sysid, MAV_COMP_ID_ALL,
-                            MAV_DATA_STREAM_EXTRA1, 5, 1);
-        mavlink_send_msg(&msg2);
+    /* request rates after receiving the first heartbeat from vehicle */
+    /* SCALED_IMU2, SCALED_PRESSURE, SENSOR_OFFSETS */
+    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_RAW_SENSORS, 3, 1);
+    mavlink_send_msg(&msg2);
 
-        /* VFR_HUD */
-        mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                            uav_sysid, MAV_COMP_ID_ALL,
-                            MAV_DATA_STREAM_EXTRA2, 3, 1);
-        mavlink_send_msg(&msg2);
+    /* MEMINFO, MISSION_CURRENT, GPS_RAW_INT, NAV_CONTROLLER_OUTPUT, LIMITS_STATUS */
+    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_EXTENDED_STATUS, 1, 1);
+    mavlink_send_msg(&msg2);
 
-        /* AHRS, HWSTATUS, SYSTEM_TIME */
-        mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                            uav_sysid, MAV_COMP_ID_ALL,
-                            MAV_DATA_STREAM_EXTRA3, 1, 1);
-        mavlink_send_msg(&msg2);
+    /* SERVO_OUTPUT_RAW, RC_CHANNELS_RAW */
+    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_RC_CHANNELS, 4, 1);
+    mavlink_send_msg(&msg2);
+
+    /* RC_CHANNELS_SCALED (HIL) */
+    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_RAW_CONTROLLER, 0, 0);
+    mavlink_send_msg(&msg2);
+
+    /* GLOBAL_POSITION_INT */
+    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_POSITION, 1, 1);
+    mavlink_send_msg(&msg2);
+
+    /* ATTITUDE, SIMSTATE (SITL) */
+    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_EXTRA1, 5, 1);
+    mavlink_send_msg(&msg2);
+
+    /* VFR_HUD */
+    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_EXTRA2, 3, 1);
+    mavlink_send_msg(&msg2);
+
+    /* AHRS, HWSTATUS, SYSTEM_TIME */
+    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_EXTRA3, 1, 1);
+    mavlink_send_msg(&msg2);
         
-        
-        uav_ready = 1;
-    }
+    del_mavlink_callback((struct mavlink_callback *) d);
 }
+
 #if 0
 void mav_cmd_ack(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 {
@@ -656,6 +653,7 @@ void mav_cmd_ack(mavlink_message_t *msg, mavlink_status_t *status, void *d)
 
 void mavlink_init(void)
 {
+    struct mavlink_callback *hb_cbk;
     unsigned char i;
 
     /* register serial port clients */
@@ -680,6 +678,7 @@ void mavlink_init(void)
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_READ, mav_param_request_read, CALLBACK_PERSISTENT, NULL);
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_SET, mav_param_set, CALLBACK_PERSISTENT, NULL);
 
-    add_mavlink_callback(MAVLINK_MSG_ID_HEARTBEAT, mav_heartbeat_cbk, CALLBACK_PERSISTENT, NULL);
+    hb_cbk = add_mavlink_callback(MAVLINK_MSG_ID_HEARTBEAT, mav_heartbeat_cbk, CALLBACK_PERSISTENT, NULL);
+    hb_cbk->data = hb_cbk;
     //add_mavlink_callback(MAVLINK_MSG_ID_COMMAND_ACK, mav_cmd_ack, CALLBACK_PERSISTENT, NULL);
 }
