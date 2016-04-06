@@ -68,16 +68,7 @@ namespace AlceOSD_updater
         {
             string version = "";
 
-            DialogResult result = ofd_fwfile.ShowDialog();
-            if (result == DialogResult.Cancel)
-                return;
-            if (ofd_fwfile.FileName == "")
-                return;
-
             tabControl1.SelectTab(4);
-
-            txt_log.AppendText("Will flash file " + ofd_fwfile.FileName + "\n");
-
 
             setup_comport();
             if (!open_comport())
@@ -125,8 +116,18 @@ namespace AlceOSD_updater
             System.Threading.Thread.Sleep(500);
             comPort.DiscardInBuffer();
 
-            do_flash(version);
 
+            DialogResult result = ofd_fwfile.ShowDialog();
+            if ((result != DialogResult.Cancel) && (ofd_fwfile.FileName != ""))
+            {
+                txt_log.AppendText("Will flash file " + ofd_fwfile.FileName + "\n");
+                do_flash(version);
+            } else
+            {
+                byte[] abort = new byte[] { 0xff, 0xff, 0xff };
+                txt_log.AppendText("Exiting bootloader...\n");
+                comPort.Write(abort, 0, 3);
+            }
             comPort.Close();
         }
 
