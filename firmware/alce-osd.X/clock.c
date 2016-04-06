@@ -28,7 +28,6 @@ struct timer {
     unsigned int time;
     unsigned int last_time;
     unsigned char type;
-    unsigned char active;
     void (*cbk)(struct timer *t, void *data);
     void *data;
 };
@@ -38,46 +37,44 @@ static unsigned char nr_timers = 0;
 
 struct timer* add_timer(unsigned char type, unsigned int time, void *cbk, void *data)
 {
-    struct timer *t = NULL;
-    if (nr_timers < MAX_TIMERS) {
-        t = &timers[nr_timers++];
-        t->cbk = cbk;
-        t->data = data;
-        if (type & TIMER_10MS)
-            t->time = time;
-        else
-            t->time = time * 10;
-        t->type = type;
-        t->active = 1;
-        t->last_time = ms10;
+    struct timer *t = timers;
+    unsigned char i;
+
+    for (i = 0; i < nr_timers; i++) {
+        if (timers[i].cbk == NULL)
+            break;
     }
+
+    if (i == MAX_TIMERS)
+        return NULL;
+
+    t = &timers[i];
+    t->cbk = cbk;
+    t->data = data;
+    if (type & TIMER_10MS)
+        t->time = time;
+    else
+        t->time = time * 10;
+    t->type = type;
+    t->last_time = ms10;
+    nr_timers++;
     return t;
 }
 
-void remove_timer(struct timer *t)
+inline void remove_timer(struct timer *t)
 {
-    unsigned char i = t - timers;
-
-    if (t == NULL)
-        return;
-    if (i < (nr_timers - 1))
-        memcpy(&timers[i], &timers[i + 1], sizeof(struct timer) * (nr_timers - i - 1));
-    nr_timers--;
+    t->cbk = NULL;
 }
 
 void remove_timers(unsigned char ctype)
 {
     struct timer *t = timers;
-    unsigned char i = 0;
+    unsigned char i;
 
-    while (i < nr_timers) {
-        if (t->type == ctype) {
-            memcpy(t, t + 1, sizeof(struct timer) * (nr_timers - i - 1));
-            nr_timers--;
-        } else {
-            t++;
-            i++;
-        }
+    for (i = 0; i < nr_timers; i++) {
+        if (t->type == ctype)
+            t->cbk = NULL;
+        t++;
     }
 }
 
@@ -88,11 +85,13 @@ static void clock_process(void)
 
     for (i = 0; i < nr_timers; i++) {
         t = &timers[i];
-        if ((t->active) && ((ms10 - t->last_time) > t->time)) {
+        if (t->cbk == NULL)
+            continue;
+        if ((ms10 - t->last_time) > t->time) {
             t->last_time += t->time;
             t->cbk(t, t->data);
             if (t->type == TIMER_ONCE)
-                t->active = 0;
+                t->cbk = NULL;
         }
     }
 }
