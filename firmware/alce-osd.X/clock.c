@@ -57,7 +57,8 @@ struct timer* add_timer(unsigned char type, unsigned int time, void *cbk, void *
         t->time = time * 10;
     t->type = type;
     t->last_time = ms10;
-    nr_timers++;
+    if (i == nr_timers)
+        nr_timers++;
     return t;
 }
 

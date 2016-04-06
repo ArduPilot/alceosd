@@ -444,7 +444,8 @@ struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid, unsigne
     c->cbk = cbk;
     c->type = ctype;
     c->data = data;
-    nr_callbacks++;
+    if (i == nr_callbacks)
+        nr_callbacks++;
     return c;
 }
 
