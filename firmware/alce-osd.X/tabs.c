@@ -173,7 +173,7 @@ static void tab_switch_task(struct timer *t, void *d)
     switch (cfg->mode) {
         case TAB_CHANGE_CHANNEL:
         default:
-            idx = ((val * tab_list[0]) / 100) + 1;
+            idx = ((val * tab_list[0]) / 101) + 1;
             new_tab = tab_list[idx];
             if (new_tab != active_tab) {
                 DTABS("tab_change_channel: change to tab %d\n", new_tab);
