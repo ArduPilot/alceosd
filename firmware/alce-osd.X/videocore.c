@@ -910,7 +910,7 @@ static void render_line(void)
                 odd = PORTBbits.RB15;
         }
             
-        if (config.video.mode && VIDEO_MODE_SCAN_MASK) {
+        if (config.video.mode & VIDEO_MODE_SCAN_MASK) {
             if (odd == 0) {
                 addr.l += (osdxsize/4);
             }
@@ -990,7 +990,6 @@ void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
     render_line();
     _INT2IF = 0;
 }
-
 
 /* comparator + input capture sync */
 void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
