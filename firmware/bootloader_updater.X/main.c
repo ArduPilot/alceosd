@@ -30,7 +30,7 @@
 #define TRIS_LED                        (TRISAbits.TRISA10)
 #define LED                             (LATAbits.LATA10)
 
-#define VERSION 0xfffffffc
+#define VERSION 0xfffffffb
 
 unsigned long devid;
 
