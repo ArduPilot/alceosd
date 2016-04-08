@@ -69,6 +69,39 @@ int shell_printf(const char *fmt, ...)
     return ret;
 }
 
+unsigned char shell_arg_parser(char *args, struct shell_argval *v, unsigned char max)
+{
+    char *p, *s;
+    unsigned char i = 0;
+
+    p = strtok(args, "-");
+    while (p != NULL) {
+        v[i].key = *p++;
+        while (*p == ' ')
+            *p++;
+        strncpy(v[i].val, p, MAX_SHELL_ARGVAL_LEN);
+        s = strchr(v[i].val, ' ');
+        if (s != NULL)
+            *s = '\0';
+        p = strtok(NULL, "-");
+        i++;
+        if (i == max)
+            break;
+    }
+    v[i].key = '\0';
+    return i;
+}
+
+struct shell_argval* shell_get_argval(struct shell_argval *v, char k)
+{
+    while (v->key != '\0') {
+        if (v->key == k)
+            return v;
+        v++;
+    }
+    return NULL;
+}
+
 void shell_exec(char *cmd_line, const struct shell_cmdmap_s *c, void *data)
 {
     char *args, *cmd = cmd_line;

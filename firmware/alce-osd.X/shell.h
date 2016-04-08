@@ -19,6 +19,8 @@
 #ifndef _SHELL_H
 #define	_SHELL_H
 
+#define MAX_SHELL_ARGVAL_LEN    15
+
 enum {
     SHELL_CMD_SIMPLE = 0,
     SHELL_CMD_SUBCMD,
@@ -31,8 +33,16 @@ struct shell_cmdmap_s {
     unsigned char type;
 };
 
+struct shell_argval {
+    char key;
+    char val[MAX_SHELL_ARGVAL_LEN];
+};
+
 void shell_exec(char *cmd, const struct shell_cmdmap_s *c, void *data);
 void shell_parser(unsigned char *buf, unsigned int len);
+unsigned char shell_arg_parser(char *args, struct shell_argval *v, unsigned char max);
+struct shell_argval* shell_get_argval(struct shell_argval *v, char k);
+
 int shell_printf(const char *fmt, ...);
 
 #endif
