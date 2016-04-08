@@ -385,6 +385,7 @@ void tabs_init(void)
             msgid = MAVLINK_MSG_ID_HEARTBEAT;
             cbk = tab_switch_flightmode_cbk;
             tmr = TAB_TIMER_IDLE;
+            break;
         case TAB_CHANGE_DEMO:
             cbk = NULL;
             tmr = 0;
