@@ -197,7 +197,7 @@ static void uavtalk_handle_msg(struct uavtalk_message *msg)
                     DEG2RAD(uavtalk_get_float(msg, UAVTALK_OBJID_ATTITUDESTATE_PITCH)),
                     DEG2RAD(uavtalk_get_float(msg, UAVTALK_OBJID_ATTITUDESTATE_YAW)),
                     0, 0, 0);
-            mavlink_handle_msg(255, &mav_msg, NULL);
+            mavlink_handle_msg(255, &mav_msg);
             break;
         case UAVTALK_OBJID_MANUALCONTROLCOMMAND:
         case UAVTALK_OBJID_MANUALCONTROLCOMMAND_001:
@@ -212,7 +212,7 @@ static void uavtalk_handle_msg(struct uavtalk_message *msg)
                     (unsigned int) uavtalk_get_int16(msg, UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_7),
                     (unsigned int) uavtalk_get_int16(msg, UAVTALK_OBJID_MANUALCONTROLCOMMAND_CHANNEL_8),
                     0);
-            mavlink_handle_msg(255, &mav_msg, NULL);
+            mavlink_handle_msg(255, &mav_msg);
             break;
         case UAVTALK_OBJID_FLIGHTSTATUS:
         case UAVTALK_OBJID_FLIGHTSTATUS_001:
@@ -225,7 +225,7 @@ static void uavtalk_handle_msg(struct uavtalk_message *msg)
                     (uavtalk_get_int8(msg, UAVTALK_OBJID_FLIGHTSTATUS_ARMED) != 0) ? MAV_MODE_FLAG_SAFETY_ARMED : 0,
                     uavtalk_get_int8(msg, UAVTALK_OBJID_FLIGHTSTATUS_FLIGHTMODE),
                     MAV_STATE_STANDBY);
-            mavlink_handle_msg(255, &mav_msg, NULL);
+            mavlink_handle_msg(255, &mav_msg);
             break;
     }
 }

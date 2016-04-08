@@ -25,7 +25,7 @@ struct widget_priv {
     unsigned char font_id;
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_callback(mavlink_message_t *msg, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
@@ -39,7 +39,7 @@ static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void 
     schedule_widget(w);
 }
 
-static void mav_callback2(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_callback2(mavlink_message_t *msg, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;

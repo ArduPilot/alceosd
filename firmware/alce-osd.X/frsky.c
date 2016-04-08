@@ -129,7 +129,7 @@ static unsigned int frsky_receive(struct uart_client *cli, unsigned char *buf, u
 
 
 /* GPS */
-static void gps_mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void gps_mav_callback(mavlink_message_t *msg, void *d)
 {
     unsigned long data;
     float tmp;

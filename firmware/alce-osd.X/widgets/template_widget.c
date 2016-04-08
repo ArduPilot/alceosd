@@ -48,7 +48,7 @@ struct widget_priv {
     unsigned char var1;
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_callback(mavlink_message_t *msg, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;

@@ -82,11 +82,28 @@ static void shell_cmd_stats(char *args, void *data)
         shell_printf(" packet_rx_drop_count=%d\n", status->packet_rx_drop_count);
         shell_printf(" packet_rx_success_count=%d\n", status->packet_rx_success_count);
     }
+    shell_printf("\nActive channel mask=%x\n", active_channel_mask);
+}
+
+static void shell_cmd_route(char *args, void *data)
+{
+    unsigned char i;
+    
+    shell_printf("\nMavlink routing table:\n");
+    for(i = 0; i < total_routes; i++) {
+        shell_printf(" sysid(%3u) compid(%3u) on channel(%u)\n",
+                (unsigned) routes[i].sysid, 
+                (unsigned) routes[i].compid,
+                (unsigned) routes[i].ch);
+    }
+    
+    shell_printf("\nTotal routes=%d\n", total_routes);
 }
 
 static const struct shell_cmdmap_s mavlink_cmdmap[] = {
-    {"callbacks", shell_cmd_callbacks, "callbacks", SHELL_CMD_SIMPLE},
-    {"stats", shell_cmd_stats, "stats", SHELL_CMD_SIMPLE},
+    {"callbacks", shell_cmd_callbacks, "Display callback info", SHELL_CMD_SIMPLE},
+    {"route", shell_cmd_route, "Display routing table", SHELL_CMD_SIMPLE},
+    {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
 };
 
@@ -441,7 +458,7 @@ static void mavlink_send_msg(mavlink_message_t *msg)
     mavlink_send_msg_to_channels(route, msg);
 }
 
-void mavlink_handle_msg(unsigned char ch, mavlink_message_t *msg, mavlink_status_t *status)
+void mavlink_handle_msg(unsigned char ch, mavlink_message_t *msg)
 {
     struct mavlink_callback *c;
     unsigned char i, route;
@@ -457,7 +474,7 @@ void mavlink_handle_msg(unsigned char ch, mavlink_message_t *msg, mavlink_status
         if (c->cbk == NULL)
             continue;
         if ((msg->msgid == c->msgid) && ((msg->sysid == c->sysid) || (c->sysid == MAV_SYS_ID_ANY)))
-            c->cbk(msg, status, c->data);
+            c->cbk(msg, c->data);
     }
     
     LED = 1;
@@ -470,7 +487,7 @@ static unsigned int mavlink_receive(struct uart_client *cli, unsigned char *buf,
     unsigned int i = len;
     while (i--) {
         if (mavlink_parse_char(cli->ch, *(buf++), &msg, &status)) {
-            mavlink_handle_msg(cli->ch, &msg, &status);
+            mavlink_handle_msg(cli->ch, &msg);
         }
     }
     return len;
@@ -559,7 +576,7 @@ static void send_param_list_cbk(struct timer *t, void *d)
 }
 
 
-void mav_param_request_list(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+void mav_param_request_list(mavlink_message_t *msg, void *d)
 {
     unsigned char sys, comp;
 
@@ -578,7 +595,7 @@ void mav_param_request_list(mavlink_message_t *msg, mavlink_status_t *status, vo
 }
 
 
-void mav_param_request_read(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+void mav_param_request_read(mavlink_message_t *msg, void *d)
 {
     unsigned char sys, comp;
     mavlink_message_t msg2;
@@ -608,7 +625,7 @@ void mav_param_request_read(mavlink_message_t *msg, mavlink_status_t *status, vo
 }
 
 
-void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+void mav_param_set(mavlink_message_t *msg, void *d)
 {
     unsigned char sys, comp;
     mavlink_message_t msg2;
@@ -639,7 +656,7 @@ void mav_param_set(mavlink_message_t *msg, mavlink_status_t *status, void *d)
     mavlink_send_msg(&msg2);
 }
 
-static void mav_heartbeat_cbk(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_heartbeat_cbk(mavlink_message_t *msg, void *d)
 {
     mavlink_message_t msg2;
 
@@ -696,7 +713,7 @@ static void mav_heartbeat_cbk(mavlink_message_t *msg, mavlink_status_t *status, 
 }
 
 #if 0
-void mav_cmd_ack(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+void mav_cmd_ack(mavlink_message_t *msg, void *d)
 {
     unsigned int c = mavlink_msg_command_ack_get_command(msg);
     unsigned char r = mavlink_msg_command_ack_get_result(msg);

@@ -38,7 +38,7 @@ struct home_data* get_home_data(void)
 }
 
 
-static void store_mavdata(mavlink_message_t *msg, mavlink_status_t *status)
+static void store_mavdata(mavlink_message_t *msg, void *d)
 {
 
     switch (msg->msgid) {

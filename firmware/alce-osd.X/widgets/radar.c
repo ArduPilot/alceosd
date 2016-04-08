@@ -28,20 +28,20 @@ struct widget_priv {
     unsigned int wp_distance, wp_seq;
 };
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_callback(mavlink_message_t *msg, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
     priv->heading = mavlink_msg_vfr_hud_get_heading(msg);
 }
-static void mav_callback_nav(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_callback_nav(mavlink_message_t *msg, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
     priv->wp_target_bearing = mavlink_msg_nav_controller_output_get_target_bearing(msg);
     priv->wp_distance = mavlink_msg_nav_controller_output_get_wp_dist(msg);
 }
-static void mav_callback_wp_seq(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_callback_wp_seq(mavlink_message_t *msg, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;

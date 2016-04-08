@@ -35,14 +35,14 @@ struct widget_priv {
     int yaw;
 };
 
-static void mav_callback_vfr_hud(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_callback_vfr_hud(mavlink_message_t *msg, void *d)
 {
     g_priv.heading = (int) mavlink_msg_vfr_hud_get_heading(msg);
     if ((g_priv.state & GIMBAL_READY) == 0)
         g_priv.yaw0_heading = g_priv.heading;
 }
 
-static void mav_callback_gimbal_hb(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_callback_gimbal_hb(mavlink_message_t *msg, void *d)
 {
     unsigned char s = mavlink_msg_heartbeat_get_system_status(msg);
     if (s > MAV_STATE_CALIBRATING) {
@@ -56,7 +56,7 @@ static void mav_callback_gimbal_hb(mavlink_message_t *msg, mavlink_status_t *sta
     }
 }
 
-static void mav_callback_gimbal_att(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_callback_gimbal_att(mavlink_message_t *msg, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;

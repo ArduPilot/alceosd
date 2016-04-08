@@ -31,7 +31,7 @@ struct mavlink_callback {
     unsigned char sysid;
     unsigned char type;
     void *data;
-    void (*cbk) (mavlink_message_t *msg, mavlink_status_t *status, void *data);
+    void (*cbk) (mavlink_message_t *msg, void *data);
 };
 
 
@@ -42,7 +42,7 @@ struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid,
         unsigned char msgid,
         void *cbk, unsigned char ctype, void *data);
 void del_mavlink_callbacks(unsigned char ctype);
-void mavlink_handle_msg(unsigned char ch, mavlink_message_t *msg, mavlink_status_t *status);
+void mavlink_handle_msg(unsigned char ch, mavlink_message_t *msg);
 
 void shell_cmd_mavlink(char *args, void *data);
 

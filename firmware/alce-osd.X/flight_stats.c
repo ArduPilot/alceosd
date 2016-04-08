@@ -39,7 +39,7 @@ struct flight_stats* get_flight_stats(void)
     return &stats;
 }
 
-static void store_mavdata(mavlink_message_t *msg, mavlink_status_t *status)
+static void store_mavdata(mavlink_message_t *msg, void *d)
 {
     switch (msg->msgid) {
         case MAVLINK_MSG_ID_VFR_HUD:

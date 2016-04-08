@@ -29,14 +29,14 @@ struct widget_priv {
     float speed_z;
 };
 
-static void mav_callback_vfr_hud(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_callback_vfr_hud(mavlink_message_t *msg, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
     priv->heading = mavlink_msg_vfr_hud_get_heading(msg);
 }
 
-static void mav_callback_wind(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_callback_wind(mavlink_message_t *msg, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;

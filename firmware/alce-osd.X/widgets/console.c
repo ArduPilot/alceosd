@@ -121,7 +121,7 @@ int console_printf(const char *fmt, ...)
 }
 
 
-static void mav_callback(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void mav_callback(mavlink_message_t *msg, void *d)
 {
     mavlink_statustext_t s;
     char buf[51];

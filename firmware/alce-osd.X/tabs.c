@@ -241,7 +241,7 @@ static void tab_switch_task(struct timer *t, void *d)
 }
 
 
-static void tab_switch_channel_cbk(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void tab_switch_channel_cbk(mavlink_message_t *msg, void *d)
 {
     struct tab_change_config *cfg = (struct tab_change_config*) d;
     unsigned int ch_raw;
@@ -283,7 +283,7 @@ static void tab_switch_channel_cbk(mavlink_message_t *msg, mavlink_status_t *sta
     DTABS("cbk: val=%u prev_val=%d\n", val, prev_val);
 }
 
-static void tab_switch_flightmode_cbk(mavlink_message_t *msg, mavlink_status_t *status, void *d)
+static void tab_switch_flightmode_cbk(mavlink_message_t *msg, void *d)
 {
     unsigned char mav_type;
 
