@@ -194,7 +194,7 @@ inline static void handle_uart_int(unsigned char port)
             key_idx[port]++;
             if (key_idx[port] == (sizeof(keywords)-1)) {
                 uart_set_client(port, UART_CLIENT_CONFIG);
-                uart_get_client(port)->write(answer, sizeof(answer)-1);
+                uart_get_client(port)->write((unsigned char*) answer, sizeof(answer)-1);
                 while ( (*(UARTS[port].STA) & 0x0100) == 0);
                 uart_set_baudrate(port, UART_BAUD_115200);
                 return;
