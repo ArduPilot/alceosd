@@ -34,5 +34,7 @@ inline void remove_timer(struct timer *t);
 void remove_timers(unsigned char type);
 unsigned long get_millis(void);
 
+void shell_cmd_clock(char *args, void *data);
+
 #endif	/* CLOCK_H */
 

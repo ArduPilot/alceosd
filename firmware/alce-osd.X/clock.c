@@ -35,6 +35,49 @@ struct timer {
 static struct timer timers[MAX_TIMERS];
 static unsigned char nr_timers = 0;
 
+
+static void shell_cmd_timers(char *args, void *data)
+{
+    unsigned char i, total = 0;
+    struct timer *t = timers;
+
+    shell_printf("\n\nWidget timers:\n");
+    for (i = 0; i < nr_timers; i++) {
+        if ((t->cbk != NULL) && (t->type == TIMER_WIDGET)) {
+            printf(" period=%5dms last_tick=%5d cbk=%p data=%p\n", t->time * 10, t->last_time, t->cbk, t->data);
+            total++;
+        }
+        t++;
+    }
+    shell_printf("\n\nGeneric timers:\n");
+    t = timers;
+    for (i = 0; i < nr_timers; i++) {
+        if ((t->cbk != NULL) && (t->type != TIMER_WIDGET)) {
+            printf(" period=%5dms last_tick=%5d cbk=%p data=%p\n", t->time * 10, t->last_time, t->cbk, t->data);
+            total++;
+        }
+        t++;
+    }
+    shell_printf("\n\ntotal=%d peak=%d\n", total, nr_timers);
+}
+
+static void shell_cmd_stats(char *args, void *data)
+{
+    shell_printf("\nElapsed time since boot: %lu\n", millis);
+}
+
+static const struct shell_cmdmap_s clock_cmdmap[] = {
+    {"timers", shell_cmd_timers, "callbacks", SHELL_CMD_SIMPLE},
+    {"stats", shell_cmd_stats, "stats", SHELL_CMD_SIMPLE},
+    {"", NULL, ""},
+};
+
+void shell_cmd_clock(char *args, void *data)
+{
+    shell_exec(args, clock_cmdmap, data);
+}
+
+
 struct timer* add_timer(unsigned char type, unsigned int time, void *cbk, void *data)
 {
     struct timer *t = timers;
