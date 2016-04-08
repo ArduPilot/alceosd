@@ -49,7 +49,7 @@
 
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   9
-#define VERSION_DEV     0
+#define VERSION_DEV     1
 
 #define WITH_BOOTLOADER
 

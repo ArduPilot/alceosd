@@ -159,61 +159,6 @@ const char *UART_PIN_NAMES[] = {
 };
 
 
-static void shell_cmd_stats(char *args, void *data)
-{
-    unsigned char i, total = 0;
-    struct uart_client **clist = uart_client_list;
-    struct uart_client **cli = port_clients;
-    
-    shell_printf("\nPort settings (config):\n");
-    for (i = 0; i < 4; i++) {
-        shell_printf(" port%d: %6lubps pins=%-9s client=%s\n",
-                i, baudrates[config.uart[i].baudrate].baudrate,
-                UART_PIN_NAMES[config.uart[i].pins],
-                UART_CLIENT_NAMES[config.uart[i].mode]);
-    }
-    
-    shell_printf("\nRegistered clients:\n");
-    cli = uart_client_list;
-    while (*cli != NULL) {
-        shell_printf(" %-7s : ch=%d init=%04p close=%04p read=%04p write=%04p\n",
-                UART_CLIENT_NAMES[(*cli)->id], (*cli)->ch,
-                (*cli)->init, (*cli)->close, (*cli)->read, (*cli)->write);
-        total++;
-        cli++;
-    }
-    shell_printf("total=%d max=%d\n", total, UART_CLIENTS_MAX);
-
-    shell_printf("\nActive clients:\n");
-    cli = port_clients;
-    for (i = 0; i < 4; i++) {
-        if (cli[i] == NULL)
-            continue;
-        shell_printf(" port%d: client=%-7s ch=%d init=%04p close=%04p read=%04p write=%04p\n",
-                cli[i]->port, UART_CLIENT_NAMES[cli[i]->id], cli[i]->ch,
-                cli[i]->init, cli[i]->close, cli[i]->read, cli[i]->write);
-    }
-}
-
-static void shell_cmd_config(char *args, void *data)
-{
-    printf("args: %s\n", args);
-    
-    
-}
-
-static const struct shell_cmdmap_s uart_cmdmap[] = {
-    {"config", shell_cmd_config, "args: -p <port_nr> -b <baudrate> -c <client> -i <pins>", SHELL_CMD_SIMPLE},
-    {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
-    {"", NULL, ""},
-};
-
-void shell_cmd_uart(char *args, void *data)
-{
-    shell_exec(args, uart_cmdmap, data);
-}
-
-
 inline unsigned long uart_get_baudrate(unsigned char b)
 {
     if (b < UART_BAUDRATES)
@@ -805,4 +750,132 @@ void uart_init(void)
         params_add(params_uart34);
     }
     process_add(uart_process);
+}
+
+
+static void shell_cmd_stats(char *args, void *data)
+{
+    unsigned char i, total = 0;
+    struct uart_client **cli;
+    
+    shell_printf("\nPort settings (config):\n");
+    for (i = 0; i < 4; i++) {
+        shell_printf(" port%d: %6lubps pins=%-9s client=%s\n",
+                i, baudrates[config.uart[i].baudrate].baudrate,
+                UART_PIN_NAMES[config.uart[i].pins],
+                UART_CLIENT_NAMES[config.uart[i].mode]);
+    }
+    
+    shell_printf("\nRegistered clients:\n");
+    cli = uart_client_list;
+    while (*cli != NULL) {
+        shell_printf(" %-7s : ch=%d init=%04p close=%04p read=%04p write=%04p\n",
+                UART_CLIENT_NAMES[(*cli)->id], (*cli)->ch,
+                (*cli)->init, (*cli)->close, (*cli)->read, (*cli)->write);
+        total++;
+        cli++;
+    }
+    shell_printf("total=%d max=%d\n", total, UART_CLIENTS_MAX);
+
+    shell_printf("\nActive clients:\n");
+    cli = port_clients;
+    for (i = 0; i < 4; i++) {
+        if (cli[i] == NULL)
+            continue;
+        shell_printf(" port%d: client=%-7s ch=%d init=%04p close=%04p read=%04p write=%04p\n",
+                cli[i]->port, UART_CLIENT_NAMES[cli[i]->id], cli[i]->ch,
+                cli[i]->init, cli[i]->close, cli[i]->read, cli[i]->write);
+    }
+}
+
+#define SHELL_CMD_CONFIG_ARGS   5
+static void shell_cmd_config(char *args, void *data)
+{
+    struct shell_argval argval[SHELL_CMD_CONFIG_ARGS+1], *p, *now;
+    unsigned char t, i;
+    int port;
+    long baud;
+    
+    t = shell_arg_parser(args, argval, SHELL_CMD_CONFIG_ARGS);
+    p = shell_get_argval(argval, 'p');
+
+    if ((t < 2) || (p == NULL)) {
+        shell_printf("\nsyntax: -p <port> [-n] [-b <baudrate>] [-c <client>] [-i <pins>]\n");
+        shell_printf(" -p <port>      uart port number: 0 to 3\n");
+        shell_printf(" -n             apply changes now\n");
+        shell_printf(" -b <baudrate>  baudrate:");
+        for (i = 0; i < UART_BAUDRATES; i++)
+            shell_printf(" %lu", baudrates[i].baudrate);
+        shell_printf("\n -c <client>    client name:");
+        for (i = 0; i < UART_CLIENTS; i++)
+            shell_printf(" %s", UART_CLIENT_NAMES[i]);
+        shell_printf("\n -i <pins>      connector:");
+        for (i = 0; i < UART_PINS; i++)
+            shell_printf(" %s", UART_PIN_NAMES[i]);
+        shell_printf("\n");
+    } else {
+        now = shell_get_argval(argval, 'n');
+        port = atoi(p->val);
+        if ((port < 0) || (port > UART_PORTS)) {
+            shell_printf("\nerror: invalid port '%d'\n", port);
+            return;
+        }
+        p = shell_get_argval(argval, 'b');
+        if (p != NULL) {
+            baud = atol(p->val);
+            for (i = 0; i < UART_BAUDRATES; i++) {
+                if (baud == baudrates[i].baudrate) {
+                    config.uart[port].baudrate = i;
+                    if (now)
+                        uart_set_baudrate(port, i);
+                    break;
+                }
+            }
+            if (i == UART_BAUDRATES) {
+                shell_printf("\nerror: invalid baudrate '%lu'\n", baud);
+                return;
+            }
+        }
+        p = shell_get_argval(argval, 'c');
+        if (p != NULL) {
+            for (i = 0; i < UART_CLIENTS; i++) {
+                if (strcmp(p->val, UART_CLIENT_NAMES[i]) == 0) {
+                    config.uart[port].mode = i;
+                    if (now)
+                        uart_set_client(port, i);
+                    break;
+                }
+            }
+            if (i == UART_CLIENTS) {
+                shell_printf("\nerror: invalid client '%s'\n", p->val);
+                return;
+            }
+        }
+        p = shell_get_argval(argval, 'i');
+        if (p != NULL) {
+            for (i = 0; i < UART_PINS; i++) {
+                if (strcmp(p->val, UART_PIN_NAMES[i]) == 0) {
+                    config.uart[port].pins = i;
+                    if (now)
+                        uart_set_pins(port, i);
+                    break;
+                }
+            }
+            if (i == UART_PINS) {
+                shell_printf("\nerror: invalid pins '%s'\n", p->val);
+                return;
+            }
+        }
+    }
+}
+
+static const struct shell_cmdmap_s uart_cmdmap[] = {
+    {"config", shell_cmd_config, "args: -p <port_nr> -b <baudrate> -c <client> -i <pins>", SHELL_CMD_SIMPLE},
+    {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
+    {"", NULL, ""},
+};
+
+void shell_cmd_uart(char *args, void *data)
+{
+    shell_exec(args, uart_cmdmap, data);
 }

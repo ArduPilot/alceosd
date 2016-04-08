@@ -24,6 +24,7 @@ enum {
     UART_PORT2,
     UART_PORT3,
     UART_PORT4,
+    UART_PORTS
 };
 
 enum {

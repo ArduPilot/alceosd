@@ -61,7 +61,7 @@ struct alceosd_config config = {
     .tab_change.tab_change_ch_min = 1000,
     .tab_change.tab_change_ch_max = 2000,
     .tab_change.ch = 7,
-    .tab_change.mode = TAB_CHANGE_CHANNEL,
+    .tab_change.mode = TAB_CHANGE_TOGGLE,
     .tab_change.time_window = 20,
 
     
@@ -304,8 +304,6 @@ static void exit_config(void)
 enum {
     MENU_MAIN,
     MENU_VIDEO,
-    MENU_UART,
-    MENU_UART_CONFIG,
     MENU_TABS,
     MENU_TAB_WIDGETS,
     MENU_ADD_WIDGET,
@@ -315,7 +313,6 @@ enum {
 const char menu_main[] = "\n\n"
                          "AlceOSD setup\n\n"
                          "1 - Video config\n"
-                         "2 - Serial port config\n"
                          "3 - Configure tabs\n"
                          "4 - Units (global setting): %s\n"
                          "q/w - Decrease/increase home locking timer: %d\n"
@@ -337,20 +334,6 @@ const char menu_video[] = "\n\nAlceOSD :: VIDEO setup\n\n"
                           "e/r - Decrease/increase video X size: %d\n"
                           "s/w - Decrease/increase video Y size: %d\n"
                           "x - Go back\n";
-
-const char menu_uart[] = "\n\nAlceOSD :: SERIAL PORT setup\n\n"
-                          "1 - Serial port 1\n"
-                          "2 - Serial port 2\n"
-                          "3 - Serial port 3\n"
-                          "4 - Serial port 4\n"
-                          "x - Go back\n";
-
-const char menu_uart_config[] = "\n\nAlceOSD :: SERIAL PORT %d setup\n\n"
-                                "1/2 - Mode: %s\n"
-                                "3/4 - Baudrate: %u%u\n"
-                                "5/6 - Pins: %s\n"
-                                "x - Go back\n";
-
 
 const char menu_tabs[] = "\n\nAlceOSD :: TAB config\n\n"
                          "1/2 - Change active tab: %d\n"
@@ -411,9 +394,6 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
             switch (c) {
                 case '1':
                     state = MENU_VIDEO;
-                    break;
-                case '2':
-                    state = MENU_UART;
                     break;
                 case '3':
                     state = MENU_TABS;
@@ -556,53 +536,6 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
                     break;
             }
             break;
-
-        case MENU_UART:
-            switch (c) {
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                    state = MENU_UART_CONFIG;
-                    nr_opt = c - '1';
-                    break;
-                case 'x':
-                    state = MENU_MAIN;
-                    break;
-            }
-            break;
-        case MENU_UART_CONFIG:
-            switch (c) {
-                case '1':
-                    if (config.uart[nr_opt].mode > 0)
-                        config.uart[nr_opt].mode--;
-                    break;
-                case '2':
-                    if (config.uart[nr_opt].mode < UART_CLIENTS-1)
-                        config.uart[nr_opt].mode++;
-                    break;
-                case '3':
-                    if (config.uart[nr_opt].baudrate > 0)
-                        config.uart[nr_opt].baudrate--;
-                    break;
-                case '4':
-                    if (config.uart[nr_opt].baudrate < UART_BAUDRATES-1)
-                        config.uart[nr_opt].baudrate++;
-                    break;
-                case '5':
-                    if (config.uart[nr_opt].pins > 0)
-                        config.uart[nr_opt].pins--;
-                    break;
-                case '6':
-                    if (config.uart[nr_opt].pins < UART_PINS-1)
-                        config.uart[nr_opt].pins++;
-                    break;
-                case 'x':
-                    state = MENU_UART;
-                    break;
-            }
-            break;
-                
         case MENU_TABS:
             switch (c) {
                 case '1':
@@ -787,21 +720,6 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
                     osdxsize,
                     osdysize);
 
-            break;
-        case MENU_UART:
-            printf(menu_uart);
-            break;
-        case MENU_UART_CONFIG:
-            printf(menu_uart_config, nr_opt+1,
-                    config.uart[nr_opt].mode == 0 ? "DISABLED" :
-                    config.uart[nr_opt].mode == 1 ? "MAVLINK" :
-                    config.uart[nr_opt].mode == 2 ? "UAVTALK" : "CONSOLE",
-                    (unsigned int) (uart_get_baudrate(config.uart[nr_opt].baudrate) / 1000),
-                    (unsigned int) (uart_get_baudrate(config.uart[nr_opt].baudrate) % 1000),
-                    config.uart[nr_opt].pins == UART_PINS_TELEMETRY ? "TELEMETRY" :
-                    config.uart[nr_opt].pins == UART_PINS_CON2 ? "CON2" : 
-                    config.uart[nr_opt].pins == UART_PINS_ICSP ? "ICSP" :
-                    config.uart[nr_opt].pins == UART_PINS_CON3 ? "CON3" : "OFF");
             break;
         case MENU_TABS:
             printf(menu_tabs, current_tab,
