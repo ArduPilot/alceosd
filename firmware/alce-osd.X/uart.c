@@ -121,7 +121,7 @@ static const struct hw_pin_map_table {
 
 #define UART_CLIENTS_MAX 10
 static struct uart_client *uart_client_list[UART_CLIENTS_MAX] = { NULL };
-
+static struct uart_client *port_clients[4] = {NULL, NULL, NULL, NULL};
 
 struct uart_fifo {
   unsigned char buf[UART_FIFO_MASK+1];
@@ -141,6 +141,78 @@ __eds__ unsigned char uart4TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma)
 static const char keywords[] = "I want to enter AlceOSD setup";
 static const unsigned char answer[] = "AlceOSD setup starting";
 static unsigned char key_idx[4] = {0, 0, 0, 0};
+
+
+const char *UART_CLIENT_NAMES[] = {
+    "off",
+    "mavlink",
+    "uavtalk",
+    "shell",
+    "frsky"
+};
+const char *UART_PIN_NAMES[] = {
+    "telemetry",
+    "con2",
+    "icsp",
+    "con3",
+    "off"
+};
+
+
+static void shell_cmd_stats(char *args, void *data)
+{
+    unsigned char i, total = 0;
+    struct uart_client **clist = uart_client_list;
+    struct uart_client **cli = port_clients;
+    
+    shell_printf("\nPort settings (config):\n");
+    for (i = 0; i < 4; i++) {
+        shell_printf(" port%d: %6lubps pins=%-9s client=%s\n",
+                i, baudrates[config.uart[i].baudrate].baudrate,
+                UART_PIN_NAMES[config.uart[i].pins],
+                UART_CLIENT_NAMES[config.uart[i].mode]);
+    }
+    
+    shell_printf("\nRegistered clients:\n");
+    cli = uart_client_list;
+    while (*cli != NULL) {
+        shell_printf(" %-7s : ch=%d init=%04p close=%04p read=%04p write=%04p\n",
+                UART_CLIENT_NAMES[(*cli)->id], (*cli)->ch,
+                (*cli)->init, (*cli)->close, (*cli)->read, (*cli)->write);
+        total++;
+        cli++;
+    }
+    shell_printf("total=%d max=%d\n", total, UART_CLIENTS_MAX);
+
+    shell_printf("\nActive clients:\n");
+    cli = port_clients;
+    for (i = 0; i < 4; i++) {
+        if (cli[i] == NULL)
+            continue;
+        shell_printf(" port%d: client=%-7s ch=%d init=%04p close=%04p read=%04p write=%04p\n",
+                cli[i]->port, UART_CLIENT_NAMES[cli[i]->id], cli[i]->ch,
+                cli[i]->init, cli[i]->close, cli[i]->read, cli[i]->write);
+    }
+}
+
+static void shell_cmd_config(char *args, void *data)
+{
+    printf("args: %s\n", args);
+    
+    
+}
+
+static const struct shell_cmdmap_s uart_cmdmap[] = {
+    {"config", shell_cmd_config, "args: -p <port_nr> -b <baudrate> -c <client> -i <pins>", SHELL_CMD_SIMPLE},
+    {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
+    {"", NULL, ""},
+};
+
+void shell_cmd_uart(char *args, void *data)
+{
+    shell_exec(args, uart_cmdmap, data);
+}
+
 
 inline unsigned long uart_get_baudrate(unsigned char b)
 {
@@ -574,10 +646,6 @@ int __attribute__((__weak__, __section__(".libc"))) write(int handle, void *buf,
     return len;
 }
 #endif
-
-
-static struct uart_client *port_clients[4] = {NULL, NULL, NULL, NULL};
-
 
 static void uart_process(void)
 {

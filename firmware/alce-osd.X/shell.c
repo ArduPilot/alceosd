@@ -37,6 +37,7 @@ static const struct shell_cmdmap_s root_cmdmap[] = {
     {"clock", shell_cmd_clock, "Clock module", SHELL_CMD_SUBCMD},
     {"mavlink", shell_cmd_mavlink, "Mavlink module", SHELL_CMD_SUBCMD},
     {"reboot", shell_cmd_reboot, "Reboot AlceOSD", SHELL_CMD_SIMPLE},
+    {"uart", shell_cmd_uart, "UART module", SHELL_CMD_SUBCMD},
     {"version", shell_cmd_version, "Display firmware version", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
 };
@@ -82,7 +83,7 @@ void shell_exec(char *cmd_line, const struct shell_cmdmap_s *c, void *data)
         if (ac == NULL) {
             shell_printf("\r\n");
             while (c->handler != NULL) {
-                shell_printf("%s : %s\n", c->cmd, c->usage);
+                shell_printf("%-10s : %s\n", c->cmd, c->usage);
                 c++;
             }
         } else {
