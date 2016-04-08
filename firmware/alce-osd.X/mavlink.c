@@ -67,7 +67,7 @@ static void shell_cmd_callbacks(char *args, void *data)
         }
         c++;
     }
-    shell_printf("\n\ntotal=%d peak=%d\n", t, nr_callbacks);
+    shell_printf("\n\ntotal=%d peak=%d max=%d\n", t, nr_callbacks, MAX_MAVLINK_CALLBACKS);
 }
 
 static void shell_cmd_stats(char *args, void *data)
@@ -97,7 +97,7 @@ static void shell_cmd_route(char *args, void *data)
                 (unsigned) routes[i].ch);
     }
     
-    shell_printf("\nTotal routes=%d\n", total_routes);
+    shell_printf("\ntotal routes=%d max=%d\n", total_routes, MAX_MAVLINK_ROUTES);
 }
 
 static const struct shell_cmdmap_s mavlink_cmdmap[] = {

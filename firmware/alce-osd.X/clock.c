@@ -63,7 +63,7 @@ static void shell_cmd_timers(char *args, void *data)
 
 static void shell_cmd_stats(char *args, void *data)
 {
-    shell_printf("\nElapsed time since boot: %lu\n", millis);
+    shell_printf("\nElapsed time since boot: %lums\n", millis);
 }
 
 static const struct shell_cmdmap_s clock_cmdmap[] = {
