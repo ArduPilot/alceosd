@@ -106,73 +106,89 @@ void shell_exec(char *cmd_line, const struct shell_cmdmap_s *c, void *data)
     }
 }
 
+#define BACKSPACE   8
+#define TAB         9
+#define CR          13
+#define CTRL_R      18
+
 void shell_parser(unsigned char *buf, unsigned int len)
 {
-    static unsigned char cmd_idx = 0;
+    static unsigned char cmd_len = 0;
     static char cmd_line[MAX_SHELL_LINE_LEN];
+    static char prev_cmd_line[MAX_SHELL_LINE_LEN];
     unsigned char i;
     char tmp[MAX_SHELL_LINE_LEN], *p;
     struct shell_cmdmap_s *ac[20], **a, **b;
     int size;
     
     for (i = 0; i < len; i++) {
-        if (buf[i] == 8) {
-            if (cmd_idx > 0) {
-                cmd_idx--;
-                shell_putc(buf[i]);
-            }
-            continue;
-        } else {
-            cmd_line[cmd_idx] = buf[i];
-        }
-
-        if (buf[i] == '\t') {
-            cmd_line[cmd_idx] = '\0';
-            strcpy(tmp, cmd_line);
-            p = strrchr(tmp, ' ');
-            if (p == NULL) {
-                strcpy(tmp, "help");
-                p = tmp;
-            } else {
-                strcpy(p, " help");
-                p++;
-            }
-            shell_exec(tmp, root_cmdmap, ac);
-            strcpy(tmp, cmd_line);
-            size = strlen(p);
-            if (size > 0) {
-                a = b = ac;
-                while (*a != NULL) {
-                    if (strncmp((*a)->cmd, p, size) == 0)
-                        *b++ = *a;
-                    a++;
+        //printf("<%d>", buf[i]);
+        switch (buf[i]) {
+            case BACKSPACE:
+                if (cmd_len > 0) {
+                    cmd_len--;
+                    shell_putc(buf[i]);
                 }
-                *b = NULL;
-            }
-
-            a = ac;
-            if (*a == NULL) {
-                shell_printf("%c", 7);
-            } else if (*(a+1) == NULL) {
-                strcat(cmd_line, a->cmd + size);
-                cmd_idx += strlen(a->cmd) - size;
-                cmd_line[cmd_idx++] = ' ';
-                cmd_line[cmd_idx] = '\0';
-            } else {
-                shell_printf("\r\n");
-                while (*a != NULL)
-                    shell_printf("%s ", (*a++)->cmd);
-            }
-            shell_printf("\r\n> %s", cmd_line);
-        } else if (buf[i] == '\r') {
-            cmd_line[cmd_idx] = '\0';
-            shell_exec(cmd_line, root_cmdmap, NULL);
-            cmd_idx = 0;
-            shell_printf("\r\n> ");
-        } else {
-            if (cmd_idx < MAX_SHELL_LINE_LEN-1)
-                cmd_idx++;
-            shell_putc(buf[i]);
+                continue;
+            case CTRL_R:
+                strcpy(cmd_line, prev_cmd_line);
+                cmd_len = strlen(cmd_line);
+                shell_printf("\r\n> %s", cmd_line);
+                continue;
+            case TAB:
+                cmd_line[cmd_len] = '\0';
+                strcpy(tmp, cmd_line);
+                p = strrchr(tmp, ' ');
+                if (p == NULL) {
+                    strcpy(tmp, "help");
+                    p = tmp;
+                } else {
+                    strcpy(p, " help");
+                    p++;
+                }
+                shell_exec(tmp, root_cmdmap, ac);
+                strcpy(tmp, cmd_line);
+                size = strlen(p);
+                if (size > 0) {
+                    a = b = ac;
+                    while (*a != NULL) {
+                        if (strncmp((*a)->cmd, p, size) == 0)
+                            *b++ = *a;
+                        a++;
+                    }
+                    *b = NULL;
+                }
+                a = ac;
+                if (*a == NULL) {
+                    shell_printf("%c", 7);
+                } else if (*(a+1) == NULL) {
+                    p = &cmd_line[cmd_len];
+                    strcat(cmd_line, (*a)->cmd + size);
+                    cmd_len += strlen((*a)->cmd) - size;
+                    cmd_line[cmd_len++] = ' ';
+                    cmd_line[cmd_len] = '\0';
+                    shell_printf("%s", p);
+                } else {
+                    shell_printf("\r\n");
+                    while (*a != NULL)
+                        shell_printf("%s ", (*a++)->cmd);
+                    shell_printf("\r\n> %s", cmd_line);
+                }
+                continue;
+            case CR:
+                cmd_line[cmd_len] = '\0';
+                strcpy(prev_cmd_line, cmd_line);
+                shell_exec(cmd_line, root_cmdmap, NULL);
+                cmd_len = 0;
+                shell_printf("\r\n> ");
+                break;
+            default:
+                cmd_line[cmd_len] = buf[i];
+                if (cmd_len < MAX_SHELL_LINE_LEN-1)
+                    cmd_len++;
+                shell_putc(buf[i]);
+                break;
         }
+
     }
 }
