@@ -44,6 +44,7 @@
 #include "uavtalk.h"
 #include "frsky.h"
 #include "process.h"
+#include "shell.h"
 
 
 #define VERSION_MAJOR   0

@@ -23,6 +23,7 @@
       <itemPath>uavtalk.h</itemPath>
       <itemPath>process.h</itemPath>
       <itemPath>frsky.h</itemPath>
+      <itemPath>shell.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -75,6 +76,7 @@
       <itemPath>uavtalk.c</itemPath>
       <itemPath>process.c</itemPath>
       <itemPath>frsky.c</itemPath>
+      <itemPath>shell.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -289,6 +291,7 @@
         <property key="UART 2" value="true"/>
         <property key="UART 3" value="true"/>
         <property key="UART 4" value="true"/>
+        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>

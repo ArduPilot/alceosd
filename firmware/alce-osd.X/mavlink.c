@@ -18,7 +18,7 @@
 
 #include "alce-osd.h"
 
-#define MAX_MAVLINK_CALLBACKS 50
+#define MAX_MAVLINK_CALLBACKS 40
 #define MAX_MAVLINK_ROUTES 10
 
 
@@ -43,6 +43,58 @@ const struct param_def params_mavlink[] = {
     PARAM("MAV_OSDSYSID", MAV_PARAM_TYPE_UINT8, &osd_sysid, NULL),
     PARAM_END,
 };
+
+
+static void shell_cmd_callbacks(char *args, void *data)
+{
+    unsigned char i, t = 0;
+    struct mavlink_callback *c = callbacks;
+
+    shell_printf("\n\nWidget callbacks:\n");
+    for (i = 0; i < nr_callbacks; i++) {
+        if ((c->cbk != NULL) && (c->type == CALLBACK_WIDGET)) {
+            printf(" sysid=%3d msgid=%3d cbk=%p data=%p\n", c->sysid, c->msgid, c->cbk, c->data);
+            t++;
+        }
+        c++;
+    }
+    shell_printf("\n\nPersistent callbacks:\n");
+    c = callbacks;
+    for (i = 0; i < nr_callbacks; i++) {
+        if ((c->cbk != NULL) && (c->type == CALLBACK_PERSISTENT)) {
+            printf(" sysid=%3d msgid=%3d cbk=%p data=%p\n", c->sysid, c->msgid, c->cbk, c->data);
+            t++;
+        }
+        c++;
+    }
+    shell_printf("\n\ntotal=%d peak=%d\n", t, nr_callbacks);
+}
+
+static void shell_cmd_stats(char *args, void *data)
+{
+    mavlink_status_t *status;
+    unsigned char i;
+
+    for (i = 0; i < MAVLINK_COMM_NUM_BUFFERS; i++) {
+        status = mavlink_get_channel_status(i);
+        shell_printf("\nMavlink channel %d\n", i);
+        shell_printf(" msg_received=%d\n", status->msg_received);
+        shell_printf(" packet_rx_drop_count=%d\n", status->packet_rx_drop_count);
+        shell_printf(" packet_rx_success_count=%d\n", status->packet_rx_success_count);
+    }
+}
+
+static const struct shell_cmdmap_s mavlink_cmdmap[] = {
+    {"callbacks", shell_cmd_callbacks, "callbacks", SHELL_CMD_SIMPLE},
+    {"stats", shell_cmd_stats, "stats", SHELL_CMD_SIMPLE},
+    {"", NULL, ""},
+};
+
+void shell_cmd_mavlink(char *args, void *data)
+{
+    shell_exec(args, mavlink_cmdmap, data);
+}
+
 
 
 /* additional helper functions */

@@ -381,13 +381,18 @@ const char menu_edit_widget[] = "\n\nAlceOSD :: Edit widget\n\n"
 
 extern const struct widget_ops *all_widget_ops[];
 
+static unsigned int shell_process(struct uart_client *cli, unsigned char *buf, unsigned int len)
+{
+    shell_parser(buf, len);
+    return len;
+}
+
 static unsigned int config_process(struct uart_client *cli, unsigned char *buf, unsigned int len)
 {
     static unsigned char state = MENU_MAIN;
     unsigned int osdxsize, osdysize;
     static unsigned int options[30];
     static unsigned char nr_opt = 0;
-    void (*fptr)(void);
 
     video_get_size(&osdxsize, &osdysize);
 
@@ -451,6 +456,10 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
                 case '-':
                     break;
                     
+                case '!':
+                    config_uart_client.read = shell_process;
+                    break;
+
                 case '#':
                     __asm__ volatile ("reset");
                     break;
