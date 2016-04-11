@@ -161,7 +161,7 @@ void clock_init(void)
     process_add(clock_process);
 }
 
-void __attribute__((__interrupt__, no_auto_psv )) _T1Interrupt()
+void __attribute__((__interrupt__, auto_psv )) _T1Interrupt()
 {
     static unsigned int j = 0;
     millis++;

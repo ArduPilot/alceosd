@@ -173,26 +173,6 @@ static inline void uart_set_baudrate(unsigned char port, unsigned char b)
         *(UARTS[port].BRG) = baudrates[b].brg;
 }
 
-void __attribute__((__interrupt__, no_auto_psv)) _DMA0Interrupt(void)
-{
-    IFS0bits.DMA0IF = 0;
-}
-
-void __attribute__((__interrupt__, no_auto_psv)) _DMA1Interrupt(void)
-{
-    IFS0bits.DMA1IF = 0;
-}
-
-void __attribute__((__interrupt__, no_auto_psv)) _DMA2Interrupt(void)
-{
-    IFS1bits.DMA2IF = 0;
-}
-
-void __attribute__((__interrupt__, no_auto_psv)) _DMA3Interrupt(void)
-{
-    IFS2bits.DMA3IF = 0;
-}
-
 inline static void handle_uart_int(unsigned char port)
 {
     unsigned char n_wr = rx_fifo[port].wr;
