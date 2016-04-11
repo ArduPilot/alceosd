@@ -73,7 +73,7 @@ _copy_line:
     MOV #0xFEF0, W3
     AND W5, W3, W5 ; base LATC
 
-;   don't call this routine with W1(count) = 0
+;   don't call this routine with W2(count) = 0
     DEC W2,W2
     DO  W2, copy_line_loop
 
@@ -90,6 +90,7 @@ _copy_line:
     AND W4, #0xF, W2
     IOR W5, W2, W2
     MOV W2, LATC
+    DISI #1
 copy_line_loop:
 ;   CLK_HIGH;
     BSET LATC, #8

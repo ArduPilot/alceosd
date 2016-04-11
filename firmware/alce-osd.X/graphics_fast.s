@@ -155,6 +155,7 @@ _draw_hline_no_clip_x0:
     LSR W2, W1, W2
     IOR.B W2, [W7], [W7]
 
+    DISI #1
 _draw_hline_loop:
     INC W0, W0
 
@@ -233,6 +234,7 @@ _draw_vline_no_clip_y0:
     LSR W2, W5, W2
     IOR.B W2, [W7], [W7]
 
+    DISI #1
 _draw_vline_loop:
     ADD W7, W6, W7
 
