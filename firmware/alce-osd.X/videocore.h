@@ -112,4 +112,6 @@ void video_get_size(unsigned int *xsize, unsigned int *ysize);
 void video_pause(void);
 void video_resume(void);
 
+void shell_cmd_video(char *args, void *data);
+
 #endif

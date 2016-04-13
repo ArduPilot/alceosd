@@ -39,6 +39,7 @@ static const struct shell_cmdmap_s root_cmdmap[] = {
     {"reboot", shell_cmd_reboot, "Reboot AlceOSD", SHELL_CMD_SIMPLE},
     {"uart", shell_cmd_uart, "UART module", SHELL_CMD_SUBCMD},
     {"version", shell_cmd_version, "Display firmware version", SHELL_CMD_SIMPLE},
+    {"video", shell_cmd_video, "Videocore module", SHELL_CMD_SUBCMD},
     {"", NULL, ""},
 };
 
@@ -78,7 +79,7 @@ unsigned char shell_arg_parser(char *args, struct shell_argval *v, unsigned char
     while (p != NULL) {
         v[i].key = *p++;
         while (*p == ' ')
-            *p++;
+            p++;
         strncpy(v[i].val, p, MAX_SHELL_ARGVAL_LEN);
         s = strchr(v[i].val, ' ');
         if (s != NULL)

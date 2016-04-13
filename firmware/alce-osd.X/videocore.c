@@ -117,6 +117,7 @@ const struct osd_xsize_tbl video_xsizes[] = {
 static struct canvas_pipe_s {
     struct canvas *ca[MAX_CANVAS_PIPE_MASK+1];
     unsigned char prd, pwr;
+    unsigned char peak;
 } canvas_pipe = {
     .pwr = 0,
     .prd = 0,
@@ -330,12 +331,11 @@ static void video_init_sram(void)
 #endif
 }
 
-static void video_read_dac(void)
+#define VIDEO_DAC_BUF_SIZE  (3*2*4)
+static void video_read_dac(unsigned char *dac_status)
 {
-    unsigned char dac_status[3*2*4];
+    //unsigned char dac_status[VIDEO_DAC_BUF_SIZE];
     unsigned char i;
-    
-    printf("Reading DAC values...\n");
     
     I2C1CONbits.SEN = 1;
     while (I2C1CONbits.SEN == 1);
@@ -343,7 +343,7 @@ static void video_read_dac(void)
     I2C1TRN = 0xc1;
     while (I2C1STATbits.TRSTAT == 1);
 
-    for (i = 0; i < 3*2*4; i++) {
+    for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
         I2C1CONbits.RCEN = 1;
         while (I2C1CONbits.RCEN == 1);
         
@@ -356,11 +356,11 @@ static void video_read_dac(void)
     I2C1CONbits.PEN = 1;
     while (I2C1CONbits.PEN == 1);
     
-    for (i = 0; i < 3*2*4; i++) {
+    /*for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
         printf("0x%02x ", dac_status[i]);
         if (((i+1) % 3) == 0)
             printf("\n");
-    }
+    }*/
     
     
 }
@@ -741,6 +741,7 @@ void schedule_canvas(struct canvas *ca)
 {
     canvas_pipe.ca[canvas_pipe.pwr++] = ca;
     canvas_pipe.pwr &= MAX_CANVAS_PIPE_MASK;
+    canvas_pipe.peak = MAX(canvas_pipe.peak, canvas_pipe.pwr - canvas_pipe.prd);
     ca->lock = 1;
 }
 
@@ -839,7 +840,7 @@ void init_video(void)
 
 
 /* line timer */
-void __attribute__((__interrupt__, no_auto_psv )) _T2Interrupt()
+void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
 {
     /* stop timer */
     T2CONbits.TON = 0;
@@ -975,7 +976,7 @@ static void render_line(void)
 
 
 /* external sync */
-void __attribute__((__interrupt__, no_auto_psv )) _INT1Interrupt()
+void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
 {
     last_line_cnt = line;
     line = 0;
@@ -1222,4 +1223,155 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
             }
         }
     }
+}
+
+
+static void shell_cmd_stats(char *args, void *data)
+{
+    unsigned char dac_status[VIDEO_DAC_BUF_SIZE], i;
+    shell_printf("\nVideo config:\n");
+    shell_printf(" standard=%s,%s\n",
+        (config.video.mode & VIDEO_MODE_STANDARD_MASK) != 0 ? "ntsc" : "pal",
+        (config.video.mode & VIDEO_MODE_SCAN_MASK) != 0 ? "interlaced" : "progressive");
+    shell_printf(" internal sync=%u\n", (config.video.mode & VIDEO_MODE_SYNC_MASK) != 0 ? 1 : 0);
+    if (hw_rev < 0x03) {
+        shell_printf(" brightness=%u\n", config.video.brightness);
+    } else {
+        shell_printf(" levels: white=%u gray=%u %black=%u\n",
+                config.video.white_lvl,
+                config.video.gray_lvl,
+                config.video.black_lvl);
+        
+        shell_printf(" dac settings:\n  ");
+        video_read_dac(dac_status);
+        for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
+            shell_printf("0x%02x ", dac_status[i]);
+            if (((i+1) % 3) == 0)
+                printf("\n  ");
+        }
+        shell_printf("\n");
+    }
+
+    shell_printf(" offset: x=%u y=%u\n",
+            config.video.x_offset, config.video.y_offset);
+    shell_printf(" size: x=%u y=%u\n",
+            video_xsizes[config.video.x_size_id].xsize, config.video.y_size);
+    
+    shell_printf("\nVideocore stats:\n");
+    shell_printf(" scratchpad memory: A=%u/%u B=%u/%u\n",
+                scratchpad[0].alloc_size, SCRATCHPAD_SIZE,
+                scratchpad[1].alloc_size, SCRATCHPAD_SIZE);
+    shell_printf(" canvas fifo: size=%u peak=%u max=%u\n",
+                canvas_pipe.pwr - canvas_pipe.prd, canvas_pipe.peak, MAX_CANVAS_PIPE_MASK+1);
+    shell_printf(" status: last_line_cnt=%u sram_busy=%u int_sync_cnt=%u\n",
+                last_line_cnt, sram_busy, int_sync_cnt);
+}
+
+#define SHELL_CMD_CONFIG_ARGS   10
+static void shell_cmd_config(char *args, void *data)
+{
+    struct shell_argval argval[SHELL_CMD_CONFIG_ARGS+1];
+    unsigned char t, i;
+    int int_var;
+    
+    t = shell_arg_parser(args, argval, SHELL_CMD_CONFIG_ARGS);
+
+    if (t < 1) {
+        shell_printf("\narguments:\n");
+        shell_printf(" -s <standard>    video standard: [p]al or [n]tsc\n");
+        shell_printf(" -m <scan_mode>   video scan mode: [p]rogressive or [i]nterlaced\n");
+        shell_printf(" -i <int_sync>    internal sync: 0 or 1\n");
+
+        if (hw_rev < 0x03) {
+            shell_printf(" -t <brightness>  brightness: 0 (max) to 1000 (min)\n");
+        } else {
+            shell_printf(" -w <white_lvl>   white voltage level: 0 to \n");
+            shell_printf(" -g <gray_lvl>    gray voltage level: 0 to \n");
+            shell_printf(" -b <black_lvl>   black voltage level: 0 to \n");
+        }
+        shell_printf(" -x <x_size>    horizontal video resolution:");
+        for (i = 0; i < VIDEO_XSIZE_END; i++)
+            shell_printf(" %d", video_xsizes[i].xsize);
+        shell_printf("\n -y <y_size>    vertical video resolution\n");
+        shell_printf(" -h <x_offset>  horizontal video offset\n");
+        shell_printf(" -v <y_offset>  vertical video offset\n");
+        
+    } else {
+        for (i = 0; i < t; i++) {
+            switch (argval[i].key) {
+                case 's':
+                    if (strcmp(argval[i].val, "p") == 0)
+                        config.video.mode &= ~VIDEO_MODE_STANDARD_MASK;
+                    else
+                        config.video.mode |= VIDEO_MODE_STANDARD_MASK;
+                case 'm':
+                    if (strcmp(argval[i].val, "p") == 0)
+                        config.video.mode &= ~VIDEO_MODE_SCAN_MASK;
+                    else
+                        config.video.mode |= VIDEO_MODE_SCAN_MASK;
+                    break;
+                case 'i':
+                    if (strcmp(argval[i].val, "0") == 0)
+                        config.video.mode &= ~VIDEO_MODE_SYNC_MASK;
+                    else
+                        config.video.mode |= VIDEO_MODE_SYNC_MASK;
+                    break;
+
+                case 't':
+                    int_var = atoi(argval[i].val);
+                    config.video.brightness = (unsigned int) int_var;
+                    break;
+
+                case 'w':
+                    int_var = atoi(argval[i].val);
+                    config.video.white_lvl = (unsigned char) int_var;
+                    break;
+                case 'g':
+                    int_var = atoi(argval[i].val);
+                    config.video.gray_lvl = (unsigned char) int_var;
+                    break;
+                case 'b':
+                    int_var = atoi(argval[i].val);
+                    config.video.black_lvl = (unsigned char) int_var;
+                    break;
+                    
+                case 'x':
+                    int_var = atoi(argval[i].val);
+                    for (i = 0; i < VIDEO_XSIZE_END; i++) {
+                        if (int_var == video_xsizes[i].xsize) {
+                            config.video.x_size_id = i;
+                            break;
+                        }
+                    }
+                    break;
+                case 'y':
+                    int_var = atoi(argval[i].val);
+                    config.video.y_size = (unsigned int) int_var;
+                    break;
+                case 'h':
+                    int_var = atoi(argval[i].val);
+                    config.video.x_offset = (unsigned int) int_var;
+                    break;
+                case 'v':
+                    int_var = atoi(argval[i].val);
+                    config.video.y_offset = (unsigned int) int_var;
+                    break;
+                default:
+                    break;
+            }
+        }
+        video_apply_config_cbk();
+    }
+}
+
+
+static const struct shell_cmdmap_s video_cmdmap[] = {
+    {"config", shell_cmd_config, "Configure video settings", SHELL_CMD_SIMPLE},
+    {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
+    {"", NULL, ""},
+};
+
+void shell_cmd_video(char *args, void *data)
+{
+    shell_exec(args, video_cmdmap, data);
 }
