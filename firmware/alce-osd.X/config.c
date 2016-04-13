@@ -303,7 +303,6 @@ static void exit_config(void)
 
 enum {
     MENU_MAIN,
-    MENU_VIDEO,
     MENU_TABS,
     MENU_TAB_WIDGETS,
     MENU_ADD_WIDGET,
@@ -312,7 +311,6 @@ enum {
 
 const char menu_main[] = "\n\n"
                          "AlceOSD setup\n\n"
-                         "1 - Video config\n"
                          "3 - Configure tabs\n"
                          "4 - Units (global setting): %s\n"
                          "q/w - Decrease/increase home locking timer: %d\n"
@@ -321,19 +319,6 @@ const char menu_main[] = "\n\n"
                          "d - Dump setting to console\n"
                          "l - Load settings from console\n"
                          "x - Exit config\n";
-
-const char menu_video[] = "\n\nAlceOSD :: VIDEO setup\n\n"
-                          "1 - Video standard: %s\n"
-                          "    Internal sync generator: %s\n"
-                          "2/3 - Adjust video brightness: %u\n"
-                          "4/5 - Video white lvl: %u\n"
-                          "6/7 - Video gray lvl: %u\n"
-                          "8/9 - Video black lvl: %u\n"
-                          "q/a - Adjust video window vertically: %d\n"
-                          "d/f - Adjust video window horizontally: %d\n"
-                          "e/r - Decrease/increase video X size: %d\n"
-                          "s/w - Decrease/increase video Y size: %d\n"
-                          "x - Go back\n";
 
 const char menu_tabs[] = "\n\nAlceOSD :: TAB config\n\n"
                          "1/2 - Change active tab: %d\n"
@@ -392,9 +377,6 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
         case MENU_MAIN:
         default:
             switch (c) {
-                case '1':
-                    state = MENU_VIDEO;
-                    break;
                 case '3':
                     state = MENU_TABS;
                     break;
@@ -447,94 +429,6 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
                     break;
             }
 
-            break;
-        case MENU_VIDEO:
-            switch (c) {
-                case '1':
-                    config.video.mode += 1;
-                    if (config.video.mode >= VIDEO_STANDARD_END)
-                        config.video.mode = 0;
-                    load_tab(current_tab);
-                    break;
-                case '2':
-                    if (config.video.brightness > 9)
-                        config.video.brightness -= 10;
-                    video_apply_config(&config.video);
-                    break;
-                case '3':
-                    config.video.brightness += 10;
-                    if (config.video.brightness > 1000)
-                        config.video.brightness = 1000;
-                    video_apply_config(&config.video);
-                    break;
-                case '4':
-                    config.video.white_lvl -= 1;
-                    video_apply_config(&config.video);
-                    break;
-                case '5':
-                    config.video.white_lvl += 1;
-                    video_apply_config(&config.video);
-                    break;
-                case '6':
-                    config.video.gray_lvl -= 1;
-                    video_apply_config(&config.video);
-                    break;
-                case '7':
-                    config.video.gray_lvl += 1;
-                    video_apply_config(&config.video);
-                    break;
-                case '8':
-                    config.video.black_lvl -= 1;
-                    video_apply_config(&config.video);
-                    break;
-                case '9':
-                    config.video.black_lvl += 1;
-                    video_apply_config(&config.video);
-                    break;
-                case 'q':
-                    if (config.video.y_offset > 0)
-                        config.video.y_offset--;
-                    break;
-                case 'a':
-                    if (config.video.y_offset < 500)
-                        config.video.y_offset++;
-                    break;
-                case 'd':
-                    if (config.video.x_offset > 0)
-                        config.video.x_offset--;
-                    break;
-                case 'f':
-                    if (config.video.x_offset < 1000)
-                        config.video.x_offset++;
-                    break;
-                case 'e':
-                    if (config.video.x_size_id > 0)
-                        config.video.x_size_id--;
-                    video_apply_config(&config.video);
-                    load_tab(current_tab);
-                    break;
-                case 'r':
-                    if (config.video.x_size_id < (VIDEO_XSIZE_END-1))
-                        config.video.x_size_id++;
-                    video_apply_config(&config.video);
-                    load_tab(current_tab);
-                    break;
-                case 'w':
-                    if (config.video.y_size < 1000)
-                        config.video.y_size++;
-                    load_tab(current_tab);
-                    break;
-                case 's':
-                    if (config.video.y_size > 0)
-                        config.video.y_size--;
-                    load_tab(current_tab);
-                    break;
-                case 'x':
-                    state = MENU_MAIN;
-                    break;
-                default:
-                    break;
-            }
             break;
         case MENU_TABS:
             switch (c) {
@@ -704,22 +598,6 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
             printf(menu_main,
                     (config.default_units == UNITS_METRIC) ? "METRIC" : "IMPERIAL",
                     config.home_lock_sec);
-            break;
-        case MENU_VIDEO:
-            printf(menu_video,
-                    ((config.video.mode & 0x3) == VIDEO_STANDARD_PAL_P) ? "PAL progressive" :
-                    ((config.video.mode & 0x3) == VIDEO_STANDARD_PAL_I) ? "PAL interlaced" :
-                    ((config.video.mode & 0x3) == VIDEO_STANDARD_NTSC_P) ? "NTSC progressive" : "NTSC interlaced",
-                    (config.video.mode & VIDEO_MODE_SYNC_MASK) ? "Enabled" : "Disabled",
-                    config.video.brightness,
-                    config.video.white_lvl,
-                    config.video.gray_lvl,
-                    config.video.black_lvl,
-                    config.video.y_offset,
-                    config.video.x_offset,
-                    osdxsize,
-                    osdysize);
-
             break;
         case MENU_TABS:
             printf(menu_tabs, current_tab,
