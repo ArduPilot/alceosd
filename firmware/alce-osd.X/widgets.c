@@ -67,7 +67,7 @@ const struct widget_ops *all_widget_ops[] = {
 #define MAX_WIDGET_ALLOC_MEM (0x400)
 
 struct widgets_mem_s {
-    unsigned int mem[MAX_WIDGET_ALLOC_MEM];
+    unsigned char mem[MAX_WIDGET_ALLOC_MEM];
     unsigned int alloc_size;
 } widgets_mem = {
     .alloc_size = 0,
