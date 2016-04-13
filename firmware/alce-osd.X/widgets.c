@@ -177,14 +177,6 @@ void schedule_widget(struct widget *w)
 
 void widgets_reset(void)
 {
-    const struct widget_ops **w = all_widget_ops;
-
-    while ((*w) != NULL) {
-        if ((*w)->close != NULL)
-            (*w)->close(w);
-        w++;
-    }
-    
     /* remove widget related timers/tasks */
     remove_timers(TIMER_WIDGET);
     /* remove widget related mavlink callbacks */
