@@ -86,7 +86,7 @@ struct widget_fifo {
 /* custom memory allocator for widgets */
 void* widget_malloc(unsigned int size)
 {
-    unsigned int *ptr;
+    unsigned char *ptr;
     size = (size + 1) & 0xfffe;
     if ((widgets_mem.alloc_size + size) >= MAX_WIDGET_ALLOC_MEM)
         return NULL;
@@ -111,6 +111,31 @@ const struct widget_ops *get_widget_ops(unsigned int id)
             w++;
     }
     return (*w);
+}
+
+
+struct widget* load_widget(struct widget_config *w_cfg)
+{
+    const struct widget_ops *w_ops;
+    struct widget *w;
+    
+    w_ops = get_widget_ops(w_cfg->widget_id);
+    if (w_ops == NULL)
+        return NULL;
+
+    w = (struct widget*) widget_malloc(sizeof(struct widget));
+    if (w == NULL)
+        return NULL;
+    w->ops = w_ops;
+    w->cfg = w_cfg;
+    w->status = 0;
+    if (w_ops->open(w))
+        return NULL;
+
+    alloc_canvas(&w->ca, w->cfg);
+    schedule_widget(w);
+
+    return w;
 }
 
 

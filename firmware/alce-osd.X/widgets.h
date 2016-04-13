@@ -91,6 +91,7 @@ struct widget {
 
 void widgets_init(void);
 void widgets_reset(void);
+struct widget* load_widget(struct widget_config *w_cfg);
 void schedule_widget(struct widget *w);
 const struct widget_ops *get_widget_ops(unsigned int id);
 void* widget_malloc(unsigned int size);

@@ -66,33 +66,6 @@ static unsigned char search_on_list(unsigned char *list, unsigned char tab)
 }
 
 
-static struct widget* load_widget(struct widget_config *w_cfg)
-{
-    const struct widget_ops *w_ops;
-    struct widget *w;
-    
-    w_ops = get_widget_ops(w_cfg->widget_id);
-    if (w_ops == NULL)
-        return NULL;
-
-    w = (struct widget*) widget_malloc(sizeof(struct widget));
-    if (w == NULL) {
-        DTABS("load_tab: no mem for widget %d exiting load tabs\n", w_cfg->widget_id);
-        return NULL;
-    }
-    w->ops = w_ops;
-    w->cfg = w_cfg;
-    w->status = 0;
-    if (w_ops->open(w))
-        return NULL;
-
-    alloc_canvas(&w->ca, w->cfg);
-    schedule_widget(w);
-
-    return w;
-}
-
-
 void load_tab(unsigned char tab)
 {
     struct widget_config *w_cfg = &config.widgets[0];
