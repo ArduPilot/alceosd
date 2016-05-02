@@ -547,7 +547,7 @@ static void video_init_hw(void)
         CVR1CONbits.VREFSEL = 0;
         CVR1CONbits.CVRR = 1;
         CVR1CONbits.CVRSS = 0;
-        CVR1CONbits.CVR = 3;
+        CVR1CONbits.CVR = 4;
         CVR1CONbits.CVREN = 1;
 #else
         CVRCONbits.CVR1OE = 0;
@@ -582,6 +582,13 @@ static void video_init_hw(void)
         CM2CONbits.CCH = 0b00;
         CM2FLTRbits.CFLTREN = 0;
         CM2CONbits.CON = 1;
+
+        T5CON = 0x0010;
+        /* period = 1 / (70000000 / 8) * PR5 */
+        PR5 = 500;
+        _T5IP = 7;
+        _T5IF = 0;
+        _T5IE = 1;
     }
     
     if (videocore_ctrl & CTRL_DACBRIGHT) {
@@ -992,18 +999,21 @@ void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
     _INT2IF = 0;
 }
 
+void __attribute__((__interrupt__, no_auto_psv )) _T5Interrupt()
+{
+    T5CONbits.TON = 0;
+    IC1CON1bits.ICM = 1;
+    _T5IF = 0;
+}
+
 /* comparator + input capture sync */
 void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
 {
     static unsigned int tp = 0xffff, last_cnt;
     static unsigned char vsync = 0;
     unsigned int cnt, t;
+    unsigned char std = 0;
 
-    /* fifo overflow means no sync */
-    if (IC1CON1bits.ICOV) {
-        IC1CON1bits.ICOV = 0;
-        vsync = 0;
-    }
     /* empty fifo */
     do {
         cnt = IC1BUF;
@@ -1027,15 +1037,26 @@ void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
             tp = 0xffff;
         }
 
-        /* pal / ntsc */
-        if ((tp == 0b1000001111100000) || (tp == 0b0000111111000000)) {
+        switch (tp) {
+            case 0b1000001111100000:
+                std = 1; // pal
+                break;
+            case 0b0000111111000000:
+                std = 2; // ntsc
+                break;
+            default:
+                std = 0;
+                break;
+        }
+        
+        if (std > 0) {
             /* pull downs - input video */
             _CNPUA2 = 0;
             _CNPDA2 = 1;
             _CNPUA3 = 0;
             _CNPDA3 = 1;
             _T4IP = 3;
-            vsync = 50;
+            vsync = std;
             last_line_cnt = line+10;
             line = 10;
             odd = 0;
@@ -1045,11 +1066,17 @@ void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
         }
 
         if (vsync) {
-            if (abs(((long) t) - 300) < 100) {
+            if (abs(((long) t) - 329) < 100) {
+                if (((vsync == 1) && (line < 314)) ||
+                    ((vsync == 2) && (line < 264))) {
+                    IC1CON1bits.ICM = 0;
+                    TMR5 = 0;
+                    T5CONbits.TON = 1;
+                }
                 render_line();
             } else {
-                /* loosing sync */
-                vsync--;
+                /* lost sync */
+                vsync = 0;
             }
         }
     } else {
@@ -1273,6 +1300,7 @@ static void shell_cmd_config(char *args, void *data)
     struct shell_argval argval[SHELL_CMD_CONFIG_ARGS+1];
     unsigned char t, i;
     int int_var;
+    float f;
     
     t = shell_arg_parser(args, argval, SHELL_CMD_CONFIG_ARGS);
 
@@ -1355,6 +1383,43 @@ static void shell_cmd_config(char *args, void *data)
                 case 'v':
                     int_var = atoi(argval[i].val);
                     config.video.y_offset = (unsigned int) int_var;
+                    break;
+
+                case 'c':
+                    int_var = atoi(argval[i].val);
+                    CVR1CONbits.CVRR = (unsigned int) int_var & 0x1;
+                    CVR1CONbits.CVRR1 = (unsigned int) (int_var >> 1) & 0x1;
+                    break;
+                case 'r':
+                    int_var = atoi(argval[i].val);
+                    CVR1CONbits.CVR = (unsigned int) int_var & 0xf;
+                    
+                    int_var = CVR1CONbits.CVRR | (CVR1CONbits.CVRR1 << 1);
+                    
+                    f = (float) CVR1CONbits.CVR;
+                    
+                    switch (int_var) {
+                        case 0:
+                            f = f/32.0 * 3.3 + (1/4.0) * 3.3;
+                            break;
+                        case 1:
+                            f = f /24.0 * 3.3;
+                            break;
+                        case 2:
+                            f = f/24.0 * 3.3 + (1/3.0) * 3.3;
+                            break;
+                        case 3:
+                            f = f / 16.0 * 3.3;
+                            break;
+                        default:
+                            f = 0;
+                            break;
+                    }
+                    shell_printf("\nvref=%0.3f\n", f);
+                    break;
+                case 'l':
+                    int_var = atoi(argval[i].val);
+                    PR5 = (unsigned int) int_var;
                     break;
                 default:
                     break;
