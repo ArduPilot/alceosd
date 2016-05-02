@@ -190,7 +190,7 @@ namespace AlceOSD_updater
                 comPort.Write("I want to enter AlceOSD setup");
                 System.Threading.Thread.Sleep(100);
                 string ans = comPort.ReadExisting();
-                txt_log.AppendText(ans + "\n");
+                //txt_log.AppendText(ans + "\n");
                 if (ans.EndsWith("AlceOSD setup starting"))
                 {
                     in_setup = true;

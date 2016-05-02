@@ -1119,8 +1119,8 @@
             this.cb_tabmode.FormattingEnabled = true;
             this.cb_tabmode.Items.AddRange(new object[] {
             "Percentage",
-            "Toogle",
             "Flight mode",
+            "Toggle",
             "Demo"});
             this.cb_tabmode.Location = new System.Drawing.Point(107, 19);
             this.cb_tabmode.Name = "cb_tabmode";
