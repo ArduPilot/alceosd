@@ -68,7 +68,7 @@ static void timer_callback(struct timer *t, void *d)
     struct widget *w = (struct widget*) d;
     struct widget_priv *priv = (struct widget_priv*) w->priv;
 
-    /* do stuff if needed (read adc, digital i/o, ... */
+    /* do stuff if needed (read adc, digital I/O, ...) */
 
     priv->var1--;
 
@@ -76,7 +76,7 @@ static void timer_callback(struct timer *t, void *d)
 }
 
 /* called when the widget is shown on the screen */
-/* should return 0 if the init was successeful */
+/* should return 0 if the init was successful */
 static int open(struct widget *w)
 {
     struct widget_priv *priv;
@@ -95,7 +95,7 @@ static int open(struct widget *w)
     w->ca.width = X_SIZE;
     w->ca.height = Y_SIZE;
 
-    /* create a callback that will trigger when a sepecific message ID arrrives */
+    /* create a callback that will trigger when a specific message ID arrives */
     add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET, w);
 
     /* or/and trigger the widget rendering with a timer */
