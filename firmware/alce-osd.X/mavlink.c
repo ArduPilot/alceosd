@@ -45,97 +45,10 @@ const struct param_def params_mavlink[] = {
 };
 
 
-static void shell_cmd_callbacks(char *args, void *data)
-{
-    unsigned char i, t = 0;
-    struct mavlink_callback *c = callbacks;
-
-    shell_printf("\n\nWidget callbacks:\n");
-    for (i = 0; i < nr_callbacks; i++) {
-        if ((c->cbk != NULL) && (c->type == CALLBACK_WIDGET)) {
-            printf(" sysid=%3d msgid=%3d cbk=%p data=%p\n", c->sysid, c->msgid, c->cbk, c->data);
-            t++;
-        }
-        c++;
-    }
-    shell_printf("\n\nPersistent callbacks:\n");
-    c = callbacks;
-    for (i = 0; i < nr_callbacks; i++) {
-        if ((c->cbk != NULL) && (c->type == CALLBACK_PERSISTENT)) {
-            printf(" sysid=%3d msgid=%3d cbk=%p data=%p\n", c->sysid, c->msgid, c->cbk, c->data);
-            t++;
-        }
-        c++;
-    }
-    shell_printf("\n\ntotal=%d peak=%d max=%d\n", t, nr_callbacks, MAX_MAVLINK_CALLBACKS);
-}
-
-static void shell_cmd_stats(char *args, void *data)
-{
-    mavlink_status_t *status;
-    unsigned char i;
-
-    for (i = 0; i < MAVLINK_COMM_NUM_BUFFERS; i++) {
-        status = mavlink_get_channel_status(i);
-        shell_printf("\nMavlink channel %d\n", i);
-        shell_printf(" msg_received=%d\n", status->msg_received);
-        shell_printf(" packet_rx_drop_count=%d\n", status->packet_rx_drop_count);
-        shell_printf(" packet_rx_success_count=%d\n", status->packet_rx_success_count);
-    }
-    shell_printf("\nActive channel mask=%x\n", active_channel_mask);
-}
-
-static void shell_cmd_route(char *args, void *data)
-{
-    unsigned char i;
-    
-    shell_printf("\nMavlink routing table:\n");
-    for(i = 0; i < total_routes; i++) {
-        shell_printf(" sysid(%3u) compid(%3u) on channel(%u)\n",
-                (unsigned) routes[i].sysid, 
-                (unsigned) routes[i].compid,
-                (unsigned) routes[i].ch);
-    }
-    
-    shell_printf("\ntotal routes=%d max=%d\n", total_routes, MAX_MAVLINK_ROUTES);
-}
-
-static const struct shell_cmdmap_s mavlink_cmdmap[] = {
-    {"callbacks", shell_cmd_callbacks, "Display callback info", SHELL_CMD_SIMPLE},
-    {"route", shell_cmd_route, "Display routing table", SHELL_CMD_SIMPLE},
-    {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
-    {"", NULL, ""},
-};
-
-void shell_cmd_mavlink(char *args, void *data)
-{
-    shell_exec(args, mavlink_cmdmap, data);
-}
-
-
-
 /* additional helper functions */
 unsigned int mavlink_msg_rc_channels_raw_get_chan(mavlink_message_t *msg, unsigned char ch)
 {
-    switch (ch) {
-        default:
-        case 0:
-            return mavlink_msg_rc_channels_raw_get_chan1_raw(msg);
-        case 1:
-            return mavlink_msg_rc_channels_raw_get_chan2_raw(msg);
-        case 2:
-            return mavlink_msg_rc_channels_raw_get_chan3_raw(msg);
-        case 3:
-            return mavlink_msg_rc_channels_raw_get_chan4_raw(msg);
-        case 4:
-            return mavlink_msg_rc_channels_raw_get_chan5_raw(msg);
-        case 5:
-            return mavlink_msg_rc_channels_raw_get_chan6_raw(msg);
-        case 6:
-            return mavlink_msg_rc_channels_raw_get_chan7_raw(msg);
-        case 7:
-            return mavlink_msg_rc_channels_raw_get_chan8_raw(msg);
-    }
+    return _MAV_RETURN_uint16_t(msg,  4 + ch*2);
 }
 
 static void get_targets(mavlink_message_t *msg, int *sysid, int *compid)
@@ -463,7 +376,7 @@ void mavlink_handle_msg(unsigned char ch, mavlink_message_t *msg)
     struct mavlink_callback *c;
     unsigned char i, route;
 
-    LED = 0;
+    LED = ~LED;
     
     route = mavlink_get_route(ch, msg);
     if (route)
@@ -477,7 +390,7 @@ void mavlink_handle_msg(unsigned char ch, mavlink_message_t *msg)
             c->cbk(msg, c->data);
     }
     
-    LED = 1;
+    LED = ~LED;
 }
 
 static unsigned int mavlink_receive(struct uart_client *cli, unsigned char *buf, unsigned int len)
@@ -553,6 +466,7 @@ static void mav_heartbeat(struct timer *t, void *d)
             MAV_STATE_ACTIVE);
 
     mavlink_send_msg(&msg);
+    LED = ~LED;
 }
 
 
@@ -656,11 +570,10 @@ void mav_param_set(mavlink_message_t *msg, void *d)
     mavlink_send_msg(&msg2);
 }
 
-static void mav_heartbeat_cbk(mavlink_message_t *msg, void *d)
+static void mavlink_request_data_streams(struct timer *t, void *d)
 {
     mavlink_message_t msg2;
 
-    /* request rates after receiving the first heartbeat from vehicle */
     /* SCALED_IMU2, SCALED_PRESSURE, SENSOR_OFFSETS */
     mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
                         uav_sysid, MAV_COMP_ID_ALL,
@@ -694,13 +607,13 @@ static void mav_heartbeat_cbk(mavlink_message_t *msg, void *d)
     /* ATTITUDE, SIMSTATE (SITL) */
     mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
                         uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_EXTRA1, 5, 1);
+                        MAV_DATA_STREAM_EXTRA1, 20, 1);
     mavlink_send_msg(&msg2);
 
     /* VFR_HUD */
     mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
                         uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_EXTRA2, 3, 1);
+                        MAV_DATA_STREAM_EXTRA2, 10, 1);
     mavlink_send_msg(&msg2);
 
     /* AHRS, HWSTATUS, SYSTEM_TIME */
@@ -708,7 +621,13 @@ static void mav_heartbeat_cbk(mavlink_message_t *msg, void *d)
                         uav_sysid, MAV_COMP_ID_ALL,
                         MAV_DATA_STREAM_EXTRA3, 1, 1);
     mavlink_send_msg(&msg2);
-        
+}
+
+static void mav_heartbeat_cbk(mavlink_message_t *msg, void *d)
+{
+    mavlink_request_data_streams(NULL, NULL);
+    add_timer(TIMER_ALWAYS, 600, mavlink_request_data_streams, NULL);
+
     del_mavlink_callback((struct mavlink_callback *) d);
 }
 
@@ -751,4 +670,78 @@ void mavlink_init(void)
     hb_cbk = add_mavlink_callback(MAVLINK_MSG_ID_HEARTBEAT, mav_heartbeat_cbk, CALLBACK_PERSISTENT, NULL);
     hb_cbk->data = hb_cbk;
     //add_mavlink_callback(MAVLINK_MSG_ID_COMMAND_ACK, mav_cmd_ack, CALLBACK_PERSISTENT, NULL);
+}
+
+
+static void shell_cmd_callbacks(char *args, void *data)
+{
+    unsigned char i, t = 0;
+    struct mavlink_callback *c = callbacks;
+
+    shell_printf("\n\nWidget callbacks:\n");
+    for (i = 0; i < nr_callbacks; i++) {
+        if ((c->cbk != NULL) && (c->type == CALLBACK_WIDGET)) {
+            printf(" sysid=%3d msgid=%3d cbk=%p data=%p\n", c->sysid, c->msgid, c->cbk, c->data);
+            t++;
+        }
+        c++;
+    }
+    shell_printf("\n\nPersistent callbacks:\n");
+    c = callbacks;
+    for (i = 0; i < nr_callbacks; i++) {
+        if ((c->cbk != NULL) && (c->type == CALLBACK_PERSISTENT)) {
+            printf(" sysid=%3d msgid=%3d cbk=%p data=%p\n", c->sysid, c->msgid, c->cbk, c->data);
+            t++;
+        }
+        c++;
+    }
+    shell_printf("\n\ntotal=%d peak=%d max=%d\n", t, nr_callbacks, MAX_MAVLINK_CALLBACKS);
+}
+
+static void shell_cmd_stats(char *args, void *data)
+{
+    mavlink_status_t *status;
+    unsigned char i;
+
+    for (i = 0; i < MAVLINK_COMM_NUM_BUFFERS; i++) {
+        status = mavlink_get_channel_status(i);
+        shell_printf("\nMavlink channel %d\n", i);
+        shell_printf(" msg_received=%d\n", status->msg_received);
+        shell_printf(" packet_rx_drop_count=%d\n", status->packet_rx_drop_count);
+        shell_printf(" packet_rx_success_count=%d\n", status->packet_rx_success_count);
+    }
+    shell_printf("\nActive channel mask=%x\n", active_channel_mask);
+}
+
+static void shell_cmd_route(char *args, void *data)
+{
+    unsigned char i;
+    
+    shell_printf("\nMavlink routing table:\n");
+    for(i = 0; i < total_routes; i++) {
+        shell_printf(" sysid(%3u) compid(%3u) on channel(%u)\n",
+                (unsigned) routes[i].sysid, 
+                (unsigned) routes[i].compid,
+                (unsigned) routes[i].ch);
+    }
+    
+    shell_printf("\ntotal routes=%d max=%d\n", total_routes, MAX_MAVLINK_ROUTES);
+}
+
+void shell_cmd_config(char *args, void *data)
+{
+    
+}
+
+static const struct shell_cmdmap_s mavlink_cmdmap[] = {
+    {"callbacks", shell_cmd_callbacks, "Display callback info", SHELL_CMD_SIMPLE},
+    {"config", shell_cmd_config, "config", SHELL_CMD_SIMPLE},
+    {"route", shell_cmd_route, "Display routing table", SHELL_CMD_SIMPLE},
+    {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
+    {"", NULL, ""},
+};
+
+void shell_cmd_mavlink(char *args, void *data)
+{
+    shell_exec(args, mavlink_cmdmap, data);
 }
