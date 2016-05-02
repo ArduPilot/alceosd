@@ -21,23 +21,26 @@
 #define BAR_SIZE 8
 
 struct widget_priv {
-    unsigned int ch_raw[8];
+    unsigned int ch_raw[16];
     unsigned char bar_size;
+    unsigned char total_ch;
+    void *cbk1, *cbk2;
 };
 
 static void mav_callback(mavlink_message_t *msg, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
+    unsigned char i;
 
-    priv->ch_raw[0] = mavlink_msg_rc_channels_raw_get_chan1_raw(msg);
-    priv->ch_raw[1] = mavlink_msg_rc_channels_raw_get_chan2_raw(msg);
-    priv->ch_raw[2] = mavlink_msg_rc_channels_raw_get_chan3_raw(msg);
-    priv->ch_raw[3] = mavlink_msg_rc_channels_raw_get_chan4_raw(msg);
-    priv->ch_raw[4] = mavlink_msg_rc_channels_raw_get_chan5_raw(msg);
-    priv->ch_raw[5] = mavlink_msg_rc_channels_raw_get_chan6_raw(msg);
-    priv->ch_raw[6] = mavlink_msg_rc_channels_raw_get_chan7_raw(msg);
-    priv->ch_raw[7] = mavlink_msg_rc_channels_raw_get_chan8_raw(msg);
+    if (msg->msgid == MAVLINK_MSG_ID_RC_CHANNELS_RAW) {
+        priv->total_ch = 8;
+    } else {
+        priv->total_ch = mavlink_msg_rc_channels_get_chancount(msg);
+    }
+    
+    for (i = 0; i < priv->total_ch; i++)
+        priv->ch_raw[i] = mavlink_msg_rc_channels_raw_get_chan(msg, i);
 
     schedule_widget(w);
 }
@@ -46,7 +49,7 @@ static void mav_callback(mavlink_message_t *msg, void *d)
 static int open(struct widget *w)
 {
     struct widget_priv *priv;
-    unsigned int i;
+    unsigned char i;
     const struct font *f = get_font(0);
 
     priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
@@ -55,7 +58,8 @@ static int open(struct widget *w)
     w->priv = priv;
 
     /* set initial values */
-    for (i = 0; i < 8; i++)
+    priv->total_ch = 16;
+    for (i = 0; i < priv->total_ch; i++)
         priv->ch_raw[i] = 1500;
 
     /* setup canvas according to widget mode */
@@ -77,8 +81,9 @@ static int open(struct widget *w)
             w->ca.width = 80;
             break;
     }
-    w->ca.height = f->size * 8 + 2;
-    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET, w);
+    w->ca.height = f->size * priv->total_ch + 2;
+    priv->cbk1 = add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET, w);
+    priv->cbk2 = add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS, mav_callback, CALLBACK_WIDGET, w);
     return 0;
 }
 
@@ -93,7 +98,7 @@ static void render(struct widget *w)
     char buf[10];
     const struct font *f = get_font(0);
 
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < priv->total_ch; i++) {
         if ((w->cfg->props.mode == 0) || (w->cfg->props.mode == 1))
             sprintf(buf, "CH%u %4d", i+1, priv->ch_raw[i]);
         else
