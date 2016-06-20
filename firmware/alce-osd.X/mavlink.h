@@ -25,6 +25,10 @@
 #define MAV_SYS_ID_ANY          (0)
 #define MAV_TYPE_ALCEOSD        (27)
 
+struct mavlink_config {
+    unsigned char streams[8];
+    unsigned char uav_sysid, osd_sysid;
+};
 
 struct mavlink_callback {
     unsigned char msgid;

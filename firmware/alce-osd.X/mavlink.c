@@ -25,9 +25,6 @@
 static struct mavlink_callback callbacks[MAX_MAVLINK_CALLBACKS];
 static unsigned char nr_callbacks = 0;
 
-static unsigned char streams[8] = {3, 1, 4, 1, 1, 10, 10, 1};
-static unsigned char uav_sysid = 1, osd_sysid = 200;
-
 static unsigned char active_channel_mask = 0, total_routes = 0;
 
 static unsigned int pidx = 0, total_params = 0;
@@ -40,18 +37,20 @@ static struct mavlink_route_entry {
     unsigned char compid;
 } routes[MAX_MAVLINK_ROUTES];
 
-const struct param_def params_mavlink[] = {
-    PARAM("MAV_UAVSYSID", MAV_PARAM_TYPE_UINT8, &uav_sysid, NULL),
-    PARAM("MAV_OSDSYSID", MAV_PARAM_TYPE_UINT8, &osd_sysid, NULL),
+extern struct alceosd_config config;
 
-    PARAM("MAV_RAWSENS",  MAV_PARAM_TYPE_UINT8, &streams[0], NULL),
-    PARAM("MAV_REXTSTAT", MAV_PARAM_TYPE_UINT8, &streams[1], NULL),
-    PARAM("MAV_RCCHAN",   MAV_PARAM_TYPE_UINT8, &streams[2], NULL),
-    PARAM("MAV_RAWCTRL",  MAV_PARAM_TYPE_UINT8, &streams[3], NULL),
-    PARAM("MAV_POSITION", MAV_PARAM_TYPE_UINT8, &streams[4], NULL),
-    PARAM("MAV_EXTRA1",   MAV_PARAM_TYPE_UINT8, &streams[5], NULL),
-    PARAM("MAV_EXTRA2",   MAV_PARAM_TYPE_UINT8, &streams[6], NULL),
-    PARAM("MAV_EXTRA3",   MAV_PARAM_TYPE_UINT8, &streams[7], NULL),
+const struct param_def params_mavlink[] = {
+    PARAM("MAV_UAVSYSID", MAV_PARAM_TYPE_UINT8, &config.mav.uav_sysid, NULL),
+    PARAM("MAV_OSDSYSID", MAV_PARAM_TYPE_UINT8, &config.mav.osd_sysid, NULL),
+
+    PARAM("MAV_RAWSENS",  MAV_PARAM_TYPE_UINT8, &config.mav.streams[0], NULL),
+    PARAM("MAV_EXTSTAT",  MAV_PARAM_TYPE_UINT8, &config.mav.streams[1], NULL),
+    PARAM("MAV_RCCHAN",   MAV_PARAM_TYPE_UINT8, &config.mav.streams[2], NULL),
+    PARAM("MAV_RAWCTRL",  MAV_PARAM_TYPE_UINT8, &config.mav.streams[3], NULL),
+    PARAM("MAV_POSITION", MAV_PARAM_TYPE_UINT8, &config.mav.streams[4], NULL),
+    PARAM("MAV_EXTRA1",   MAV_PARAM_TYPE_UINT8, &config.mav.streams[5], NULL),
+    PARAM("MAV_EXTRA2",   MAV_PARAM_TYPE_UINT8, &config.mav.streams[6], NULL),
+    PARAM("MAV_EXTRA3",   MAV_PARAM_TYPE_UINT8, &config.mav.streams[7], NULL),
     PARAM_END,
 };
 
@@ -296,7 +295,7 @@ static void mavlink_learn_route(unsigned char ch, mavlink_message_t *msg)
 {
     unsigned char i;
     
-    if (msg->sysid == 0 || (msg->sysid == osd_sysid && msg->compid == MAV_COMP_ID_OSD))
+    if (msg->sysid == 0 || (msg->sysid == config.mav.osd_sysid && msg->compid == MAV_COMP_ID_OSD))
         return;
 
     for(i = 0; i < total_routes; i++) {
@@ -347,7 +346,7 @@ static unsigned char mavlink_get_route(unsigned char ch, mavlink_message_t *msg)
     get_targets(msg, &target_sys, &target_comp);
 
     /* its for us - don't route */
-    if ((target_sys == osd_sysid) && (target_comp == MAV_COMP_ID_OSD))
+    if ((target_sys == config.mav.osd_sysid) && (target_comp == MAV_COMP_ID_OSD))
         return 0;
 
     /* broadcast message - route to all active ports*/
@@ -445,7 +444,7 @@ struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid, unsigne
 inline struct mavlink_callback* add_mavlink_callback(unsigned char msgid,
             void *cbk, unsigned char ctype, void *data)
 {
-    return add_mavlink_callback_sysid(uav_sysid, msgid, cbk, ctype, data);
+    return add_mavlink_callback_sysid(config.mav.uav_sysid, msgid, cbk, ctype, data);
 }
 
 void del_mavlink_callbacks(unsigned char ctype)
@@ -469,7 +468,7 @@ static void mav_heartbeat(struct timer *t, void *d)
 {
     mavlink_message_t msg;
 
-    mavlink_msg_heartbeat_pack(osd_sysid,
+    mavlink_msg_heartbeat_pack(config.mav.osd_sysid,
             MAV_COMP_ID_OSD, &msg, MAV_TYPE_ALCEOSD,
             MAV_AUTOPILOT_INVALID,
             MAV_MODE_FLAG_CUSTOM_MODE_ENABLED, // base_mode
@@ -494,7 +493,7 @@ static void send_param_list_cbk(struct timer *t, void *d)
     }
 
     param_value = params_get_value(pidx, param_name);
-    mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_OSD, &msg,
+    mavlink_msg_param_value_pack(config.mav.osd_sysid, MAV_COMP_ID_OSD, &msg,
                                     param_name, param_value, MAVLINK_TYPE_FLOAT,
                                     total_params, pidx++);
     mavlink_send_msg(&msg);
@@ -509,7 +508,7 @@ void mav_param_request_list(mavlink_message_t *msg, void *d)
     comp = mavlink_msg_param_request_list_get_target_component(msg);
     
     //if ((comp != MAV_COMP_ID_OSD) || (sys != osd_sysid))
-    if (sys != osd_sysid)
+    if (sys != config.mav.osd_sysid)
         return;
     
     pidx = 0;
@@ -531,7 +530,7 @@ void mav_param_request_read(mavlink_message_t *msg, void *d)
     sys = mavlink_msg_param_request_read_get_target_system(msg);
     comp = mavlink_msg_param_request_read_get_target_component(msg);
     //console_printf("get_param_start %d,%d\n", sys, comp);
-    if ((comp != MAV_COMP_ID_OSD) || (sys != osd_sysid))
+    if ((comp != MAV_COMP_ID_OSD) || (sys != config.mav.osd_sysid))
         return;
 
     idx = mavlink_msg_param_request_read_get_param_index(msg);
@@ -541,7 +540,7 @@ void mav_param_request_read(mavlink_message_t *msg, void *d)
     }
 
     param_value = params_get_value(idx, param_name);
-    mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_OSD, &msg2,
+    mavlink_msg_param_value_pack(config.mav.osd_sysid, MAV_COMP_ID_OSD, &msg2,
                                     param_name, param_value, MAVLINK_TYPE_FLOAT,
                                     total_params, idx);
     mavlink_send_msg(&msg2);
@@ -562,7 +561,7 @@ void mav_param_set(mavlink_message_t *msg, void *d)
     sys = mavlink_msg_param_set_get_target_system(msg);
     comp = mavlink_msg_param_set_get_target_component(msg);
     //console_printf("set_param_start %d,%d\n", sys, comp);
-    if ((comp != MAV_COMP_ID_OSD) || (sys != osd_sysid))
+    if ((comp != MAV_COMP_ID_OSD) || (sys != config.mav.osd_sysid))
         return;
 
     len = mavlink_msg_param_set_get_param_id(msg, param_name);
@@ -575,7 +574,7 @@ void mav_param_set(mavlink_message_t *msg, void *d)
     idx = params_set_value(param_name, param_value, 1);
 
     /* broadcast new parameter value */
-    mavlink_msg_param_value_pack(osd_sysid, MAV_COMP_ID_OSD, &msg2,
+    mavlink_msg_param_value_pack(config.mav.osd_sysid, MAV_COMP_ID_OSD, &msg2,
                                     param_name, param_value, MAVLINK_TYPE_FLOAT,
                                     total_params, idx);
     mavlink_send_msg(&msg2);
@@ -586,51 +585,51 @@ static void mavlink_request_data_streams(struct timer *t, void *d)
     mavlink_message_t msg2;
 
     /* SCALED_IMU2, SCALED_PRESSURE, SENSOR_OFFSETS */
-    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_RAW_SENSORS, streams[0], 1);
+    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_RAW_SENSORS, config.mav.streams[0], 1);
     mavlink_send_msg(&msg2);
 
     /* MEMINFO, MISSION_CURRENT, GPS_RAW_INT, NAV_CONTROLLER_OUTPUT, LIMITS_STATUS */
-    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_EXTENDED_STATUS, streams[1], 1);
+    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_EXTENDED_STATUS, config.mav.streams[1], 1);
     mavlink_send_msg(&msg2);
 
     /* SERVO_OUTPUT_RAW, RC_CHANNELS_RAW */
-    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_RC_CHANNELS, streams[2], 1);
+    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_RC_CHANNELS, config.mav.streams[2], 1);
     mavlink_send_msg(&msg2);
 
     /* RC_CHANNELS_SCALED (HIL) */
-    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_RAW_CONTROLLER, streams[3], 0);
+    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_RAW_CONTROLLER, config.mav.streams[3], 0);
     mavlink_send_msg(&msg2);
 
     /* GLOBAL_POSITION_INT */
-    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_POSITION, streams[4], 1);
+    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_POSITION, config.mav.streams[4], 1);
     mavlink_send_msg(&msg2);
 
     /* ATTITUDE, SIMSTATE (SITL) */
-    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_EXTRA1, streams[5], 1);
+    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_EXTRA1, config.mav.streams[5], 1);
     mavlink_send_msg(&msg2);
 
     /* VFR_HUD */
-    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_EXTRA2, streams[6], 1);
+    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_EXTRA2, config.mav.streams[6], 1);
     mavlink_send_msg(&msg2);
 
     /* AHRS, HWSTATUS, SYSTEM_TIME */
-    mavlink_msg_request_data_stream_pack(osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_EXTRA3, streams[7], 1);
+    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
+                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
+                        MAV_DATA_STREAM_EXTRA3, config.mav.streams[7], 1);
     mavlink_send_msg(&msg2);
 }
 

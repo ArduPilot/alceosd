@@ -23,6 +23,7 @@
 #include "uart.h"
 #include "widgets.h"
 #include "tabs.h"
+#include "mavlink.h"
 
 
 #define CONFIG_MAX_WIDGETS      (80)
@@ -78,6 +79,9 @@ struct alceosd_config {
     /* home position locking timer */
     unsigned char home_lock_sec;
 
+    /* mavlink config */
+    struct mavlink_config mav;
+    
     /* widgets config */
     struct widget_config widgets[CONFIG_MAX_WIDGETS];
 };
