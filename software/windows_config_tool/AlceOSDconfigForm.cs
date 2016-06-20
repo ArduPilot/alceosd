@@ -886,6 +886,10 @@ namespace AlceOSD_updater
                     cb_wsource.Visible = true;
                     cb_wsource.Items.Add("Air speed");
                     cb_wsource.Items.Add("Ground speed");
+                    lbl_wmode.Visible = true;
+                    cb_wmode.Visible = true;
+                    cb_wmode.Items.Add("Dial");
+                    cb_wmode.Items.Add("Text");
                     break;
                 case "THROTTL":
                     lbl_wname.Text = "Throttle bar";
