@@ -30,7 +30,7 @@
 #define CONFIG_ADDR_PAGE    (0x800)
 #define CONFIG_PAGE_SIZE    (0x400)
 
-#define CONFIG_VERSION_SIG  (0xfffff-7)
+#define CONFIG_VERSION_SIG  (0xfffff-8)
 
 //#define DEBUG_CONFIG
 
@@ -64,6 +64,9 @@ struct alceosd_config config = {
     .tab_change.mode = TAB_CHANGE_TOGGLE,
     .tab_change.time_window = 20,
 
+    .mav.streams = {3, 1, 4, 1, 1, 10, 10, 1},
+    .mav.osd_sysid = 200,
+    .mav.uav_sysid = 1,
     
     .default_units = UNITS_METRIC,
     .home_lock_sec = 15,
