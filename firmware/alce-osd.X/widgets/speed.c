@@ -35,8 +35,20 @@ static void mav_callback(mavlink_message_t *msg, void *d)
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
 
-    priv->speed = mavlink_msg_vfr_hud_get_airspeed(msg) * 3600 / 1000.0;
-    priv->speed_i = (int) priv->speed;
+    /* sources:
+       0) airspeed
+       1) groundspeed */
+    switch (w->cfg->props.source) {
+        case 0:
+        default:
+            priv->speed = mavlink_msg_vfr_hud_get_airspeed(msg) * 3600 / 1000.0;
+            priv->speed_i = (int) priv->speed;
+            break;
+        case 1:
+            priv->speed = mavlink_msg_vfr_hud_get_groundspeed(msg) * 3600 / 1000.0;
+            priv->speed_i = (int) priv->speed;
+            break;
+    }
 
     schedule_widget(w);
 }
@@ -50,15 +62,37 @@ static int open(struct widget *w)
         return -1;
     w->priv = priv;
 
-    priv->range = 20*5;
-
-    w->ca.width = X_SIZE;
-    w->ca.height = Y_SIZE;
+    /* modes
+       0) gauge
+       1) text */
+    switch (w->cfg->props.mode) {
+        case 0:
+        default:
+            priv->range = 20*5;
+            w->ca.width = X_SIZE;
+            w->ca.height = Y_SIZE;
+            break;
+        case 1:
+            w->ca.width = 64;
+            w->ca.height = 20;
+            break;
+    }
+    
     add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET, w);
     return 0;
 }
 
-static void render(struct widget *w)
+static void render_text(struct widget *w)
+{
+    struct widget_priv *priv = w->priv;
+    struct canvas *ca = &w->ca;
+    char buf[10];
+
+    sprintf(buf, "%d", (unsigned int) priv->speed);
+    draw_jstr(buf, 64, 10, JUST_RIGHT | JUST_VCENTER, ca, 1);
+}
+
+static void render_gauge(struct widget *w)
 {
     struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
@@ -67,7 +101,7 @@ static void render(struct widget *w)
     char buf[10], d = 0;
     int major_tick = priv->range / 5;
     int minor_tick = major_tick / 4;
-    
+
     for (i = 0; i < priv->range; i++) {
         yy = ((long) i * Y_SIZE) / priv->range;
         if ((yy == y) && (d == 1))
@@ -101,9 +135,21 @@ static void render(struct widget *w)
     draw_line(X_CENTER-10, Y_CENTER+6, X_CENTER-10+5, Y_CENTER, 1, ca);
 }
 
+static void render(struct widget *w)
+{
+    switch (w->cfg->props.mode) {
+        case 0:
+        default:
+            render_gauge(w);
+            break;
+        case 1:
+            render_text(w);
+            break;
+    }
+}
 
 const struct widget_ops speed_widget_ops = {
-    .name = "Air speed",
+    .name = "Speed",
     .mavname = "SPEED",
     .id = WIDGET_SPEED_ID,
     .init = NULL,
