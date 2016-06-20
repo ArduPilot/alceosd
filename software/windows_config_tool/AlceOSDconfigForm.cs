@@ -306,6 +306,15 @@ namespace AlceOSD_updater
             config.Add("MAV_UAVSYSID = " + Convert.ToDouble(nud_uavsysid.Value));
             config.Add("MAV_OSDSYSID = " + Convert.ToDouble(nud_osdsysid.Value));
 
+            config.Add("MAV_RAWSENS = " + Convert.ToDouble(nud_osdsysid.Value));
+            config.Add("MAV_EXTSTAT = " + Convert.ToDouble(nud_osdsysid.Value));
+            config.Add("MAV_RCCHAN = " + Convert.ToDouble(nud_osdsysid.Value));
+            config.Add("MAV_RAWCTRL = " + Convert.ToDouble(nud_osdsysid.Value));
+            config.Add("MAV_POSITION = " + Convert.ToDouble(nud_osdsysid.Value));
+            config.Add("MAV_EXTRA1 = " + Convert.ToDouble(nud_osdsysid.Value));
+            config.Add("MAV_EXTRA2 = " + Convert.ToDouble(nud_osdsysid.Value));
+            config.Add("MAV_EXTRA3 = " + Convert.ToDouble(nud_osdsysid.Value));
+
 
             /* widgets */
             foreach (KeyValuePair<string, Dictionary<string, double>> pair in widgets)
@@ -419,7 +428,6 @@ namespace AlceOSD_updater
 
 
 
-
         private void populateVideoConfig(List<string> config)
         {
             string[] entry;
@@ -433,7 +441,7 @@ namespace AlceOSD_updater
                 key = entry.ElementAt(0).Trim();
                 val = entry.ElementAt(1).Trim();
                 dval = Convert.ToDouble(val, CultureInfo.InvariantCulture.NumberFormat);
-                txt_log.AppendText(key + "=" + val + "\n");
+                //txt_log.AppendText(key + "=" + val + "\n");
 
                 switch (key)
                 {
@@ -455,6 +463,15 @@ namespace AlceOSD_updater
                         break;
                     case "BRIGHT":
                         nud_brightness.Value = Convert.ToInt16(dval);
+                        break;
+                    case "WHITE":
+                        nud_whitelvl.Value = Convert.ToInt16(dval);
+                        break;
+                    case "GRAY":
+                        nud_graylvl.Value = Convert.ToInt16(dval);
+                        break;
+                    case "BLACK":
+                        nud_blacklvl.Value = Convert.ToInt16(dval);
                         break;
                     default:
                         break;
@@ -591,6 +608,30 @@ namespace AlceOSD_updater
                         break;
                     case "OSDSYSID":
                         nud_osdsysid.Value = Convert.ToByte(dval);
+                        break;
+                    case "RAWSENS":
+                        nud_streamRawSensors.Value = Convert.ToByte(dval);
+                        break;
+                    case "EXTSTAT":
+                        nud_streamExtStatus.Value = Convert.ToByte(dval);
+                        break;
+                    case "RCCHAN":
+                        nud_streamRcChannels.Value = Convert.ToByte(dval);
+                        break;
+                    case "RAWCTRL":
+                        nud_streamRawCtrl.Value = Convert.ToByte(dval);
+                        break;
+                    case "POSITION":
+                        nud_streamPosition.Value = Convert.ToByte(dval);
+                        break;
+                    case "EXTRA1":
+                        nud_streamExtra1.Value = Convert.ToByte(dval);
+                        break;
+                    case "EXTRA2":
+                        nud_streamExtra2.Value = Convert.ToByte(dval);
+                        break;
+                    case "EXTRA3":
+                        nud_streamExtra3.Value = Convert.ToByte(dval);
                         break;
                     default:
                         break;
@@ -840,7 +881,11 @@ namespace AlceOSD_updater
                     set_param(3, "RC Channel(0-7)");
                     break;
                 case "SPEED":
-                    lbl_wname.Text = "Air speed";
+                    lbl_wname.Text = "Speed";
+                    lbl_wsource.Visible = true;
+                    cb_wsource.Visible = true;
+                    cb_wsource.Items.Add("Air speed");
+                    cb_wsource.Items.Add("Ground speed");
                     break;
                 case "THROTTL":
                     lbl_wname.Text = "Throttle bar";
@@ -1215,7 +1260,7 @@ namespace AlceOSD_updater
             setup_comport();
             if (!open_comport())
                 return;
-            if (! reset_board(false))
+            if (!reset_board(false))
                 return;
 
             txt_log.AppendText("Port " + comPort.PortName + " opened for config read\n");
