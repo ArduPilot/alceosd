@@ -306,14 +306,14 @@ namespace AlceOSD_updater
             config.Add("MAV_UAVSYSID = " + Convert.ToDouble(nud_uavsysid.Value));
             config.Add("MAV_OSDSYSID = " + Convert.ToDouble(nud_osdsysid.Value));
 
-            config.Add("MAV_RAWSENS = " + Convert.ToDouble(nud_osdsysid.Value));
-            config.Add("MAV_EXTSTAT = " + Convert.ToDouble(nud_osdsysid.Value));
-            config.Add("MAV_RCCHAN = " + Convert.ToDouble(nud_osdsysid.Value));
-            config.Add("MAV_RAWCTRL = " + Convert.ToDouble(nud_osdsysid.Value));
-            config.Add("MAV_POSITION = " + Convert.ToDouble(nud_osdsysid.Value));
-            config.Add("MAV_EXTRA1 = " + Convert.ToDouble(nud_osdsysid.Value));
-            config.Add("MAV_EXTRA2 = " + Convert.ToDouble(nud_osdsysid.Value));
-            config.Add("MAV_EXTRA3 = " + Convert.ToDouble(nud_osdsysid.Value));
+            config.Add("MAV_RAWSENS = " + Convert.ToDouble(nud_streamRawSensors.Value));
+            config.Add("MAV_EXTSTAT = " + Convert.ToDouble(nud_streamExtStatus.Value));
+            config.Add("MAV_RCCHAN = " + Convert.ToDouble(nud_streamRcChannels.Value));
+            config.Add("MAV_RAWCTRL = " + Convert.ToDouble(nud_streamRawCtrl.Value));
+            config.Add("MAV_POSITION = " + Convert.ToDouble(nud_streamPosition.Value));
+            config.Add("MAV_EXTRA1 = " + Convert.ToDouble(nud_streamExtra1.Value));
+            config.Add("MAV_EXTRA2 = " + Convert.ToDouble(nud_streamExtra2.Value));
+            config.Add("MAV_EXTRA3 = " + Convert.ToDouble(nud_streamExtra3.Value));
 
 
             /* widgets */

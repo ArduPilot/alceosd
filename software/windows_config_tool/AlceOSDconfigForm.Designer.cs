@@ -82,6 +82,23 @@
             this.cb_mode1 = new System.Windows.Forms.ComboBox();
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.label45 = new System.Windows.Forms.Label();
+            this.nud_streamExtra3 = new System.Windows.Forms.NumericUpDown();
+            this.label44 = new System.Windows.Forms.Label();
+            this.nud_streamExtra2 = new System.Windows.Forms.NumericUpDown();
+            this.label43 = new System.Windows.Forms.Label();
+            this.nud_streamExtra1 = new System.Windows.Forms.NumericUpDown();
+            this.label42 = new System.Windows.Forms.Label();
+            this.nud_streamPosition = new System.Windows.Forms.NumericUpDown();
+            this.label41 = new System.Windows.Forms.Label();
+            this.nud_streamRawCtrl = new System.Windows.Forms.NumericUpDown();
+            this.label40 = new System.Windows.Forms.Label();
+            this.nud_streamRcChannels = new System.Windows.Forms.NumericUpDown();
+            this.label39 = new System.Windows.Forms.Label();
+            this.nud_streamExtStatus = new System.Windows.Forms.NumericUpDown();
+            this.label38 = new System.Windows.Forms.Label();
+            this.nud_streamRawSensors = new System.Windows.Forms.NumericUpDown();
+            this.label37 = new System.Windows.Forms.Label();
             this.nud_osdsysid = new System.Windows.Forms.NumericUpDown();
             this.nud_uavsysid = new System.Windows.Forms.NumericUpDown();
             this.label34 = new System.Windows.Forms.Label();
@@ -153,23 +170,6 @@
             this.ofd_savecfg = new System.Windows.Forms.SaveFileDialog();
             this.ofd_fwfile = new System.Windows.Forms.OpenFileDialog();
             this.pb = new System.Windows.Forms.ProgressBar();
-            this.label37 = new System.Windows.Forms.Label();
-            this.nud_streamRawSensors = new System.Windows.Forms.NumericUpDown();
-            this.nud_streamExtStatus = new System.Windows.Forms.NumericUpDown();
-            this.label38 = new System.Windows.Forms.Label();
-            this.nud_streamRcChannels = new System.Windows.Forms.NumericUpDown();
-            this.label39 = new System.Windows.Forms.Label();
-            this.nud_streamRawCtrl = new System.Windows.Forms.NumericUpDown();
-            this.label40 = new System.Windows.Forms.Label();
-            this.nud_streamPosition = new System.Windows.Forms.NumericUpDown();
-            this.label41 = new System.Windows.Forms.Label();
-            this.nud_streamExtra1 = new System.Windows.Forms.NumericUpDown();
-            this.label42 = new System.Windows.Forms.Label();
-            this.nud_streamExtra2 = new System.Windows.Forms.NumericUpDown();
-            this.label43 = new System.Windows.Forms.Label();
-            this.nud_streamExtra3 = new System.Windows.Forms.NumericUpDown();
-            this.label44 = new System.Windows.Forms.Label();
-            this.label45 = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_blacklvl)).BeginInit();
@@ -186,6 +186,14 @@
             this.groupBox1.SuspendLayout();
             this.tabPage3.SuspendLayout();
             this.groupBox4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra3)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamPosition)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamRawCtrl)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamRcChannels)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtStatus)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamRawSensors)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_osdsysid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_uavsysid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_homelock)).BeginInit();
@@ -200,14 +208,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_seltab)).BeginInit();
             this.tabPage5.SuspendLayout();
             this.menuStrip1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamRawSensors)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtStatus)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamRcChannels)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamRawCtrl)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamPosition)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra2)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra3)).BeginInit();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -250,7 +250,7 @@
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(849, 450);
+            this.tabPage1.Size = new System.Drawing.Size(849, 474);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Video";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -507,7 +507,7 @@
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(849, 450);
+            this.tabPage2.Size = new System.Drawing.Size(849, 474);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Serial ports";
             this.tabPage2.UseVisualStyleBackColor = true;
@@ -898,6 +898,223 @@
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Mavlink";
             // 
+            // label45
+            // 
+            this.label45.AutoSize = true;
+            this.label45.Location = new System.Drawing.Point(15, 89);
+            this.label45.Name = "label45";
+            this.label45.Size = new System.Drawing.Size(71, 13);
+            this.label45.TabIndex = 27;
+            this.label45.Text = "Stream Rates";
+            // 
+            // nud_streamExtra3
+            // 
+            this.nud_streamExtra3.Location = new System.Drawing.Point(112, 291);
+            this.nud_streamExtra3.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.nud_streamExtra3.Name = "nud_streamExtra3";
+            this.nud_streamExtra3.Size = new System.Drawing.Size(93, 20);
+            this.nud_streamExtra3.TabIndex = 26;
+            this.nud_streamExtra3.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            // 
+            // label44
+            // 
+            this.label44.AutoSize = true;
+            this.label44.Location = new System.Drawing.Point(15, 293);
+            this.label44.Name = "label44";
+            this.label44.Size = new System.Drawing.Size(49, 13);
+            this.label44.TabIndex = 25;
+            this.label44.Text = "EXTRA3";
+            // 
+            // nud_streamExtra2
+            // 
+            this.nud_streamExtra2.Location = new System.Drawing.Point(112, 265);
+            this.nud_streamExtra2.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.nud_streamExtra2.Name = "nud_streamExtra2";
+            this.nud_streamExtra2.Size = new System.Drawing.Size(93, 20);
+            this.nud_streamExtra2.TabIndex = 24;
+            this.nud_streamExtra2.Value = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            // 
+            // label43
+            // 
+            this.label43.AutoSize = true;
+            this.label43.Location = new System.Drawing.Point(15, 267);
+            this.label43.Name = "label43";
+            this.label43.Size = new System.Drawing.Size(49, 13);
+            this.label43.TabIndex = 23;
+            this.label43.Text = "EXTRA2";
+            // 
+            // nud_streamExtra1
+            // 
+            this.nud_streamExtra1.Location = new System.Drawing.Point(112, 239);
+            this.nud_streamExtra1.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.nud_streamExtra1.Name = "nud_streamExtra1";
+            this.nud_streamExtra1.Size = new System.Drawing.Size(93, 20);
+            this.nud_streamExtra1.TabIndex = 22;
+            this.nud_streamExtra1.Value = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            // 
+            // label42
+            // 
+            this.label42.AutoSize = true;
+            this.label42.Location = new System.Drawing.Point(15, 241);
+            this.label42.Name = "label42";
+            this.label42.Size = new System.Drawing.Size(49, 13);
+            this.label42.TabIndex = 21;
+            this.label42.Text = "EXTRA1";
+            // 
+            // nud_streamPosition
+            // 
+            this.nud_streamPosition.Location = new System.Drawing.Point(112, 213);
+            this.nud_streamPosition.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.nud_streamPosition.Name = "nud_streamPosition";
+            this.nud_streamPosition.Size = new System.Drawing.Size(93, 20);
+            this.nud_streamPosition.TabIndex = 20;
+            this.nud_streamPosition.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            // 
+            // label41
+            // 
+            this.label41.AutoSize = true;
+            this.label41.Location = new System.Drawing.Point(15, 215);
+            this.label41.Name = "label41";
+            this.label41.Size = new System.Drawing.Size(58, 13);
+            this.label41.TabIndex = 19;
+            this.label41.Text = "POSITION";
+            // 
+            // nud_streamRawCtrl
+            // 
+            this.nud_streamRawCtrl.Location = new System.Drawing.Point(112, 187);
+            this.nud_streamRawCtrl.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.nud_streamRawCtrl.Name = "nud_streamRawCtrl";
+            this.nud_streamRawCtrl.Size = new System.Drawing.Size(93, 20);
+            this.nud_streamRawCtrl.TabIndex = 18;
+            this.nud_streamRawCtrl.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            // 
+            // label40
+            // 
+            this.label40.AutoSize = true;
+            this.label40.Location = new System.Drawing.Point(15, 189);
+            this.label40.Name = "label40";
+            this.label40.Size = new System.Drawing.Size(67, 13);
+            this.label40.TabIndex = 17;
+            this.label40.Text = "RAW_CTRL";
+            // 
+            // nud_streamRcChannels
+            // 
+            this.nud_streamRcChannels.Location = new System.Drawing.Point(112, 161);
+            this.nud_streamRcChannels.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.nud_streamRcChannels.Name = "nud_streamRcChannels";
+            this.nud_streamRcChannels.Size = new System.Drawing.Size(93, 20);
+            this.nud_streamRcChannels.TabIndex = 16;
+            this.nud_streamRcChannels.Value = new decimal(new int[] {
+            4,
+            0,
+            0,
+            0});
+            // 
+            // label39
+            // 
+            this.label39.AutoSize = true;
+            this.label39.Location = new System.Drawing.Point(15, 163);
+            this.label39.Name = "label39";
+            this.label39.Size = new System.Drawing.Size(86, 13);
+            this.label39.TabIndex = 15;
+            this.label39.Text = "RC_CHANNELS";
+            // 
+            // nud_streamExtStatus
+            // 
+            this.nud_streamExtStatus.Location = new System.Drawing.Point(112, 135);
+            this.nud_streamExtStatus.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.nud_streamExtStatus.Name = "nud_streamExtStatus";
+            this.nud_streamExtStatus.Size = new System.Drawing.Size(93, 20);
+            this.nud_streamExtStatus.TabIndex = 14;
+            this.nud_streamExtStatus.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            // 
+            // label38
+            // 
+            this.label38.AutoSize = true;
+            this.label38.Location = new System.Drawing.Point(15, 137);
+            this.label38.Name = "label38";
+            this.label38.Size = new System.Drawing.Size(77, 13);
+            this.label38.TabIndex = 13;
+            this.label38.Text = "EXT_STATUS";
+            // 
+            // nud_streamRawSensors
+            // 
+            this.nud_streamRawSensors.Location = new System.Drawing.Point(112, 109);
+            this.nud_streamRawSensors.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.nud_streamRawSensors.Name = "nud_streamRawSensors";
+            this.nud_streamRawSensors.Size = new System.Drawing.Size(93, 20);
+            this.nud_streamRawSensors.TabIndex = 12;
+            this.nud_streamRawSensors.Value = new decimal(new int[] {
+            3,
+            0,
+            0,
+            0});
+            // 
+            // label37
+            // 
+            this.label37.AutoSize = true;
+            this.label37.Location = new System.Drawing.Point(15, 111);
+            this.label37.Name = "label37";
+            this.label37.Size = new System.Drawing.Size(91, 13);
+            this.label37.TabIndex = 11;
+            this.label37.Text = "RAW_SENSORS";
+            // 
             // nud_osdsysid
             // 
             this.nud_osdsysid.Location = new System.Drawing.Point(112, 51);
@@ -1210,7 +1427,7 @@
             this.tabPage4.Location = new System.Drawing.Point(4, 22);
             this.tabPage4.Name = "tabPage4";
             this.tabPage4.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage4.Size = new System.Drawing.Size(849, 450);
+            this.tabPage4.Size = new System.Drawing.Size(849, 474);
             this.tabPage4.TabIndex = 3;
             this.tabPage4.Text = "Widgets";
             this.tabPage4.UseVisualStyleBackColor = true;
@@ -1532,7 +1749,7 @@
             this.tabPage5.Location = new System.Drawing.Point(4, 22);
             this.tabPage5.Name = "tabPage5";
             this.tabPage5.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage5.Size = new System.Drawing.Size(849, 450);
+            this.tabPage5.Size = new System.Drawing.Size(849, 474);
             this.tabPage5.TabIndex = 4;
             this.tabPage5.Text = "Log";
             this.tabPage5.UseVisualStyleBackColor = true;
@@ -1686,223 +1903,6 @@
             this.pb.Size = new System.Drawing.Size(853, 23);
             this.pb.TabIndex = 5;
             // 
-            // label37
-            // 
-            this.label37.AutoSize = true;
-            this.label37.Location = new System.Drawing.Point(15, 111);
-            this.label37.Name = "label37";
-            this.label37.Size = new System.Drawing.Size(91, 13);
-            this.label37.TabIndex = 11;
-            this.label37.Text = "RAW_SENSORS";
-            // 
-            // nud_streamRawSensors
-            // 
-            this.nud_streamRawSensors.Location = new System.Drawing.Point(112, 109);
-            this.nud_streamRawSensors.Maximum = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            this.nud_streamRawSensors.Name = "nud_streamRawSensors";
-            this.nud_streamRawSensors.Size = new System.Drawing.Size(93, 20);
-            this.nud_streamRawSensors.TabIndex = 12;
-            this.nud_streamRawSensors.Value = new decimal(new int[] {
-            3,
-            0,
-            0,
-            0});
-            // 
-            // nud_streamExtStatus
-            // 
-            this.nud_streamExtStatus.Location = new System.Drawing.Point(112, 135);
-            this.nud_streamExtStatus.Maximum = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            this.nud_streamExtStatus.Name = "nud_streamExtStatus";
-            this.nud_streamExtStatus.Size = new System.Drawing.Size(93, 20);
-            this.nud_streamExtStatus.TabIndex = 14;
-            this.nud_streamExtStatus.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            // 
-            // label38
-            // 
-            this.label38.AutoSize = true;
-            this.label38.Location = new System.Drawing.Point(15, 137);
-            this.label38.Name = "label38";
-            this.label38.Size = new System.Drawing.Size(77, 13);
-            this.label38.TabIndex = 13;
-            this.label38.Text = "EXT_STATUS";
-            // 
-            // nud_streamRcChannels
-            // 
-            this.nud_streamRcChannels.Location = new System.Drawing.Point(112, 161);
-            this.nud_streamRcChannels.Maximum = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            this.nud_streamRcChannels.Name = "nud_streamRcChannels";
-            this.nud_streamRcChannels.Size = new System.Drawing.Size(93, 20);
-            this.nud_streamRcChannels.TabIndex = 16;
-            this.nud_streamRcChannels.Value = new decimal(new int[] {
-            4,
-            0,
-            0,
-            0});
-            // 
-            // label39
-            // 
-            this.label39.AutoSize = true;
-            this.label39.Location = new System.Drawing.Point(15, 163);
-            this.label39.Name = "label39";
-            this.label39.Size = new System.Drawing.Size(86, 13);
-            this.label39.TabIndex = 15;
-            this.label39.Text = "RC_CHANNELS";
-            // 
-            // nud_streamRawCtrl
-            // 
-            this.nud_streamRawCtrl.Location = new System.Drawing.Point(112, 187);
-            this.nud_streamRawCtrl.Maximum = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            this.nud_streamRawCtrl.Name = "nud_streamRawCtrl";
-            this.nud_streamRawCtrl.Size = new System.Drawing.Size(93, 20);
-            this.nud_streamRawCtrl.TabIndex = 18;
-            this.nud_streamRawCtrl.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            // 
-            // label40
-            // 
-            this.label40.AutoSize = true;
-            this.label40.Location = new System.Drawing.Point(15, 189);
-            this.label40.Name = "label40";
-            this.label40.Size = new System.Drawing.Size(67, 13);
-            this.label40.TabIndex = 17;
-            this.label40.Text = "RAW_CTRL";
-            // 
-            // nud_streamPosition
-            // 
-            this.nud_streamPosition.Location = new System.Drawing.Point(112, 213);
-            this.nud_streamPosition.Maximum = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            this.nud_streamPosition.Name = "nud_streamPosition";
-            this.nud_streamPosition.Size = new System.Drawing.Size(93, 20);
-            this.nud_streamPosition.TabIndex = 20;
-            this.nud_streamPosition.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            // 
-            // label41
-            // 
-            this.label41.AutoSize = true;
-            this.label41.Location = new System.Drawing.Point(15, 215);
-            this.label41.Name = "label41";
-            this.label41.Size = new System.Drawing.Size(58, 13);
-            this.label41.TabIndex = 19;
-            this.label41.Text = "POSITION";
-            // 
-            // nud_streamExtra1
-            // 
-            this.nud_streamExtra1.Location = new System.Drawing.Point(112, 239);
-            this.nud_streamExtra1.Maximum = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            this.nud_streamExtra1.Name = "nud_streamExtra1";
-            this.nud_streamExtra1.Size = new System.Drawing.Size(93, 20);
-            this.nud_streamExtra1.TabIndex = 22;
-            this.nud_streamExtra1.Value = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            // 
-            // label42
-            // 
-            this.label42.AutoSize = true;
-            this.label42.Location = new System.Drawing.Point(15, 241);
-            this.label42.Name = "label42";
-            this.label42.Size = new System.Drawing.Size(49, 13);
-            this.label42.TabIndex = 21;
-            this.label42.Text = "EXTRA1";
-            // 
-            // nud_streamExtra2
-            // 
-            this.nud_streamExtra2.Location = new System.Drawing.Point(112, 265);
-            this.nud_streamExtra2.Maximum = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            this.nud_streamExtra2.Name = "nud_streamExtra2";
-            this.nud_streamExtra2.Size = new System.Drawing.Size(93, 20);
-            this.nud_streamExtra2.TabIndex = 24;
-            this.nud_streamExtra2.Value = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            // 
-            // label43
-            // 
-            this.label43.AutoSize = true;
-            this.label43.Location = new System.Drawing.Point(15, 267);
-            this.label43.Name = "label43";
-            this.label43.Size = new System.Drawing.Size(49, 13);
-            this.label43.TabIndex = 23;
-            this.label43.Text = "EXTRA2";
-            // 
-            // nud_streamExtra3
-            // 
-            this.nud_streamExtra3.Location = new System.Drawing.Point(112, 291);
-            this.nud_streamExtra3.Maximum = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            this.nud_streamExtra3.Name = "nud_streamExtra3";
-            this.nud_streamExtra3.Size = new System.Drawing.Size(93, 20);
-            this.nud_streamExtra3.TabIndex = 26;
-            this.nud_streamExtra3.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            // 
-            // label44
-            // 
-            this.label44.AutoSize = true;
-            this.label44.Location = new System.Drawing.Point(15, 293);
-            this.label44.Name = "label44";
-            this.label44.Size = new System.Drawing.Size(49, 13);
-            this.label44.TabIndex = 25;
-            this.label44.Text = "EXTRA3";
-            // 
-            // label45
-            // 
-            this.label45.AutoSize = true;
-            this.label45.Location = new System.Drawing.Point(15, 89);
-            this.label45.Name = "label45";
-            this.label45.Size = new System.Drawing.Size(71, 13);
-            this.label45.TabIndex = 27;
-            this.label45.Text = "Stream Rates";
-            // 
             // AlceOSDconfigForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1914,7 +1914,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "AlceOSDconfigForm";
-            this.Text = "AlceOSD 0v8";
+            this.Text = "AlceOSD 0v9";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form2_FormClosing);
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
@@ -1939,6 +1939,14 @@
             this.tabPage3.PerformLayout();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra3)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamPosition)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamRawCtrl)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamRcChannels)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtStatus)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_streamRawSensors)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_osdsysid)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_uavsysid)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_homelock)).EndInit();
@@ -1957,14 +1965,6 @@
             this.tabPage5.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamRawSensors)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtStatus)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamRcChannels)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamRawCtrl)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamPosition)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra2)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra3)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
