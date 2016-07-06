@@ -54,6 +54,7 @@
         <itemPath>widgets/gimbal.c</itemPath>
         <itemPath>widgets/videolevel.c</itemPath>
         <itemPath>widgets/messages.c</itemPath>
+        <itemPath>widgets/sonar.c</itemPath>
       </logicalFolder>
       <itemPath>uart.c</itemPath>
       <itemPath>main.c</itemPath>
