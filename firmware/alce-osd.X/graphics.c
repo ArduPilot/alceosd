@@ -77,18 +77,41 @@ void draw_ohline(int x0, int x1, int y, unsigned char p, unsigned char b, struct
 void draw_oline(int x0, int y0, int x1, int y1,
         unsigned char v, struct canvas *ca)
 {
-    float angle1, angle2;
-    angle1 = angle2 = atan2(x1 - x0, y1 - y0);
-    angle1 = cos(angle1 + (PI / 2.0)) * 1;
-    angle2 = sin(angle2 + (PI / 2.0)) * 1;
-    
-    draw_line(x0 - angle2, y1 - angle1,
-              x1 - angle2, y1 - angle1, 3, ca);
-    draw_line(x0 + angle2, y1 + angle1,
-              x1 + angle2, y1 + angle1, 3, ca);
-    draw_line(x0, y1, x1, y1, v, ca);
-}
+    double slope;
+    int aux, x, y;
 
+    if (abs(x1-x0) >= abs(y1-y0)) {
+        if (x1 < x0) {
+            aux = x0;
+            x0 = x1;
+            x1 = aux;
+        }
+        slope = 1.0*(y1-y0)/(x1-x0);
+        set_pixel(x0-1, y0, 3, ca);
+        for (x = x0; x <= x1; x++) {
+            y = y0 + ((int) (slope*(x-x0)));
+            set_pixel(x, y-1, 3, ca);
+            set_pixel(x, y+1, 3, ca);
+            set_pixel(x, y, v, ca);
+        }
+        set_pixel(x1+1, y1, 3, ca);
+    } else {
+        if (y1 < y0) {
+            aux = y0;
+            y0 = y1;
+            y1 = aux;
+        }
+        slope = 1.0*(x1-x0)/(y1-y0);
+        set_pixel(x0, y0-1, 3, ca);
+        for (y = y0; y <= y1; y++) {
+            x = x0 + ((int) (slope*(y-y0)));
+            set_pixel(x-1, y, 3, ca);
+            set_pixel(x+2, y, 3, ca);
+            set_pixel(x, y, v, ca);
+        }
+        set_pixel(x1, y1+1, 3, ca);
+    }
+}
 
 
 void draw_rect(int x0, int y0, int x1, int y1, unsigned char p, struct canvas *ca)
