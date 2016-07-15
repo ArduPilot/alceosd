@@ -53,7 +53,7 @@ static void shell_cmd_timers(char *args, void *data)
     t = timers;
     for (i = 0; i < nr_timers; i++) {
         if ((t->cbk != NULL) && (t->type != TIMER_WIDGET)) {
-            printf(" period=%5dms last_tick=%5d cbk=%p data=%p\n", t->time * 10, t->last_time, t->cbk, t->data);
+            printf(" period=%5ums last_tick=%5u cbk=%p data=%p\n", t->time * 10, t->last_time, t->cbk, t->data);
             total++;
         }
         t++;
