@@ -105,7 +105,7 @@ void free_mem(void);
 void clear_sram(void);
 
 
-void video_apply_config(struct video_config *cfg);
+void video_apply_config(unsigned char profile);
 void video_get_size(unsigned int *xsize, unsigned int *ysize);
 
 

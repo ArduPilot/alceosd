@@ -26,7 +26,9 @@
 #include "mavlink.h"
 
 
-#define CONFIG_MAX_WIDGETS      (80)
+#define CONFIG_MAX_WIDGETS      100
+#define CONFIG_MAX_TABS         20
+#define CONFIG_MAX_VIDEO        2
 
 
 /* widget config */
@@ -68,7 +70,7 @@ struct alceosd_config {
     struct uart_config uart[4];
 
     /* video config */
-    struct video_config video;
+    struct video_config video[CONFIG_MAX_VIDEO];
 
     /* tab changing config */
     struct tab_change_config tab_change;
@@ -84,6 +86,9 @@ struct alceosd_config {
     
     /* widgets config */
     struct widget_config widgets[CONFIG_MAX_WIDGETS];
+    
+    /* tabs config */
+    struct tab_config tabs[CONFIG_MAX_TABS];
 };
 
 

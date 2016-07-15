@@ -25,10 +25,10 @@
 /* WARNING: MESSING WITH THIS CODE MIGHT BRICK YOUR ALCEOSD */
 /* RECOVERY IS ONLY POSSIBLE USING A PICKIT3 TO RE-FLASH THE BOOTLOADER */
 
-#define CONFIG_ADDR_START   (0x1000)
-#define CONFIG_ADDR_END     (0x3fff)
+#define CONFIG_ADDR_START   (0x1000L)
+#define CONFIG_ADDR_END     (0x3fffL)
 #define CONFIG_ADDR_PAGE    (0x800)
-#define CONFIG_PAGE_SIZE    (0x400)
+#define CONFIG_PAGE_SIZE    (0x800)
 
 #define CONFIG_VERSION_SIG  (0xfffff-8)
 
@@ -45,19 +45,36 @@ struct alceosd_config config = {
         { .mode = UART_CLIENT_NONE,    .baudrate = UART_BAUD_115200, .pins = UART_PINS_OFF },
     },
   
-    .video.mode = VIDEO_STANDARD_PAL_P | VIDEO_MODE_SYNC_MASK,
-    .video.brightness = 200,
+    .video = {
+        {
+            .mode = VIDEO_STANDARD_PAL_P | VIDEO_MODE_SYNC_MASK,
+            .brightness = 200,
 
-    .video.white_lvl = 0x3ff >> 4,
-    .video.gray_lvl = 0x2d0 >> 4,
-    .video.black_lvl = 0x190 >> 4,
-          
-    .video.x_offset = 40,
-    .video.y_offset = 40,
+            .white_lvl = 0x3ff >> 4,
+            .gray_lvl = 0x2d0 >> 4,
+            .black_lvl = 0x190 >> 4,
 
-    .video.x_size_id = VIDEO_XSIZE_480,
-    .video.y_size = 260,
+            .x_offset = 40,
+            .y_offset = 40,
 
+            .x_size_id = VIDEO_XSIZE_480,
+            .y_size = 260,
+        },
+        {
+            .mode = VIDEO_STANDARD_PAL_I | VIDEO_MODE_SYNC_MASK,
+            .brightness = 200,
+
+            .white_lvl = 0x3ff >> 4,
+            .gray_lvl = 0x2d0 >> 4,
+            .black_lvl = 0x190 >> 4,
+
+            .x_offset = 40,
+            .y_offset = 40,
+
+            .x_size_id = VIDEO_XSIZE_672,
+            .y_size = 260,
+        },
+    },
     .tab_change.tab_change_ch_min = 1000,
     .tab_change.tab_change_ch_max = 2000,
     .tab_change.ch = 7,
@@ -98,6 +115,10 @@ struct alceosd_config config = {
         { 3, 0, WIDGET_FLIGHT_INFO_ID,     0,   0, {JUST_VCENTER | JUST_HCENTER}},
 
         { TABS_END, 0, 0, 0, 0, {0}},
+    },
+    .tabs = {
+        { .id = 1, .video_profile = 1 },
+        { .id = 0xff },
     }
 };
 
@@ -149,7 +170,7 @@ static void load_config(void)
     }
 
     /* setup video */
-    video_apply_config(&config.video);
+    video_apply_config(0xff);
 
     /* setup serial ports */
     uart_set_config_pins();
@@ -275,7 +296,7 @@ static unsigned int load_config_text(struct uart_client *cli, unsigned char *buf
         llen = 0;
 
         load_tab(0);
-        video_apply_config(&config.video);
+        video_apply_config(0xff);
 
         return i;
     }
@@ -367,9 +388,11 @@ static void shell_cmd_stats(char *args, void *data)
         shell_printf(" Address          (none)\n");
     else
         shell_printf(" Address          0x%06lx\n", valid_config_addr);
-    shell_printf(" Size             %u (0x%x)\n",
+    shell_printf(" Size             %u/%u (0x%x/0x%x)\n",
             (unsigned int) sizeof(struct alceosd_config),
-            (unsigned int) sizeof(struct alceosd_config));
+            (unsigned int) CONFIG_PAGE_SIZE,
+            (unsigned int) sizeof(struct alceosd_config),
+            (unsigned int) CONFIG_PAGE_SIZE);
 }
 
 static void shell_cmd_savecfg(char *args, void *data)

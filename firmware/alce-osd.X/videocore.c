@@ -74,21 +74,33 @@ extern unsigned char hw_rev;
 void video_apply_config_cbk(void);
 
 const struct param_def params_video[] = {
-    PARAM("VIDEO_STD", MAV_PARAM_TYPE_UINT8, &config.video.mode, NULL),
-    PARAM("VIDEO_XSIZE", MAV_PARAM_TYPE_UINT8, &config.video.x_size_id, video_apply_config_cbk),
-    PARAM("VIDEO_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video.y_size, NULL),
-    PARAM("VIDEO_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video.x_offset, NULL),
-    PARAM("VIDEO_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video.y_offset, NULL),
+    PARAM("VIDE0_STD", MAV_PARAM_TYPE_UINT8, &config.video[0].mode, NULL),
+    PARAM("VIDE0_XSIZE", MAV_PARAM_TYPE_UINT8, &config.video[0].x_size_id, video_apply_config_cbk),
+    PARAM("VIDE0_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video[0].y_size, NULL),
+    PARAM("VIDE0_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video[0].x_offset, NULL),
+    PARAM("VIDE0_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video[0].y_offset, NULL),
+
+    PARAM("VIDE1_STD", MAV_PARAM_TYPE_UINT8, &config.video[1].mode, NULL),
+    PARAM("VIDE1_XSIZE", MAV_PARAM_TYPE_UINT8, &config.video[1].x_size_id, video_apply_config_cbk),
+    PARAM("VIDE1_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video[1].y_size, NULL),
+    PARAM("VIDE1_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video[1].x_offset, NULL),
+    PARAM("VIDE1_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video[1].y_offset, NULL),
+
     PARAM_END,
 };
 const struct param_def params_video0v1[] = {
-    PARAM("VIDEO_BRIGHT", MAV_PARAM_TYPE_UINT16, &config.video.brightness, video_apply_config_cbk),
+    PARAM("VIDE0_BRIGHT", MAV_PARAM_TYPE_UINT16, &config.video[0].brightness, video_apply_config_cbk),
+    PARAM("VIDE1_BRIGHT", MAV_PARAM_TYPE_UINT16, &config.video[1].brightness, video_apply_config_cbk),
     PARAM_END,
 };
 const struct param_def params_video0v3[] = {
-    PARAM("VIDEO_WHITE", MAV_PARAM_TYPE_UINT8, &config.video.white_lvl, video_apply_config_cbk),
-    PARAM("VIDEO_GRAY", MAV_PARAM_TYPE_UINT8, &config.video.gray_lvl, video_apply_config_cbk),
-    PARAM("VIDEO_BLACK", MAV_PARAM_TYPE_UINT8, &config.video.black_lvl, video_apply_config_cbk),
+    PARAM("VIDE0_WHITE", MAV_PARAM_TYPE_UINT8, &config.video[0].white_lvl, video_apply_config_cbk),
+    PARAM("VIDE0_GRAY", MAV_PARAM_TYPE_UINT8, &config.video[0].gray_lvl, video_apply_config_cbk),
+    PARAM("VIDE0_BLACK", MAV_PARAM_TYPE_UINT8, &config.video[0].black_lvl, video_apply_config_cbk),
+
+    PARAM("VIDE1_WHITE", MAV_PARAM_TYPE_UINT8, &config.video[1].white_lvl, video_apply_config_cbk),
+    PARAM("VIDE1_GRAY", MAV_PARAM_TYPE_UINT8, &config.video[1].gray_lvl, video_apply_config_cbk),
+    PARAM("VIDE1_BLACK", MAV_PARAM_TYPE_UINT8, &config.video[1].black_lvl, video_apply_config_cbk),
     PARAM_END,
 };
 
@@ -101,6 +113,7 @@ static struct canvas *rendering_canvas = NULL;
 
 static unsigned char videocore_ctrl = 0;
 
+static struct video_config *cfg = &config.video[0];
 
 
 
@@ -434,7 +447,7 @@ static void video_init_hw(void)
     SPI2CON1bits.DISSDO = 1;
     SPI2CON1bits.DISSCK = 0;
     SPI2CON1bits.PPRE = 3;
-    SPI2CON1bits.SPRE = video_xsizes[config.video.x_size_id].clk_ps;
+    SPI2CON1bits.SPRE = video_xsizes[cfg->x_size_id].clk_ps;
     SPI2CON1bits.MODE16 = 1;
     SPI2CON2bits.FRMEN = 1;
     /* pins as ports */
@@ -513,7 +526,7 @@ static void video_init_hw(void)
         OC1CON1bits.OCTSEL = 1;
         OC1CON2bits.SYNCSEL = 0x1f;
         OC1R = 0x100;
-        OC1RS = 0x100 + config.video.brightness;
+        OC1RS = 0x100 + cfg->brightness;
         OC1CON1bits.OCM = 0b110;
     }
 
@@ -600,8 +613,11 @@ static void video_init_hw(void)
     }
 }
 
-void video_apply_config(struct video_config *cfg)
+void video_apply_config(unsigned char profile)
 {
+    if (profile < CONFIG_MAX_VIDEO)
+        cfg = &config.video[profile];
+
     /* brightness */
     if (hw_rev < 0x03) {
         OC1RS = 0x100 + cfg->brightness;
@@ -615,7 +631,7 @@ void video_apply_config(struct video_config *cfg)
     SPI2CON1bits.SPRE = video_xsizes[cfg->x_size_id].clk_ps;
     INTCON2bits.GIE = 1;
 
-    if (config.video.mode & VIDEO_MODE_SYNC_MASK) {
+    if (cfg->mode & VIDEO_MODE_SYNC_MASK) {
         _T4IF = 0;
         _T4IE = 1;
     } else {
@@ -625,17 +641,16 @@ void video_apply_config(struct video_config *cfg)
 
 void video_apply_config_cbk(void)
 {
-    struct video_config *c = &config.video;
-    if (c->x_size_id >= VIDEO_XSIZE_END)
-        c->x_size_id = VIDEO_XSIZE_END - 1;
-    video_apply_config(c);
+    if (cfg->x_size_id >= VIDEO_XSIZE_END)
+        cfg->x_size_id = VIDEO_XSIZE_END - 1;
+    video_apply_config(0xff);
 }
 
 void video_get_size(unsigned int *xsize, unsigned int *ysize)
 {
-    *xsize = video_xsizes[config.video.x_size_id].xsize;
-    *ysize = config.video.y_size;
-    if (config.video.mode & VIDEO_MODE_SCAN_MASK)
+    *xsize = video_xsizes[cfg->x_size_id].xsize;
+    *ysize = cfg->y_size;
+    if (cfg->mode & VIDEO_MODE_SCAN_MASK)
         *ysize *= 2;
 }
 
@@ -665,7 +680,7 @@ void video_resume(void)
         _INT1IE = 1;
     }
 
-    if ((videocore_ctrl & CTRL_SYNCGEN) && (config.video.mode & VIDEO_MODE_SYNC_MASK)) {
+    if ((videocore_ctrl & CTRL_SYNCGEN) && (cfg->mode & VIDEO_MODE_SYNC_MASK)) {
         _T4IF = 0;
         _T4IE = 1;
     }
@@ -774,7 +789,7 @@ static void render_process(void)
             x = rendering_canvas->x >> 2;
             b = rendering_canvas->buf;
 
-            xsize = (video_xsizes[config.video.x_size_id].xsize) >> 2;
+            xsize = (video_xsizes[cfg->x_size_id].xsize) >> 2;
             addr.l = x + ((unsigned long) xsize *  y);
         } else {
             /* render */
@@ -889,14 +904,14 @@ static void render_line(void)
     
     line++;
 
-    if (line < config.video.y_offset-2) {
+    if (line < cfg->y_offset-2) {
         /* do nothing */
-    } else if (line < config.video.y_offset-1) {
+    } else if (line < cfg->y_offset-1) {
         /* setup vars */
-        osdxsize = video_xsizes[config.video.x_size_id].xsize;
+        osdxsize = video_xsizes[cfg->x_size_id].xsize;
 
         /* calc last_line */
-        last_line = config.video.y_size + config.video.y_offset;
+        last_line = cfg->y_size + cfg->y_offset;
 
         /* avoid sram_busy soft-locks */
         if (last_line > last_line_cnt - 10)
@@ -905,9 +920,9 @@ static void render_line(void)
         /* auto detect video standard */
 #if 0
         if (last_line_cnt < 300)
-            config.video.mode |= VIDEO_MODE_STANDARD_MASK;
+            cfg->mode |= VIDEO_MODE_STANDARD_MASK;
         else
-            config.video.mode &= ~VIDEO_MODE_STANDARD_MASK;
+            cfg->mode &= ~VIDEO_MODE_STANDARD_MASK;
 #endif
         
         sram_busy = 1;
@@ -918,12 +933,12 @@ static void render_line(void)
                 odd = PORTBbits.RB15;
         }
             
-        if (config.video.mode & VIDEO_MODE_SCAN_MASK) {
+        if (cfg->mode & VIDEO_MODE_SCAN_MASK) {
             if (odd == 0) {
                 addr.l += (osdxsize/4);
             }
         }
-    } else if (line < config.video.y_offset) {
+    } else if (line < cfg->y_offset) {
         sram_exit_sqi();
         /* make sure we are in sequential mode */
         CS_LOW;
@@ -936,7 +951,7 @@ static void render_line(void)
         CS_HIGH;
         SRAM_OUT;
 
-        x_offset = config.video.x_offset;
+        x_offset = cfg->x_offset;
         if (int_sync_cnt > CNT_INT_MODE) {
             x_offset += INT_X_OFFSET;
             if (hw_rev < 0x03)
@@ -965,7 +980,7 @@ static void render_line(void)
         T2CONbits.TON = 1;
 
         /* calc next address */
-        if (config.video.mode & VIDEO_MODE_SCAN_MASK) {
+        if (cfg->mode & VIDEO_MODE_SCAN_MASK) {
             addr.l += (unsigned long) ((osdxsize/4) * 2);
         } else {
             addr.l += (unsigned long) (osdxsize/4);
@@ -1258,16 +1273,16 @@ static void shell_cmd_stats(char *args, void *data)
     unsigned char dac_status[VIDEO_DAC_BUF_SIZE], i;
     shell_printf("\nVideo config:\n");
     shell_printf(" standard=%s,%s\n",
-        (config.video.mode & VIDEO_MODE_STANDARD_MASK) != 0 ? "ntsc" : "pal",
-        (config.video.mode & VIDEO_MODE_SCAN_MASK) != 0 ? "interlaced" : "progressive");
-    shell_printf(" internal sync=%u\n", (config.video.mode & VIDEO_MODE_SYNC_MASK) != 0 ? 1 : 0);
+        (cfg->mode & VIDEO_MODE_STANDARD_MASK) != 0 ? "ntsc" : "pal",
+        (cfg->mode & VIDEO_MODE_SCAN_MASK) != 0 ? "interlaced" : "progressive");
+    shell_printf(" internal sync=%u\n", (cfg->mode & VIDEO_MODE_SYNC_MASK) != 0 ? 1 : 0);
     if (hw_rev < 0x03) {
-        shell_printf(" brightness=%u\n", config.video.brightness);
+        shell_printf(" brightness=%u\n", cfg->brightness);
     } else {
         shell_printf(" levels: white=%u gray=%u %black=%u\n",
-                config.video.white_lvl,
-                config.video.gray_lvl,
-                config.video.black_lvl);
+                cfg->white_lvl,
+                cfg->gray_lvl,
+                cfg->black_lvl);
         
         shell_printf(" dac settings:\n  ");
         video_read_dac(dac_status);
@@ -1280,9 +1295,9 @@ static void shell_cmd_stats(char *args, void *data)
     }
 
     shell_printf(" offset: x=%u y=%u\n",
-            config.video.x_offset, config.video.y_offset);
+            cfg->x_offset, cfg->y_offset);
     shell_printf(" size: x=%u y=%u\n",
-            video_xsizes[config.video.x_size_id].xsize, config.video.y_size);
+            video_xsizes[cfg->x_size_id].xsize, cfg->y_size);
     
     shell_printf("\nVideocore stats:\n");
     shell_printf(" scratchpad memory: A=%u/%u B=%u/%u\n",
@@ -1329,60 +1344,60 @@ static void shell_cmd_config(char *args, void *data)
             switch (argval[i].key) {
                 case 's':
                     if (strcmp(argval[i].val, "p") == 0)
-                        config.video.mode &= ~VIDEO_MODE_STANDARD_MASK;
+                        cfg->mode &= ~VIDEO_MODE_STANDARD_MASK;
                     else
-                        config.video.mode |= VIDEO_MODE_STANDARD_MASK;
+                        cfg->mode |= VIDEO_MODE_STANDARD_MASK;
                 case 'm':
                     if (strcmp(argval[i].val, "p") == 0)
-                        config.video.mode &= ~VIDEO_MODE_SCAN_MASK;
+                        cfg->mode &= ~VIDEO_MODE_SCAN_MASK;
                     else
-                        config.video.mode |= VIDEO_MODE_SCAN_MASK;
+                        cfg->mode |= VIDEO_MODE_SCAN_MASK;
                     break;
                 case 'i':
                     if (strcmp(argval[i].val, "0") == 0)
-                        config.video.mode &= ~VIDEO_MODE_SYNC_MASK;
+                        cfg->mode &= ~VIDEO_MODE_SYNC_MASK;
                     else
-                        config.video.mode |= VIDEO_MODE_SYNC_MASK;
+                        cfg->mode |= VIDEO_MODE_SYNC_MASK;
                     break;
 
                 case 't':
                     int_var = atoi(argval[i].val);
-                    config.video.brightness = (unsigned int) int_var;
+                    cfg->brightness = (unsigned int) int_var;
                     break;
 
                 case 'w':
                     int_var = atoi(argval[i].val);
-                    config.video.white_lvl = (unsigned char) int_var;
+                    cfg->white_lvl = (unsigned char) int_var;
                     break;
                 case 'g':
                     int_var = atoi(argval[i].val);
-                    config.video.gray_lvl = (unsigned char) int_var;
+                    cfg->gray_lvl = (unsigned char) int_var;
                     break;
                 case 'b':
                     int_var = atoi(argval[i].val);
-                    config.video.black_lvl = (unsigned char) int_var;
+                    cfg->black_lvl = (unsigned char) int_var;
                     break;
                     
                 case 'x':
                     int_var = atoi(argval[i].val);
                     for (i = 0; i < VIDEO_XSIZE_END; i++) {
                         if (int_var == video_xsizes[i].xsize) {
-                            config.video.x_size_id = i;
+                            cfg->x_size_id = i;
                             break;
                         }
                     }
                     break;
                 case 'y':
                     int_var = atoi(argval[i].val);
-                    config.video.y_size = (unsigned int) int_var;
+                    cfg->y_size = (unsigned int) int_var;
                     break;
                 case 'h':
                     int_var = atoi(argval[i].val);
-                    config.video.x_offset = (unsigned int) int_var;
+                    cfg->x_offset = (unsigned int) int_var;
                     break;
                 case 'v':
                     int_var = atoi(argval[i].val);
-                    config.video.y_offset = (unsigned int) int_var;
+                    cfg->y_offset = (unsigned int) int_var;
                     break;
 
                 case 'c':

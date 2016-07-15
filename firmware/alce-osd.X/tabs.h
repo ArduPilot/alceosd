@@ -39,6 +39,10 @@ struct tab_change_config {
     unsigned char mode;
 };
 
+struct tab_config {
+    unsigned char id;
+    unsigned char video_profile;
+};
 
 void tabs_init(void);
 void load_tab(unsigned char tab);

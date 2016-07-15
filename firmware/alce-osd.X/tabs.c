@@ -69,6 +69,7 @@ static unsigned char search_on_list(unsigned char *list, unsigned char tab)
 void load_tab(unsigned char tab)
 {
     struct widget_config *w_cfg = &config.widgets[0];
+    struct tab_config *t_cfg = &config.tabs[0];
     struct widget *w;
     struct widget_config tmp_wcfg;
     struct widget **aw = active_widgets;
@@ -108,6 +109,13 @@ void load_tab(unsigned char tab)
 
 
     } else {
+        while (t_cfg->id != 0xff) {
+            if (t_cfg->id == tab)
+                break;
+        }
+        if (t_cfg->id != 0xff)
+            video_apply_config(t_cfg->id);
+        
         /* load tab widgets */
         while (w_cfg->tab != TABS_END) {
             if (w_cfg->tab == tab) {
