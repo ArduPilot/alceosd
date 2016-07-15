@@ -40,7 +40,6 @@ extern void draw_vline(int x, int y0, int y1, unsigned char p, struct canvas *ca
 /* in C */
 void draw_line(int x0, int y0, int x1, int y1, unsigned char v, struct canvas *ca);
 void draw_oline(int x0, int y0, int x1, int y1, unsigned char v, struct canvas *ca);
-void draw_ohline(int x0, int x1, int y, unsigned char p, unsigned char b, struct canvas *ca);
 
 void draw_rect(int x0, int y0, int x1, int y1, unsigned char p, struct canvas *ca);
 void draw_frect(int x0, int y0, int x1, int y1, unsigned char p, struct canvas *ca);

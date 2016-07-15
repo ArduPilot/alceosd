@@ -67,52 +67,99 @@ void draw_line(int x0, int y0, int x1, int y1,
     }
 }
 
-void draw_ohline(int x0, int x1, int y, unsigned char p, unsigned char b, struct canvas *ca)
+static void draw_ovline(int x, int y0, int y1, unsigned char p, struct canvas *ca)
 {
-    draw_hline(x0, x1, y-1, b, ca);
+    int aux;
+    if (y1 < y0) {
+        aux = y0;
+        y0 = y1;
+        y1 = aux;
+    }
+    draw_vline(x, y0, y1, p, ca);
+    draw_vline(x-1, y0, y1, 3, ca);
+    draw_vline(x+1, y0, y1, 3, ca);
+    set_pixel(x, y0-1, 3, ca);
+    set_pixel(x, y1+1, 3, ca);
+}
+
+static void draw_ohline(int x0, int x1, int y, unsigned char p, struct canvas *ca)
+{
+    int aux;
+    if (x1 < x0) {
+        aux = x0;
+        x0 = x1;
+        x1 = aux;
+    }
     draw_hline(x0, x1, y, p, ca);
-    draw_hline(x0, x1, y+1, b, ca);
+    draw_hline(x0, x1, y-1, 3, ca);
+    draw_hline(x0, x1, y+1, 3, ca);
+    set_pixel(x0-1, y, 3, ca);
+    set_pixel(x1+1, y, 3, ca);
 }
 
 void draw_oline(int x0, int y0, int x1, int y1,
         unsigned char v, struct canvas *ca)
 {
-    double slope;
-    int aux, x, y;
+    if (x0 == x1) {
+        draw_ovline(x0, y0, y1, v, ca);
+        return;
+    } else if (y0 == y1) {
+        draw_ohline(x0, x1, y0, v, ca);
+        return;
+    }
 
-    if (abs(x1-x0) >= abs(y1-y0)) {
-        if (x1 < x0) {
-            aux = x0;
-            x0 = x1;
-            x1 = aux;
-        }
-        slope = 1.0*(y1-y0)/(x1-x0);
+    int aux;
+    if (x0 > x1) {
+        aux = x1; x1 = x0; x0 = aux;
+        aux = y1; y1 = y0; y0 = aux;
+    }
+
+    int dx =  abs(x1-x0);
+    int dy = -abs(y1-y0), sy = y0<y1 ? 1 : -1;
+    int err = dx+dy, e2;
+
+    if (dx > -dy) {
         set_pixel(x0-1, y0, 3, ca);
-        for (x = x0; x <= x1; x++) {
-            y = y0 + ((int) (slope*(x-x0)));
-            set_pixel(x, y-1, 3, ca);
-            set_pixel(x, y+1, 3, ca);
-            set_pixel(x, y, v, ca);
+        for(;;){
+            set_pixel(x0, y0, v, ca);
+            set_pixel(x0, y0-1, 3, ca);
+            set_pixel(x0, y0+1, 3, ca);
+            if (x0==x1 && y0==y1) break;
+
+            e2 = 2*err;
+
+            if (e2 >= dy) {
+                err += dy;
+                x0 ++;
+            }
+            if (e2 <= dx) {
+                err += dx;
+                y0 += sy;
+            }
         }
-        set_pixel(x1+1, y1, 3, ca);
+        set_pixel(x1+1, y0, 3, ca);
     } else {
-        if (y1 < y0) {
-            aux = y0;
-            y0 = y1;
-            y1 = aux;
+        set_pixel(x0, y0 + sy, 3, ca);
+        for(;;){
+            set_pixel(x0, y0, v, ca);
+            set_pixel(x0-1, y0, 3, ca);
+            set_pixel(x0+1, y0, 3, ca);
+            if (x0==x1 && y0==y1) break;
+
+            e2 = 2*err;
+
+            if (e2 >= dy) {
+                err += dy;
+                x0 ++;
+            }
+            if (e2 <= dx) {
+                err += dx;
+                y0 += sy;
+            }
         }
-        slope = 1.0*(x1-x0)/(y1-y0);
-        set_pixel(x0, y0-1, 3, ca);
-        for (y = y0; y <= y1; y++) {
-            x = x0 + ((int) (slope*(y-y0)));
-            set_pixel(x-1, y, 3, ca);
-            set_pixel(x+2, y, 3, ca);
-            set_pixel(x, y, v, ca);
-        }
-        set_pixel(x1, y1+1, 3, ca);
+        set_pixel(x1, y0 - sy, 3, ca);
     }
 }
-
 
 void draw_rect(int x0, int y0, int x1, int y1, unsigned char p, struct canvas *ca)
 {

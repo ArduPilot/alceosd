@@ -113,10 +113,10 @@ static void render_gauge(struct widget *w)
         if (j % major_tick == 0) {
             sprintf(buf, "%d", j);
             draw_jstr(buf, 2, y, JUST_VCENTER, ca, 0);
-            draw_ohline(X_CENTER - 2, X_CENTER + 4, y, 1, 3, ca);
+            draw_oline(X_CENTER - 2, y, X_CENTER + 4, y, 1, ca);
             d = 1;
         } else if (j % minor_tick == 0) {
-            draw_ohline(X_CENTER - 2, X_CENTER + 2, y, 1, 3, ca);
+            draw_oline(X_CENTER - 2, y, X_CENTER + 2, y, 1, ca);
             d = 1;
         } else {
             d = 0;

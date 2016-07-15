@@ -133,12 +133,12 @@ static void render_gauge(struct widget *w)
         y = Y_SIZE - (int) yy;
         j = priv->altitude + i - priv->range/2;
         if (j % major_tick == 0) {
-            draw_ohline(X_CENTER + 2, X_CENTER - 4, y, 1, 3, ca);
+            draw_oline(X_CENTER + 2, y, X_CENTER - 4, y, 1, ca);
             sprintf(buf, "%d", j);
             draw_jstr(buf, X_SIZE-2, y, JUST_RIGHT | JUST_VCENTER, ca, 0);
             d = 1;
         } else if (j % minor_tick == 0) {
-            draw_ohline(X_CENTER + 2, X_CENTER - 2, y, 1, 3, ca);
+            draw_oline(X_CENTER + 2, y, X_CENTER - 2, y, 1, ca);
             d = 1;
         } else {
             d = 0;

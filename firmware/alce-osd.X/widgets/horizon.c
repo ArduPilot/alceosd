@@ -161,7 +161,7 @@ static void render_0(struct widget *w)
         }
     }
 
-    draw_ohline(X_CENTER - 3, X_CENTER + 3, Y_CENTER, 1, 3, ca);
+    draw_oline(X_CENTER - 3, Y_CENTER, X_CENTER + 3, Y_CENTER, 1, ca);
     draw_vline(X_CENTER, Y_CENTER - 3, Y_CENTER + 3, 1, ca);
     
     float cos_i, sin_i;
@@ -237,7 +237,7 @@ static void render_1(struct widget *w)
     cx = X_SIZE / 2;
     cy = Y_CENTER;
     
-    i = priv->pitch_deg ;
+    i = priv->pitch_deg;
 
     y = cy + (int) i * priv->cos_roll * 0.8;
     x = cx - (int) i * priv->sin_roll * 0.8;
