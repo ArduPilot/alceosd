@@ -85,17 +85,17 @@ struct alceosd_config config = {
         { 1, 0, WIDGET_SPEED_ID,           0,   0, {JUST_VCENTER | JUST_LEFT}},
         { 1, 0, WIDGET_THROTTLE_ID,       70,   0, {JUST_TOP     | JUST_LEFT}},
         { 1, 0, WIDGET_VARIOMETER_ID,      0,  -5, {JUST_BOT     | JUST_RIGHT}},
-        { 1, 0, WIDGET_WIND_ID,             0, 30, {JUST_TOP     | JUST_RIGHT}},
+        { 1, 0, WIDGET_WIND_ID,            0,  30, {JUST_TOP     | JUST_RIGHT}},
 
-        { 1, 0, WIDGET_HOME_INFO_ID,       80,  0, {JUST_TOP     | JUST_LEFT}},
-        { 1, 0, WIDGET_RADAR_ID,           60,-44, {JUST_BOT     | JUST_LEFT}},
-        //{ 1, 0, WIDGET_MESSAGES_ID,         0,  0, {JUST_TOP     | JUST_HCENTER}},
+        { 1, 0, WIDGET_HOME_INFO_ID,      80,   0, {JUST_TOP     | JUST_LEFT}},
+        { 1, 0, WIDGET_RADAR_ID,          60, -44, {JUST_BOT     | JUST_LEFT}},
+        //{ 1, 0, WIDGET_MESSAGES_ID,        0,  0, {JUST_TOP     | JUST_HCENTER}},
 
-        { 2, 0, WIDGET_RC_CHANNELS_ID,      0,  0, {JUST_TOP     | JUST_LEFT}},
-        { 2, 1, WIDGET_RADAR_ID,            0,  0, {JUST_TOP     | JUST_HCENTER}},
-        { 2, 0, WIDGET_CONSOLE_ID,          0,  0, {JUST_BOT     | JUST_LEFT}},
+        { 2, 0, WIDGET_RC_CHANNELS_ID,     0,   0, {JUST_TOP     | JUST_LEFT}},
+        { 2, 1, WIDGET_RADAR_ID,           0,   0, {JUST_TOP     | JUST_HCENTER}},
+        { 2, 0, WIDGET_CONSOLE_ID,         0,   0, {JUST_BOT     | JUST_LEFT}},
 
-        { 3, 0, WIDGET_FLIGHT_INFO_ID,      0,  0, {JUST_VCENTER | JUST_HCENTER}},
+        { 3, 0, WIDGET_FLIGHT_INFO_ID,     0,   0, {JUST_VCENTER | JUST_HCENTER}},
 
         { TABS_END, 0, 0, 0, 0, {0}},
     }
@@ -357,6 +357,51 @@ static unsigned int shell_process(struct uart_client *cli, unsigned char *buf, u
     shell_parser(buf, len);
     return len;
 }
+
+static void shell_cmd_stats(char *args, void *data)
+{
+    shell_printf("Config stats:\n");
+    shell_printf(" Signature        0x%06lx\n", CONFIG_VERSION_SIG);
+    shell_printf(" Address range    0x%06lx-0x%06lx\n", CONFIG_ADDR_START, CONFIG_ADDR_END);
+    if (valid_config_addr == 0)
+        shell_printf(" Address          (none)\n");
+    else
+        shell_printf(" Address          0x%06lx\n", valid_config_addr);
+    shell_printf(" Size             %u (0x%x)\n",
+            (unsigned int) sizeof(struct alceosd_config),
+            (unsigned int) sizeof(struct alceosd_config));
+}
+
+static void shell_cmd_savecfg(char *args, void *data)
+{
+    shell_printf("Saving config...\n");
+    write_config();
+}
+
+static void shell_cmd_loadcfg(char *args, void *data)
+{
+    shell_printf("Loading config...\n");
+    config_uart_client.read = load_config_text;
+}
+
+static void shell_cmd_dumpcfg(char *args, void *data)
+{
+    dump_config_text();
+}
+
+static const struct shell_cmdmap_s config_cmdmap[] = {
+    {"dump", shell_cmd_dumpcfg, "dump", SHELL_CMD_SIMPLE},
+    {"load", shell_cmd_loadcfg, "load", SHELL_CMD_SIMPLE},
+    {"save", shell_cmd_savecfg, "save", SHELL_CMD_SIMPLE},
+    {"stats", shell_cmd_stats, "config statistics", SHELL_CMD_SIMPLE},
+    {"", NULL, ""},
+};
+
+void shell_cmd_cfg(char *args, void *data)
+{
+    shell_exec(args, config_cmdmap, data);
+}
+
 
 static unsigned int config_process(struct uart_client *cli, unsigned char *buf, unsigned int len)
 {

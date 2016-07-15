@@ -35,6 +35,7 @@ static void shell_cmd_reboot(char *args, void *data)
 
 static const struct shell_cmdmap_s root_cmdmap[] = {
     {"clock", shell_cmd_clock, "Clock module", SHELL_CMD_SUBCMD},
+    {"config", shell_cmd_cfg, "Config module", SHELL_CMD_SUBCMD},
     {"mavlink", shell_cmd_mavlink, "Mavlink module", SHELL_CMD_SUBCMD},
     {"reboot", shell_cmd_reboot, "Reboot AlceOSD", SHELL_CMD_SIMPLE},
     {"uart", shell_cmd_uart, "UART module", SHELL_CMD_SUBCMD},
