@@ -42,7 +42,10 @@ extern struct alceosd_config config;
 const struct param_def params_mavlink[] = {
     PARAM("MAV_UAVSYSID", MAV_PARAM_TYPE_UINT8, &config.mav.uav_sysid, NULL),
     PARAM("MAV_OSDSYSID", MAV_PARAM_TYPE_UINT8, &config.mav.osd_sysid, NULL),
+    PARAM_END,
+};
 
+const struct param_def params_mavlink_rates[] = {
     PARAM("MAV_RAWSENS",  MAV_PARAM_TYPE_UINT8, &config.mav.streams[0], NULL),
     PARAM("MAV_EXTSTAT",  MAV_PARAM_TYPE_UINT8, &config.mav.streams[1], NULL),
     PARAM("MAV_RCCHAN",   MAV_PARAM_TYPE_UINT8, &config.mav.streams[2], NULL),
@@ -54,6 +57,25 @@ const struct param_def params_mavlink[] = {
     PARAM_END,
 };
 
+const static unsigned char mavlink_stream_map[] = {
+    MAV_DATA_STREAM_ALL,
+    /* SCALED_IMU2, SCALED_PRESSURE, SENSOR_OFFSETS */
+	MAV_DATA_STREAM_RAW_SENSORS,
+    /* MEMINFO, MISSION_CURRENT, GPS_RAW_INT, NAV_CONTROLLER_OUTPUT, LIMITS_STATUS */
+	MAV_DATA_STREAM_EXTENDED_STATUS,
+    /* SERVO_OUTPUT_RAW, RC_CHANNELS_RAW */
+	MAV_DATA_STREAM_RC_CHANNELS,
+    /* RC_CHANNELS_SCALED (HIL) */
+	MAV_DATA_STREAM_RAW_CONTROLLER,
+    /* GLOBAL_POSITION_INT */
+	MAV_DATA_STREAM_POSITION,
+    /* ATTITUDE, SIMSTATE (SITL) */
+	MAV_DATA_STREAM_EXTRA1,
+    /* VFR_HUD */
+	MAV_DATA_STREAM_EXTRA2,
+    /* AHRS, HWSTATUS, SYSTEM_TIME */
+	MAV_DATA_STREAM_EXTRA3,
+};
 
 /* additional helper functions */
 unsigned int mavlink_msg_rc_channels_raw_get_chan(mavlink_message_t *msg, unsigned char ch)
@@ -580,57 +602,32 @@ void mav_param_set(mavlink_message_t *msg, void *d)
     mavlink_send_msg(&msg2);
 }
 
+static void mavlink_request_data_stream(unsigned char id, unsigned char rate)
+{
+    mavlink_message_t msg;
+    unsigned char i, start_stop = (rate == 0) ? 0 : 1;
+
+    if (id >= sizeof(mavlink_stream_map))
+        return;
+    
+    if (id == 0) {
+        for (i = 0; i < sizeof(mavlink_stream_map)-1; i++)
+            config.mav.streams[i] = rate;
+    } else {
+        config.mav.streams[id - 1] = rate;
+    }
+
+    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg,
+                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
+                        mavlink_stream_map[id], rate, start_stop);
+    mavlink_send_msg(&msg);
+}
+
 static void mavlink_request_data_streams(struct timer *t, void *d)
 {
-    mavlink_message_t msg2;
-
-    /* SCALED_IMU2, SCALED_PRESSURE, SENSOR_OFFSETS */
-    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_RAW_SENSORS, config.mav.streams[0], 1);
-    mavlink_send_msg(&msg2);
-
-    /* MEMINFO, MISSION_CURRENT, GPS_RAW_INT, NAV_CONTROLLER_OUTPUT, LIMITS_STATUS */
-    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_EXTENDED_STATUS, config.mav.streams[1], 1);
-    mavlink_send_msg(&msg2);
-
-    /* SERVO_OUTPUT_RAW, RC_CHANNELS_RAW */
-    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_RC_CHANNELS, config.mav.streams[2], 1);
-    mavlink_send_msg(&msg2);
-
-    /* RC_CHANNELS_SCALED (HIL) */
-    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_RAW_CONTROLLER, config.mav.streams[3], 0);
-    mavlink_send_msg(&msg2);
-
-    /* GLOBAL_POSITION_INT */
-    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_POSITION, config.mav.streams[4], 1);
-    mavlink_send_msg(&msg2);
-
-    /* ATTITUDE, SIMSTATE (SITL) */
-    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_EXTRA1, config.mav.streams[5], 1);
-    mavlink_send_msg(&msg2);
-
-    /* VFR_HUD */
-    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_EXTRA2, config.mav.streams[6], 1);
-    mavlink_send_msg(&msg2);
-
-    /* AHRS, HWSTATUS, SYSTEM_TIME */
-    mavlink_msg_request_data_stream_pack(config.mav.osd_sysid, MAV_COMP_ID_PERIPHERAL, &msg2,
-                        config.mav.uav_sysid, MAV_COMP_ID_ALL,
-                        MAV_DATA_STREAM_EXTRA3, config.mav.streams[7], 1);
-    mavlink_send_msg(&msg2);
+    unsigned char i;
+    for (i = 1; i < sizeof(mavlink_stream_map); i++)
+        mavlink_request_data_stream(i, config.mav.streams[i - 1]);
 }
 
 static void mav_heartbeat_cbk(mavlink_message_t *msg, void *d)
@@ -668,6 +665,7 @@ void mavlink_init(void)
     
     /* register module parameters */
     params_add(params_mavlink);
+    params_add(params_mavlink_rates);
 
     /* heartbeat timer */
     add_timer(TIMER_ALWAYS, 10, mav_heartbeat, NULL);
@@ -738,14 +736,48 @@ static void shell_cmd_route(char *args, void *data)
     shell_printf("\ntotal routes=%d max=%d\n", total_routes, MAX_MAVLINK_ROUTES);
 }
 
-void shell_cmd_config(char *args, void *data)
+#define SHELL_CMD_MAVRATE_ARGS    2
+void shell_cmd_rates(char *args, void *data)
 {
+    struct shell_argval argval[SHELL_CMD_MAVRATE_ARGS+1], *p;
+    unsigned char t, i, val;
+    unsigned char *v;
     
+    t = shell_arg_parser(args, argval, SHELL_CMD_MAVRATE_ARGS);
+    p = shell_get_argval(argval, 's');
+
+    if ((t < 2) || (p == NULL)) {
+        shell_printf("\nMavlink stream rates:\n");
+        shell_printf("id - rate stream\n");
+        for (i = 0; i < sizeof(mavlink_stream_map)-1; i++) {
+            v = (unsigned char*) params_mavlink_rates[i].value;
+            shell_printf(" %u - [%2u] %s\n", i+1, *v,
+                        params_mavlink_rates[i].name);
+        };
+        
+        shell_printf("\nset rate: [-s <stream_id> -r <rate>]\n");
+        shell_printf(" -s <stream_id>  mavlink stream id (0=ALL)\n");
+        shell_printf(" -r <rate>       stream rate: 0-10\n");
+    } else {
+        if (p != NULL) {
+            i = atoi(p->val);
+            if (i > sizeof(mavlink_stream_map)) {
+                shell_printf("\nInvalid stream id\n");
+            } else {
+                p = shell_get_argval(argval, 'r');
+                val = atoi(p->val);
+                if (val > 10)
+                    val = 0;
+                shell_printf("\nSetting stream id %u to %uHz\n", i, val);
+                mavlink_request_data_stream(i, val);
+            }
+        }
+    }
 }
 
 static const struct shell_cmdmap_s mavlink_cmdmap[] = {
     {"callbacks", shell_cmd_callbacks, "Display callback info", SHELL_CMD_SIMPLE},
-    {"config", shell_cmd_config, "config", SHELL_CMD_SIMPLE},
+    {"rates", shell_cmd_rates, "Mavklink stream rates", SHELL_CMD_SIMPLE},
     {"route", shell_cmd_route, "Display routing table", SHELL_CMD_SIMPLE},
     {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
