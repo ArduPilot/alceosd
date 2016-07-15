@@ -190,6 +190,8 @@ inline static void handle_uart_int(unsigned char port)
         if (keywords[key_idx[port]] == ch) {
             key_idx[port]++;
             if (key_idx[port] == (sizeof(keywords)-1)) {
+                if (uart_get_client(port)->id == UART_CLIENT_CONFIG)
+                    return;
                 uart_set_client(port, UART_CLIENT_CONFIG);
                 uart_get_client(port)->write((unsigned char*) answer, sizeof(answer)-1);
                 while ( (*(UARTS[port].STA) & 0x0100) == 0);
