@@ -84,9 +84,9 @@ static void render(struct widget *w)
 {
     struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
-    char buf[100], buf2[5];
+    char buf[50], buf2[5];
 
-    sprintf(buf, "%10.6f\n%10.6f", (double) priv->gps_lat, (double) priv->gps_lon);
+    snprintf(buf, 50, "%10.6f\n%10.6f", (double) priv->gps_lat, (double) priv->gps_lon);
     draw_str(buf, 0, 0, ca, priv->font_id);
 
     if (priv->gps_fix_type < 2) {
@@ -101,7 +101,7 @@ static void render(struct widget *w)
         strcpy(buf2, "?");
     }
 
-    sprintf(buf, "%d %s\n%2.1f HDP",
+    snprintf(buf, 50, "%d %s\n%2.1f HDP",
                 priv->gps_nrsats, buf2,
                 (double) priv->gps_eph);
     draw_jstr(buf, ca->width, 0, JUST_RIGHT, ca, priv->font_id);
