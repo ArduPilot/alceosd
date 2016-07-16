@@ -21,6 +21,7 @@
 #define MAX_MAVLINK_CALLBACKS 40
 #define MAX_MAVLINK_ROUTES 10
 
+#define UAV_LAST_SEEN_TIMEOUT   2000
 
 static struct mavlink_callback callbacks[MAX_MAVLINK_CALLBACKS];
 static unsigned char nr_callbacks = 0;
@@ -493,8 +494,12 @@ static void mav_heartbeat(struct timer *t, void *d)
 
     LED = ~LED;
 
-    if (get_millis() - uav_last_seen > 5000)
+    if (get_millis() - uav_last_seen > UAV_LAST_SEEN_TIMEOUT) {
+        set_timer_period(t, 5);
         return;
+    } else {
+        set_timer_period(t, 10);
+    }
     
     mavlink_msg_heartbeat_pack(config.mav.osd_sysid,
             MAV_COMP_ID_OSD, &msg, MAV_TYPE_ALCEOSD,
