@@ -28,6 +28,7 @@ static unsigned char nr_callbacks = 0;
 static unsigned char active_channel_mask = 0, total_routes = 0;
 
 static unsigned int pidx = 0, total_params = 0;
+unsigned long uav_last_seen = 0;
 
 struct uart_client mavlink_uart_clients[MAVLINK_COMM_NUM_BUFFERS];
 
@@ -490,6 +491,11 @@ static void mav_heartbeat(struct timer *t, void *d)
 {
     mavlink_message_t msg;
 
+    LED = ~LED;
+
+    if (get_millis() - uav_last_seen > 5000)
+        return;
+    
     mavlink_msg_heartbeat_pack(config.mav.osd_sysid,
             MAV_COMP_ID_OSD, &msg, MAV_TYPE_ALCEOSD,
             MAV_AUTOPILOT_INVALID,
@@ -498,7 +504,6 @@ static void mav_heartbeat(struct timer *t, void *d)
             MAV_STATE_ACTIVE);
 
     mavlink_send_msg(&msg);
-    LED = ~LED;
 }
 
 
@@ -626,16 +631,17 @@ static void mavlink_request_data_stream(unsigned char id, unsigned char rate)
 static void mavlink_request_data_streams(struct timer *t, void *d)
 {
     unsigned char i;
+    
+    if (get_millis() - uav_last_seen > 5)
+        return;
+    
     for (i = 1; i < sizeof(mavlink_stream_map); i++)
         mavlink_request_data_stream(i, config.mav.streams[i - 1]);
 }
 
 static void mav_heartbeat_cbk(mavlink_message_t *msg, void *d)
 {
-    mavlink_request_data_streams(NULL, NULL);
-    add_timer(TIMER_ALWAYS, 600, mavlink_request_data_streams, NULL);
-
-    del_mavlink_callback((struct mavlink_callback *) d);
+    uav_last_seen = get_millis();
 }
 
 #if 0
@@ -649,7 +655,6 @@ void mav_cmd_ack(mavlink_message_t *msg, void *d)
 
 void mavlink_init(void)
 {
-    struct mavlink_callback *hb_cbk;
     unsigned char i;
 
     /* register serial port clients */
@@ -675,8 +680,11 @@ void mavlink_init(void)
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_READ, mav_param_request_read, CALLBACK_PERSISTENT, NULL);
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_SET, mav_param_set, CALLBACK_PERSISTENT, NULL);
 
-    hb_cbk = add_mavlink_callback(MAVLINK_MSG_ID_HEARTBEAT, mav_heartbeat_cbk, CALLBACK_PERSISTENT, NULL);
-    hb_cbk->data = hb_cbk;
+    add_mavlink_callback(MAVLINK_MSG_ID_HEARTBEAT, mav_heartbeat_cbk, CALLBACK_PERSISTENT, NULL);
+
+    /* request stream rates periodically */
+    add_timer(TIMER_ALWAYS, 600, mavlink_request_data_streams, NULL);
+    
     //add_mavlink_callback(MAVLINK_MSG_ID_COMMAND_ACK, mav_cmd_ack, CALLBACK_PERSISTENT, NULL);
 }
 
@@ -719,6 +727,7 @@ static void shell_cmd_stats(char *args, void *data)
         shell_printf(" packet_rx_success_count=%d\n", status->packet_rx_success_count);
     }
     shell_printf("\nActive channel mask=%x\n", active_channel_mask);
+    shell_printf("\nUAV last seen %lums ago\n", get_millis() - uav_last_seen);
 }
 
 static void shell_cmd_route(char *args, void *data)
