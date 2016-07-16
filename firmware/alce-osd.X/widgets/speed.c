@@ -27,7 +27,6 @@
 struct widget_priv {
     int range;
     float speed;
-    int speed_i;
 };
 
 static void mav_callback(mavlink_message_t *msg, void *d)
@@ -42,11 +41,9 @@ static void mav_callback(mavlink_message_t *msg, void *d)
         case 0:
         default:
             priv->speed = mavlink_msg_vfr_hud_get_airspeed(msg) * 3600 / 1000.0;
-            priv->speed_i = (int) priv->speed;
             break;
         case 1:
             priv->speed = mavlink_msg_vfr_hud_get_groundspeed(msg) * 3600 / 1000.0;
-            priv->speed_i = (int) priv->speed;
             break;
     }
 
@@ -73,7 +70,7 @@ static int open(struct widget *w)
             w->ca.height = Y_SIZE;
             break;
         case 1:
-            w->ca.width = 64;
+            w->ca.width = 48;
             w->ca.height = 20;
             break;
     }
@@ -82,17 +79,7 @@ static int open(struct widget *w)
     return 0;
 }
 
-static void render_text(struct widget *w)
-{
-    struct widget_priv *priv = w->priv;
-    struct canvas *ca = &w->ca;
-    char buf[10];
-
-    sprintf(buf, "%d", (unsigned int) priv->speed);
-    draw_jstr(buf, 64, 10, JUST_RIGHT | JUST_VCENTER, ca, 1);
-}
-
-static void render_gauge(struct widget *w)
+static void render_gauge(struct widget *w, int speed_i)
 {
     struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
@@ -107,7 +94,7 @@ static void render_gauge(struct widget *w)
         if ((yy == y) && (d == 1))
             continue;
         y = Y_SIZE - (int) yy;
-        j = priv->speed_i + i - priv->range/2;
+        j = speed_i + i - priv->range/2;
         if(j < 0)
             continue;
         if (j % major_tick == 0) {
@@ -124,7 +111,7 @@ static void render_gauge(struct widget *w)
     }
 
     draw_frect(1, Y_CENTER-5, X_CENTER - 10, Y_CENTER + 5, 0, ca);
-    sprintf(buf, "%d", (int) priv->speed_i);
+    sprintf(buf, "%d", (int) speed_i);
     draw_jstr(buf, 2, Y_CENTER, JUST_VCENTER, ca, 0);
 
     draw_hline(0, X_CENTER - 10, Y_CENTER - 6, 1, ca);
@@ -137,13 +124,43 @@ static void render_gauge(struct widget *w)
 
 static void render(struct widget *w)
 {
+    struct widget_priv *priv = w->priv;
+    struct canvas *ca = &w->ca;
+    char buf[10], text[5];
+    int speed_i;
+
+    switch (get_units(w->cfg)) {
+        case UNITS_METRIC:
+        default:
+            speed_i = (int) ((priv->speed * 3600) / 1000);
+            strcpy(text, "km/h");
+            break;
+        case UNITS_IMPERIAL:
+            speed_i = (int) ((priv->speed * 3600) * M2MILE);
+            strcpy(text, "mph");
+            break;
+        case UNITS_CUSTOM_1:
+            speed_i = (int) (priv->speed);
+            strcpy(text, "m/s");
+            break;
+        case UNITS_CUSTOM_2:
+            speed_i = (int) (priv->speed * M2FEET);
+            strcpy(text, "f/s");
+            break;
+        case UNITS_CUSTOM_3:
+            speed_i = (int) ((priv->speed * 3600 * 1.852) / 1000);
+            strcpy(text, "kn");
+            break;
+    }
+    
     switch (w->cfg->props.mode) {
         case 0:
         default:
-            render_gauge(w);
+            render_gauge(w, speed_i);
             break;
         case 1:
-            render_text(w);
+            snprintf(buf, 10, "%d%s", speed_i, text);
+            draw_jstr(buf, 47, 10, JUST_RIGHT | JUST_VCENTER, ca, 1);
             break;
     }
 }
