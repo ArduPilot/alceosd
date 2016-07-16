@@ -102,10 +102,12 @@ void load_tab(unsigned char tab)
         tmp_wcfg.props.vjust = VJUST_TOP;
         tmp_wcfg.props.hjust = HJUST_LEFT;
         w = load_widget(&tmp_wcfg);
+        *(aw++) = w;
 
         tmp_wcfg.widget_id = WIDGET_VIDEOLVL_ID;
         tmp_wcfg.props.hjust = HJUST_RIGHT;
         w = load_widget(&tmp_wcfg);
+        *(aw++) = w;
 
 
     } else {
