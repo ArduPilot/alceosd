@@ -24,7 +24,7 @@
 #define COLS    (40)
 
 #define X_SIZE  (8*COLS)
-#define Y_SIZE  (12*ROWS)
+#define Y_SIZE  (13*ROWS)
 
 static struct widget *console = NULL;
 
@@ -46,14 +46,10 @@ static inline void print_chr(char chr)
 #endif
     unsigned char i, j;
 
-    if (chr == '\n') {
+    if ((chr == '\n') || (wp->x == COLS)) {
         wp->x = 0;
         wp->y++;
-    } else {
-        if (wp->x == COLS) {
-            wp->x = 0;
-            wp->y++;
-        }
+
         if (wp->y == ROWS) {
             for (i = 1; i < ROWS; i++) {
                 for (j = 0; j < COLS; j++)
@@ -61,8 +57,10 @@ static inline void print_chr(char chr)
             }
             for (j = 0; j < COLS; j++)
                 wp->buf[ROWS-1][j] = ' ';
-            wp->y --;
+            wp->y--;
         }
+    }
+    if (chr > 13) {
         wp->buf[wp->y][wp->x] = chr;
         wp->x++;
     }
@@ -124,11 +122,9 @@ int console_printf(const char *fmt, ...)
 static void mav_callback(mavlink_message_t *msg, void *d)
 {
     mavlink_statustext_t s;
-    char buf[51];
     
     mavlink_msg_statustext_decode(msg, &s);
-    strncpy(buf, (const char*) s.text, 50);
-    console_printf("[%d] %s\n", s.severity, buf);
+    console_printf("[%d] %s\n", s.severity, s.text);
 }
 
 
