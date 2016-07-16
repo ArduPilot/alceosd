@@ -114,6 +114,7 @@ void load_tab(unsigned char tab)
         while (t_cfg->id != 0xff) {
             if (t_cfg->id == tab)
                 break;
+            t_cfg++;
         }
         if (t_cfg->id != 0xff)
             video_apply_config(t_cfg->id);
