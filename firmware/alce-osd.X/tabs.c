@@ -20,11 +20,8 @@
 
 //#define DEBUG_TABS
 #define MAX_TABS 10
-#define MAX_ACTIVE_WIDGETS  (50)
-
 #define TAB_TIMER_IDLE   (0xff)
 
-static struct widget *active_widgets[MAX_ACTIVE_WIDGETS] = {NULL};
 unsigned char tab_list[MAX_TABS];
 static unsigned char active_tab, val, prev_val, tmr = TAB_TIMER_IDLE;
 static unsigned char active_tab_idx = 0, source_mode = 0xff;
@@ -43,7 +40,7 @@ extern struct alceosd_config config;
 #endif
 
 
-const struct param_def params_tabs[] = {
+static const struct param_def params_tabs[] = {
     PARAM("TABS_MODE", MAV_PARAM_TYPE_UINT8, &config.tab_change.mode, NULL),
     PARAM("TABS_TIME", MAV_PARAM_TYPE_UINT8, &config.tab_change.time_window, NULL),
     PARAM("TABS_CH", MAV_PARAM_TYPE_UINT8, &config.tab_change.ch, NULL),
@@ -52,6 +49,11 @@ const struct param_def params_tabs[] = {
     PARAM_END,
 };
 
+static const struct widget_config tab0_widgets[] = {
+    { 0, 0, WIDGET_CONSOLE_ID,  0, 0, {JUST_TOP | JUST_LEFT}},
+    { 0, 0, WIDGET_VIDEOLVL_ID, 0, 0, {JUST_TOP | JUST_RIGHT}},
+    { TABS_END, 0, 0, 0, 0, {0}},
+};
 
 
 static unsigned char search_on_list(unsigned char *list, unsigned char tab)
@@ -65,72 +67,36 @@ static unsigned char search_on_list(unsigned char *list, unsigned char tab)
   return 0;
 }
 
-
 void load_tab(unsigned char tab)
 {
-    struct widget_config *w_cfg = &config.widgets[0];
-    struct tab_config *t_cfg = &config.tabs[0];
-    struct widget *w;
-    struct widget_config tmp_wcfg;
-    struct widget **aw = active_widgets;
+    struct widget_config *w_cfg;
 
     DTABS("Loading tab %d\n", tab);
 
     /* stop rendering */
     video_pause();
 
-    while ((*aw) != NULL) {
-        if ((*aw)->ops->close != NULL) {
-            DTABS("closing widget %p: %s\n", *aw, (*aw)->ops->name);
-            (*aw)->ops->close(*aw);
-        }
-        aw++;
-    }
-    aw = active_widgets;
-
     /* reset widgets module */
     widgets_reset();
 
+    /* default video profile */
+    video_apply_config(0);
 
     if (tab == 0) {
-        /* zero tab */
-        
-        /* console */
-        tmp_wcfg.widget_id = WIDGET_CONSOLE_ID;
-        tmp_wcfg.x = 0;
-        tmp_wcfg.y = 0;
-        tmp_wcfg.props.vjust = VJUST_TOP;
-        tmp_wcfg.props.hjust = HJUST_LEFT;
-        w = load_widget(&tmp_wcfg);
-        *(aw++) = w;
-
-        tmp_wcfg.widget_id = WIDGET_VIDEOLVL_ID;
-        tmp_wcfg.props.hjust = HJUST_RIGHT;
-        w = load_widget(&tmp_wcfg);
-        *(aw++) = w;
-
-
+        w_cfg = (struct widget_config*) tab0_widgets;
     } else {
-        while (t_cfg->id != 0xff) {
-            if (t_cfg->id == tab)
-                break;
-            t_cfg++;
-        }
-        if (t_cfg->id != 0xff)
-            video_apply_config(t_cfg->id);
-        
-        /* load tab widgets */
-        while (w_cfg->tab != TABS_END) {
-            if (w_cfg->tab == tab) {
-                w = load_widget(w_cfg);
-                if (w == NULL)
-                    break;
-                *(aw++) = w;
-            }
-            w_cfg++;
-        }
+        w_cfg = config.widgets;
     }
-    *aw = NULL;
+
+    /* load widgets config */
+    while (w_cfg->tab != TABS_END) {
+        if (w_cfg->tab == tab)
+            load_widget_config(w_cfg);
+        w_cfg++;
+    }
+    
+    load_widgets();
+
     /* resume video rendering */
     video_resume();
     active_tab = tab;

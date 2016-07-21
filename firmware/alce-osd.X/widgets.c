@@ -39,6 +39,7 @@ extern const struct widget_ops gimbal_widget_ops;
 extern const struct widget_ops videolvl_widget_ops;
 extern const struct widget_ops messages_widget_ops;
 extern const struct widget_ops sonar_widget_ops;
+extern const struct widget_ops vidprf_widget_ops;
 
 const struct widget_ops *all_widget_ops[] = {
     &altitude_widget_ops,
@@ -61,11 +62,13 @@ const struct widget_ops *all_widget_ops[] = {
     &videolvl_widget_ops,
     &messages_widget_ops,
     &sonar_widget_ops,
+    &vidprf_widget_ops,
     NULL,
 };
 
 #define WIDGET_FIFO_MASK    (0x1f)
 #define MAX_WIDGET_ALLOC_MEM (0x400)
+#define MAX_ACTIVE_WIDGETS  (50)
 
 struct widgets_mem_s {
     unsigned char mem[MAX_WIDGET_ALLOC_MEM];
@@ -83,6 +86,8 @@ struct widget_fifo {
     .wr = 0,
 };
 
+static struct widget *active_widgets[MAX_ACTIVE_WIDGETS];
+static unsigned char total_active_widgets = 0;
 
 /* custom memory allocator for widgets */
 void* widget_malloc(unsigned int size)
@@ -100,7 +105,6 @@ void* widget_malloc(unsigned int size)
     return ptr;
 }
 
-
 const struct widget_ops *get_widget_ops(unsigned int id)
 {
     const struct widget_ops **w = all_widget_ops;
@@ -114,8 +118,7 @@ const struct widget_ops *get_widget_ops(unsigned int id)
     return (*w);
 }
 
-
-struct widget* load_widget(struct widget_config *w_cfg)
+struct widget* load_widget_config(struct widget_config *w_cfg)
 {
     const struct widget_ops *w_ops;
     struct widget *w;
@@ -133,12 +136,37 @@ struct widget* load_widget(struct widget_config *w_cfg)
     if (w_ops->open(w))
         return NULL;
 
-    alloc_canvas(&w->ca, w->cfg);
-    schedule_widget(w);
-
+    active_widgets[total_active_widgets++] = w;
+    
     return w;
 }
 
+void load_widgets(void)
+{
+    struct widget *w;
+    unsigned char i;
+    
+    for (i = 0; i < total_active_widgets; i++) {
+        w = active_widgets[i];
+        if (alloc_canvas(&w->ca, w->cfg))
+            continue;
+        if (w->ops->render)
+            schedule_widget(w);
+    }
+}
+
+static void close_widgets(void)
+{
+    struct widget *w;
+    unsigned char i;
+
+    for (i = 0; i < total_active_widgets; i++) {
+        w = active_widgets[i];
+        if (w->ops->close)
+            w->ops->close(w);
+    }
+    total_active_widgets = 0;
+}
 
 static inline void render_widget(struct widget *w)
 {
@@ -178,6 +206,8 @@ void schedule_widget(struct widget *w)
 
 void widgets_reset(void)
 {
+    /* close active widgets */
+    close_widgets();
     /* remove widget related timers/tasks */
     remove_timers(TIMER_WIDGET);
     /* remove widget related mavlink callbacks */

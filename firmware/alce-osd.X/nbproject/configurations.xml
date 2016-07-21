@@ -55,6 +55,7 @@
         <itemPath>widgets/videolevel.c</itemPath>
         <itemPath>widgets/messages.c</itemPath>
         <itemPath>widgets/sonar.c</itemPath>
+        <itemPath>widgets/video_profile.c</itemPath>
       </logicalFolder>
       <itemPath>uart.c</itemPath>
       <itemPath>main.c</itemPath>

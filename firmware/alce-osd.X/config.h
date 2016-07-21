@@ -27,7 +27,6 @@
 
 
 #define CONFIG_MAX_WIDGETS      100
-#define CONFIG_MAX_TABS         20
 #define CONFIG_MAX_VIDEO        2
 
 
@@ -86,9 +85,6 @@ struct alceosd_config {
     
     /* widgets config */
     struct widget_config widgets[CONFIG_MAX_WIDGETS];
-    
-    /* tabs config */
-    struct tab_config tabs[CONFIG_MAX_TABS];
 };
 
 

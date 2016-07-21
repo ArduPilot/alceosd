@@ -116,10 +116,6 @@ struct alceosd_config config = {
 
         { TABS_END, 0, 0, 0, 0, {0}},
     },
-    .tabs = {
-        { .id = 1, .video_profile = 1 },
-        { .id = 0xff },
-    }
 };
 
 const struct param_def params_config[] = {
@@ -170,7 +166,7 @@ static void load_config(void)
     }
 
     /* setup video */
-    video_apply_config(0xff);
+    video_apply_config(VIDEO_ACTIVE_CONFIG);
 
     /* setup serial ports */
     uart_set_config_pins();
@@ -283,7 +279,7 @@ static unsigned int load_config_text(struct uart_client *cli, unsigned char *buf
         if (++i == len)
             return len;
     }
-    line[llen] = *buf;
+    line[llen] = '\0';
     i++;
 
     /* process line */
@@ -294,22 +290,15 @@ static unsigned int load_config_text(struct uart_client *cli, unsigned char *buf
     if (line[0] == '.') {
         config_uart_client.read = config_process;
         llen = 0;
-
         load_tab(0);
-        video_apply_config(0xff);
-
         return i;
     }
 
-    /* terminate string */
-    line[llen] = '\0';
-
-    /* reset widgets config*/
+    /* reset widgets config */
     if (memcmp("==", line, 2) == 0)
         config.widgets[0].tab = TABS_END;
 
-
-    sscanf((const char *) line, "%s = %f", param, &value);
+    sscanf((const char *) line, "%20s = %f", param, &value);
     params_set_value(param, value, 0);
     printf("got: '%s' = '%f'\n", param, (double) value);
 

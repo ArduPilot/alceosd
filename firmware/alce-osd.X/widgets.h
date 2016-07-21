@@ -43,6 +43,7 @@ enum {
     WIDGET_VIDEOLVL_ID,
     WIDGET_MESSAGES_ID,
     WIDGET_SONAR_ID,
+    WIDGET_VIDPROFILE_ID,
 };
 
 #define WIDGET_SCHEDULED    (0x1)
@@ -92,7 +93,8 @@ struct widget {
 
 void widgets_init(void);
 void widgets_reset(void);
-struct widget* load_widget(struct widget_config *w_cfg);
+struct widget* load_widget_config(struct widget_config *w_cfg);
+void load_widgets(void);
 void schedule_widget(struct widget *w);
 const struct widget_ops *get_widget_ops(unsigned int id);
 void* widget_malloc(unsigned int size);
