@@ -902,6 +902,10 @@ namespace AlceOSD_updater
                     break;
                 case "HORIZON":
                     lbl_wname.Text = "Artificial horizon";
+                    lbl_wmode.Visible = true;
+                    cb_wmode.Visible = true;
+                    cb_wmode.Items.Add("Default");
+                    cb_wmode.Items.Add("Compass");
                     break;
                 case "RADAR":
                     lbl_wname.Text = "Radar";
