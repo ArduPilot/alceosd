@@ -25,7 +25,7 @@
 #ifndef WITH_BOOTLOADER
 
 // FICD
-#pragma config ICS = NONE
+#pragma config ICS = PGD1
 #pragma config JTAGEN = OFF
 
 // FPOR
@@ -63,33 +63,53 @@
 #endif
 
 
+#define BLINK { \
+    LED = 0; for (i = 0; i < 1000000; i++); \
+    LED = 1; for (i = 0; i < 1000000; i++); \
+}
 
 void __attribute__((interrupt,no_auto_psv)) _OscillatorFail(void)
 {
-        INTCON1bits.OSCFAIL = 0;        //Clear the trap flag
-        U1TXREG = '!';
-        while (1);
+    volatile unsigned long i;
+    INTCON1bits.OSCFAIL = 0;
+    U1TXREG = '!';
+    while (1) {
+        LED = 1; for (i = 0; i < 3000000; i++);
+        BLINK;
+    };
 }
 
 void __attribute__((interrupt,no_auto_psv)) _AddressError(void)
 {
-        INTCON1bits.ADDRERR = 0;        //Clear the trap flag
-        U1TXREG = '"';
-        while (1);
+    volatile unsigned long i;
+    INTCON1bits.ADDRERR = 0;
+    U1TXREG = '"';
+    while (1) {
+        LED = 1; for (i = 0; i < 3000000; i++);
+        BLINK; BLINK;
+    };
 }
 
 void __attribute__((interrupt,no_auto_psv)) _StackError(void)
 {
-        INTCON1bits.STKERR = 0;         //Clear the trap flag
-        U1TXREG = '#';
-        while (1);
+    volatile unsigned long i;
+    INTCON1bits.STKERR = 0;
+    U1TXREG = '#';
+    while (1) {
+        LED = 1; for (i = 0; i < 3000000; i++);
+        BLINK; BLINK; BLINK;
+    };
 }
 
 void __attribute__((interrupt,no_auto_psv)) _MathError(void)
 {
-        INTCON1bits.MATHERR = 0;        //Clear the trap flag
-        U1TXREG = '$';
-        while (1);
+    volatile unsigned long i;
+    INTCON1bits.MATHERR = 0;
+    U1TXREG = '$';
+    while (1) {
+        LED = 1; for (i = 0; i < 3000000; i++);
+        BLINK; BLINK; BLINK; BLINK;
+    };
 }
 
 
