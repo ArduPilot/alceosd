@@ -26,7 +26,7 @@
 #include "mavlink.h"
 
 
-#define CONFIG_MAX_WIDGETS      100
+#define CONFIG_MAX_WIDGETS      50
 #define CONFIG_MAX_VIDEO        2
 
 

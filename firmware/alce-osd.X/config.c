@@ -28,9 +28,9 @@
 #define CONFIG_ADDR_START   (0x1000L)
 #define CONFIG_ADDR_END     (0x3fffL)
 #define CONFIG_ADDR_PAGE    (0x800)
-#define CONFIG_PAGE_SIZE    (0x800)
+#define CONFIG_PAGE_SIZE    (0x400)
 
-#define CONFIG_VERSION_SIG  (0xfffff-8)
+#define CONFIG_VERSION_SIG  (0xffffff-9)
 
 //#define DEBUG_CONFIG
 
