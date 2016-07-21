@@ -49,7 +49,7 @@ MEMORY
   data  (a!xr)   : ORIGIN = 0x1000,        LENGTH = 0xC000
   reset          : ORIGIN = 0x0,           LENGTH = 0x4
   ivt            : ORIGIN = 0x4,           LENGTH = 0x1FC
-  program (xr)   : ORIGIN = 0x4000,        LENGTH = 0x517EC
+  program (xr)   : ORIGIN = 0x4000,        LENGTH = 0x507EC /* 0x517EC */
   FICD           : ORIGIN = 0x557F0,       LENGTH = 0x2
   FPOR           : ORIGIN = 0x557F2,       LENGTH = 0x2
   FWDT           : ORIGIN = 0x557F4,       LENGTH = 0x2
