@@ -40,6 +40,7 @@ enum {
 #define VIDEO_MODE_STANDARD_MASK    (0x02)
 #define VIDEO_MODE_SYNC_MASK        (0x04)
 
+#define VIDEO_ACTIVE_CONFIG         0xff
 
 union sram_addr {
     unsigned long l;

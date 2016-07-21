@@ -643,7 +643,7 @@ void video_apply_config_cbk(void)
 {
     if (cfg->x_size_id >= VIDEO_XSIZE_END)
         cfg->x_size_id = VIDEO_XSIZE_END - 1;
-    video_apply_config(0xff);
+    video_apply_config(VIDEO_ACTIVE_CONFIG);
 }
 
 void video_get_size(unsigned int *xsize, unsigned int *ysize)
