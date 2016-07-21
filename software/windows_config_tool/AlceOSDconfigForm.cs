@@ -31,10 +31,12 @@ namespace AlceOSD_updater
             {"Radar", "RADAR"},
             {"RC Channels", "RCCHAN"},
             {"RSSI", "RSSI"},
+            {"Sonar", "SONAR"},
             {"Speed", "SPEED"},
             {"Throttle", "THROTTL"},
             {"Variometer", "VARIO"},
             {"Video levels", "VIDLVL"},
+            {"Video profile", "VIDPRF"},
             {"Wind info", "WINDINF"},
         };
 
@@ -281,15 +283,26 @@ namespace AlceOSD_updater
 
             /* video */
             int vidmode = cb_vidstd.SelectedIndex | ((cbx_isync.Checked ? 1 : 0) << 2);
-            config.Add("VIDEO_STD = " + Convert.ToDouble(vidmode));
-            config.Add("VIDEO_XSIZE = " + Convert.ToDouble(cb_xsize.SelectedIndex));
-            config.Add("VIDEO_YSIZE = " + Convert.ToDouble(nud_ysize.Value));
-            config.Add("VIDEO_XOFFSET = " + Convert.ToDouble(nud_xoffset.Value));
-            config.Add("VIDEO_YOFFSET = " + Convert.ToDouble(nud_yoffset.Value));
-            config.Add("VIDEO_BRIGHT = " + Convert.ToDouble(nud_brightness.Value));
-            config.Add("VIDEO_WHITE = " + Convert.ToDouble(nud_whitelvl.Value));
-            config.Add("VIDEO_GRAY = " + Convert.ToDouble(nud_graylvl.Value));
-            config.Add("VIDEO_BLACK = " + Convert.ToDouble(nud_blacklvl.Value));
+            config.Add("VIDE0_STD = " + Convert.ToDouble(vidmode));
+            config.Add("VIDE0_XSIZE = " + Convert.ToDouble(cb_xsize.SelectedIndex));
+            config.Add("VIDE0_YSIZE = " + Convert.ToDouble(nud_ysize.Value));
+            config.Add("VIDE0_XOFFSET = " + Convert.ToDouble(nud_xoffset.Value));
+            config.Add("VIDE0_YOFFSET = " + Convert.ToDouble(nud_yoffset.Value));
+            config.Add("VIDE0_BRIGHT = " + Convert.ToDouble(nud_brightness.Value));
+            config.Add("VIDE0_WHITE = " + Convert.ToDouble(nud_whitelvl.Value));
+            config.Add("VIDE0_GRAY = " + Convert.ToDouble(nud_graylvl.Value));
+            config.Add("VIDE0_BLACK = " + Convert.ToDouble(nud_blacklvl.Value));
+
+            vidmode = cb_vidstd1.SelectedIndex | ((cbx_isync1.Checked ? 1 : 0) << 2);
+            config.Add("VIDE1_STD = " + Convert.ToDouble(vidmode));
+            config.Add("VIDE1_XSIZE = " + Convert.ToDouble(cb_xsize1.SelectedIndex));
+            config.Add("VIDE1_YSIZE = " + Convert.ToDouble(nud_ysize1.Value));
+            config.Add("VIDE1_XOFFSET = " + Convert.ToDouble(nud_xoffset1.Value));
+            config.Add("VIDE1_YOFFSET = " + Convert.ToDouble(nud_yoffset1.Value));
+            config.Add("VIDE1_BRIGHT = " + Convert.ToDouble(nud_brightness1.Value));
+            config.Add("VIDE1_WHITE = " + Convert.ToDouble(nud_whitelvl1.Value));
+            config.Add("VIDE1_GRAY = " + Convert.ToDouble(nud_graylvl1.Value));
+            config.Add("VIDE1_BLACK = " + Convert.ToDouble(nud_blacklvl1.Value));
 
             /* misc */
             config.Add("HOME_LOCKING = " + Convert.ToDouble(nud_homelock.Value));
@@ -363,8 +376,9 @@ namespace AlceOSD_updater
                     val = String.Join("_", entry, 1, entry.Length - 1);
                     switch (entry.ElementAt(0))
                     {
-                        case "VIDEO":
-                            vidcfg.Add(val);
+                        case "VIDE0":
+                        case "VIDE1":
+                            vidcfg.Add(value);
                             break;
 
                         case "SERIAL1":
@@ -430,8 +444,8 @@ namespace AlceOSD_updater
 
         private void populateVideoConfig(List<string> config)
         {
-            string[] entry;
-            string key, val;
+            string[] entry, entry2;
+            string key, val, param;
             double dval;
             foreach (string value in config)
             {
@@ -439,44 +453,83 @@ namespace AlceOSD_updater
                 if (entry.Count() < 2)
                     continue;
                 key = entry.ElementAt(0).Trim();
+                entry2 = key.Split('_');
+                key = entry2.ElementAt(0).Trim();
+                param = entry2.ElementAt(1).Trim();
                 val = entry.ElementAt(1).Trim();
                 dval = Convert.ToDouble(val, CultureInfo.InvariantCulture.NumberFormat);
-                //txt_log.AppendText(key + "=" + val + "\n");
+                //txt_log.AppendText(key + " " + param + "=" + val + "\n");
 
-                switch (key)
+                bool isync = true;
+                int std = -1, xsize = -1, ysize = -1, xoffset = -1, yoffset = -1;
+                int bright = -1, white = -1, gray = -1, black = -1;
+                switch (param)
                 {
                     case "STD":
-                        cb_vidstd.SelectedIndex = Convert.ToByte(dval) & 3;
-                        cbx_isync.Checked = (Convert.ToByte(dval) & 4) == 0 ? false : true;
+                        std = Convert.ToByte(dval) & 3;
+                        isync = (Convert.ToByte(dval) & 4) == 0 ? false : true;
                         break;
                     case "XSIZE":
-                        cb_xsize.SelectedIndex = Convert.ToByte(dval);
+                        xsize = Convert.ToByte(dval);
                         break;
                     case "YSIZE":
-                        nud_ysize.Value = Convert.ToInt16(dval);
+                        ysize = Convert.ToInt16(dval);
                         break;
                     case "XOFFSET":
-                        nud_xoffset.Value = Convert.ToInt16(dval);
+                        xoffset = Convert.ToInt16(dval);
                         break;
                     case "YOFFSET":
-                        nud_yoffset.Value = Convert.ToInt16(dval);
+                        yoffset = Convert.ToInt16(dval);
                         break;
                     case "BRIGHT":
-                        nud_brightness.Value = Convert.ToInt16(dval);
+                        bright = Convert.ToInt16(dval);
                         break;
                     case "WHITE":
-                        nud_whitelvl.Value = Convert.ToInt16(dval);
+                        white = Convert.ToInt16(dval);
                         break;
                     case "GRAY":
-                        nud_graylvl.Value = Convert.ToInt16(dval);
+                        gray = Convert.ToInt16(dval);
                         break;
                     case "BLACK":
-                        nud_blacklvl.Value = Convert.ToInt16(dval);
+                        black = Convert.ToInt16(dval);
                         break;
                     default:
                         break;
                 }
-
+                switch (key)
+                {
+                    default:
+                    case "VIDE0":
+                        if (std != -1)
+                        {
+                            cb_vidstd.SelectedIndex = std;
+                            cbx_isync.Checked = isync;
+                        }
+                        if (xsize != -1) cb_xsize.SelectedIndex = xsize;
+                        if (ysize != -1) nud_ysize.Value = ysize;
+                        if (xoffset != -1) nud_xoffset.Value = xoffset;
+                        if (yoffset != -1) nud_yoffset.Value = yoffset;
+                        if (bright != -1) nud_brightness.Value = bright;
+                        if (white != -1) nud_whitelvl.Value = white;
+                        if (gray != -1) nud_graylvl.Value = gray;
+                        if (black != -1) nud_blacklvl.Value = black;
+                        break;
+                    case "VIDE1":
+                        if (std != -1)
+                        {
+                            cb_vidstd1.SelectedIndex = std;
+                            cbx_isync1.Checked = isync;
+                        }
+                        if (xsize != -1) cb_xsize1.SelectedIndex = xsize;
+                        if (ysize != -1) nud_ysize1.Value = ysize;
+                        if (xoffset != -1) nud_xoffset1.Value = xoffset;
+                        if (yoffset != -1) nud_yoffset1.Value = yoffset;
+                        if (bright != -1) nud_brightness1.Value = bright;
+                        if (white != -1) nud_whitelvl1.Value = white;
+                        if (gray != -1) nud_graylvl1.Value = gray;
+                        if (black != -1) nud_blacklvl1.Value = black;
+                        break;
+                }
             }
         }
 
@@ -485,19 +538,16 @@ namespace AlceOSD_updater
             string[] entry, entry2;
             string key, val, param;
             double dval;
-            int mode = 0, baud = 0, port = 0;
+            int mode = -1, baud = -1, port = -1;
             foreach (string value in config)
             {
                 entry = value.Split('=');
                 if (entry.Count() < 2)
                     continue;
                 key = entry.ElementAt(0).Trim();
-
                 entry2 = key.Split('_');
-
                 key = entry2.ElementAt(0).Trim();
                 param = entry2.ElementAt(1).Trim();
-
                 val = entry.ElementAt(1).Trim();
                 dval = Convert.ToDouble(val, CultureInfo.InvariantCulture.NumberFormat);
                 //tb_log.AppendText(key + "=" + val + "\n");
@@ -779,6 +829,11 @@ namespace AlceOSD_updater
             cb_wsource.Items.Clear();
             cb_wsource.Text = "";
 
+            cb_wunits.Items.Clear();
+            cb_wunits.Items.Add("Default");
+            cb_wunits.Items.Add("Metric");
+            cb_wunits.Items.Add("Imperial");
+
             /* setup display */
             switch (wid)
             {
@@ -880,6 +935,9 @@ namespace AlceOSD_updater
                     set_param(2, "Max value");
                     set_param(3, "RC Channel(0-7)");
                     break;
+                case "SONAR":
+                    lbl_wname.Text = "Sonar";
+                    break;
                 case "SPEED":
                     lbl_wname.Text = "Speed";
                     lbl_wsource.Visible = true;
@@ -890,6 +948,14 @@ namespace AlceOSD_updater
                     cb_wmode.Visible = true;
                     cb_wmode.Items.Add("Dial");
                     cb_wmode.Items.Add("Text");
+
+                    cb_wunits.Items.Clear();
+                    cb_wunits.Items.Add("Default");
+                    cb_wunits.Items.Add("km/h");
+                    cb_wunits.Items.Add("mph");
+                    cb_wunits.Items.Add("m/s");
+                    cb_wunits.Items.Add("f/s");
+                    cb_wunits.Items.Add("kn");
                     break;
                 case "THROTTL":
                     lbl_wname.Text = "Throttle bar";
@@ -897,11 +963,25 @@ namespace AlceOSD_updater
                 case "VARIO":
                     lbl_wname.Text = "Variometer chart / vertical speed";
                     break;
-                case "VIDEOLVL":
+                case "VIDLVL":
                     lbl_wname.Text = "Video levels (for debug)";
+                    break;
+                case "VIDPRF":
+                    lbl_wname.Text = "Video profile";
+                    lbl_wmode.Visible = true;
+                    cb_wmode.Visible = true;
+                    cb_wmode.Items.Add("Profile 0 (default)");
+                    cb_wmode.Items.Add("Profile 1");
                     break;
                 case "WINDINF":
                     lbl_wname.Text = "Wind speed";
+                    cb_wunits.Items.Clear();
+                    cb_wunits.Items.Add("Default");
+                    cb_wunits.Items.Add("km/h");
+                    cb_wunits.Items.Add("mph");
+                    cb_wunits.Items.Add("m/s");
+                    cb_wunits.Items.Add("f/s");
+                    cb_wunits.Items.Add("kn");
                     break;
                 default:
                     break;
@@ -1015,7 +1095,24 @@ namespace AlceOSD_updater
 
             cb.SelectedIndex = 0;
 
-            return prompt.ShowDialog() == DialogResult.OK ? cb.SelectedItem.ToString() : "";
+            string r;
+            if (prompt.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    r = cb.SelectedItem.ToString();
+                }
+                catch
+                {
+                    r = "";
+                }
+                
+            }
+            else
+            {
+                r = "";
+            }
+            return r;
         }
 
 

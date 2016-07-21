@@ -170,6 +170,27 @@
             this.ofd_savecfg = new System.Windows.Forms.SaveFileDialog();
             this.ofd_fwfile = new System.Windows.Forms.OpenFileDialog();
             this.pb = new System.Windows.Forms.ProgressBar();
+            this.groupBox7 = new System.Windows.Forms.GroupBox();
+            this.groupBox8 = new System.Windows.Forms.GroupBox();
+            this.label46 = new System.Windows.Forms.Label();
+            this.cb_vidstd1 = new System.Windows.Forms.ComboBox();
+            this.label47 = new System.Windows.Forms.Label();
+            this.cb_xsize1 = new System.Windows.Forms.ComboBox();
+            this.label48 = new System.Windows.Forms.Label();
+            this.label49 = new System.Windows.Forms.Label();
+            this.label50 = new System.Windows.Forms.Label();
+            this.label51 = new System.Windows.Forms.Label();
+            this.cbx_isync1 = new System.Windows.Forms.CheckBox();
+            this.label52 = new System.Windows.Forms.Label();
+            this.nud_blacklvl1 = new System.Windows.Forms.NumericUpDown();
+            this.label53 = new System.Windows.Forms.Label();
+            this.nud_graylvl1 = new System.Windows.Forms.NumericUpDown();
+            this.label54 = new System.Windows.Forms.Label();
+            this.nud_whitelvl1 = new System.Windows.Forms.NumericUpDown();
+            this.nud_ysize1 = new System.Windows.Forms.NumericUpDown();
+            this.nud_brightness1 = new System.Windows.Forms.NumericUpDown();
+            this.nud_xoffset1 = new System.Windows.Forms.NumericUpDown();
+            this.nud_yoffset1 = new System.Windows.Forms.NumericUpDown();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_blacklvl)).BeginInit();
@@ -208,6 +229,15 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_seltab)).BeginInit();
             this.tabPage5.SuspendLayout();
             this.menuStrip1.SuspendLayout();
+            this.groupBox7.SuspendLayout();
+            this.groupBox8.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_blacklvl1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_graylvl1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_whitelvl1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_ysize1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_brightness1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_xoffset1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_yoffset1)).BeginInit();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -228,25 +258,8 @@
             // 
             // tabPage1
             // 
-            this.tabPage1.Controls.Add(this.label36);
-            this.tabPage1.Controls.Add(this.label35);
-            this.tabPage1.Controls.Add(this.label25);
-            this.tabPage1.Controls.Add(this.cbx_isync);
-            this.tabPage1.Controls.Add(this.nud_blacklvl);
-            this.tabPage1.Controls.Add(this.nud_graylvl);
-            this.tabPage1.Controls.Add(this.nud_whitelvl);
-            this.tabPage1.Controls.Add(this.nud_brightness);
-            this.tabPage1.Controls.Add(this.nud_yoffset);
-            this.tabPage1.Controls.Add(this.nud_xoffset);
-            this.tabPage1.Controls.Add(this.nud_ysize);
-            this.tabPage1.Controls.Add(this.label6);
-            this.tabPage1.Controls.Add(this.label5);
-            this.tabPage1.Controls.Add(this.label4);
-            this.tabPage1.Controls.Add(this.label3);
-            this.tabPage1.Controls.Add(this.label2);
-            this.tabPage1.Controls.Add(this.cb_xsize);
-            this.tabPage1.Controls.Add(this.cb_vidstd);
-            this.tabPage1.Controls.Add(this.label1);
+            this.tabPage1.Controls.Add(this.groupBox8);
+            this.tabPage1.Controls.Add(this.groupBox7);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
@@ -258,7 +271,7 @@
             // label36
             // 
             this.label36.AutoSize = true;
-            this.label36.Location = new System.Drawing.Point(24, 242);
+            this.label36.Location = new System.Drawing.Point(17, 235);
             this.label36.Name = "label36";
             this.label36.Size = new System.Drawing.Size(59, 13);
             this.label36.TabIndex = 5;
@@ -267,7 +280,7 @@
             // label35
             // 
             this.label35.AutoSize = true;
-            this.label35.Location = new System.Drawing.Point(24, 216);
+            this.label35.Location = new System.Drawing.Point(17, 209);
             this.label35.Name = "label35";
             this.label35.Size = new System.Drawing.Size(54, 13);
             this.label35.TabIndex = 5;
@@ -276,7 +289,7 @@
             // label25
             // 
             this.label25.AutoSize = true;
-            this.label25.Location = new System.Drawing.Point(24, 190);
+            this.label25.Location = new System.Drawing.Point(17, 183);
             this.label25.Name = "label25";
             this.label25.Size = new System.Drawing.Size(60, 13);
             this.label25.TabIndex = 5;
@@ -285,7 +298,7 @@
             // cbx_isync
             // 
             this.cbx_isync.AutoSize = true;
-            this.cbx_isync.Location = new System.Drawing.Point(302, 32);
+            this.cbx_isync.Location = new System.Drawing.Point(20, 271);
             this.cbx_isync.Name = "cbx_isync";
             this.cbx_isync.Size = new System.Drawing.Size(134, 17);
             this.cbx_isync.TabIndex = 4;
@@ -294,7 +307,7 @@
             // 
             // nud_blacklvl
             // 
-            this.nud_blacklvl.Location = new System.Drawing.Point(160, 240);
+            this.nud_blacklvl.Location = new System.Drawing.Point(153, 233);
             this.nud_blacklvl.Maximum = new decimal(new int[] {
             255,
             0,
@@ -311,7 +324,7 @@
             // 
             // nud_graylvl
             // 
-            this.nud_graylvl.Location = new System.Drawing.Point(160, 214);
+            this.nud_graylvl.Location = new System.Drawing.Point(153, 207);
             this.nud_graylvl.Maximum = new decimal(new int[] {
             255,
             0,
@@ -328,7 +341,7 @@
             // 
             // nud_whitelvl
             // 
-            this.nud_whitelvl.Location = new System.Drawing.Point(160, 188);
+            this.nud_whitelvl.Location = new System.Drawing.Point(153, 181);
             this.nud_whitelvl.Maximum = new decimal(new int[] {
             255,
             0,
@@ -345,7 +358,7 @@
             // 
             // nud_brightness
             // 
-            this.nud_brightness.Location = new System.Drawing.Point(160, 162);
+            this.nud_brightness.Location = new System.Drawing.Point(153, 155);
             this.nud_brightness.Maximum = new decimal(new int[] {
             5000,
             0,
@@ -362,9 +375,14 @@
             // 
             // nud_yoffset
             // 
-            this.nud_yoffset.Location = new System.Drawing.Point(160, 136);
+            this.nud_yoffset.Location = new System.Drawing.Point(153, 129);
             this.nud_yoffset.Maximum = new decimal(new int[] {
             400,
+            0,
+            0,
+            0});
+            this.nud_yoffset.Minimum = new decimal(new int[] {
+            10,
             0,
             0,
             0});
@@ -379,7 +397,7 @@
             // 
             // nud_xoffset
             // 
-            this.nud_xoffset.Location = new System.Drawing.Point(160, 110);
+            this.nud_xoffset.Location = new System.Drawing.Point(153, 103);
             this.nud_xoffset.Maximum = new decimal(new int[] {
             400,
             0,
@@ -396,7 +414,7 @@
             // 
             // nud_ysize
             // 
-            this.nud_ysize.Location = new System.Drawing.Point(160, 84);
+            this.nud_ysize.Location = new System.Drawing.Point(153, 77);
             this.nud_ysize.Maximum = new decimal(new int[] {
             260,
             0,
@@ -419,7 +437,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(24, 164);
+            this.label6.Location = new System.Drawing.Point(17, 157);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(56, 13);
             this.label6.TabIndex = 2;
@@ -428,7 +446,7 @@
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(24, 138);
+            this.label5.Location = new System.Drawing.Point(17, 131);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(43, 13);
             this.label5.TabIndex = 2;
@@ -437,7 +455,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(24, 112);
+            this.label4.Location = new System.Drawing.Point(17, 105);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(43, 13);
             this.label4.TabIndex = 2;
@@ -446,7 +464,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(24, 86);
+            this.label3.Location = new System.Drawing.Point(17, 79);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(35, 13);
             this.label3.TabIndex = 2;
@@ -455,7 +473,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(24, 60);
+            this.label2.Location = new System.Drawing.Point(17, 53);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(35, 13);
             this.label2.TabIndex = 2;
@@ -469,7 +487,7 @@
             "480",
             "560",
             "672"});
-            this.cb_xsize.Location = new System.Drawing.Point(160, 57);
+            this.cb_xsize.Location = new System.Drawing.Point(153, 50);
             this.cb_xsize.Name = "cb_xsize";
             this.cb_xsize.Size = new System.Drawing.Size(121, 21);
             this.cb_xsize.TabIndex = 1;
@@ -483,7 +501,7 @@
             "PAL interlaced",
             "NTSC progressive",
             "NTSC interlaced"});
-            this.cb_vidstd.Location = new System.Drawing.Point(160, 30);
+            this.cb_vidstd.Location = new System.Drawing.Point(153, 23);
             this.cb_vidstd.Name = "cb_vidstd";
             this.cb_vidstd.Size = new System.Drawing.Size(121, 21);
             this.cb_vidstd.TabIndex = 1;
@@ -492,7 +510,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(24, 33);
+            this.label1.Location = new System.Drawing.Point(17, 26);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(50, 13);
             this.label1.TabIndex = 0;
@@ -1476,10 +1494,6 @@
             // cb_wunits
             // 
             this.cb_wunits.FormattingEnabled = true;
-            this.cb_wunits.Items.AddRange(new object[] {
-            "Default",
-            "Metric",
-            "Imperial"});
             this.cb_wunits.Location = new System.Drawing.Point(416, 224);
             this.cb_wunits.Name = "cb_wunits";
             this.cb_wunits.Size = new System.Drawing.Size(195, 21);
@@ -1903,6 +1917,310 @@
             this.pb.Size = new System.Drawing.Size(853, 23);
             this.pb.TabIndex = 5;
             // 
+            // groupBox7
+            // 
+            this.groupBox7.Controls.Add(this.label1);
+            this.groupBox7.Controls.Add(this.cb_vidstd);
+            this.groupBox7.Controls.Add(this.label36);
+            this.groupBox7.Controls.Add(this.cb_xsize);
+            this.groupBox7.Controls.Add(this.label35);
+            this.groupBox7.Controls.Add(this.label2);
+            this.groupBox7.Controls.Add(this.label25);
+            this.groupBox7.Controls.Add(this.label3);
+            this.groupBox7.Controls.Add(this.cbx_isync);
+            this.groupBox7.Controls.Add(this.label4);
+            this.groupBox7.Controls.Add(this.nud_blacklvl);
+            this.groupBox7.Controls.Add(this.label5);
+            this.groupBox7.Controls.Add(this.nud_graylvl);
+            this.groupBox7.Controls.Add(this.label6);
+            this.groupBox7.Controls.Add(this.nud_whitelvl);
+            this.groupBox7.Controls.Add(this.nud_ysize);
+            this.groupBox7.Controls.Add(this.nud_brightness);
+            this.groupBox7.Controls.Add(this.nud_xoffset);
+            this.groupBox7.Controls.Add(this.nud_yoffset);
+            this.groupBox7.Location = new System.Drawing.Point(6, 6);
+            this.groupBox7.Name = "groupBox7";
+            this.groupBox7.Size = new System.Drawing.Size(296, 303);
+            this.groupBox7.TabIndex = 6;
+            this.groupBox7.TabStop = false;
+            this.groupBox7.Text = "Profile 0 (default)";
+            // 
+            // groupBox8
+            // 
+            this.groupBox8.Controls.Add(this.label46);
+            this.groupBox8.Controls.Add(this.cb_vidstd1);
+            this.groupBox8.Controls.Add(this.label47);
+            this.groupBox8.Controls.Add(this.cb_xsize1);
+            this.groupBox8.Controls.Add(this.label48);
+            this.groupBox8.Controls.Add(this.label49);
+            this.groupBox8.Controls.Add(this.label50);
+            this.groupBox8.Controls.Add(this.label51);
+            this.groupBox8.Controls.Add(this.cbx_isync1);
+            this.groupBox8.Controls.Add(this.label52);
+            this.groupBox8.Controls.Add(this.nud_blacklvl1);
+            this.groupBox8.Controls.Add(this.label53);
+            this.groupBox8.Controls.Add(this.nud_graylvl1);
+            this.groupBox8.Controls.Add(this.label54);
+            this.groupBox8.Controls.Add(this.nud_whitelvl1);
+            this.groupBox8.Controls.Add(this.nud_ysize1);
+            this.groupBox8.Controls.Add(this.nud_brightness1);
+            this.groupBox8.Controls.Add(this.nud_xoffset1);
+            this.groupBox8.Controls.Add(this.nud_yoffset1);
+            this.groupBox8.Location = new System.Drawing.Point(308, 6);
+            this.groupBox8.Name = "groupBox8";
+            this.groupBox8.Size = new System.Drawing.Size(303, 303);
+            this.groupBox8.TabIndex = 7;
+            this.groupBox8.TabStop = false;
+            this.groupBox8.Text = "Profile 1";
+            // 
+            // label46
+            // 
+            this.label46.AutoSize = true;
+            this.label46.Location = new System.Drawing.Point(18, 26);
+            this.label46.Name = "label46";
+            this.label46.Size = new System.Drawing.Size(50, 13);
+            this.label46.TabIndex = 6;
+            this.label46.Text = "Standard";
+            // 
+            // cb_vidstd1
+            // 
+            this.cb_vidstd1.FormattingEnabled = true;
+            this.cb_vidstd1.Items.AddRange(new object[] {
+            "PAL progressive",
+            "PAL interlaced",
+            "NTSC progressive",
+            "NTSC interlaced"});
+            this.cb_vidstd1.Location = new System.Drawing.Point(154, 23);
+            this.cb_vidstd1.Name = "cb_vidstd1";
+            this.cb_vidstd1.Size = new System.Drawing.Size(121, 21);
+            this.cb_vidstd1.TabIndex = 7;
+            this.cb_vidstd1.Text = "PAL progressive";
+            // 
+            // label47
+            // 
+            this.label47.AutoSize = true;
+            this.label47.Location = new System.Drawing.Point(18, 235);
+            this.label47.Name = "label47";
+            this.label47.Size = new System.Drawing.Size(59, 13);
+            this.label47.TabIndex = 23;
+            this.label47.Text = "Black level";
+            // 
+            // cb_xsize1
+            // 
+            this.cb_xsize1.FormattingEnabled = true;
+            this.cb_xsize1.Items.AddRange(new object[] {
+            "420",
+            "480",
+            "560",
+            "672"});
+            this.cb_xsize1.Location = new System.Drawing.Point(154, 50);
+            this.cb_xsize1.Name = "cb_xsize1";
+            this.cb_xsize1.Size = new System.Drawing.Size(121, 21);
+            this.cb_xsize1.TabIndex = 8;
+            this.cb_xsize1.Text = "480";
+            // 
+            // label48
+            // 
+            this.label48.AutoSize = true;
+            this.label48.Location = new System.Drawing.Point(18, 209);
+            this.label48.Name = "label48";
+            this.label48.Size = new System.Drawing.Size(54, 13);
+            this.label48.TabIndex = 22;
+            this.label48.Text = "Gray level";
+            // 
+            // label49
+            // 
+            this.label49.AutoSize = true;
+            this.label49.Location = new System.Drawing.Point(18, 53);
+            this.label49.Name = "label49";
+            this.label49.Size = new System.Drawing.Size(35, 13);
+            this.label49.TabIndex = 13;
+            this.label49.Text = "X size";
+            // 
+            // label50
+            // 
+            this.label50.AutoSize = true;
+            this.label50.Location = new System.Drawing.Point(18, 183);
+            this.label50.Name = "label50";
+            this.label50.Size = new System.Drawing.Size(60, 13);
+            this.label50.TabIndex = 24;
+            this.label50.Text = "White level";
+            // 
+            // label51
+            // 
+            this.label51.AutoSize = true;
+            this.label51.Location = new System.Drawing.Point(18, 79);
+            this.label51.Name = "label51";
+            this.label51.Size = new System.Drawing.Size(35, 13);
+            this.label51.TabIndex = 11;
+            this.label51.Text = "Y size";
+            // 
+            // cbx_isync1
+            // 
+            this.cbx_isync1.AutoSize = true;
+            this.cbx_isync1.Location = new System.Drawing.Point(21, 271);
+            this.cbx_isync1.Name = "cbx_isync1";
+            this.cbx_isync1.Size = new System.Drawing.Size(134, 17);
+            this.cbx_isync1.TabIndex = 21;
+            this.cbx_isync1.Text = "Internal sync generator";
+            this.cbx_isync1.UseVisualStyleBackColor = true;
+            // 
+            // label52
+            // 
+            this.label52.AutoSize = true;
+            this.label52.Location = new System.Drawing.Point(18, 105);
+            this.label52.Name = "label52";
+            this.label52.Size = new System.Drawing.Size(43, 13);
+            this.label52.TabIndex = 12;
+            this.label52.Text = "X offset";
+            // 
+            // nud_blacklvl1
+            // 
+            this.nud_blacklvl1.Location = new System.Drawing.Point(154, 233);
+            this.nud_blacklvl1.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+            this.nud_blacklvl1.Name = "nud_blacklvl1";
+            this.nud_blacklvl1.Size = new System.Drawing.Size(120, 20);
+            this.nud_blacklvl1.TabIndex = 15;
+            this.nud_blacklvl1.Value = new decimal(new int[] {
+            25,
+            0,
+            0,
+            0});
+            // 
+            // label53
+            // 
+            this.label53.AutoSize = true;
+            this.label53.Location = new System.Drawing.Point(18, 131);
+            this.label53.Name = "label53";
+            this.label53.Size = new System.Drawing.Size(43, 13);
+            this.label53.TabIndex = 10;
+            this.label53.Text = "Y offset";
+            // 
+            // nud_graylvl1
+            // 
+            this.nud_graylvl1.Location = new System.Drawing.Point(154, 207);
+            this.nud_graylvl1.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+            this.nud_graylvl1.Name = "nud_graylvl1";
+            this.nud_graylvl1.Size = new System.Drawing.Size(120, 20);
+            this.nud_graylvl1.TabIndex = 16;
+            this.nud_graylvl1.Value = new decimal(new int[] {
+            45,
+            0,
+            0,
+            0});
+            // 
+            // label54
+            // 
+            this.label54.AutoSize = true;
+            this.label54.Location = new System.Drawing.Point(18, 157);
+            this.label54.Name = "label54";
+            this.label54.Size = new System.Drawing.Size(56, 13);
+            this.label54.TabIndex = 9;
+            this.label54.Text = "Brightness";
+            // 
+            // nud_whitelvl1
+            // 
+            this.nud_whitelvl1.Location = new System.Drawing.Point(154, 181);
+            this.nud_whitelvl1.Maximum = new decimal(new int[] {
+            255,
+            0,
+            0,
+            0});
+            this.nud_whitelvl1.Name = "nud_whitelvl1";
+            this.nud_whitelvl1.Size = new System.Drawing.Size(120, 20);
+            this.nud_whitelvl1.TabIndex = 17;
+            this.nud_whitelvl1.Value = new decimal(new int[] {
+            63,
+            0,
+            0,
+            0});
+            // 
+            // nud_ysize1
+            // 
+            this.nud_ysize1.Location = new System.Drawing.Point(154, 77);
+            this.nud_ysize1.Maximum = new decimal(new int[] {
+            260,
+            0,
+            0,
+            0});
+            this.nud_ysize1.Minimum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.nud_ysize1.Name = "nud_ysize1";
+            this.nud_ysize1.Size = new System.Drawing.Size(120, 20);
+            this.nud_ysize1.TabIndex = 18;
+            this.nud_ysize1.Value = new decimal(new int[] {
+            260,
+            0,
+            0,
+            0});
+            // 
+            // nud_brightness1
+            // 
+            this.nud_brightness1.Location = new System.Drawing.Point(154, 155);
+            this.nud_brightness1.Maximum = new decimal(new int[] {
+            5000,
+            0,
+            0,
+            0});
+            this.nud_brightness1.Name = "nud_brightness1";
+            this.nud_brightness1.Size = new System.Drawing.Size(120, 20);
+            this.nud_brightness1.TabIndex = 19;
+            this.nud_brightness1.Value = new decimal(new int[] {
+            200,
+            0,
+            0,
+            0});
+            // 
+            // nud_xoffset1
+            // 
+            this.nud_xoffset1.Location = new System.Drawing.Point(154, 103);
+            this.nud_xoffset1.Maximum = new decimal(new int[] {
+            400,
+            0,
+            0,
+            0});
+            this.nud_xoffset1.Name = "nud_xoffset1";
+            this.nud_xoffset1.Size = new System.Drawing.Size(120, 20);
+            this.nud_xoffset1.TabIndex = 14;
+            this.nud_xoffset1.Value = new decimal(new int[] {
+            120,
+            0,
+            0,
+            0});
+            // 
+            // nud_yoffset1
+            // 
+            this.nud_yoffset1.Location = new System.Drawing.Point(154, 129);
+            this.nud_yoffset1.Maximum = new decimal(new int[] {
+            400,
+            0,
+            0,
+            0});
+            this.nud_yoffset1.Minimum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.nud_yoffset1.Name = "nud_yoffset1";
+            this.nud_yoffset1.Size = new System.Drawing.Size(120, 20);
+            this.nud_yoffset1.TabIndex = 20;
+            this.nud_yoffset1.Value = new decimal(new int[] {
+            40,
+            0,
+            0,
+            0});
+            // 
             // AlceOSDconfigForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1914,11 +2232,10 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "AlceOSDconfigForm";
-            this.Text = "AlceOSD 0v9";
+            this.Text = "AlceOSD 0v10";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form2_FormClosing);
             this.tabControl1.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
-            this.tabPage1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_blacklvl)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_graylvl)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_whitelvl)).EndInit();
@@ -1965,6 +2282,17 @@
             this.tabPage5.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
+            this.groupBox7.ResumeLayout(false);
+            this.groupBox7.PerformLayout();
+            this.groupBox8.ResumeLayout(false);
+            this.groupBox8.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_blacklvl1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_graylvl1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_whitelvl1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_ysize1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_brightness1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_xoffset1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_yoffset1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -2112,5 +2440,26 @@
         private System.Windows.Forms.NumericUpDown nud_streamExtra1;
         private System.Windows.Forms.Label label42;
         private System.Windows.Forms.Label label45;
+        private System.Windows.Forms.GroupBox groupBox8;
+        private System.Windows.Forms.Label label46;
+        private System.Windows.Forms.ComboBox cb_vidstd1;
+        private System.Windows.Forms.Label label47;
+        private System.Windows.Forms.ComboBox cb_xsize1;
+        private System.Windows.Forms.Label label48;
+        private System.Windows.Forms.Label label49;
+        private System.Windows.Forms.Label label50;
+        private System.Windows.Forms.Label label51;
+        private System.Windows.Forms.CheckBox cbx_isync1;
+        private System.Windows.Forms.Label label52;
+        private System.Windows.Forms.NumericUpDown nud_blacklvl1;
+        private System.Windows.Forms.Label label53;
+        private System.Windows.Forms.NumericUpDown nud_graylvl1;
+        private System.Windows.Forms.Label label54;
+        private System.Windows.Forms.NumericUpDown nud_whitelvl1;
+        private System.Windows.Forms.NumericUpDown nud_ysize1;
+        private System.Windows.Forms.NumericUpDown nud_brightness1;
+        private System.Windows.Forms.NumericUpDown nud_xoffset1;
+        private System.Windows.Forms.NumericUpDown nud_yoffset1;
+        private System.Windows.Forms.GroupBox groupBox7;
     }
 }
