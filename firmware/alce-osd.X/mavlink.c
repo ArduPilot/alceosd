@@ -29,7 +29,7 @@ static unsigned char nr_callbacks = 0;
 static unsigned char active_channel_mask = 0, total_routes = 0;
 
 static unsigned int pidx = 0, total_params = 0;
-unsigned long uav_last_seen = 0;
+static unsigned long uav_last_seen = 0;
 
 struct uart_client mavlink_uart_clients[MAVLINK_COMM_NUM_BUFFERS];
 
@@ -399,7 +399,7 @@ static unsigned char mavlink_get_route(unsigned char ch, mavlink_message_t *msg)
     return route;
 }
 
-static void mavlink_send_msg(mavlink_message_t *msg)
+void mavlink_send_msg(mavlink_message_t *msg)
 {
     unsigned char route = mavlink_get_route(255, msg);
     mavlink_send_msg_to_channels(route, msg);
@@ -495,8 +495,7 @@ static void mav_heartbeat(struct timer *t, void *d)
     LED = ~LED;
 
     if (get_millis() - uav_last_seen > UAV_LAST_SEEN_TIMEOUT) {
-        set_timer_period(t, 5);
-        return;
+        set_timer_period(t, 50);
     } else {
         set_timer_period(t, 10);
     }
@@ -511,6 +510,16 @@ static void mav_heartbeat(struct timer *t, void *d)
     mavlink_send_msg(&msg);
 }
 
+static void mav_heartbeat_blink(struct timer *t, void *d)
+{
+    LED = ~LED;
+
+    if (get_millis() - uav_last_seen > UAV_LAST_SEEN_TIMEOUT) {
+        set_timer_period(t, 5);
+    } else {
+        set_timer_period(t, 10);
+    }
+}
 
 static void send_param_list_cbk(struct timer *t, void *d)
 {
@@ -654,7 +663,7 @@ void mav_cmd_ack(mavlink_message_t *msg, void *d)
 {
     unsigned int c = mavlink_msg_command_ack_get_command(msg);
     unsigned char r = mavlink_msg_command_ack_get_result(msg);
-    //printf("cmd %d ack %d\n", c, r);
+    shell_printf("cmd %d ack %d\n", c, r);
 }
 #endif
 
@@ -679,6 +688,8 @@ void mavlink_init(void)
 
     /* heartbeat timer */
     add_timer(TIMER_ALWAYS, 10, mav_heartbeat, NULL);
+    /* LED heartbeat timer */
+    add_timer(TIMER_ALWAYS, 10, mav_heartbeat_blink, NULL);
 
     /* parameter request handlers */
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_LIST, mav_param_request_list, CALLBACK_PERSISTENT, NULL);
@@ -690,7 +701,7 @@ void mavlink_init(void)
     /* request stream rates periodically */
     add_timer(TIMER_ALWAYS, 600, mavlink_request_data_streams, NULL);
     
-    //add_mavlink_callback(MAVLINK_MSG_ID_COMMAND_ACK, mav_cmd_ack, CALLBACK_PERSISTENT, NULL);
+//    add_mavlink_callback(MAVLINK_MSG_ID_COMMAND_ACK, mav_cmd_ack, CALLBACK_PERSISTENT, NULL);
 }
 
 
