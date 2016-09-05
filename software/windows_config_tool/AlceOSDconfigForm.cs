@@ -201,7 +201,7 @@ namespace AlceOSD_updater
 
             }
 
-            comPort.BaudRate = 115200;
+            //comPort.BaudRate = 115200;
 
             if (in_setup)
             {
