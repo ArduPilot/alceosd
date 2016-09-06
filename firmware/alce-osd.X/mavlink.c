@@ -710,19 +710,11 @@ static void shell_cmd_callbacks(char *args, void *data)
     unsigned char i, t = 0;
     struct mavlink_callback *c = callbacks;
 
-    shell_printf("\n\nWidget callbacks:\n");
+    shell_printf("\n\nMavlink callbacks:\n");
     for (i = 0; i < nr_callbacks; i++) {
-        if ((c->cbk != NULL) && (c->type == CALLBACK_WIDGET)) {
-            printf(" sysid=%3d msgid=%3d cbk=%p data=%p\n", c->sysid, c->msgid, c->cbk, c->data);
-            t++;
-        }
-        c++;
-    }
-    shell_printf("\n\nPersistent callbacks:\n");
-    c = callbacks;
-    for (i = 0; i < nr_callbacks; i++) {
-        if ((c->cbk != NULL) && (c->type == CALLBACK_PERSISTENT)) {
-            printf(" sysid=%3d msgid=%3d cbk=%p data=%p\n", c->sysid, c->msgid, c->cbk, c->data);
+        if (c->cbk != NULL) {
+            printf(" type=%d sysid=%3d msgid=%3d cbk=%p data=%p\n",
+                        c->type, c->sysid, c->msgid, c->cbk, c->data);
             t++;
         }
         c++;
