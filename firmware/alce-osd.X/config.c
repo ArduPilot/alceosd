@@ -30,7 +30,7 @@
 #define CONFIG_ADDR_PAGE    (0x800)
 #define CONFIG_PAGE_SIZE    (0x400)
 
-#define CONFIG_VERSION_SIG  (0xffffff-9)
+#define CONFIG_VERSION_SIG  (0xffffff-10)
 
 //#define DEBUG_CONFIG
 
@@ -77,16 +77,15 @@ struct alceosd_config config = {
     },
     .tab_change.tab_change_ch_min = 1000,
     .tab_change.tab_change_ch_max = 2000,
-    .tab_change.ch = 7,
-    .tab_change.mode = TAB_CHANGE_TOGGLE,
+    .tab_change.ch = 5,
+    .tab_change.mode = TAB_CHANGE_CHANNEL,
     .tab_change.time_window = 20,
 
-    .mav.streams = {3, 1, 4, 1, 1, 10, 10, 1},
+    .mav.streams = {3, 1, 4, 1, 4, 10, 10, 1},
     .mav.osd_sysid = 200,
     .mav.uav_sysid = 1,
     
     .default_units = UNITS_METRIC,
-    .home_lock_sec = 15,
 
     .widgets = {
         //{ 5, 0, WIDGET_CONSOLE_ID,         0,   0, {JUST_VCENTER | JUST_HCENTER}},
@@ -119,7 +118,6 @@ struct alceosd_config config = {
 };
 
 const struct param_def params_config[] = {
-    PARAM("HOME_LOCKING", MAV_PARAM_TYPE_UINT8, &config.home_lock_sec, NULL),
     PARAM("OSD_UNITS", MAV_PARAM_TYPE_UINT8, &config.default_units, NULL),
     PARAM_END,
 };
@@ -326,7 +324,6 @@ const char menu_main[] = "\n\n"
                          "AlceOSD setup\n\n"
                          "3 - Configure tabs\n"
                          "4 - Units (global setting): %s\n"
-                         "q/w - Decrease/increase home locking timer: %d\n"
                          "\n"
                          "s - Save settings to FLASH\n"
                          "d - Dump setting to console\n"
@@ -445,16 +442,6 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
                         config.default_units = UNITS_IMPERIAL;
                     else
                         config.default_units = UNITS_METRIC;
-                    load_tab(current_tab);
-                    break;
-                case 'q':
-                    if (config.home_lock_sec > 5)
-                        config.home_lock_sec -= 5;
-                    load_tab(current_tab);
-                    break;
-                case 'w':
-                    if (config.home_lock_sec < 56)
-                        config.home_lock_sec += 5;
                     load_tab(current_tab);
                     break;
                 case 's':
@@ -656,8 +643,7 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
         case MENU_MAIN:
         default:
             printf(menu_main,
-                    (config.default_units == UNITS_METRIC) ? "METRIC" : "IMPERIAL",
-                    config.home_lock_sec);
+                    (config.default_units == UNITS_METRIC) ? "METRIC" : "IMPERIAL");
             break;
         case MENU_TABS:
             printf(menu_tabs, current_tab,

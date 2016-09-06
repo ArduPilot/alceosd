@@ -56,22 +56,6 @@ static void render(struct widget *w)
     if (priv->lock != HOME_LOCKED) {
         sprintf(buf, "No Home");
         draw_str(buf, 0, 0, ca, 2);
-        if (priv->lock & HOME_LOCK_FIX)
-            buf[0] = 'F';
-        else
-            buf[0] = ' ';
-        if (priv->lock & HOME_LOCK_POS)
-            buf[1] = 'P';
-        else
-            buf[1] = ' ';
-        if (priv->lock & HOME_LOCK_ALT)
-            buf[2] = 'A';
-        else
-            buf[2] = ' ';
-        buf[3] = 0;
-        draw_str(buf, 0, 16, ca, 1);
-        sprintf(buf, "Lock in %d", config.home_lock_sec - priv->lock_sec);
-        draw_str(buf, 0, 30, ca, 1);
     } else {
         switch (get_units(w->cfg)) {
             case UNITS_METRIC:

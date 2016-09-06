@@ -19,11 +19,7 @@
 #ifndef HOME_H
 #define	HOME_H
 
-#define HOME_LOCK_FIX    0x01
-#define HOME_LOCK_POS    0x02
-#define HOME_LOCK_ALT    0x04
-#define HOME_LOCK_DONE   0x08
-#define HOME_LOCKED      0x0f
+#define HOME_LOCKED      0x01
 
 
 struct home_data {
@@ -31,7 +27,6 @@ struct home_data {
     int direction, uav_bearing;
     float distance;
 
-    unsigned char lock_sec;
     unsigned char lock;
 };
 

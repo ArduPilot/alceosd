@@ -77,9 +77,6 @@ struct alceosd_config {
     /* default unit system */
     unsigned char default_units;
 
-    /* home position locking timer */
-    unsigned char home_lock_sec;
-
     /* mavlink config */
     struct mavlink_config mav;
     

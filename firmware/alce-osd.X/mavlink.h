@@ -58,6 +58,7 @@ unsigned int mavlink_msg_rc_channels_raw_get_chan(mavlink_message_t *msg, unsign
 enum {
     CALLBACK_WIDGET = 0,
     CALLBACK_PERSISTENT,
+    CALLBACK_HOME_INIT,
 };
 
 enum {
