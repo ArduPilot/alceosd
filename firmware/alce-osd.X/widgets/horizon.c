@@ -37,35 +37,26 @@
 
 
 struct widget_priv {
-    float pitch, roll;
-
     int pitch_deg, roll_deg;
     float cos_roll, sin_roll;
-
     int heading;
 };
 
-static void mav_callback(mavlink_message_t *msg, void *d)
+void pre_render(struct timer *t, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
-
-    priv->pitch = mavlink_msg_attitude_get_pitch(msg);
-    priv->pitch_deg = RAD2DEG(priv->pitch * SCALE);
-
-    priv->roll = mavlink_msg_attitude_get_roll(msg);
-    priv->roll_deg  = RAD2DEG(priv->roll);
-    priv->cos_roll = cos(priv->roll);
-    priv->sin_roll = -1 * sin(priv->roll);
-
+    
+    mavlink_attitude_t *att = mavdata_get(MAVDATA_ATTITUDE);
+    mavlink_vfr_hud_t *hud = mavdata_get(MAVDATA_VRF_HUD);
+    
+    priv->pitch_deg = RAD2DEG(att->pitch * SCALE);
+    priv->roll_deg  = RAD2DEG(att->roll);
+    priv->cos_roll = cos(att->roll);
+    priv->sin_roll = -1 * sin(att->roll);
+    priv->heading = hud->heading;
+    
     schedule_widget(w);
-}
-
-static void mav_callback_hud(mavlink_message_t *msg, void *d)
-{
-    struct widget *w = d;
-    struct widget_priv *priv = w->priv;
-    priv->heading = mavlink_msg_vfr_hud_get_heading(msg);
 }
 
 static int open(struct widget *w)
@@ -77,16 +68,13 @@ static int open(struct widget *w)
         return -1;
     w->priv = priv;
 
-    priv->roll = 0;
-    priv->pitch = 0;
     priv->cos_roll = cos(0);
     priv->sin_roll = sin(0);
-    
-    add_mavlink_callback(MAVLINK_MSG_ID_ATTITUDE, mav_callback, CALLBACK_WIDGET, w);
-    if (w->cfg->props.mode == 1)
-        add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback_hud, CALLBACK_WIDGET, w);
+        
     w->ca.width = X_SIZE;
     w->ca.height = Y_SIZE;
+        
+    add_timer(TIMER_WIDGET, 80, pre_render, w);
     return 0;
 }
 
