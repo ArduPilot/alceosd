@@ -33,15 +33,25 @@ struct widget_priv {
 };
 
 
-static void mav_callback(mavlink_message_t *msg, void *d)
+static void mav_callback(struct timer *t, void *d) //(mavlink_message_t *msg, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
     
-    priv->bat_voltage = mavlink_msg_sys_status_get_voltage_battery(msg) / 1000.0;
-    priv->bat_current = mavlink_msg_sys_status_get_current_battery(msg) / 100.0;
-    priv->bat_remaining = (int) mavlink_msg_sys_status_get_battery_remaining(msg);
+    unsigned long p;
+    
+    mavlink_sys_status_t *s = mavdata_get(MAVDATA_SYS_STATUS);
+    
+    priv->bat_voltage = s->voltage_battery / 1000.0;
+    priv->bat_current = s->current_battery / 100.0;
+    priv->bat_remaining = (int) s->battery_remaining;
 
+    
+    p = mavdata_period(MAVDATA_SYS_STATUS);
+    p = max(p, 200);
+    p = min(p, 1000);
+    set_timer_period(t, (unsigned int) p);
+    
     schedule_widget(w);
 }
 
@@ -78,35 +88,36 @@ static int open(struct widget *w)
     switch (w->cfg->props.mode) {
         default:
         case 0:
-            add_mavlink_callback(MAVLINK_MSG_ID_SYS_STATUS, mav_callback, CALLBACK_WIDGET, w);
+            add_timer(TIMER_WIDGET, 500, mav_callback, w);
+            //add_mavlink_callback(MAVLINK_MSG_ID_SYS_STATUS, mav_callback, CALLBACK_WIDGET, w);
             w->ca.height = 45;
             break;
         case 1:
             /* adc ch 0 */
-            adc_start(1);
+            adc_start(100);
             adc_link_ch(0, &priv->adc_raw);
             w->ca.height = 15;
-            add_timer(TIMER_WIDGET, 2, timer_callback, w);
+            add_timer(TIMER_WIDGET, 200, timer_callback, w);
             break;
         case 2:
             /* adc ch 1 */
-            adc_start(1);
+            adc_start(100);
             adc_link_ch(1, &priv->adc_raw);
             w->ca.height = 15;
-            add_timer(TIMER_WIDGET, 2, timer_callback, w);
+            add_timer(TIMER_WIDGET, 200, timer_callback, w);
             break;
         case 3:
             /* adc ch 0,1 */
-            adc_start(1);
+            adc_start(100);
             adc_link_ch(0, &priv->adc_raw);
             adc_link_ch(1, &priv->adc_raw2);
             w->ca.height = 30;
-            add_timer(TIMER_WIDGET, 2, timer_callback, w);
+            add_timer(TIMER_WIDGET, 200, timer_callback, w);
             break;
         case 4:
             /* flight total current consumption */
             w->ca.height = 15;
-            add_timer(TIMER_WIDGET, 2, current_tmr_callback, w);
+            add_timer(TIMER_WIDGET, 200, current_tmr_callback, w);
             break;
     }
 
