@@ -347,7 +347,7 @@ void tabs_init(void)
         add_mavlink_callback(msgid, cbk, CALLBACK_PERSISTENT, &config.tab_change);
     
     /* tab switching task (100ms) */
-    add_timer(TIMER_ALWAYS, 1, tab_switch_task, &config.tab_change);
+    add_timer(TIMER_ALWAYS, 100, tab_switch_task, &config.tab_change);
 }
 
 

@@ -100,7 +100,7 @@ static int open(struct widget *w)
 
     /* or/and trigger the widget rendering with a timer */
     /* in this case with a refresh rate of 500 msec */
-    add_timer(TIMER_WIDGET, 5, timer_callback, w);
+    add_timer(TIMER_WIDGET, 500, timer_callback, w);
 
     return 0;
 }

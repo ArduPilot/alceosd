@@ -87,7 +87,7 @@ static void calc_stats(struct timer *t, void *d)
         stats.launch_heading = NO_HEADING;
 
         /* determine launch heading */
-        add_timer(TIMER_ALWAYS, 5, find_launch_heading, NULL);
+        add_timer(TIMER_ALWAYS, 500, find_launch_heading, NULL);
     }
 
 }
@@ -106,7 +106,7 @@ static void start_calc_stats(void)
     stats.total_mah = 0;
 
     /* start calcs in a 100ms interval */
-    add_timer(TIMER_ALWAYS, 1, calc_stats, NULL);
+    add_timer(TIMER_ALWAYS, 100, calc_stats, NULL);
 }
 
 static void find_launch_heading(struct timer *t, void *d)
@@ -136,7 +136,7 @@ void init_flight_stats(void)
     stats.launch_heading = NO_HEADING;
 
     /* determine launch heading */
-    add_timer(TIMER_ALWAYS, 5, find_launch_heading, NULL);
+    add_timer(TIMER_ALWAYS, 500, find_launch_heading, NULL);
 
     add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, store_mavdata, CALLBACK_PERSISTENT, NULL);
     add_mavlink_callback(MAVLINK_MSG_ID_SYS_STATUS, store_mavdata, CALLBACK_PERSISTENT, NULL);

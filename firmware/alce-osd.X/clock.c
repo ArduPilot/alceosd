@@ -80,10 +80,7 @@ void shell_cmd_clock(char *args, void *data)
 
 void set_timer_period(struct timer *t, unsigned int time)
 {
-    if (t->type & TIMER_10MS)
-        t->time = time;
-    else
-        t->time = time * 10;
+    t->time = time / 10;
 }
 
 struct timer* add_timer(unsigned char type, unsigned int time, void *cbk, void *data)
@@ -102,10 +99,7 @@ struct timer* add_timer(unsigned char type, unsigned int time, void *cbk, void *
     t = &timers[i];
     t->cbk = cbk;
     t->data = data;
-    if (type & TIMER_10MS)
-        t->time = time;
-    else
-        t->time = time * 10;
+    t->time = time / 10;
     t->type = type;
     t->last_time = ms10;
     if (i == nr_timers)

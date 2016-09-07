@@ -88,5 +88,5 @@ void init_home(void)
     add_mavlink_callback(MAVLINK_MSG_ID_MISSION_ITEM, home_cbk, CALLBACK_HOME_INIT, NULL);
     
     add_mavlink_callback(MAVLINK_MSG_ID_GLOBAL_POSITION_INT, store_global_position, CALLBACK_PERSISTENT, NULL);
-    add_timer(TIMER_ALWAYS, 2, calc_home, NULL);
+    add_timer(TIMER_ALWAYS, 200, calc_home, NULL);
 }

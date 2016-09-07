@@ -36,7 +36,7 @@ static int open(struct widget *w)
     w->ca.height = 50;
 
     /* refresh rate of 0.2 sec */
-    add_timer(TIMER_WIDGET, 2, timer_callback, w);
+    add_timer(TIMER_WIDGET, 200, timer_callback, w);
     return 0;
 }
 

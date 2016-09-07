@@ -79,7 +79,7 @@ static int open(struct widget *w)
     add_mavlink_callback(MAVLINK_MSG_ID_MISSION_CURRENT, mav_callback_wp_seq, CALLBACK_WIDGET, w);
 
     /* refresh rate of 0.2 sec */
-    add_timer(TIMER_WIDGET, 2, timer_callback, w);
+    add_timer(TIMER_WIDGET, 200, timer_callback, w);
     return 0;
 }
 

@@ -61,7 +61,7 @@ static int open(struct widget *w)
     w->ca.height = Y_SIZE;
 
     add_mavlink_callback(MAVLINK_MSG_ID_STATUSTEXT, mav_callback, CALLBACK_WIDGET, w);
-    add_timer(TIMER_WIDGET, 1, timer_callback, w);
+    add_timer(TIMER_WIDGET, 100, timer_callback, w);
 
     return 0;
 }
