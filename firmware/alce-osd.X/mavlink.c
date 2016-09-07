@@ -416,6 +416,9 @@ void mavlink_handle_msg(unsigned char ch, mavlink_message_t *msg)
     if (route)
         mavlink_send_msg_to_channels(route, msg);
     
+    if (msg->sysid == config.mav.uav_sysid)
+        mavdata_store(msg);
+    
     for (i = 0; i < nr_callbacks; i++) {
         c = &callbacks[i];
         if (c->cbk == NULL)
@@ -554,7 +557,7 @@ void mav_param_request_list(mavlink_message_t *msg, void *d)
     
     pidx = 0;
     total_params = params_get_total();
-    add_timer(TIMER_ALWAYS | TIMER_10MS, 1, send_param_list_cbk, d);
+    add_timer(TIMER_ALWAYS, 100, send_param_list_cbk, d);
 
     console_printf("plist:sysid=%d compid=%d\n", sys, comp);
 }
@@ -646,7 +649,7 @@ static void mavlink_request_data_streams(struct timer *t, void *d)
 {
     unsigned char i;
     
-    if (get_millis() - uav_last_seen > 5)
+    if (get_millis() - uav_last_seen > UAV_LAST_SEEN_TIMEOUT)
         return;
     
     for (i = 1; i < sizeof(mavlink_stream_map); i++)
@@ -687,9 +690,9 @@ void mavlink_init(void)
     params_add(params_mavlink_rates);
 
     /* heartbeat timer */
-    add_timer(TIMER_ALWAYS, 10, mav_heartbeat, NULL);
+    add_timer(TIMER_ALWAYS, 1000, mav_heartbeat, NULL);
     /* LED heartbeat timer */
-    add_timer(TIMER_ALWAYS, 10, mav_heartbeat_blink, NULL);
+    add_timer(TIMER_ALWAYS, 1000, mav_heartbeat_blink, NULL);
 
     /* parameter request handlers */
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_LIST, mav_param_request_list, CALLBACK_PERSISTENT, NULL);
@@ -699,7 +702,7 @@ void mavlink_init(void)
     add_mavlink_callback(MAVLINK_MSG_ID_HEARTBEAT, mav_heartbeat_cbk, CALLBACK_PERSISTENT, NULL);
 
     /* request stream rates periodically */
-    add_timer(TIMER_ALWAYS, 600, mavlink_request_data_streams, NULL);
+    add_timer(TIMER_ALWAYS, 60000, mavlink_request_data_streams, NULL);
     
 //    add_mavlink_callback(MAVLINK_MSG_ID_COMMAND_ACK, mav_cmd_ack, CALLBACK_PERSISTENT, NULL);
 }
@@ -754,7 +757,7 @@ static void shell_cmd_route(char *args, void *data)
 }
 
 #define SHELL_CMD_MAVRATE_ARGS    2
-void shell_cmd_rates(char *args, void *data)
+static void shell_cmd_rates(char *args, void *data)
 {
     struct shell_argval argval[SHELL_CMD_MAVRATE_ARGS+1], *p;
     unsigned char t, i, val;
@@ -792,11 +795,61 @@ void shell_cmd_rates(char *args, void *data)
     }
 }
 
+#define SHELL_CMD_MAVWATCH_ARGS    2
+static void watch_cbk(mavlink_message_t *msg, void *d)
+{
+    int sysid, compid;
+    get_targets(msg, &sysid, &compid);
+            
+    shell_printf("[%03d] ", msg->msgid);
+    shell_printf("%d:%d to ", msg->sysid, msg->compid);
+    if (sysid == -1) {
+        shell_printf("everyone");
+    } else {
+        shell_printf("%d", sysid);
+        if (compid != -1)
+            shell_printf(":%3d", compid);
+    }
+    shell_printf(" len=%d seq=%d\n", msg->len, msg->seq);
+}
+
+static void shell_cmd_watch(char *args, void *data)
+{
+    struct shell_argval argval[SHELL_CMD_MAVWATCH_ARGS+1], *p;
+    unsigned char t, i, val;
+    unsigned char *v;
+    
+    t = shell_arg_parser(args, argval, SHELL_CMD_MAVWATCH_ARGS);
+    
+    p = shell_get_argval(argval, 'r');
+    if (p != NULL) {
+        del_mavlink_callbacks(CALLBACK_WATCH);
+        shell_printf("\nRemoved all watches\n");
+        return;
+    }
+    
+    p = shell_get_argval(argval, 'i');
+    if ((t < 1) || (p == NULL)) {
+        shell_printf("\nMavlink watch:\n");
+        
+        shell_printf("\nwatch mavlink messages: [-i <msgid> -o <output>]\n");
+        shell_printf(" -r          remove watches\n");
+        shell_printf(" -i <msgid>  mavlink msgid (0=ALL)\n");
+        //shell_printf(" -o <msgid>  output (0=shell; 1=console widget)\n");
+    } else {
+        i = atoi(p->val);
+        shell_printf("\nCreated watch for msgid=%d\n", i);
+        add_mavlink_callback_sysid(MAV_SYS_ID_ANY, i, watch_cbk, CALLBACK_WATCH, NULL);
+    } 
+}
+
+
 static const struct shell_cmdmap_s mavlink_cmdmap[] = {
     {"callbacks", shell_cmd_callbacks, "Display callback info", SHELL_CMD_SIMPLE},
     {"rates", shell_cmd_rates, "Mavklink stream rates", SHELL_CMD_SIMPLE},
     {"route", shell_cmd_route, "Display routing table", SHELL_CMD_SIMPLE},
     {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
+    {"watch", shell_cmd_watch, "Watch messages", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
 };
 

@@ -59,6 +59,7 @@ enum {
     CALLBACK_WIDGET = 0,
     CALLBACK_PERSISTENT,
     CALLBACK_HOME_INIT,
+    CALLBACK_WATCH,
 };
 
 enum {
