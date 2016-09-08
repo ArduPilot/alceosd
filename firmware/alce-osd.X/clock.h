@@ -19,8 +19,6 @@
 #ifndef CLOCK_H
 #define	CLOCK_H
 
-#define TIMER_10MS  0x10
-
 enum {
     TIMER_ONCE = 0,
     TIMER_ALWAYS,
