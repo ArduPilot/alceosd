@@ -22,8 +22,10 @@
 enum {
     MAVDATA_HEARTBEAT,
     MAVDATA_SYS_STATUS,
-    MAVDATA_VRF_HUD,
     MAVDATA_ATTITUDE,
+    MAVDATA_GLOBAL_POS_INT,
+    MAVDATA_MISSION_ITEM,
+    MAVDATA_VRF_HUD,
     MAVDATA_TOTAL,
 };
 
@@ -41,6 +43,7 @@ struct mavdata_decode_ops {
 void mavdata_store(mavlink_message_t *msg);
 void* mavdata_get(unsigned int id);
 unsigned long mavdata_time(unsigned int id);
+unsigned long mavdata_age(unsigned int id);
 unsigned long mavdata_period(unsigned int id);
 
 #endif
