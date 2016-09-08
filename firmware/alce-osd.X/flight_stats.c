@@ -33,7 +33,7 @@ static void find_launch_heading(struct timer *t, void *d);
 static void calc_stats(struct timer *t, void *d)
 {
     struct home_data *home = get_home_data();
-    mavlink_vfr_hud_t *hud = mavdata_get(MAVDATA_VRF_HUD);
+    mavlink_vfr_hud_t *hud = mavdata_get(MAVDATA_VFR_HUD);
     mavlink_sys_status_t *s = mavdata_get(MAVDATA_SYS_STATUS);
     
     /* accumulate distance */
@@ -84,7 +84,7 @@ static void start_calc_stats(void)
 static void find_launch_heading(struct timer *t, void *d)
 {
     struct home_data *home = get_home_data();
-    mavlink_vfr_hud_t *hud = mavdata_get(MAVDATA_VRF_HUD);
+    mavlink_vfr_hud_t *hud = mavdata_get(MAVDATA_VFR_HUD);
 
     if (home->lock != HOME_LOCKED)
         return;

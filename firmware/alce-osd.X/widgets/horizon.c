@@ -48,7 +48,7 @@ void pre_render(struct timer *t, void *d)
     struct widget_priv *priv = w->priv;
     
     mavlink_attitude_t *att = mavdata_get(MAVDATA_ATTITUDE);
-    mavlink_vfr_hud_t *hud = mavdata_get(MAVDATA_VRF_HUD);
+    mavlink_vfr_hud_t *hud = mavdata_get(MAVDATA_VFR_HUD);
     
     priv->pitch_deg = RAD2DEG(att->pitch * SCALE);
     priv->roll_deg  = RAD2DEG(att->roll);

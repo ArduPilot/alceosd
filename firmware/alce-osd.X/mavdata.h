@@ -23,9 +23,9 @@ enum {
     MAVDATA_HEARTBEAT,
     MAVDATA_SYS_STATUS,
     MAVDATA_ATTITUDE,
-    MAVDATA_GLOBAL_POS_INT,
+    MAVDATA_GLOBAL_POSITION_INT,
     MAVDATA_MISSION_ITEM,
-    MAVDATA_VRF_HUD,
+    MAVDATA_VFR_HUD,
     MAVDATA_TOTAL,
 };
 
@@ -33,11 +33,13 @@ struct mavdata_state {
     void *data;
     unsigned long time;
     unsigned long period;
+    unsigned char id;
 };
 
 struct mavdata_decode_ops {
     void (*decode)(mavlink_message_t *msg, void *d);
-    unsigned int offset;    
+    unsigned int offset;
+    const mavlink_message_info_t *info;
 };
 
 void mavdata_store(mavlink_message_t *msg);
@@ -45,5 +47,7 @@ void* mavdata_get(unsigned int id);
 unsigned long mavdata_time(unsigned int id);
 unsigned long mavdata_age(unsigned int id);
 unsigned long mavdata_period(unsigned int id);
+
+void shell_cmd_mavdata(char *args, void *data);
 
 #endif
