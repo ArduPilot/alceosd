@@ -42,7 +42,7 @@ struct widget_priv {
     int heading;
 };
 
-void pre_render(struct timer *t, void *d)
+static void pre_render(struct timer *t, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;

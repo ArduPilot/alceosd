@@ -21,35 +21,20 @@
 #define BAR_SIZE 8
 
 struct widget_priv {
-    unsigned int ch_raw[16];
+    unsigned int *ch;
     unsigned char bar_size;
     unsigned char total_ch;
-    void *cbk1, *cbk2;
 };
 
-static void mav_callback(mavlink_message_t *msg, void *d)
+static void pre_render(struct timer *t, void *d)
 {
     struct widget *w = d;
-    struct widget_priv *priv = w->priv;
-    unsigned char i;
-
-    if (msg->msgid == MAVLINK_MSG_ID_RC_CHANNELS_RAW) {
-        priv->total_ch = 8;
-    } else {
-        priv->total_ch = mavlink_msg_rc_channels_get_chancount(msg);
-    }
-    
-    for (i = 0; i < priv->total_ch; i++)
-        priv->ch_raw[i] = mavlink_msg_rc_channels_raw_get_chan(msg, i);
-
     schedule_widget(w);
 }
-
 
 static int open(struct widget *w)
 {
     struct widget_priv *priv;
-    unsigned char i;
     const struct font *f = get_font(0);
 
     priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
@@ -57,11 +42,16 @@ static int open(struct widget *w)
         return -1;
     w->priv = priv;
 
-    /* set initial values */
-    priv->total_ch = 16;
-    for (i = 0; i < priv->total_ch; i++)
-        priv->ch_raw[i] = 1500;
-
+    if (mavdata_age(MAVDATA_RC_CHANNELS) < 5000) {
+        mavlink_rc_channels_t *rc = mavdata_get(MAVDATA_RC_CHANNELS);
+        priv->total_ch = rc->chancount;
+        priv->ch = &rc->chan1_raw;
+    } else {
+        mavlink_rc_channels_raw_t *rc_raw = mavdata_get(MAVDATA_RC_CHANNELS_RAW);
+        priv->total_ch = 8;
+        priv->ch = &rc_raw->chan1_raw;
+    }
+    
     /* setup canvas according to widget mode */
     switch (w->cfg->props.mode) {
         case 0:
@@ -82,8 +72,7 @@ static int open(struct widget *w)
             break;
     }
     w->ca.height = f->size * priv->total_ch + 2;
-    priv->cbk1 = add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET, w);
-    priv->cbk2 = add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS, mav_callback, CALLBACK_WIDGET, w);
+    add_timer(TIMER_WIDGET, 250, pre_render, w);
     return 0;
 }
 
@@ -97,16 +86,17 @@ static void render(struct widget *w)
     int x, y;
     char buf[10];
     const struct font *f = get_font(0);
+    unsigned int *ch = priv->ch;
 
     for (i = 0; i < priv->total_ch; i++) {
         if ((w->cfg->props.mode == 0) || (w->cfg->props.mode == 1))
-            sprintf(buf, "CH%u %4d", i+1, priv->ch_raw[i]);
+            sprintf(buf, "CH%u %4d", i+1, *ch);
         else
             sprintf(buf, "CH%u", i+1);
         draw_str(buf, 0, i*f->size, ca, 0);
 
         if ((w->cfg->props.mode == 0) || (w->cfg->props.mode == 2)) {
-            x = priv->ch_raw[i] - 1000;
+            x = *ch - 1000;
             if (x < 0)
                 x = 0;
             else if (x > 1000)
@@ -122,6 +112,7 @@ static void render(struct widget *w)
             draw_vline(width-priv->bar_size-1+x-1, y+1, y+BAR_SIZE-1, 3, ca);
             draw_vline(width-priv->bar_size-1+x+1, y+1, y+BAR_SIZE-1, 3, ca);
         }
+        ch++;
     }
 }
 

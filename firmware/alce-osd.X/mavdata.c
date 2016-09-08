@@ -21,48 +21,38 @@
 extern struct alceosd_config config;
 
 const char *mavdata_type_name[] = {
-	"CHAR",
-	"UINT8_T",
-	"INT8_T",
-	"UINT16_T",
-	"INT16_T",
-	"UINT32_T",
-	"INT32_T",
-	"UINT64_T",
-	"INT64_T",
-	"FLOAT",
-	"DOUBLE"
+    "CHAR", "UINT8_T", "INT8_T",
+    "UINT16_T", "INT16_T",
+    "UINT32_T", "INT32_T",
+    "UINT64_T", "INT64_T",
+    "FLOAT", "DOUBLE"
 };
 
-static mavlink_heartbeat_t heartbeat;
-static mavlink_sys_status_t sys_status;
-static mavlink_attitude_t attitude;
-static mavlink_global_position_int_t global_pos_int;
-static mavlink_mission_item_t mission_item;
-static mavlink_vfr_hud_t vfr_hud;
-
-#define MAVDATA_INFO(x) const mavlink_message_info_t mi_##x = MAVLINK_MESSAGE_INFO_##x
+#define MAVDATA_INFO(x, y) const mavlink_message_info_t mi_##x = MAVLINK_MESSAGE_INFO_##x ; static mavlink_##y##_t y
 #define MAVDATA_STATE(x,y) [MAVDATA_##x] = { .data = &y, .id = MAVLINK_MSG_ID_##x }
 #define MAVDATA_OPS(x,y) [MAVLINK_MSG_ID_##x] = { \
         .decode = ((void*) mavlink_msg_##y##_decode), \
         .offset = MAVDATA_##x, \
         .info = &mi_##x }
 
-
-MAVDATA_INFO(HEARTBEAT);
-MAVDATA_INFO(SYS_STATUS);
-MAVDATA_INFO(ATTITUDE);
-MAVDATA_INFO(GLOBAL_POSITION_INT);
-MAVDATA_INFO(MISSION_ITEM);
-MAVDATA_INFO(VFR_HUD);
+MAVDATA_INFO(HEARTBEAT, heartbeat);
+MAVDATA_INFO(SYS_STATUS, sys_status);
+MAVDATA_INFO(ATTITUDE, attitude);
+MAVDATA_INFO(GLOBAL_POSITION_INT, global_position_int);
+MAVDATA_INFO(MISSION_ITEM, mission_item);
+MAVDATA_INFO(VFR_HUD, vfr_hud);
+MAVDATA_INFO(RC_CHANNELS_RAW, rc_channels_raw);
+MAVDATA_INFO(RC_CHANNELS, rc_channels);
 
 struct mavdata_state m[MAVDATA_TOTAL] = {
     MAVDATA_STATE(HEARTBEAT, heartbeat),
     MAVDATA_STATE(SYS_STATUS, sys_status),
     MAVDATA_STATE(ATTITUDE, attitude),
-    MAVDATA_STATE(GLOBAL_POSITION_INT, global_pos_int),
+    MAVDATA_STATE(GLOBAL_POSITION_INT, global_position_int),
     MAVDATA_STATE(MISSION_ITEM, mission_item),
     MAVDATA_STATE(VFR_HUD, vfr_hud),
+    MAVDATA_STATE(RC_CHANNELS_RAW, rc_channels_raw),
+    MAVDATA_STATE(RC_CHANNELS, rc_channels),
 };
 
 static const struct mavdata_decode_ops decode_ops[256] = {
@@ -72,6 +62,8 @@ static const struct mavdata_decode_ops decode_ops[256] = {
     MAVDATA_OPS(GLOBAL_POSITION_INT, global_position_int),
     MAVDATA_OPS(MISSION_ITEM, mission_item),
     MAVDATA_OPS(VFR_HUD, vfr_hud),
+    MAVDATA_OPS(RC_CHANNELS_RAW, rc_channels_raw),
+    MAVDATA_OPS(RC_CHANNELS, rc_channels),
 };
 
 void mavdata_store(mavlink_message_t *msg)
