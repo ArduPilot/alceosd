@@ -30,7 +30,7 @@ struct flight_stats {
     unsigned int max_home_distance;
 
     unsigned int max_bat_current;
-    float total_mah;
+    float total_flight_mah, total_mah;
 };
 
 void init_flight_stats(void);

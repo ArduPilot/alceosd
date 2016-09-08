@@ -68,7 +68,7 @@ static void render(struct widget *w)
     sprintf(buf, "Peak current:          %.2fA", ((double) priv->max_bat_current) / 100);
     draw_str(buf, 0, 12*6, ca, 1);
 
-    sprintf(buf, "Total used current:    %dmAh", (unsigned int) priv->total_mah);
+    sprintf(buf, "Total used current:    %dmAh", (unsigned int) priv->total_flight_mah);
     draw_str(buf, 0, 12*7, ca, 1);
 
     sprintf(buf, "Flight duration:       %02dm%02ds", (unsigned int) duration / 60, (unsigned int) duration % 60);

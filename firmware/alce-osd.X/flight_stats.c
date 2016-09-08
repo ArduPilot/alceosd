@@ -23,38 +23,9 @@ extern struct home_data home;
 
 #define NO_HEADING 0xfff
 
-
-struct stats_priv {
-    unsigned int throttle;
-    int airspeed, groundspeed;
-    int alt;
-    int heading;
-
-    unsigned int bat_current;
-} priv;
-
-
 struct flight_stats* get_flight_stats(void)
 {
     return &stats;
-}
-
-static void store_mavdata(mavlink_message_t *msg, void *d)
-{
-    switch (msg->msgid) {
-        case MAVLINK_MSG_ID_VFR_HUD:
-            priv.throttle = mavlink_msg_vfr_hud_get_throttle(msg);
-            priv.airspeed = (int) mavlink_msg_vfr_hud_get_airspeed(msg);
-            priv.groundspeed = (int) mavlink_msg_vfr_hud_get_groundspeed(msg);
-            priv.alt = (int) mavlink_msg_vfr_hud_get_alt(msg);
-            priv.heading = mavlink_msg_vfr_hud_get_heading(msg);
-            break;
-        case MAVLINK_MSG_ID_SYS_STATUS:
-            priv.bat_current = mavlink_msg_sys_status_get_current_battery(msg);
-            break;
-        default:
-            break;
-    }
 }
 
 static void find_launch_heading(struct timer *t, void *d);
@@ -62,24 +33,25 @@ static void find_launch_heading(struct timer *t, void *d);
 static void calc_stats(struct timer *t, void *d)
 {
     struct home_data *home = get_home_data();
+    mavlink_vfr_hud_t *hud = mavdata_get(MAVDATA_VRF_HUD);
+    mavlink_sys_status_t *s = mavdata_get(MAVDATA_SYS_STATUS);
     
     /* accumulate distance */
-    stats.total_distance += ((float) priv.groundspeed / 10);
-    stats.total_mah += ((float) priv.bat_current) / 3600;
+    stats.total_distance += (hud->groundspeed / 10);
+    stats.total_flight_mah += ((float) s->current_battery) / 3600;
 
-    stats.max_air_speed = MAX(priv.airspeed, stats.max_air_speed);
-    stats.max_gnd_speed = MAX(priv.groundspeed, stats.max_gnd_speed);
-    stats.max_altitude  = MAX(priv.alt, stats.max_altitude);
+    stats.max_air_speed = MAX(hud->airspeed, stats.max_air_speed);
+    stats.max_gnd_speed = MAX(hud->groundspeed, stats.max_gnd_speed);
+    stats.max_altitude  = MAX(hud->alt, stats.max_altitude);
     stats.max_home_distance = MAX((unsigned int) home->distance, stats.max_home_distance);
     stats.max_home_altitude = MAX(home->altitude, stats.max_home_altitude);
-    stats.max_bat_current = MAX(priv.bat_current, stats.max_bat_current);
+    stats.max_bat_current = MAX(s->current_battery, stats.max_bat_current);
 
     stats.flight_end = get_millis();
 
-
     /* try to guess a landing */
-    if ((priv.throttle < 5) &&
-        (priv.airspeed < 5) &&
+    if ((hud->throttle < 5) &&
+        (hud->airspeed < 5) &&
         (home->distance < 50) &&
         (abs(home->altitude) < 10)) {
 
@@ -103,7 +75,7 @@ static void start_calc_stats(void)
     stats.max_home_altitude = 0;
 
     stats.max_bat_current = 0;
-    stats.total_mah = 0;
+    stats.total_flight_mah = 0;
 
     /* start calcs in a 100ms interval */
     add_timer(TIMER_ALWAYS, 100, calc_stats, NULL);
@@ -111,16 +83,16 @@ static void start_calc_stats(void)
 
 static void find_launch_heading(struct timer *t, void *d)
 {
-    struct home_data *home;
+    struct home_data *home = get_home_data();
+    mavlink_vfr_hud_t *hud = mavdata_get(MAVDATA_VRF_HUD);
 
-    home = get_home_data();
     if (home->lock != HOME_LOCKED)
         return;
 
-    if ((priv.throttle > 10) &&
-        (priv.airspeed > 5) &&
+    if ((hud->throttle > 10) &&
+        (hud->airspeed > 5) &&
         (home->altitude > 5))
-        stats.launch_heading = priv.heading;
+        stats.launch_heading = hud->heading;
 
     if (stats.launch_heading != NO_HEADING) {
         /* found */
@@ -131,13 +103,18 @@ static void find_launch_heading(struct timer *t, void *d)
     }
 }
 
+static void calc_mah(struct timer *t, void *d)
+{
+    mavlink_sys_status_t *s = mavdata_get(MAVDATA_SYS_STATUS);
+    stats.total_mah += ((float) s->current_battery) / 3600;
+}
+
 void init_flight_stats(void)
 {
     stats.launch_heading = NO_HEADING;
+    stats.total_mah = 0;
 
     /* determine launch heading */
     add_timer(TIMER_ALWAYS, 500, find_launch_heading, NULL);
-
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, store_mavdata, CALLBACK_PERSISTENT, NULL);
-    add_mavlink_callback(MAVLINK_MSG_ID_SYS_STATUS, store_mavdata, CALLBACK_PERSISTENT, NULL);
+    add_timer(TIMER_ALWAYS, 100, calc_mah, NULL);
 }
