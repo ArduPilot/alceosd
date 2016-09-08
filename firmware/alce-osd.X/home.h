@@ -19,8 +19,12 @@
 #ifndef HOME_H
 #define	HOME_H
 
-#define HOME_LOCKED      0x01
-
+enum {
+    HOME_NONE = 0,
+    HOME_WAIT,
+    HOME_GOT,
+    HOME_LOCKED,
+};
 
 struct home_data {
     int altitude;
