@@ -85,7 +85,7 @@ unsigned int mavlink_msg_rc_channels_raw_get_chan(mavlink_message_t *msg, unsign
     return _MAV_RETURN_uint16_t(msg,  4 + ch*2);
 }
 
-static void get_targets(mavlink_message_t *msg, int *sysid, int *compid)
+void mavlink_get_targets(mavlink_message_t *msg, int *sysid, int *compid)
 {
     *sysid = -1;
     *compid = -1;
@@ -367,7 +367,7 @@ static unsigned char mavlink_get_route(unsigned char ch, mavlink_message_t *msg)
     if (msg->msgid == MAVLINK_MSG_ID_HEARTBEAT)
         return route;
 
-    get_targets(msg, &target_sys, &target_comp);
+    mavlink_get_targets(msg, &target_sys, &target_comp);
 
     /* its for us - don't route */
     if ((target_sys == config.mav.osd_sysid) && (target_comp == MAV_COMP_ID_OSD))
@@ -799,7 +799,7 @@ static void shell_cmd_rates(char *args, void *data)
 static void watch_cbk(mavlink_message_t *msg, void *d)
 {
     int sysid, compid;
-    get_targets(msg, &sysid, &compid);
+    mavlink_get_targets(msg, &sysid, &compid);
             
     shell_printf("[%03d] ", msg->msgid);
     shell_printf("%d:%d to ", msg->sysid, msg->compid);
@@ -846,7 +846,7 @@ static void shell_cmd_watch(char *args, void *data)
 
 static const struct shell_cmdmap_s mavlink_cmdmap[] = {
     {"callbacks", shell_cmd_callbacks, "Display callback info", SHELL_CMD_SIMPLE},
-    {"rates", shell_cmd_rates, "Mavklink stream rates", SHELL_CMD_SIMPLE},
+    {"rates", shell_cmd_rates, "Mavlink stream rates", SHELL_CMD_SIMPLE},
     {"route", shell_cmd_route, "Display routing table", SHELL_CMD_SIMPLE},
     {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
     {"watch", shell_cmd_watch, "Watch messages", SHELL_CMD_SIMPLE},

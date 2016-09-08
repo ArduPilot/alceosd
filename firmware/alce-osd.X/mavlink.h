@@ -48,6 +48,7 @@ struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid,
 void del_mavlink_callbacks(unsigned char ctype);
 void mavlink_handle_msg(unsigned char ch, mavlink_message_t *msg);
 void mavlink_send_msg(mavlink_message_t *msg);
+void mavlink_get_targets(mavlink_message_t *msg, int *sysid, int *compid);
 
 void shell_cmd_mavlink(char *args, void *data);
 
