@@ -42,6 +42,7 @@ struct tab_change_config {
 void tabs_init(void);
 void load_tab(unsigned char tab);
 
+void shell_cmd_tabs(char *args, void *data);
 
 #endif	/* TABS_H */
 

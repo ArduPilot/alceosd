@@ -294,3 +294,97 @@ void tabs_init(void)
     load_tab(0);
     add_timer(TIMER_ONCE, 5000, start_tab_switch_task, &config.tab_change);
 }
+
+
+#define SHELL_CMD_CONFIG_ARGS 4
+static void shell_cmd_config(char *args, void *data)
+{
+    struct tab_change_config *cfg = &config.tab_change;
+    struct shell_argval argval[SHELL_CMD_CONFIG_ARGS+1], *p;
+    unsigned char t, i;
+    unsigned int w;
+
+    t = shell_arg_parser(args, argval, SHELL_CMD_CONFIG_ARGS);
+    if (t < 1) {
+        shell_printf("\nTab configuration:\n");
+        shell_printf(" Change mode:    %d (0:ch percent; 1:flight mode; 2:ch toggle; 3:demo)\n", cfg->mode);
+        shell_printf(" Change channel: CH%d\n", cfg->ch + 1);
+        shell_printf(" Channel min:    %d\n", cfg->tab_change_ch_min);
+        shell_printf(" Channel max:    %d\n", cfg->tab_change_ch_max);
+        shell_printf(" Time window:    %d00ms\n", cfg->time_window);
+        shell_printf("\nsyntax: config -m <mode> -c <channel> -l <chmin> -h <chmax> -t <time>\n");
+    } else {
+        p = shell_get_argval(argval, 'm');
+        if (p != NULL) {
+            i = atoi(p->val);
+            if (i < TAB_CHANGE_MODES_END)
+                cfg->mode = i;
+        }
+        p = shell_get_argval(argval, 'c');
+        if (p != NULL) {
+            i = atoi(p->val) - 1;
+            i = min(i, 18);
+            cfg->ch = i;
+        }
+        p = shell_get_argval(argval, 'l');
+        if (p != NULL) {
+            w = atoi(p->val);
+            w = TRIM(w, 900, 2100);
+            cfg->tab_change_ch_min = w;
+        }
+        p = shell_get_argval(argval, 'h');
+        if (p != NULL) {
+            w = atoi(p->val);
+            w = TRIM(w, 900, 2100);
+            cfg->tab_change_ch_max = w;
+        }
+        p = shell_get_argval(argval, 't');
+        if (p != NULL) {
+            w = atoi(p->val);
+            w = w / 100;
+            cfg->time_window = w;
+        }
+    }
+}
+
+#define SHELL_CMD_LOAD_ARGS  1
+static void shell_cmd_load(char *args, void *data)
+{
+    struct shell_argval argval[SHELL_CMD_LOAD_ARGS+1], *idx, *tab;
+    unsigned char t, j;
+    
+    t = shell_arg_parser(args, argval, SHELL_CMD_LOAD_ARGS);
+    
+    idx = shell_get_argval(argval, 'i');
+    tab = shell_get_argval(argval, 't');
+    if ((t != 1) && ((idx == NULL) && (tab == NULL))) {
+        shell_printf("\nload tab: [-i <tab index> | -t <tab number>]\n");
+        shell_printf(" -i <tab index>   tab index (0 to %d)\n", tab_list[0]-1);
+        shell_printf(" -t <tab id>      tab id\n");
+    } else {
+        if (idx != NULL) {
+            j = atoi(idx->val);
+            if (j < tab_list[0]) {
+                shell_printf("\nLoading tab index %d of %d\n", j, tab_list[0]-1);
+                load_tab(tab_list[j+1]);
+            } else {
+                shell_printf("\nOut of range [0 ... %d]\n", tab_list[0]-1);
+            }
+        } else {
+            j = atoi(tab->val);
+            shell_printf("\nLoading tab id %d\n", j);
+            load_tab(j);
+        }
+    }
+}
+
+static const struct shell_cmdmap_s tabs_cmdmap[] = {
+    {"config", shell_cmd_config, "Tab config", SHELL_CMD_SIMPLE},
+    {"load", shell_cmd_load, "Load tab", SHELL_CMD_SIMPLE},
+    {"", NULL, ""},
+};
+
+void shell_cmd_tabs(char *args, void *data)
+{
+    shell_exec(args, tabs_cmdmap, data);
+}
