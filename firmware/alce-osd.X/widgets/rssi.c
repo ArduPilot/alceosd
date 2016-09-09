@@ -38,31 +38,52 @@
 
 struct widget_priv {
     unsigned int rssi, last_rssi;
+    unsigned int *adc_raw;
 };
 
-static void mav_callback(mavlink_message_t *msg, void *d)
+static void pre_render(mavlink_message_t *msg, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
-
+    mavlink_rc_channels_raw_t *rcr;
+    mavlink_rc_channels_t *rc;
+    unsigned int *val;
+    int value;
+    
     switch (w->cfg->props.source) {
         case RSSI_SOURCE_RSSI:
         default:
-            priv->rssi = (unsigned int) mavlink_msg_rc_channels_raw_get_rssi(msg);
+            if (mavdata_age(MAVDATA_RC_CHANNELS) < 5000) {
+                rc = mavdata_get(MAVDATA_RC_CHANNELS);
+                priv->rssi = rc->rssi;
+            } else {
+                rcr = mavdata_get(MAVDATA_RC_CHANNELS_RAW);
+                priv->rssi = rcr->rssi;
+            }
             break;
         case RSSI_SOURCE_RCCH:
-            priv->rssi = mavlink_msg_rc_channels_raw_get_chan(msg, w->cfg->params[RSSI_PARAM_RCCH]);
+            if (mavdata_age(MAVDATA_RC_CHANNELS) < 5000) {
+                rc = mavdata_get(MAVDATA_RC_CHANNELS);
+                val = &rc->chan1_raw;
+            } else {
+                rcr = mavdata_get(MAVDATA_RC_CHANNELS_RAW);
+                val = &rcr->chan1_raw;
+            }
+            priv->rssi = *(val + w->cfg->params[RSSI_PARAM_RCCH]);
             break;
         case RSSI_SOURCE_ANALOG:
-            /* not implemented yet */
-            priv->rssi = 0;
+            priv->rssi = *(priv->adc_raw);
             break;
     }
 
+    value = (( ((long) priv->rssi - w->cfg->params[RSSI_PARAM_MIN]) * 100) /
+               (w->cfg->params[RSSI_PARAM_MAX] - w->cfg->params[RSSI_PARAM_MIN]));
+    value = TRIM(value, 0, 100);
+
+    priv->rssi = value;
     if (priv->rssi ==  priv->last_rssi)
         return;
     priv->last_rssi = priv->rssi;
-
     schedule_widget(w);
 }
 
@@ -77,9 +98,20 @@ static int open(struct widget *w)
 
     priv->last_rssi = 0xff;
 
+    switch (w->cfg->props.source) {
+        case RSSI_SOURCE_RSSI:
+        case RSSI_SOURCE_RCCH:
+        default:
+            break;
+        case RSSI_SOURCE_ANALOG:
+            adc_start(500);
+            adc_link_ch(w->cfg->params[RSSI_PARAM_RCCH], &priv->adc_raw);
+            break;
+    }
+    
     w->ca.width = X_SIZE;
     w->ca.height = Y_SIZE;
-    add_mavlink_callback(MAVLINK_MSG_ID_RC_CHANNELS_RAW, mav_callback, CALLBACK_WIDGET, w);
+    add_timer(TIMER_WIDGET, 500, pre_render, w);
     return 0;
 }
 
@@ -90,28 +122,23 @@ static void render(struct widget *w)
     struct canvas *ca = &w->ca;
     unsigned int i, x;
     char buf[5];
-    int value;
-
-    value = (( ((long) priv->rssi - w->cfg->params[RSSI_PARAM_MIN]) * 100) /
-               (w->cfg->params[RSSI_PARAM_MAX] - w->cfg->params[RSSI_PARAM_MIN]));
-
-    if (value < 0)
-        value = 0;
-    else if (value > 100)
-        value = 100;
 
     x = 0;
-    for (i = 0; i < (5 * value)/(100-100/5); i++) {
+    for (i = 0; i < (5 * priv->rssi)/(100-100/5); i++) {
         draw_vline(x, Y_SIZE-1 - i*3, Y_SIZE-1, 3, ca);
         draw_vline(x+1, Y_SIZE-1 - i*3, Y_SIZE-1, 1, ca);
         draw_vline(x+2, Y_SIZE-1 - i*3, Y_SIZE-1, 1, ca);
         x += 4;
     }
 
-    sprintf(buf, "%3d", value);
+    sprintf(buf, "%3d", priv->rssi);
     draw_jstr(buf, X_SIZE, Y_SIZE/2, JUST_RIGHT | JUST_VCENTER, ca, 2);
 }
 
+static void close(struct widget *w)
+{
+    adc_stop();
+}
 
 const struct widget_ops rssi_widget_ops = {
     .name = "RSSI",
@@ -120,5 +147,5 @@ const struct widget_ops rssi_widget_ops = {
     .init = NULL,
     .open = open,
     .render = render,
-    .close = NULL,
+    .close = close,
 };
