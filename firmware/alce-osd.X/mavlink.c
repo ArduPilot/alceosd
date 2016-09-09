@@ -816,8 +816,7 @@ static void watch_cbk(mavlink_message_t *msg, void *d)
 static void shell_cmd_watch(char *args, void *data)
 {
     struct shell_argval argval[SHELL_CMD_MAVWATCH_ARGS+1], *p;
-    unsigned char t, i, val;
-    unsigned char *v;
+    unsigned char t, i;
     
     t = shell_arg_parser(args, argval, SHELL_CMD_MAVWATCH_ARGS);
     
@@ -843,6 +842,22 @@ static void shell_cmd_watch(char *args, void *data)
     } 
 }
 
+#define SHELL_CMD_CMD_ARGS 5
+static void shell_cmd_cmd(char *args, void *data)
+{
+    struct shell_argval argval[SHELL_CMD_CMD_ARGS+1], *p;
+    mavlink_message_t *this_msg;
+    unsigned char t;
+    unsigned int cmd;
+    
+    t = shell_arg_parser(args, argval, SHELL_CMD_CMD_ARGS);
+    
+    cmd = atoi(args);
+    shell_printf("\nsending command %d\n", cmd);
+    mavlink_msg_command_long_pack(config.mav.osd_sysid, MAV_COMP_ID_OSD, &this_msg, config.mav.uav_sysid, MAV_COMP_ID_ALL,
+        cmd, 0, 0, 0, 0, 0, 0, 0, 0);
+    mavlink_send_msg(&this_msg);
+}
 
 static const struct shell_cmdmap_s mavlink_cmdmap[] = {
     {"callbacks", shell_cmd_callbacks, "Display callback info", SHELL_CMD_SIMPLE},
@@ -850,6 +865,7 @@ static const struct shell_cmdmap_s mavlink_cmdmap[] = {
     {"route", shell_cmd_route, "Display routing table", SHELL_CMD_SIMPLE},
     {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
     {"watch", shell_cmd_watch, "Watch messages", SHELL_CMD_SIMPLE},
+    {"command", shell_cmd_cmd, "Send a mavlink command", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
 };
 
