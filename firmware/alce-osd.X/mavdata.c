@@ -43,6 +43,7 @@ MAVDATA_INFO(MISSION_ITEM, mission_item);
 MAVDATA_INFO(VFR_HUD, vfr_hud);
 MAVDATA_INFO(RC_CHANNELS_RAW, rc_channels_raw);
 MAVDATA_INFO(RC_CHANNELS, rc_channels);
+MAVDATA_INFO(HOME_POSITION, home_position);
 
 struct mavdata_state m[MAVDATA_TOTAL] = {
     MAVDATA_STATE(HEARTBEAT, heartbeat),
@@ -53,6 +54,7 @@ struct mavdata_state m[MAVDATA_TOTAL] = {
     MAVDATA_STATE(VFR_HUD, vfr_hud),
     MAVDATA_STATE(RC_CHANNELS_RAW, rc_channels_raw),
     MAVDATA_STATE(RC_CHANNELS, rc_channels),
+    MAVDATA_STATE(HOME_POSITION, home_position),
 };
 
 static const struct mavdata_decode_ops decode_ops[256] = {
@@ -64,6 +66,7 @@ static const struct mavdata_decode_ops decode_ops[256] = {
     MAVDATA_OPS(VFR_HUD, vfr_hud),
     MAVDATA_OPS(RC_CHANNELS_RAW, rc_channels_raw),
     MAVDATA_OPS(RC_CHANNELS, rc_channels),
+    MAVDATA_OPS(HOME_POSITION, home_position),
 };
 
 void mavdata_store(mavlink_message_t *msg)
