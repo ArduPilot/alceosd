@@ -32,7 +32,7 @@
 
 #define CELSIUS2FAHR(x)             ((x * 18)/10 + 3200)
 
-#define MAX(_a, _b)   ((_a > _b) ? _a : _b)
+#define TRIM(_v, _b, _t)    ((_v < _b) ? _b : ((_v > _t) ? _t : _v))
 
 struct gps_coord {
     float lat, lon;

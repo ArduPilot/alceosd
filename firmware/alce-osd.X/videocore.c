@@ -560,7 +560,7 @@ static void video_init_hw(void)
         CVR1CONbits.VREFSEL = 0;
         CVR1CONbits.CVRR = 1;
         CVR1CONbits.CVRSS = 0;
-        CVR1CONbits.CVR = 4;
+        CVR1CONbits.CVR = 5;
         CVR1CONbits.CVREN = 1;
 #else
         CVRCONbits.CVR1OE = 0;
@@ -763,7 +763,7 @@ void schedule_canvas(struct canvas *ca)
 {
     canvas_pipe.ca[canvas_pipe.pwr++] = ca;
     canvas_pipe.pwr &= MAX_CANVAS_PIPE_MASK;
-    canvas_pipe.peak = MAX(canvas_pipe.peak, canvas_pipe.pwr - canvas_pipe.prd);
+    canvas_pipe.peak = max(canvas_pipe.peak, canvas_pipe.pwr - canvas_pipe.prd);
     ca->lock = 1;
 }
 

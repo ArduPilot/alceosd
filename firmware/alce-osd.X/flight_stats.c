@@ -40,12 +40,12 @@ static void calc_stats(struct timer *t, void *d)
     stats.total_distance += (hud->groundspeed / 10);
     stats.total_flight_mah += ((float) s->current_battery) / 3600;
 
-    stats.max_air_speed = MAX(hud->airspeed, stats.max_air_speed);
-    stats.max_gnd_speed = MAX(hud->groundspeed, stats.max_gnd_speed);
-    stats.max_altitude  = MAX(hud->alt, stats.max_altitude);
-    stats.max_home_distance = MAX((unsigned int) home->distance, stats.max_home_distance);
-    stats.max_home_altitude = MAX(home->altitude, stats.max_home_altitude);
-    stats.max_bat_current = MAX(s->current_battery, stats.max_bat_current);
+    stats.max_air_speed = max(hud->airspeed, stats.max_air_speed);
+    stats.max_gnd_speed = max(hud->groundspeed, stats.max_gnd_speed);
+    stats.max_altitude  = max(hud->alt, stats.max_altitude);
+    stats.max_home_distance = max((unsigned int) home->distance, stats.max_home_distance);
+    stats.max_home_altitude = max(home->altitude, stats.max_home_altitude);
+    stats.max_bat_current = max(s->current_battery, stats.max_bat_current);
 
     stats.flight_end = get_millis();
 
