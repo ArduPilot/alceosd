@@ -25,31 +25,26 @@ struct widget_priv {
     unsigned char font_id;
 };
 
-static void mav_callback(mavlink_message_t *msg, void *d)
+static void pre_render(struct timer *t, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
 
-    priv->gps_lat = mavlink_msg_gps_raw_int_get_lat(msg) / 10000000.0;
-    priv->gps_lon = mavlink_msg_gps_raw_int_get_lon(msg) / 10000000.0;
-    priv->gps_fix_type = mavlink_msg_gps_raw_int_get_fix_type(msg);
-    priv->gps_nrsats = mavlink_msg_gps_raw_int_get_satellites_visible(msg);
-    priv->gps_eph = (float) mavlink_msg_gps_raw_int_get_eph(msg) / 100.0;
-
-    schedule_widget(w);
-}
-
-static void mav_callback2(mavlink_message_t *msg, void *d)
-{
-    struct widget *w = d;
-    struct widget_priv *priv = w->priv;
-
-    priv->gps_lat = mavlink_msg_gps2_raw_get_lat(msg) / 10000000.0;
-    priv->gps_lon = mavlink_msg_gps2_raw_get_lon(msg) / 10000000.0;
-    priv->gps_fix_type = mavlink_msg_gps2_raw_get_fix_type(msg);
-    priv->gps_nrsats = mavlink_msg_gps2_raw_get_satellites_visible(msg);
-    priv->gps_eph = (float) mavlink_msg_gps2_raw_get_eph(msg) / 100.0;
-
+    if (w->cfg->props.source == 0) {
+        mavlink_gps_raw_int_t *gps = mavdata_get(MAVDATA_GPS_RAW_INT);
+        priv->gps_lat = gps->lat / 10000000.0;
+        priv->gps_lon = gps->lon / 10000000.0;
+        priv->gps_fix_type = gps->fix_type;
+        priv->gps_nrsats = gps->satellites_visible;
+        priv->gps_eph = (float) gps->eph / 100.0;
+    } else {
+        mavlink_gps2_raw_t *gps2 = mavdata_get(MAVDATA_GPS2_RAW);
+        priv->gps_lat = gps2->lat / 10000000.0;
+        priv->gps_lon = gps2->lon / 10000000.0;
+        priv->gps_fix_type = gps2->fix_type;
+        priv->gps_nrsats = gps2->satellites_visible;
+        priv->gps_eph = (float) gps2->eph / 100.0;
+    }
     schedule_widget(w);
 }
 
@@ -72,10 +67,7 @@ static int open(struct widget *w)
     w->ca.height = (f->size + 2) * 2;
     w->ca.width = f->size * 13;
     
-    if (w->cfg->props.source == 0)
-        add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET, w);
-    else
-        add_mavlink_callback(MAVLINK_MSG_ID_GPS2_RAW, mav_callback2, CALLBACK_WIDGET, w);
+    add_timer(TIMER_WIDGET, 1000, pre_render, w);
     return 0;
 }
 
