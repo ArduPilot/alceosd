@@ -129,20 +129,21 @@ static unsigned int frsky_receive(struct uart_client *cli, unsigned char *buf, u
 
 
 /* GPS */
-static void gps_mav_callback(mavlink_message_t *msg, void *d)
+static void send_frsky_data(struct timer *t, void *d)
 {
+    mavlink_gps_raw_int_t *gps = mavdata_get(MAVDATA_GPS_RAW_INT);
     unsigned long data;
     float tmp;
     
     /* send latitude */
-    tmp = ((float) mavlink_msg_gps_raw_int_get_lat(msg)) * 0.06;
+    tmp = ((float) gps->lat) * 0.06;
     data = ((unsigned long) abs(tmp)) & 0x3fffffff;
     if (tmp < 0)
         data |= 1L << 30;
     frsky_sport_queue_data(GPS_LAT_LON_DATA_ID, data);
     
     /* send longitude */
-    tmp = ((float) mavlink_msg_gps_raw_int_get_lon(msg)) * 0.06;
+    tmp = ((float) gps->lon) * 0.06;
     data = ((unsigned long) abs(tmp)) & 0x3fffffff;
     data |= 1L << 31;
     if (tmp < 0)
@@ -150,8 +151,7 @@ static void gps_mav_callback(mavlink_message_t *msg, void *d)
     frsky_sport_queue_data(GPS_LAT_LON_DATA_ID, data);
 
     /* send altitude */
-    frsky_sport_queue_data(GPS_ALT_DATA_ID,
-            mavlink_msg_gps_raw_int_get_alt(msg) / 10);
+    frsky_sport_queue_data(GPS_ALT_DATA_ID, gps->alt / 10);
 }
 
 
@@ -163,7 +163,7 @@ static void frsky_init_client(struct uart_client *cli)
             UART_PROP_HALF_DUPLEX);
 
     /* send GPS data */
-    add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, gps_mav_callback, CALLBACK_PERSISTENT, NULL);
+    add_timer(TIMER_ALWAYS, 1000, send_frsky_data, NULL);
 }
 
 
