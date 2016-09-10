@@ -26,7 +26,7 @@ void adc_init(void)
     /* disable dma (for now) */
     AD1CON4bits.ADDMAEN = 0;
     
-    /* 12 bit, 1 channel */
+    /* 10 bit, 4 channel */
     AD1CON1bits.AD12B = 0;
 
     /* voltage reference = 0V ~ 3.3V */
