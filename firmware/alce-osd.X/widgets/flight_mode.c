@@ -19,22 +19,20 @@
 #include "alce-osd.h"
 
 struct widget_priv {
-    unsigned int custom_mode, prev_custom_mode;
+    unsigned int prev_mode;
     unsigned char font_size;
-    unsigned char mav_type;
 };
 
-static void mav_callback(mavlink_message_t *msg, void *d)
+static void callback(struct timer *t, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
+    mavlink_heartbeat_t *hb = mavdata_get(MAVDATA_HEARTBEAT);
 
-    priv->custom_mode = mavlink_msg_heartbeat_get_custom_mode(msg);
-    if (priv->custom_mode == priv->prev_custom_mode)
+    if (hb->custom_mode == priv->prev_mode)
         return;
 
-    priv->mav_type = mavlink_msg_heartbeat_get_type(msg);
-    priv->prev_custom_mode = priv->custom_mode;
+    priv->prev_mode = hb->custom_mode;
     schedule_widget(w);
 }
 
@@ -58,8 +56,8 @@ static int open(struct widget *w)
     w->ca.height = f->size + 2;
     w->ca.width = f->size * 12;
 
-    priv->prev_custom_mode = 0xff;
-    add_mavlink_callback(MAVLINK_MSG_ID_HEARTBEAT, mav_callback, CALLBACK_WIDGET, w);
+    priv->prev_mode = 0xff;
+    add_timer(TIMER_WIDGET, 1000, callback, w);
     return 0;
 }
 
@@ -69,9 +67,10 @@ static void render(struct widget *w)
     struct canvas *ca = &w->ca;
     char mode[17];
     unsigned int cust_mode;
+    mavlink_heartbeat_t *hb = mavdata_get(MAVDATA_HEARTBEAT);
 
-    cust_mode = priv->custom_mode;
-    if (priv->mav_type !=  MAV_TYPE_FIXED_WING)
+    cust_mode = hb->custom_mode;
+    if (hb->type !=  MAV_TYPE_FIXED_WING)
         cust_mode += 100;
 
     switch (cust_mode) {
