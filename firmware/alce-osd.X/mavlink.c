@@ -498,9 +498,9 @@ static void mav_heartbeat(struct timer *t, void *d)
     LED = ~LED;
 
     if (get_millis() - uav_last_seen > UAV_LAST_SEEN_TIMEOUT) {
-        set_timer_period(t, 50);
+        set_timer_period(t, 5000);
     } else {
-        set_timer_period(t, 10);
+        set_timer_period(t, 1000);
     }
     
     mavlink_msg_heartbeat_pack(config.mav.osd_sysid,
@@ -518,9 +518,9 @@ static void mav_heartbeat_blink(struct timer *t, void *d)
     LED = ~LED;
 
     if (get_millis() - uav_last_seen > UAV_LAST_SEEN_TIMEOUT) {
-        set_timer_period(t, 5);
+        set_timer_period(t, 500);
     } else {
-        set_timer_period(t, 10);
+        set_timer_period(t, 1000);
     }
 }
 
