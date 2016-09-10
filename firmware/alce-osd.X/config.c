@@ -330,13 +330,9 @@ const char menu_main[] = "\n\n"
                          "l - Load settings from console\n"
                          "x - Exit config\n";
 
-const char menu_tabs[] = "\n\nAlceOSD :: TAB config\n\n"
-                         "1/2 - Change active tab: %d\n"
-                         "3/4 - Tab change mode: %s\n";
-const char menu_tabs_mode_ch[] = "5/6 - Tab change channel: RC%d\n";
-const char menu_tabs_mode_tmr[] = "7/8 - Change time window: %d00ms\n";
-const char menu_tabs_end[] = "e - Edit tab\n"
-                             "x - Go back\n";
+const char menu_tabs[] = "\n\nAlceOSD :: TAB %d config\n\n"
+                         "e - Edit tab\n"
+                         "x - Go back\n";
 
 const char menu_tab_widgets[] = "\n\nAlceOSD :: TAB %d widgets config\n\n"
                                 "0 - Add widget\n"
@@ -426,10 +422,6 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
 
     char c = *buf;
 
-#ifdef DEBUG_CONFIG
-    printf("cfg size=%d\n", (unsigned int) sizeof (struct alceosd_config));
-#endif
-
     switch (state) {
         case MENU_MAIN:
         default:
@@ -486,30 +478,6 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
                 case '2':
                     current_tab++;
                     load_tab(current_tab);
-                    break;
-                case '3':
-                    if (config.tab_change.mode > 0)
-                        config.tab_change.mode--;
-                    break;
-                case '4':
-                    if (config.tab_change.mode < (TAB_CHANGE_MODES_END-1))
-                        config.tab_change.mode++;
-                    break;
-                case '5':
-                    if (config.tab_change.ch > 0)
-                        config.tab_change.ch--;
-                    break;
-                case '6':
-                    if (config.tab_change.ch < 7)
-                        config.tab_change.ch++;
-                    break;
-                case '7':
-                    if (config.tab_change.time_window > 5)
-                        config.tab_change.time_window--;
-                    break;
-                case '8':
-                    if (config.tab_change.time_window < 50)
-                        config.tab_change.time_window++;
                     break;
                 case 'e':
                     state = MENU_TAB_WIDGETS;
@@ -646,27 +614,7 @@ static unsigned int config_process(struct uart_client *cli, unsigned char *buf, 
                     (config.default_units == UNITS_METRIC) ? "METRIC" : "IMPERIAL");
             break;
         case MENU_TABS:
-            printf(menu_tabs, current_tab,
-                    (config.tab_change.mode == TAB_CHANGE_CHANNEL) ? "RC CHANNEL PERCENT" :
-                    (config.tab_change.mode == TAB_CHANGE_FLIGHTMODE) ? "FLIGHT MODE" :
-                    (config.tab_change.mode == TAB_CHANGE_TOGGLE) ? "RC CHANNEL TOGGLE" :
-                    (config.tab_change.mode == TAB_CHANGE_DEMO) ? "DEMO" : "????");
-
-            switch (config.tab_change.mode) {
-                case TAB_CHANGE_CHANNEL:
-                default:
-                    printf(menu_tabs_mode_ch, config.tab_change.ch + 1);
-                    break;
-                case TAB_CHANGE_FLIGHTMODE:
-                case TAB_CHANGE_DEMO:
-                    printf(menu_tabs_mode_tmr, config.tab_change.time_window);
-                    break;
-                case TAB_CHANGE_TOGGLE:
-                    printf(menu_tabs_mode_ch, config.tab_change.ch + 1);
-                    printf(menu_tabs_mode_tmr, config.tab_change.time_window);
-                    break;
-            }
-            printf(menu_tabs_end);
+            printf(menu_tabs, current_tab);
             break;
         case MENU_TAB_WIDGETS: {
             wcfg = &config.widgets[0];
