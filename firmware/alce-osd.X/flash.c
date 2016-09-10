@@ -37,7 +37,7 @@ int erase_page(unsigned long erase_address)
     addr.l = erase_address & 0xfff800;
 
     erase_page0(addr);
-    if (hw_rev == 0x03) {
+    if (hw_rev >= 0x03) {
         addr.l += 0x400;
         erase_page0(addr);
     }

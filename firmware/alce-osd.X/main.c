@@ -63,6 +63,11 @@
 #endif
 
 
+#define TRAP_ISR __attribute__((no_auto_psv,__interrupt__(__preprologue__( \
+ "mov #_StkAddrHi,w1\n\tpop [w1--]\n\tpop [w1++]\n\tpush [w1--]\n\tpush [w1++]"))))
+ unsigned int StkAddrLo;
+ unsigned int StkAddrHi;
+ 
 #define BLINK { \
     LED = 0; for (i = 0; i < 1000000; i++); \
     LED = 1; for (i = 0; i < 1000000; i++); \
@@ -79,11 +84,24 @@ void __attribute__((interrupt,no_auto_psv)) _OscillatorFail(void)
     };
 }
 
-void __attribute__((interrupt,no_auto_psv)) _AddressError(void)
+void TRAP_ISR _AddressError(void)
 {
     volatile unsigned long i;
     INTCON1bits.ADDRERR = 0;
+    
     U1TXREG = '"';
+    U2TXREG = '"';
+
+    for (i = 0; i < 4; i++) {
+        U1TXREG = '0' + ((StkAddrHi >> (3-i)) & 0xf);
+        U2TXREG = '0' + ((StkAddrHi >> (3-i)) & 0xf);
+    }
+    for (i = 0; i < 4; i++) {
+        U1TXREG = '0' + ((StkAddrLo >> (3-i)) & 0xf);
+        U2TXREG = '0' + ((StkAddrLo >> (3-i)) & 0xf);
+    }
+    //shell_printf("\n\nTRAP: AddressError @ 0x%06lx\n", StkAddrHi);
+
     while (1) {
         LED = 1; for (i = 0; i < 3000000; i++);
         BLINK; BLINK;
@@ -117,6 +135,8 @@ void __attribute__((interrupt,no_auto_psv)) _MathError(void)
 
 unsigned char hw_rev;
 
+unsigned int ccc;
+
 void hw_init(void)
 {
     volatile unsigned int i;
@@ -128,11 +148,6 @@ void hw_init(void)
     ANSELA = 0;
     ANSELB = 0;
     ANSELC = 0;
-
-    /* for debug */
-    TRISBbits.TRISB4 = 0;
-    LATBbits.LATB4 = 0;
-
 
 #ifndef WITH_BOOTLOADER
     /* oscillator config */
@@ -157,16 +172,29 @@ void hw_init(void)
     /* detect hw revision */
     /* set RB9 internal pull down */
     _TRISB9 = 1;
-    _CNPUB9 = 0;
     _CNPDB9 = 1;
 
     /* set RA9 internal pull down */
     _TRISA9 = 1;
-    _CNPUA9 = 0;
     _CNPDA9 = 1;
+
+    /* set RB1 internal pull down */
+    _TRISB1 = 1;
+    _CNPDB1 = 1;
+    ANSELBbits.ANSB1 = 1;
+    AD1CON3bits.ADCS = 16;
+    AD1CON2bits.CHPS = 2;
+    AD1CON1bits.ADON = 1;
+    AD1CHS0bits.CH0SA = 3;
+    AD1CON1bits.SAMP = 1;
+    for (i = 0; i < 1000; i++);
+    AD1CON1bits.SAMP = 0;
     for (i = 0; i < 10000; i++);
     
-    if (_RB9 == 1)
+    if (ADC1BUF0 > 400)
+        /* hw 0v4 has 1.25V vref on AN3 */
+        hw_rev = 0x04;
+    else if (_RB9 == 1)
         /* hw 0v3 has external pull-up on RB9 */
         hw_rev = 0x03;
     else if (_RA9 == 1)
@@ -177,9 +205,11 @@ void hw_init(void)
         hw_rev = 0x01;
     _CNPDB9 = 0;
     _CNPDA9 = 0;
+    _CNPDB1 = 0;
+    AD1CON1bits.ADON = 0;
 
     /* weak pull up on serial port rx pins */
-    if (hw_rev == 0x03) {
+    if (hw_rev >= 0x03) {
         _CNPUB11 = 1;
         _CNPUB6 = 1;
         _CNPUB2 = 1;

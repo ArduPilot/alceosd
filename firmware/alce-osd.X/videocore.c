@@ -55,16 +55,18 @@
 /* spi2 clock pin */
 #define SCK2_O 0x09
 
+#define VIN_SEL LATAbits.LATA4
 
 #define LINE_TMR (278*12)-2
 
-#define INT_X_OFFSET    (125)
 #define CNT_INT_MODE    (10 * 1000)
 
 #define CTRL_SYNCGEN        0x01
 #define CTRL_COMPSYNC       0x02
 #define CTRL_PWMBRIGHT      0x04
 #define CTRL_DACBRIGHT      0x08
+#define CTRL_EXTVREF        0x10
+#define CTRL_DUALVIN        0x20
 
 //#define DEBUG_DAC
 
@@ -114,8 +116,6 @@ static struct canvas *rendering_canvas = NULL;
 static unsigned char videocore_ctrl = 0;
 
 static struct video_config *cfg = &config.video[0];
-
-
 
 const struct osd_xsize_tbl video_xsizes[] = {
     { .xsize = 420, .clk_ps = 0 } ,
@@ -297,7 +297,7 @@ static void video_init_sram(void)
     /* clock as output, set low */
     CLK_DIR = 0;
     CLK_LOW;
-    if (hw_rev == 0x03)
+    if (hw_rev >= 0x03)
         _RP56R = 0;
     else
         _RP54R = 0;
@@ -438,6 +438,13 @@ static void video_init_hw(void)
             videocore_ctrl |= CTRL_DACBRIGHT;
             videocore_ctrl |= CTRL_COMPSYNC;
             break;
+        case 0x04:
+            videocore_ctrl |= CTRL_SYNCGEN;
+            videocore_ctrl |= CTRL_DACBRIGHT;
+            videocore_ctrl |= CTRL_COMPSYNC;
+            videocore_ctrl |= CTRL_EXTVREF;
+            videocore_ctrl |= CTRL_DUALVIN;
+            break;
     }
 
 
@@ -533,12 +540,19 @@ static void video_init_hw(void)
     
     if (videocore_ctrl & CTRL_SYNCGEN) {
         /* sync pin */
-        if (hw_rev <= 0x02) {
-            _TRISA9 = 0;
-            _LATA9 = 1;
-        } else {
-            _TRISA4 = 0;
-            _LATA4 = 1;
+        switch (hw_rev) {
+            default:
+                _TRISA9 = 0;
+                _LATA9 = 1;
+                break;
+            case 0x03:
+                _TRISA4 = 0;
+                _LATA4 = 1;
+                break;
+            case 0x04:
+                _TRISA7 = 0;
+                _LATA7 = 0;
+                break;
         }
 
         /* timer */
@@ -555,12 +569,19 @@ static void video_init_hw(void)
 
         /* vref */
 #if defined (__dsPIC33EP512GM604__)
-        CVR1CONbits.CVR1OE = 0;
-//        CVR1CONbits.CVR2OE = 0;
+        if (videocore_ctrl & CTRL_EXTVREF) {
+            CVR1CONbits.CVRR = 0;
+            CVR1CONbits.CVRR1 = 0;
+            CVR1CONbits.CVRSS = 1;
+            CVR1CONbits.CVR = 2;
+        } else {
+            CVR1CONbits.CVRR = 1;
+            CVR1CONbits.CVRR1 = 0;
+            CVR1CONbits.CVRSS = 0;
+            CVR1CONbits.CVR = 4;
+        }
+        CVR1CONbits.CVROE = 0;
         CVR1CONbits.VREFSEL = 0;
-        CVR1CONbits.CVRR = 1;
-        CVR1CONbits.CVRSS = 0;
-        CVR1CONbits.CVR = 5;
         CVR1CONbits.CVREN = 1;
 #else
         CVRCONbits.CVR1OE = 0;
@@ -611,6 +632,11 @@ static void video_init_hw(void)
         video_read_dac();
 #endif
     }
+    
+    if (videocore_ctrl & CTRL_DUALVIN) {
+        _TRISA4 = 0;
+        VIN_SEL = 1;
+    }
 }
 
 void video_apply_config(unsigned char profile)
@@ -623,6 +649,10 @@ void video_apply_config(unsigned char profile)
         OC1RS = 0x100 + cfg->brightness;
     } else {
         video_update_dac(cfg);
+    }
+    
+    if (hw_rev == 0x04) {
+        VIN_SEL = (cfg->mode & VIDEO_MODE_INPUT_MASK) ? 0 : 1;
     }
 
     /* pixel clock */
@@ -881,12 +911,10 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
             OE_RAM = 1;
         } else {
             OE_RAM2 = 1;
-            TRISA &= 0xfff3;
-            TRISA |= 0xc;
         }
         CS_HIGH;
         SRAM_OUT;
-        if (hw_rev == 0x03)
+        if (hw_rev >= 0x03)
             _RP56R = 0;
         else
             _RP54R = 0;
@@ -894,16 +922,14 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
     }
 }
 
+static unsigned int x_offset;
 
 static void render_line(void)
 {
     static union sram_addr addr __attribute__((aligned(2)));
     static unsigned int osdxsize;
-    static unsigned int x_offset;
     static unsigned int last_line = 200;
     
-    line++;
-
     if (line < cfg->y_offset-2) {
         /* do nothing */
     } else if (line < cfg->y_offset-1) {
@@ -950,14 +976,6 @@ static void render_line(void)
         sram_byte_spi(SRAM_DIO);
         CS_HIGH;
         SRAM_OUT;
-
-        x_offset = cfg->x_offset;
-        if (int_sync_cnt > CNT_INT_MODE) {
-            x_offset += INT_X_OFFSET;
-            if (hw_rev < 0x03)
-                x_offset -= 80;
-        }
-
     } else if (line < last_line) {
         /* render */
         CS_LOW;
@@ -970,7 +988,7 @@ static void render_line(void)
         CLK_HIGH; CLK_LOW;
         CLK_HIGH; CLK_LOW;
         CLK_HIGH; CLK_LOW;
-        if (hw_rev == 0x03)
+        if (hw_rev >= 0x03)
             _RP56R = SCK2_O;
         else
             _RP54R = SCK2_O;
@@ -1000,6 +1018,8 @@ static void render_line(void)
 /* external sync */
 void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
 {
+    x_offset = cfg->x_offset;
+    
     last_line_cnt = line;
     line = 0;
     int_sync_cnt = 0;
@@ -1010,6 +1030,7 @@ void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
 }
 void __attribute__((__interrupt__, auto_psv )) _INT2Interrupt()
 {
+    line++;
     render_line();
     _INT2IF = 0;
 }
@@ -1071,6 +1092,7 @@ void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
             _CNPUA3 = 0;
             _CNPDA3 = 1;
             _T4IP = 3;
+            x_offset = cfg->x_offset;
             vsync = std;
             last_line_cnt = line+10;
             line = 10;
@@ -1088,6 +1110,7 @@ void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
                     TMR5 = 0;
                     T5CONbits.TON = 1;
                 }
+                line++;
                 render_line();
             } else {
                 /* lost sync */
@@ -1116,6 +1139,10 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
         int_sync_cnt++;
     } else if (int_sync_cnt < CNT_INT_MODE + 1) {
         /* prepare internal sync */
+        x_offset = cfg->x_offset + 95;
+        if (hw_rev < 0x03)
+            x_offset -= 50;
+
         last_line_cnt = 312;
         line = 0;
         odd = 1;
@@ -1194,7 +1221,7 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
                     }
                 }
             }
-        } else {
+        } else if (hw_rev == 0x03) {
             if (odd == 1) {
                 if (line < 2) {
                     /* vsync sync pulses */
@@ -1237,7 +1264,7 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
                     } else if ((cnt == 5) || (cnt == 10)) {
                         _LATA4 = 1;
                     }
-                } else if ((line < 5) || (line > 308)) {
+                } else if ((line < 5) || (line > 309)) {
                     if ((cnt == 1) || (cnt == 6)) {
                         _LATA4 = 0;
                     } else if ((cnt == 2) || (cnt == 7)) {
@@ -1252,13 +1279,73 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
                     }
                 }
             }
+        }  else if (hw_rev == 0x04) {
+            if (odd == 1) {
+                if (line < 2) {
+                    /* vsync sync pulses */
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA7 = 1;
+                    } else if ((cnt == 5) || (cnt == 10)) {
+                        _LATA7 = 0;
+                    }
+                } else if (line < 3) {
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA7 = 1;
+                    } else if ((cnt == 5) || (cnt == 7)) {
+                        _LATA7 = 0;
+                    }
+                } else if ((line < 5) || (line > 309)) {
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA7 = 1;
+                    } else if ((cnt == 2) || (cnt == 7)) {
+                        _LATA7 = 0;
+                    }
+                } else {
+                    /* normal sync pulse */
+                    if (cnt == 1) {
+                        _LATA7 = 1;
+                    } else if (cnt == 2) {
+                        _LATA7 = 0;
+                    }
+                }
+            } else {
+                if (line < 1) {
+                    /* vsync sync pulses */
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA7 = 1;
+                    } else if ((cnt == 2) || (cnt == 10)) {
+                        _LATA7 = 0;
+                    }
+                } else if (line < 3) {
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA7 = 1;
+                    } else if ((cnt == 5) || (cnt == 10)) {
+                        _LATA7 = 0;
+                    }
+                } else if ((line < 5) || (line > 309)) {
+                    if ((cnt == 1) || (cnt == 6)) {
+                        _LATA7 = 1;
+                    } else if ((cnt == 2) || (cnt == 7)) {
+                        _LATA7 = 0;
+                    }
+                } else {
+                    /* normal sync pulse */
+                    if (cnt == 1) {
+                        _LATA7 = 1;
+                    } else if (cnt == 2) {
+                        _LATA7 = 0;
+                    }
+                }
+            }
         }
         if (cnt == 1)
             render_line();
 
         if (cnt > 9) {
+            line++;
             cnt = 0;
-            if (line == 312) {
+            if (((line == 312) && (odd == 1)) ||
+                ((line == 313) && (odd == 0))) {
                 last_line_cnt = line;
                 line = 0;
                 odd = odd ^ 1;
@@ -1315,7 +1402,7 @@ static void shell_cmd_config(char *args, void *data)
     struct shell_argval argval[SHELL_CMD_CONFIG_ARGS+1];
     unsigned char t, i;
     int int_var;
-    float f;
+    float f, vref;
     
     t = shell_arg_parser(args, argval, SHELL_CMD_CONFIG_ARGS);
 
@@ -1325,12 +1412,17 @@ static void shell_cmd_config(char *args, void *data)
         shell_printf(" -m <scan_mode>   video scan mode: [p]rogressive or [i]nterlaced\n");
         shell_printf(" -i <int_sync>    internal sync: 0 or 1\n");
 
-        if (hw_rev < 0x03) {
-            shell_printf(" -t <brightness>  brightness: 0 (max) to 1000 (min)\n");
-        } else {
-            shell_printf(" -w <white_lvl>   white voltage level: 0 to \n");
-            shell_printf(" -g <gray_lvl>    gray voltage level: 0 to \n");
-            shell_printf(" -b <black_lvl>   black voltage level: 0 to \n");
+        switch (hw_rev) {
+            default:
+                shell_printf(" -t <brightness>  brightness: 0 (max) to 1000 (min)\n");
+                break;
+            case 0x04:
+                shell_printf(" -n <video input> select video input\n");
+            case 0x03:
+                shell_printf(" -w <white_lvl>   white voltage level: 0 to \n");
+                shell_printf(" -g <gray_lvl>    gray voltage level: 0 to \n");
+                shell_printf(" -b <black_lvl>   black voltage level: 0 to \n");
+                break;
         }
         shell_printf(" -x <x_size>    horizontal video resolution:");
         for (i = 0; i < VIDEO_XSIZE_END; i++)
@@ -1338,6 +1430,11 @@ static void shell_cmd_config(char *args, void *data)
         shell_printf("\n -y <y_size>    vertical video resolution\n");
         shell_printf(" -h <x_offset>  horizontal video offset\n");
         shell_printf(" -v <y_offset>  vertical video offset\n");
+
+        
+        shell_printf("debug:\n");
+        shell_printf(" -r <comp_lvl>  comparator level\n");
+        shell_printf(" -c <comp_ref>  comparator reference\n");
         
     } else {
         for (i = 0; i < t; i++) {
@@ -1359,7 +1456,6 @@ static void shell_cmd_config(char *args, void *data)
                     else
                         cfg->mode |= VIDEO_MODE_SYNC_MASK;
                     break;
-
                 case 't':
                     int_var = atoi(argval[i].val);
                     cfg->brightness = (unsigned int) int_var;
@@ -1377,7 +1473,13 @@ static void shell_cmd_config(char *args, void *data)
                     int_var = atoi(argval[i].val);
                     cfg->black_lvl = (unsigned char) int_var;
                     break;
-                    
+                case 'n':
+                    int_var = atoi(argval[i].val);
+                    if (int_var)
+                        cfg->mode |= VIDEO_MODE_INPUT_MASK;
+                    else
+                        cfg->mode &= ~VIDEO_MODE_INPUT_MASK;
+                    break;
                 case 'x':
                     int_var = atoi(argval[i].val);
                     for (i = 0; i < VIDEO_XSIZE_END; i++) {
@@ -1412,19 +1514,22 @@ static void shell_cmd_config(char *args, void *data)
                     int_var = CVR1CONbits.CVRR | (CVR1CONbits.CVRR1 << 1);
                     
                     f = (float) CVR1CONbits.CVR;
-                    
+                    if (videocore_ctrl & CTRL_EXTVREF)
+                        vref = 3.3/2.0;
+                    else
+                        vref = 3.3;
                     switch (int_var) {
                         case 0:
-                            f = f/32.0 * 3.3 + (1/4.0) * 3.3;
+                            f = f/32.0 * vref + (1/4.0) * vref;
                             break;
                         case 1:
-                            f = f /24.0 * 3.3;
+                            f = f /24.0 * vref;
                             break;
                         case 2:
-                            f = f/24.0 * 3.3 + (1/3.0) * 3.3;
+                            f = f/24.0 * vref + (1/3.0) * vref;
                             break;
                         case 3:
-                            f = f / 16.0 * 3.3;
+                            f = f / 16.0 * vref;
                             break;
                         default:
                             f = 0;

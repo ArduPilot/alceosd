@@ -109,13 +109,15 @@ static const struct baudrate_tbl baudrates[] = {
 static const struct hw_pin_map_table {
     unsigned int rx;
     unsigned int tx;
-} hw_pin_map[3][4] = {
+} hw_pin_map[4][4] = {
     /* telemetry, con2, icsp, con3 */
     /* hw0v1 */
     { { .rx = 38, .tx = 37 }, { .rx = 20, .tx = 41 }, { .rx = 0,  .tx = 0 },  { .rx = 0,  .tx = 0 } },
     /* hw0v2 */
     { { .rx = 38, .tx = 37 }, { .rx = 20, .tx = 36 }, { .rx = 34, .tx = 35 }, { .rx = 0,  .tx = 0 } },
     /* hw0v3 */
+    { { .rx = 43, .tx = 42 }, { .rx = 38, .tx = 37 }, { .rx = 34, .tx = 35 }, { .rx = 45, .tx = 39 } },
+    /* hw0v4 */
     { { .rx = 43, .tx = 42 }, { .rx = 38, .tx = 37 }, { .rx = 34, .tx = 35 }, { .rx = 45, .tx = 39 } },
 };
 
@@ -206,6 +208,9 @@ inline static void handle_uart_int(unsigned char port)
         if (n_wr != rx_fifo[port].rd) {
             rx_fifo[port].buf[rx_fifo[port].wr] = ch;
             rx_fifo[port].wr = n_wr;
+        } else {
+            
+            
         }
     }
 }
@@ -381,7 +386,7 @@ static void uart_set_pins(unsigned char port, unsigned char pins)
     
     switch (pins) {
         case UART_PINS_TELEMETRY:
-            if (hw_rev == 0x03) {
+            if (hw_rev >= 0x03) {
                 _RP42R = UARTS[port].TXRP;
                 //*(UARTS[port].RXRP) = 43;
             } else {
@@ -390,7 +395,7 @@ static void uart_set_pins(unsigned char port, unsigned char pins)
             }
             break;
         case UART_PINS_CON2:
-            if (hw_rev == 0x03) {
+            if (hw_rev >= 0x03) {
                 _RP37R = UARTS[port].TXRP;
                 //*(UARTS[port].RXRP) = 38;
             } else {
