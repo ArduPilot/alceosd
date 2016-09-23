@@ -47,7 +47,7 @@ MAVDATA_INFO(HOME_POSITION, home_position);
 MAVDATA_INFO(GPS_RAW_INT, gps_raw_int);
 MAVDATA_INFO(GPS2_RAW, gps2_raw);
 
-struct mavdata_state m[MAVDATA_TOTAL] = {
+static struct mavdata_state m[MAVDATA_TOTAL] = {
     MAVDATA_STATE(HEARTBEAT, heartbeat),
     MAVDATA_STATE(SYS_STATUS, sys_status),
     MAVDATA_STATE(ATTITUDE, attitude),
@@ -108,7 +108,10 @@ unsigned long mavdata_time(unsigned int id)
 
 unsigned long mavdata_age(unsigned int id)
 {
-    return get_millis() - m[id].time;
+    if (m[id].time != 0)
+        return get_millis() - m[id].time;
+    else
+        return 99999999;
 }
 
 unsigned long mavdata_period(unsigned int id)
