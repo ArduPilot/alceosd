@@ -137,20 +137,22 @@ static struct canvas_pipe_s {
 };
 
 
-#define SCRATCHPAD_SIZE 0x4000
-__eds__ unsigned char scratchpad1[SCRATCHPAD_SIZE]  __attribute__ ((eds, noload, address(0x4000)));
-__eds__ unsigned char scratchpad2[SCRATCHPAD_SIZE]  __attribute__ ((eds, noload, address(0x8000)));
+#define SCRATCHPAD1_SIZE 0x4000
+#define SCRATCHPAD2_SIZE 0x2000
+__eds__ unsigned char scratchpad1[SCRATCHPAD1_SIZE]  __attribute__ ((eds, noload, address(0x8000)));
+__eds__ unsigned char scratchpad2[SCRATCHPAD2_SIZE]  __attribute__ ((eds, noload, address(0x6000)));
 
 struct scratchpad_s {
     __eds__ unsigned char *mem;
     unsigned int alloc_size;
+    unsigned int alloc_max;
 };
 
 struct scratchpad_s scratchpad[2] = {
     {   .mem = scratchpad1,
-        .alloc_size = 0,     },
+        .alloc_size = 0, .alloc_max = SCRATCHPAD1_SIZE },
     {   .mem = scratchpad2,
-        .alloc_size = 0,     },
+        .alloc_size = 0, .alloc_max = SCRATCHPAD2_SIZE },
 };
 
 
@@ -738,7 +740,7 @@ int alloc_canvas(struct canvas *c, void *widget_cfg)
     c->size = c->rwidth * c->height;
 
     for (i = 0; i < 2; i++) {
-        if ((scratchpad[i].alloc_size + c->size) < SCRATCHPAD_SIZE)
+        if ((scratchpad[i].alloc_size + c->size) < scratchpad[i].alloc_max)
             break;
     }
     if (i == 2) {
@@ -1388,10 +1390,10 @@ static void shell_cmd_stats(char *args, void *data)
     
     shell_printf("\nVideocore stats:\n");
     shell_printf(" scratchpad memory: A=%u/%u B=%u/%u\n",
-                scratchpad[0].alloc_size, SCRATCHPAD_SIZE,
-                scratchpad[1].alloc_size, SCRATCHPAD_SIZE);
+                scratchpad[0].alloc_size, scratchpad[0].alloc_max,
+                scratchpad[1].alloc_size, scratchpad[1].alloc_max);
     shell_printf(" canvas fifo: size=%u peak=%u max=%u\n",
-                canvas_pipe.pwr - canvas_pipe.prd, canvas_pipe.peak, MAX_CANVAS_PIPE_MASK+1);
+                (canvas_pipe.pwr - canvas_pipe.prd) & MAX_CANVAS_PIPE_MASK, canvas_pipe.peak, MAX_CANVAS_PIPE_MASK+1);
     shell_printf(" status: last_line_cnt=%u sram_busy=%u int_sync_cnt=%u\n",
                 last_line_cnt, sram_busy, int_sync_cnt);
 }
