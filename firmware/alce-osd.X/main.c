@@ -88,17 +88,30 @@ void TRAP_ISR _AddressError(void)
 {
     volatile unsigned long i;
     INTCON1bits.ADDRERR = 0;
+    unsigned char c, j;
     
     U1TXREG = '"';
     U2TXREG = '"';
 
-    for (i = 0; i < 4; i++) {
-        U1TXREG = '0' + ((StkAddrHi >> (3-i)) & 0xf);
-        U2TXREG = '0' + ((StkAddrHi >> (3-i)) & 0xf);
+    for (j = 0; j < 4; j++) {
+        for (i = 0; i < 3000000; i++);
+        c = (StkAddrHi >> (3-j)) & 0xf;
+        if (c > 9)
+            c += 'A' - 10;
+        else
+            c += '0';
+        U1TXREG = c;
+        U2TXREG = c;
     }
-    for (i = 0; i < 4; i++) {
-        U1TXREG = '0' + ((StkAddrLo >> (3-i)) & 0xf);
-        U2TXREG = '0' + ((StkAddrLo >> (3-i)) & 0xf);
+    for (j = 0; j < 4; j++) {
+        for (i = 0; i < 3000000; i++);
+        c = (StkAddrLo >> (3-j)) & 0xf;
+        if (c > 9)
+            c += 'A' - 10;
+        else
+            c += '0';
+        U1TXREG = c;
+        U2TXREG = c;
     }
     //shell_printf("\n\nTRAP: AddressError @ 0x%06lx\n", StkAddrHi);
 
@@ -134,8 +147,6 @@ void __attribute__((interrupt,no_auto_psv)) _MathError(void)
 //#define DEBUG_INIT
 
 unsigned char hw_rev;
-
-unsigned int ccc;
 
 void hw_init(void)
 {
