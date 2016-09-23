@@ -29,7 +29,6 @@ static unsigned char nr_callbacks = 0;
 static unsigned char active_channel_mask = 0, total_routes = 0;
 
 static unsigned int pidx = 0, total_params = 0;
-static unsigned long uav_last_seen = 0;
 
 struct uart_client mavlink_uart_clients[MAVLINK_COMM_NUM_BUFFERS];
 
@@ -415,7 +414,7 @@ void mavlink_handle_msg(unsigned char ch, mavlink_message_t *msg)
     route = mavlink_get_route(ch, msg);
     if (route)
         mavlink_send_msg_to_channels(route, msg);
-    
+
     if (msg->sysid == config.mav.uav_sysid)
         mavdata_store(msg);
     
@@ -494,13 +493,14 @@ void inline del_mavlink_callback(struct mavlink_callback *c)
 static void mav_heartbeat(struct timer *t, void *d)
 {
     mavlink_message_t msg;
+    struct timer *led_timer = d;
 
-    LED = ~LED;
-
-    if (get_millis() - uav_last_seen > UAV_LAST_SEEN_TIMEOUT) {
+    if (mavdata_age(MAVDATA_HEARTBEAT) > UAV_LAST_SEEN_TIMEOUT) {
         set_timer_period(t, 5000);
+        set_timer_period(led_timer, 500);
     } else {
         set_timer_period(t, 1000);
+        set_timer_period(led_timer, 1000);
     }
     
     mavlink_msg_heartbeat_pack(config.mav.osd_sysid,
@@ -516,12 +516,6 @@ static void mav_heartbeat(struct timer *t, void *d)
 static void mav_heartbeat_blink(struct timer *t, void *d)
 {
     LED = ~LED;
-
-    if (get_millis() - uav_last_seen > UAV_LAST_SEEN_TIMEOUT) {
-        set_timer_period(t, 500);
-    } else {
-        set_timer_period(t, 1000);
-    }
 }
 
 static void send_param_list_cbk(struct timer *t, void *d)
@@ -649,19 +643,14 @@ static void mavlink_request_data_streams(struct timer *t, void *d)
 {
     unsigned char i;
     
-    if (get_millis() - uav_last_seen > UAV_LAST_SEEN_TIMEOUT)
+    if (mavdata_age(MAVDATA_HEARTBEAT) > UAV_LAST_SEEN_TIMEOUT)
         return;
     
     for (i = 1; i < sizeof(mavlink_stream_map); i++)
         mavlink_request_data_stream(i, config.mav.streams[i - 1]);
 }
 
-static void mav_heartbeat_cbk(mavlink_message_t *msg, void *d)
-{
-    uav_last_seen = get_millis();
-}
-
-#if 0
+#if 1
 void mav_cmd_ack(mavlink_message_t *msg, void *d)
 {
     unsigned int c = mavlink_msg_command_ack_get_command(msg);
@@ -673,6 +662,7 @@ void mav_cmd_ack(mavlink_message_t *msg, void *d)
 void mavlink_init(void)
 {
     unsigned char i;
+    struct timer *t;
 
     /* register serial port clients */
     for (i = 0; i < MAVLINK_COMM_NUM_BUFFERS; i++) {
@@ -689,22 +679,20 @@ void mavlink_init(void)
     params_add(params_mavlink);
     params_add(params_mavlink_rates);
 
-    /* heartbeat timer */
-    add_timer(TIMER_ALWAYS, 1000, mav_heartbeat, NULL);
     /* LED heartbeat timer */
-    add_timer(TIMER_ALWAYS, 1000, mav_heartbeat_blink, NULL);
+    t = add_timer(TIMER_ALWAYS, 1000, mav_heartbeat_blink, NULL);
+    /* heartbeat timer */
+    add_timer(TIMER_ALWAYS, 1000, mav_heartbeat, t);
 
     /* parameter request handlers */
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_LIST, mav_param_request_list, CALLBACK_PERSISTENT, NULL);
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_READ, mav_param_request_read, CALLBACK_PERSISTENT, NULL);
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_SET, mav_param_set, CALLBACK_PERSISTENT, NULL);
 
-    add_mavlink_callback(MAVLINK_MSG_ID_HEARTBEAT, mav_heartbeat_cbk, CALLBACK_PERSISTENT, NULL);
-
     /* request stream rates periodically */
     add_timer(TIMER_ALWAYS, 60000, mavlink_request_data_streams, NULL);
     
-//    add_mavlink_callback(MAVLINK_MSG_ID_COMMAND_ACK, mav_cmd_ack, CALLBACK_PERSISTENT, NULL);
+    add_mavlink_callback(MAVLINK_MSG_ID_COMMAND_ACK, mav_cmd_ack, CALLBACK_PERSISTENT, NULL);
 }
 
 
@@ -733,12 +721,13 @@ static void shell_cmd_stats(char *args, void *data)
     for (i = 0; i < MAVLINK_COMM_NUM_BUFFERS; i++) {
         status = mavlink_get_channel_status(i);
         shell_printf("\nMavlink channel %d\n", i);
-        shell_printf(" msg_received=%d\n", status->msg_received);
+        shell_printf(" parse errors=%d\n", status->parse_error);
+        shell_printf(" buffer_overrun=%d\n", status->buffer_overrun);
         shell_printf(" packet_rx_drop_count=%d\n", status->packet_rx_drop_count);
         shell_printf(" packet_rx_success_count=%d\n", status->packet_rx_success_count);
     }
     shell_printf("\nActive channel mask=%x\n", active_channel_mask);
-    shell_printf("\nUAV last seen %lums ago\n", get_millis() - uav_last_seen);
+    shell_printf("\nUAV last seen %lums ago\n", mavdata_age(MAVDATA_HEARTBEAT));
 }
 
 static void shell_cmd_route(char *args, void *data)
@@ -846,7 +835,7 @@ static void shell_cmd_watch(char *args, void *data)
 static void shell_cmd_cmd(char *args, void *data)
 {
     struct shell_argval argval[SHELL_CMD_CMD_ARGS+1], *p;
-    mavlink_message_t *this_msg;
+    mavlink_message_t this_msg;
     unsigned char t;
     unsigned int cmd;
     
