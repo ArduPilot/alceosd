@@ -27,13 +27,18 @@ enum {
 
 
 void clock_init(void);
-struct timer* add_timer(unsigned char type, unsigned int time, void *cbk, void *data);
+struct timer* add_timer(unsigned char type, unsigned int period, void *cbk, void *data);
 inline void remove_timer(struct timer *t);
 void remove_timers(unsigned char type);
-unsigned long get_millis(void);
-void set_timer_period(struct timer *t, unsigned int time);
-
+inline void set_timer_period(struct timer *t, unsigned int period);
+unsigned long get_micros(void);
 void shell_cmd_clock(char *args, void *data);
+
+/* clock_fast.s */
+extern unsigned long get_jiffies(void);
+extern unsigned long get_millis(void);
+extern unsigned int get_millis16(void);
+
 
 #endif	/* CLOCK_H */
 

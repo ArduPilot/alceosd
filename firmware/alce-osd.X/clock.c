@@ -20,13 +20,13 @@
 
 #define MAX_TIMERS  (30)
 
-volatile unsigned long millis = 0;
-volatile unsigned int ms10 = 0;
+volatile unsigned long millis;
+volatile unsigned long jiffies;
 
 
 struct timer {
-    unsigned int time;
-    unsigned int last_time;
+    unsigned long period;
+    unsigned long last_tick;
     unsigned char type;
     void (*cbk)(struct timer *t, void *data);
     void *data;
@@ -44,7 +44,7 @@ static void shell_cmd_timers(char *args, void *data)
     shell_printf("\n\nWidget timers:\n");
     for (i = 0; i < nr_timers; i++) {
         if ((t->cbk != NULL) && (t->type == TIMER_WIDGET)) {
-            printf(" period=%5dms last_tick=%5d cbk=%p data=%p\n", t->time * 10, t->last_time, t->cbk, t->data);
+            printf(" period=%5lums last_tick=%5lu cbk=%p data=%p\n", t->period, t->last_tick, t->cbk, t->data);
             total++;
         }
         t++;
@@ -53,7 +53,7 @@ static void shell_cmd_timers(char *args, void *data)
     t = timers;
     for (i = 0; i < nr_timers; i++) {
         if ((t->cbk != NULL) && (t->type != TIMER_WIDGET)) {
-            printf(" period=%5ums last_tick=%5u cbk=%p data=%p\n", t->time * 10, t->last_time, t->cbk, t->data);
+            printf(" period=%5lums last_tick=%5lu cbk=%p data=%p\n", t->period, t->last_tick, t->cbk, t->data);
             total++;
         }
         t++;
@@ -63,7 +63,7 @@ static void shell_cmd_timers(char *args, void *data)
 
 static void shell_cmd_stats(char *args, void *data)
 {
-    shell_printf("\nElapsed time since boot: %lums\n", millis);
+    shell_printf("\nElapsed time since boot: %lums\n", get_millis());
 }
 
 static const struct shell_cmdmap_s clock_cmdmap[] = {
@@ -78,12 +78,17 @@ void shell_cmd_clock(char *args, void *data)
 }
 
 
-void set_timer_period(struct timer *t, unsigned int time)
+unsigned long get_micros(void)
 {
-    t->time = time / 10;
+    return (get_jiffies() * 625) / 10;
 }
 
-struct timer* add_timer(unsigned char type, unsigned int time, void *cbk, void *data)
+inline void set_timer_period(struct timer *t, unsigned int period)
+{
+    t->period = period;
+}
+
+struct timer* add_timer(unsigned char type, unsigned int period, void *cbk, void *data)
 {
     struct timer *t = timers;
     unsigned char i;
@@ -99,9 +104,9 @@ struct timer* add_timer(unsigned char type, unsigned int time, void *cbk, void *
     t = &timers[i];
     t->cbk = cbk;
     t->data = data;
-    t->time = time / 10;
+    t->period = period;
     t->type = type;
-    t->last_time = ms10;
+    t->last_tick = get_millis();
     if (i == nr_timers)
         nr_timers++;
     return t;
@@ -126,9 +131,28 @@ void remove_timers(unsigned char ctype)
 
 static void clock_process(void)
 {
-    unsigned char i;
-    struct timer *t;
+    static unsigned char i = 0;
+    struct timer *t = timers;
+    unsigned int millis = get_millis();
 
+#if 1
+    
+    do {
+        if (i == nr_timers) {
+            i = 0;
+            return;
+        }
+        t = &timers[i++];
+    } while (t->cbk == NULL);
+    
+    if ((millis - t->last_tick) > t->period) {
+        t->last_tick += t->period;
+        t->cbk(t, t->data);
+        if (t->type == TIMER_ONCE)
+            t->cbk = NULL;
+    }
+    
+#else
     for (i = 0; i < nr_timers; i++) {
         t = &timers[i];
         if (t->cbk == NULL)
@@ -140,37 +164,17 @@ static void clock_process(void)
                 t->cbk = NULL;
         }
     }
-}
-
-unsigned long get_millis(void)
-{
-    unsigned long m;
-    IEC0bits.T1IE = 0;
-    m = millis;
-    IEC0bits.T1IE = 1;
-    return m;
+#endif
 }
 
 void clock_init(void)
 {
-    T1CON = 0x8010;
+    T1CON = 0x8000;
     IPC0bits.T1IP = 1;
     IEC0bits.T1IE = 1;
     IFS0bits.T1IF = 0;
-    /* period = 1 / (70000000 / 8) * 8750 = 1ms */
-    PR1 = 8750;
+    /* period = 1 / (70000000 / 1) * 4375 = 62.5us */
+    PR1 = 4375;
 
     process_add(clock_process);
-}
-
-void __attribute__((__interrupt__, auto_psv )) _T1Interrupt()
-{
-    static unsigned int j = 0;
-    millis++;
-
-    if (++j == 10) {
-        j = 0;
-        ms10++;
-    }
-    IFS0bits.T1IF = 0;
 }
