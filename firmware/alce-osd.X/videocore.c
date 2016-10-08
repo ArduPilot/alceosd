@@ -889,7 +889,7 @@ void init_video(void)
         params_add(params_video0v1);
     else
         params_add(params_video0v3);
-    process_add(render_process);
+    process_add(render_process, "RENDER");
 }
 
 

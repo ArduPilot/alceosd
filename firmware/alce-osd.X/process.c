@@ -21,44 +21,70 @@
 
 #define MAX_PROCESSES   10
 
-static void *process_list[MAX_PROCESSES] = {NULL};
+struct process {
+    void (*process)(void);
+    unsigned long time;
+    const char *name;
+};
+
+static struct process process_list[MAX_PROCESSES] = { { .process = NULL} };
 static unsigned char nr_processes = 0;
 
 
-void process_add(void *f)
+void process_add(void *f, const char *name)
 {
     if (nr_processes < MAX_PROCESSES) {
-        process_list[nr_processes++] = f;
-        process_list[nr_processes] = NULL;
+        process_list[nr_processes].name = name;
+        process_list[nr_processes].time = 0;
+        process_list[nr_processes++].process = f;
+        process_list[nr_processes].process = NULL;
     }
-}
-
-void process_remove(void *f)
-{
-    void **p = process_list;
-    unsigned char i;
-
-    while (*p != NULL) {
-        if (*p == f)
-            break;
-        p++;
-    }
-    i = p - process_list;
-    if (i < (nr_processes - 1))
-        memcpy(&process_list[i], &process_list[i + 1], sizeof(void *) * (nr_processes - i - 1));
-    nr_processes--;
 }
 
 void process_run(void)
 {
-    void (*fptr)(void);
-    void **p = process_list;
+    struct process *p = process_list;
+    unsigned int t;
+    
     for (;;) {
-        fptr = *p++;
-        fptr();
-        if (*p == NULL) {
+        t = get_micros();
+        p->process();
+        t = get_micros() - t;
+        p->time += t;
+        p++;
+        if (p->process == NULL) {
             p = process_list;
             ClrWdt();
         }
     }
 }
+
+static void shell_cmd_stats(char *args, void *data)
+{
+    unsigned char i;
+    float t;
+    unsigned long total = 0, millis = get_millis();
+    
+    shell_printf("\nProcess list\n");
+    for (i = 0; i < nr_processes; i++) {
+        t = ((float) process_list[i].time / 1000) / (float) millis * 100.0;
+        total += process_list[i].time / 1000;
+        shell_printf("%2d %-10s time(ms)=%6lu time(%%)=%.2f\n", i,
+                process_list[i].name, process_list[i].time/1000, t);
+    }
+    total = millis - total;
+    t = ((float) total) / (float) millis * 100.0;
+    shell_printf("%2d %-10s time(ms)=%6lu time(%%)=%.2f\n", i,
+            "IRQS", total, t);
+}
+
+static const struct shell_cmdmap_s process_cmdmap[] = {
+    {"stats", shell_cmd_stats, "stats", SHELL_CMD_SIMPLE},
+    {"", NULL, ""},
+};
+
+void shell_cmd_process(char *args, void *data)
+{
+    shell_exec(args, process_cmdmap, data);
+}
+

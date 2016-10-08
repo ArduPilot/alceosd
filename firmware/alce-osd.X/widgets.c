@@ -183,10 +183,12 @@ static void widgets_process(void)
 {
     struct widget *w;
 
+//    if (wfifo.rd == wfifo.wr)
+//        return;
     while (wfifo.rd != wfifo.wr) {
-        w = wfifo.fifo[wfifo.rd++];
-        wfifo.rd &= WIDGET_FIFO_MASK;
-        render_widget(w);
+    w = wfifo.fifo[wfifo.rd++];
+    wfifo.rd &= WIDGET_FIFO_MASK;
+    render_widget(w);
         if (!sram_busy)
             break;
     }
@@ -491,5 +493,5 @@ void widgets_init(void)
         w++;
     }
 
-    process_add(widgets_process);
+    process_add(widgets_process, "WIDGETS");
 }

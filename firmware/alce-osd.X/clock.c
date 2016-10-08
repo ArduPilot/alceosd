@@ -176,5 +176,5 @@ void clock_init(void)
     /* period = 1 / (70000000 / 1) * 4375 = 62.5us */
     PR1 = 4375;
 
-    process_add(clock_process);
+    process_add(clock_process, "CLOCK");
 }
