@@ -94,8 +94,8 @@ void TRAP_ISR _AddressError(void)
     U2TXREG = '"';
 
     for (j = 0; j < 4; j++) {
-        for (i = 0; i < 3000000; i++);
-        c = (StkAddrHi >> (3-j)) & 0xf;
+        for (i = 0; i < 300000; i++);
+        c = (StkAddrHi >> ((3-j)*4)) & 0xf;
         if (c > 9)
             c += 'A' - 10;
         else
@@ -104,8 +104,8 @@ void TRAP_ISR _AddressError(void)
         U2TXREG = c;
     }
     for (j = 0; j < 4; j++) {
-        for (i = 0; i < 3000000; i++);
-        c = (StkAddrLo >> (3-j)) & 0xf;
+        for (i = 0; i < 300000; i++);
+        c = (StkAddrLo >> ((3-j)*4)) & 0xf;
         if (c > 9)
             c += 'A' - 10;
         else
