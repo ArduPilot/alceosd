@@ -73,14 +73,15 @@ const struct widget_ops *all_widget_ops[] = {
 struct widgets_mem_s {
     unsigned char mem[MAX_WIDGET_ALLOC_MEM];
     unsigned int alloc_size;
-} widgets_mem = {
+} widgets_mem __attribute__((aligned(2))) = {
     .alloc_size = 0,
 };
 
 struct widget_fifo {
+    unsigned char rd;
+    unsigned char wr;
+    unsigned char peak;
     struct widget *fifo[WIDGET_FIFO_MASK + 1];
-    unsigned int rd;
-    unsigned int wr;
 } wfifo = {
     .rd = 0,
     .wr = 0,
@@ -183,15 +184,15 @@ static void widgets_process(void)
 {
     struct widget *w;
 
-//    if (wfifo.rd == wfifo.wr)
-//        return;
-    while (wfifo.rd != wfifo.wr) {
+    if (wfifo.rd == wfifo.wr)
+        return;
+    //while (wfifo.rd != wfifo.wr) {
     w = wfifo.fifo[wfifo.rd++];
     wfifo.rd &= WIDGET_FIFO_MASK;
     render_widget(w);
-        if (!sram_busy)
-            break;
-    }
+    //    if (!sram_busy)
+    //        break;
+    //}
 }
 
 
@@ -203,6 +204,7 @@ void schedule_widget(struct widget *w)
     w->status = WIDGET_SCHEDULED;
     wfifo.fifo[wfifo.wr++] = w;
     wfifo.wr &= WIDGET_FIFO_MASK;
+    wfifo.peak = max(wfifo.peak, wfifo.wr - wfifo.rd);
 }
 
 
@@ -494,4 +496,232 @@ void widgets_init(void)
     }
 
     process_add(widgets_process, "WIDGETS");
+}
+
+
+static void shell_cmd_stats(char *args, void *data)
+{
+    shell_printf("\nWidgets mem: %u/%u bytes\n",
+        widgets_mem.alloc_size, MAX_WIDGET_ALLOC_MEM);
+
+    shell_printf("Widgets fifo: size=%u peak=%u max=%u\n",
+                (wfifo.wr - wfifo.rd) & WIDGET_FIFO_MASK, wfifo.peak, WIDGET_FIFO_MASK+1);
+    
+}
+
+static void shell_cmd_loaded(char *args, void *data)
+{
+    struct widget *w;
+    unsigned char i;
+    
+    shell_printf("\nLoaded widgets:\n");
+    shell_printf("\n id+uid | name                 |   x |   y | hjust | vjust\n");
+    shell_printf(  "--------+----------------------+-----+-----+-------+-------\n");
+    for (i = 0; i < total_active_widgets; i++) {
+        w = active_widgets[i];
+        shell_printf("  %02u+%02u | %20s | %3d | %3d | %5d | %5d\n",
+            w->ops->id, w->cfg->uid, w->ops->name, w->cfg->x, w->cfg->y,
+            w->cfg->props.hjust, w->cfg->props.vjust);
+    }
+}
+
+
+extern struct alceosd_config config;
+
+static void shell_cmd_list(char *args, void *data)
+{
+    const struct widget_ops *w_ops;
+    struct widget_config *w_cfg = config.widgets;
+    struct shell_argval argval[2], *p;
+    unsigned char t, tab, i, nr_tabs;
+    unsigned char *tl = get_tab_list();
+    
+    t = shell_arg_parser(args, argval, 1);
+    
+    p = shell_get_argval(argval, 't');
+    if (p != NULL) {
+        tab = atoi(p->val);
+    } else {
+        tab = get_active_tab();
+    }
+
+    shell_printf("\nsyntax: [-t <tab_id>]\n");
+    shell_printf("    ommiting tab_id lists active tab\n");
+    shell_printf("    using tab_id 0 shows all widgets\n\n");
+    shell_printf("Widget configuration for ");
+    if (tab == 0)
+        shell_printf("all tabs\n");
+    else
+        shell_printf("tab %u:\n", tab);
+    shell_printf("\n id+uid | name                 |   x |   y | hjust | vjust\n");
+    //shell_printf(  "-----+----------------------+-----+-----+-------+-------\n");
+
+    if (tab == 0) {
+        nr_tabs = (*(tl++)) - 1;
+        tab = *(tl++);
+    } else {
+        nr_tabs = 1;
+    }
+    
+    /* list widgets from all tabs */
+    for (i = 0; i < nr_tabs; i++) {
+        shell_printf(  "--------+--- TAB %3u ----------+-----+-----+-------+-------\n", tab);
+
+        while (w_cfg->tab != TABS_END) {
+            if (w_cfg->tab == tab) {
+                w_ops = get_widget_ops(w_cfg->widget_id);
+
+                shell_printf("  %02u+%02u | %20s | %3d | %3d | %5d | %5d\n",
+                    w_cfg->widget_id, w_cfg->uid, w_ops->name,
+                    w_cfg->x, w_cfg->y, w_cfg->props.hjust, w_cfg->props.vjust);
+            }
+            w_cfg++;
+        }
+        if (nr_tabs > 1) {
+            tab = *(tl++);
+            w_cfg = config.widgets;
+        }
+    }
+}
+
+
+
+static void shell_cmd_avail(char *args, void *data)
+{
+    const struct widget_ops **w_ops = all_widget_ops;
+
+    shell_printf("\nTab %u widgets\n", get_active_tab());
+    shell_printf("\n id | name                 | mavname  | init | open | render | close\n");
+    shell_printf(  "----+----------------------+----------+------+------+--------+-------\n");
+    while ((*w_ops) != NULL) {
+        shell_printf(" %02u | %20s | %8s | %4p | %4p |   %4p |  %4p\n",
+            (*w_ops)->id, (*w_ops)->name, (*w_ops)->mavname,
+            (*w_ops)->init, (*w_ops)->open, (*w_ops)->render, (*w_ops)->close);
+        w_ops++;
+    }
+}
+
+static void shell_cmd_add(char *args, void *data)
+{
+    struct shell_argval argval[3], *p;
+    struct widget_config *w_cfg = config.widgets;
+    const struct widget_ops **w_ops = all_widget_ops;
+    unsigned char t, uid;
+    char *ptr;
+    int tab, id;
+
+    if (strlen(args) == 0) {
+        shell_printf("\nsyntax: widgets add <mavname>|-i <id> [-t <tab_id>]\n");
+        shell_printf("      <mavname>       mavlink name\n");
+        shell_printf("      -i <id>         widget global id\n");
+        shell_printf("      -t <tab_id>     tab id number (1-254)\n");
+    } else {
+        /* tab id */
+        tab = get_active_tab();
+        t = shell_arg_parser(args, argval, 2);
+        p = shell_get_argval(argval, 't');
+        if (p != NULL) {
+            tab = atoi(p->val);
+        }
+        tab = max(1, min(254, tab));
+
+        /* widget id  */
+        id = -1;
+        p = shell_get_argval(argval, 'i');
+        if (p != NULL) {
+            /* by id */
+            id = atoi(p->val);
+        } else {
+            /* by mavname */
+            ptr = strchr(args, ' ');
+            if (ptr != NULL) {
+                *ptr = '\0';
+            }
+            while ((*w_ops) != NULL) {
+                if (strcmp(args, (*w_ops)->mavname) == 0) {
+                    id = (*w_ops)->id;
+                    break;
+                }
+                w_ops++;
+            }
+        }
+        
+        if (id != -1) {
+            while (w_cfg->tab != TABS_END)
+                w_cfg++;
+            uid = widget_get_uid(id);
+            w_cfg->uid = uid;
+            w_cfg->tab = tab;
+            w_cfg->widget_id = id;
+            w_cfg->x = 0;
+            w_cfg->y = 0;
+            w_cfg->props.raw = JUST_VCENTER | JUST_HCENTER;
+
+            w_cfg++;
+            w_cfg->tab = TABS_END;
+
+            load_tab(tab);
+
+            shell_printf("\n\nAdded widget: %02u+%02u to tab %d", id, uid, tab);
+        } else {
+            shell_printf("\n\nWidget not found: %s / %d", args, id);
+        }
+    }
+}
+
+static void shell_cmd_rm(char *args, void *data)
+{
+    struct widget_config *w_cfg = config.widgets;
+    char *ptr;
+    unsigned int id, uid;
+    int tab;
+
+    if (strlen(args) == 0) {
+        shell_printf("\nsyntax: widgets rm <id>+<uid>\n");
+        shell_printf("      <id>    widget global id\n");
+        shell_printf("      <uid>   widget unique id (on same widget type)\n");
+    } else {
+    
+        ptr = strchr(args, '+');
+        *ptr++ = '\0';
+
+        id = atoi(args);
+        uid = atoi(ptr);
+
+        tab = -1;
+        while (w_cfg->tab != TABS_END) {
+            if ((w_cfg->uid == uid) && (w_cfg->widget_id == id)) {
+                tab = w_cfg->tab;
+                break;
+            }
+            w_cfg++;
+        }
+
+        if (tab != -1) {
+            do {
+                memcpy(w_cfg, w_cfg+1, sizeof(struct widget_config));
+            } while ((w_cfg++)->tab != TABS_END);
+            
+            load_tab(tab);
+            
+            shell_printf("\n\nRemoved widget: %02u+%02u from tab %d", id, uid, tab);
+        } else {
+            shell_printf("\n\nNot found: %02u+%02u", id, uid);
+        }
+    }
+}
+
+static const struct shell_cmdmap_s widgets_cmdmap[] = {
+    {"stats", shell_cmd_stats, "Widgets module stats", SHELL_CMD_SIMPLE},
+    {"loaded", shell_cmd_loaded, "List loaded widgets", SHELL_CMD_SIMPLE},
+    {"list", shell_cmd_list, "List widgets from a tab", SHELL_CMD_SIMPLE},
+    {"available", shell_cmd_avail, "List all available widgets", SHELL_CMD_SIMPLE},
+    {"add", shell_cmd_add, "Add widget", SHELL_CMD_SIMPLE},
+    {"rm", shell_cmd_rm, "Remove widget", SHELL_CMD_SIMPLE},
+    {"", NULL, ""},
+};
+
+void shell_cmd_widgets(char *args, void *data)
+{
+    shell_exec(args, widgets_cmdmap, data);
 }

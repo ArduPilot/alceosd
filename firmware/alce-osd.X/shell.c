@@ -44,6 +44,7 @@ static const struct shell_cmdmap_s root_cmdmap[] = {
     {"uart", shell_cmd_uart, "UART module", SHELL_CMD_SUBCMD},
     {"version", shell_cmd_version, "Display firmware version", SHELL_CMD_SIMPLE},
     {"video", shell_cmd_video, "Videocore module", SHELL_CMD_SUBCMD},
+    {"widgets", shell_cmd_widgets, "Widgets module", SHELL_CMD_SUBCMD},
     {"", NULL, ""},
 };
 
