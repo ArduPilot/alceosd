@@ -78,8 +78,40 @@ static void shell_cmd_stats(char *args, void *data)
             "IRQS", total, t);
 }
 
+static void shell_cmd_stack(char *args, void *data)
+{
+    unsigned char i;
+    unsigned int *stack_pos;
+    unsigned int *p, *t;
+    unsigned char *c;
+    
+    asm volatile("mov.w #__SP_init,%0" : "=r"(p));
+    asm volatile("mov.w #__SPLIM_init,%0" : "=r"(t));
+    asm volatile("mov.w W15,%0" : "=r"(stack_pos));
+    
+    c = (unsigned char*) p;
+    
+    shell_printf("\nStack dump :: [0x%04p--->0x%04p   0x%04p]\n\n", p, stack_pos, t);
+    i = 0;
+    shell_printf("0x%4p | ", p);
+    while (p < stack_pos) {
+        shell_printf("%04x ", *p++);
+
+        if (i++ == 7) {
+            for (i = 0; i < 16; i++) {
+                if ((*c) > 20)
+                    shell_printf("%c", *c);
+                c++;
+            }
+            shell_printf("\n0x%4p : ", p);
+            i = 0;
+        }
+    }
+}
+
 static const struct shell_cmdmap_s process_cmdmap[] = {
     {"stats", shell_cmd_stats, "stats", SHELL_CMD_SIMPLE},
+    {"stack", shell_cmd_stack, "dump stack", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
 };
 
