@@ -23,16 +23,18 @@
 
 .global _get_jiffies
 _get_jiffies:
-    DISI #4
+    BCLR IEC0, #3
     MOV.W _jiffies,W0
     MOV.W _jiffies+2,W1
+    BSET IEC0, #3
     RETURN
 
 .global _get_millis
 _get_millis:
-    DISI #4
+    BCLR IEC0, #3
     MOV.W _millis,W0
     MOV.W _millis+2,W1
+    BSET IEC0, #3
     RETURN
 
 .global _get_millis16
