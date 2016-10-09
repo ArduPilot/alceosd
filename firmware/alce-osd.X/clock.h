@@ -27,10 +27,10 @@ enum {
 
 
 void clock_init(void);
-struct timer* add_timer(unsigned char type, unsigned int period, void *cbk, void *data);
+struct timer* add_timer(unsigned char type, unsigned long period, void *cbk, void *data);
 inline void remove_timer(struct timer *t);
 void remove_timers(unsigned char type);
-inline void set_timer_period(struct timer *t, unsigned int period);
+inline void set_timer_period(struct timer *t, unsigned long period);
 unsigned long get_micros(void);
 void shell_cmd_clock(char *args, void *data);
 
