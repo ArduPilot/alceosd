@@ -50,7 +50,7 @@ static void mav_callback(struct timer *t, void *d) //(mavlink_message_t *msg, vo
     p = mavdata_period(MAVDATA_SYS_STATUS);
     p = max(p, 200);
     p = min(p, 1000);
-    set_timer_period(t, (unsigned int) p);
+    set_timer_period(t, p);
     
     schedule_widget(w);
 }
