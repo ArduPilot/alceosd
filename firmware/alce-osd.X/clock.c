@@ -135,8 +135,6 @@ struct timer* add_timer(unsigned char type, unsigned long period, void *cbk, voi
     if (i == nr_timers)
         nr_timers++;
     
-    shell_printf("\nT: cbk=%p type=%u T=%lu LT=%lu", t->cbk, t->type, t->period, t->last_tick);
-    
     return t;
 }
 
