@@ -35,6 +35,7 @@
 extern struct alceosd_config config;
 
 unsigned char tab_list[MAX_TABS];
+static unsigned char active_tab = 0xff;
 
 static const struct param_def params_tabs[] = {
     PARAM("TABS_MODE", MAV_PARAM_TYPE_UINT8, &config.tab_change.mode, NULL),
@@ -63,16 +64,17 @@ static unsigned char search_on_list(unsigned char *list, unsigned char tab)
   return 0;
 }
 
+unsigned char get_active_tab(void)
+{
+    return active_tab;
+}
+
 void load_tab(unsigned char tab)
 {
     struct widget_config *w_cfg;
-    static unsigned char active_tab = 0xff;
 
     DTABS("Loading tab %d\n", tab);
     
-    if (active_tab == tab)
-        return;
-
     /* stop rendering */
     video_pause();
 
@@ -132,6 +134,11 @@ static void build_tab_list(void)
 
     /* load first tab */
     load_tab(tab_list[1]);
+}
+
+unsigned char *get_tab_list(void)
+{
+    return tab_list;
 }
 
 /* return rc_channel in percentage according to config values */
