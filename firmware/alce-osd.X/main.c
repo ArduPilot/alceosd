@@ -64,9 +64,10 @@
 
 
 #define TRAP_ISR __attribute__((no_auto_psv,__interrupt__(__preprologue__( \
- "mov #_StkAddrHi,w1\n\tpop [w1--]\n\tpop [w1++]\n\tpush [w1--]\n\tpush [w1++]"))))
+ "mov #_tos,w1\n\tmov w15,[w1]\n\tmov #_StkAddrHi,w1\n\tpop [w1--]\n\tpop [w1++]\n\tpush [w1--]\n\tpush [w1++]"))))
  unsigned int StkAddrLo;
  unsigned int StkAddrHi;
+ unsigned int *tos;
  
 #define BLINK { \
     LED = 0; for (i = 0; i < 1000000; i++); \
@@ -84,43 +85,102 @@ void __attribute__((interrupt,no_auto_psv)) _OscillatorFail(void)
     };
 }
 
+#if 0
+void __attribute__((interrupt,no_auto_psv)) _AddressError(void)
+{
+    INTCON1bits.ADDRERR = 0;
+    while(1);
+}
+#else
+
+
+void debug_putc(char c)
+{
+    while (!U1STAbits.TRMT);
+    U1TXREG = c;
+    while (!U2STAbits.TRMT);
+    U2TXREG = c;
+}
+void debug_puts(char *c)
+{
+    while (*c != 0) {
+        debug_putc(*(c++));
+    }
+}
+
+void stack_dump(unsigned int *stack_pos)
+{
+    unsigned char i;
+    //unsigned int *stack_pos;
+    unsigned int *p, *t;
+    unsigned char *c;
+    char buf[100];
+    
+    asm volatile("mov.w #__SP_init,%0" : "=r"(p));
+    asm volatile("mov.w #__SPLIM_init,%0" : "=r"(t));
+
+    //asm volatile("mov.w W15,%0" : "=r"(stack_pos));
+    
+    c = (unsigned char*) p;
+    
+    snprintf(buf, 100, "\n\nStack dump :: [0x%04p--->0x%04p   0x%04p]\n\n", p, stack_pos, t);
+    debug_puts(buf);
+    i = 0;
+    snprintf(buf, 100, "0x%4p | ", p);
+    debug_puts(buf);
+    while (p < stack_pos) {
+        snprintf(buf, 100, "%04x ", *p++);
+        debug_puts(buf);
+        if (i++ == 7) {
+            for (i = 0; i < 16; i++) {
+                if ((*c) > 20)
+                    debug_putc(*c);
+                c++;
+            }
+            snprintf(buf, 100, "\n0x%4p : ", p);
+            debug_puts(buf);
+            i = 0;
+        }
+    }
+}
+
+
 void TRAP_ISR _AddressError(void)
 {
     volatile unsigned long i;
-    INTCON1bits.ADDRERR = 0;
     unsigned char c, j;
+    char buf[100];
+    INTCON1bits.ADDRERR = 0;
     
-    U1TXREG = '"';
-    U2TXREG = '"';
+    debug_putc('"');
 
     for (j = 0; j < 4; j++) {
-        for (i = 0; i < 300000; i++);
         c = (StkAddrHi >> ((3-j)*4)) & 0xf;
         if (c > 9)
             c += 'A' - 10;
         else
             c += '0';
-        U1TXREG = c;
-        U2TXREG = c;
+        debug_putc(c);
     }
     for (j = 0; j < 4; j++) {
-        for (i = 0; i < 300000; i++);
         c = (StkAddrLo >> ((3-j)*4)) & 0xf;
         if (c > 9)
             c += 'A' - 10;
         else
             c += '0';
-        U1TXREG = c;
-        U2TXREG = c;
+        debug_putc(c);
     }
-    //shell_printf("\n\nTRAP: AddressError @ 0x%06lx\n", StkAddrHi);
-
+    snprintf(buf, 100, "\r\n\nAddressError @ 0x%04x%04x\n", StkAddrHi, StkAddrLo);
+    debug_puts(buf);
+    
+    stack_dump(tos);
+            
     while (1) {
         LED = 1; for (i = 0; i < 3000000; i++);
         BLINK; BLINK;
     };
 }
-
+#endif
 void __attribute__((interrupt,no_auto_psv)) _StackError(void)
 {
     volatile unsigned long i;
