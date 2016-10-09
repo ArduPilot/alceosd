@@ -18,14 +18,14 @@
 
 #include "alce-osd.h"
 
-#define UART_FIFO_MASK 0x3f
+#define UART_FIFO_MASK 0x3ff
 
 #define DMA_UART1
 #define DMA_UART2
 #define DMA_UART3
 #define DMA_UART4
 
-#define DMA_BUF_SIZE    (64)
+#define DMA_BUF_SIZE    (128)
 
 extern struct alceosd_config config;
 extern unsigned char hw_rev;
@@ -126,18 +126,19 @@ static struct uart_client *uart_client_list[UART_CLIENTS_MAX] = { NULL };
 static struct uart_client *port_clients[4] = {NULL, NULL, NULL, NULL};
 
 struct uart_fifo {
-  unsigned char buf[UART_FIFO_MASK+1];
-  unsigned char rd, wr;
+    unsigned char buf[UART_FIFO_MASK+1];
+    unsigned int rd, wr;
+    unsigned int overflow, overrun, full, m, max;
 };
 
 static struct uart_fifo rx_fifo[4];
 
 
 /* tx dma buffers */
-__eds__ unsigned char uart1TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x4000-DMA_BUF_SIZE)));
-__eds__ unsigned char uart2TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x4000-(DMA_BUF_SIZE*2))));
-__eds__ unsigned char uart3TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x4000-(DMA_BUF_SIZE*3))));
-__eds__ unsigned char uart4TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x4000-(DMA_BUF_SIZE*4))));
+__eds__ unsigned char uart1TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-DMA_BUF_SIZE)));
+__eds__ unsigned char uart2TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(DMA_BUF_SIZE*2))));
+__eds__ unsigned char uart3TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(DMA_BUF_SIZE*3))));
+__eds__ unsigned char uart4TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(DMA_BUF_SIZE*4))));
 
 
 static const char keywords[] = "I want to enter AlceOSD setup";
@@ -161,6 +162,9 @@ const char *UART_PIN_NAMES[] = {
 };
 
 
+void uart_set_client(unsigned char port, unsigned char client_id,
+                        unsigned char force);
+
 inline unsigned long uart_get_baudrate(unsigned char b)
 {
     if (b < UART_BAUDRATES)
@@ -177,15 +181,17 @@ static inline void uart_set_baudrate(unsigned char port, unsigned char b)
 
 inline static void handle_uart_int(unsigned char port)
 {
-    unsigned char n_wr = rx_fifo[port].wr;
+    unsigned int n_wr = rx_fifo[port].wr;
     unsigned char ch;
+    //unsigned int cnt = 0;
 
     /* if set, clear overflow bit */
     if (*(UARTS[port].STA) & 2) {
         *(UARTS[port].STA) &= ~2;
+        rx_fifo[port].overflow++;
     }
 
-    while (*(UARTS[port].STA) & 1) {
+    //while (*(UARTS[port].STA) & 1) {
         n_wr = (n_wr + 1) & UART_FIFO_MASK;
         
         ch = *(UARTS[port].RX);
@@ -194,25 +200,34 @@ inline static void handle_uart_int(unsigned char port)
             if (key_idx[port] == (sizeof(keywords)-1)) {
                 if (uart_get_client(port)->id == UART_CLIENT_CONFIG)
                     return;
-                uart_set_client(port, UART_CLIENT_CONFIG);
+                uart_set_client(port, UART_CLIENT_CONFIG, 1);
                 uart_get_client(port)->write((unsigned char*) answer, sizeof(answer)-1);
-                while ( (*(UARTS[port].STA) & 0x0100) == 0);
+                //while ( (*(UARTS[port].STA) & 0x0100) == 0);
+                rx_fifo[port].rd = rx_fifo[port].wr;
                 //uart_set_baudrate(port, UART_BAUD_115200);
+                key_idx[port] = 0;
                 return;
             }
         } else {
             key_idx[port] = 0;
         }
         
+        if (port_clients[port] == NULL)
+            return;
+
         
         if (n_wr != rx_fifo[port].rd) {
             rx_fifo[port].buf[rx_fifo[port].wr] = ch;
             rx_fifo[port].wr = n_wr;
         } else {
-            
-            
+            rx_fifo[port].overrun++;
         }
-    }
+        
+        rx_fifo[port].max = max(rx_fifo[port].max, (rx_fifo[port].wr - rx_fifo[port].rd) & UART_FIFO_MASK);
+        
+        //cnt++;
+    //}
+    //rx_fifo[port].m = max(rx_fifo[port].m, cnt);
 }
 
 void __attribute__((__interrupt__, auto_psv)) _U1RXInterrupt(void)
@@ -379,10 +394,22 @@ static void uart_init_(unsigned char port)
 
 static void uart_set_pins(unsigned char port, unsigned char pins)
 {
-    if (((hw_rev < 0x03) && (port > 1)) || (pins >= UART_PINS_OFF))
+    unsigned char i;
+    
+    if (((hw_rev < 0x03) && (port > 1)) || (pins >= UART_PINS))
         return;
 
-    *(UARTS[port].RXRP) = hw_pin_map[hw_rev-1][pins].rx;
+    /* check if pins are already taken by another port */
+    for (i = 0; i < 4; i++) {
+        if ((config.uart[i].pins == pins) && (i != port)) {
+            return;
+        }
+    }
+    
+    if (pins == UART_PINS_OFF)
+        *(UARTS[port].RXRP) = 0;
+    else
+        *(UARTS[port].RXRP) = hw_pin_map[hw_rev-1][pins].rx;
     
     switch (pins) {
         case UART_PINS_TELEMETRY:
@@ -460,10 +487,15 @@ void uart1_write(unsigned char *buf, unsigned int len)
     }
 #else
     unsigned int count;
+
     if (len == 0)
         return;
 
-    /* TODO: split in 2 buffers and send data later */
+    if ((DMA0CONbits.CHEN == 1) || (U1STAbits.TRMT == 0)) {
+        rx_fifo[0].full++;
+        //return;
+    }
+
     while ((DMA0CONbits.CHEN == 1) || (U1STAbits.TRMT == 0));
 
     count = 0;
@@ -488,6 +520,11 @@ void uart2_write(unsigned char *buf, unsigned int len)
     unsigned int count;
     if (len == 0)
         return;
+
+    if ((DMA1CONbits.CHEN == 1) || (U2STAbits.TRMT == 0)) {
+        rx_fifo[1].full ++;
+    //    return;
+    }
 
     /* still busy */
     while ((DMA1CONbits.CHEN == 1) || (U2STAbits.TRMT == 0));
@@ -515,6 +552,11 @@ static void uart3_write(unsigned char *buf, unsigned int len)
     if (len == 0)
         return;
 
+    if ((DMA2CONbits.CHEN == 1) || (U3STAbits.TRMT == 0)) {
+        rx_fifo[2].full ++;
+//        return;
+    }
+
     /* still busy */
     while ((DMA2CONbits.CHEN == 1) || (U3STAbits.TRMT == 0));
 
@@ -540,6 +582,11 @@ void uart4_write(unsigned char *buf, unsigned int len)
     unsigned int count;
     if (len == 0)
         return;
+
+    if ((DMA3CONbits.CHEN == 1) || (U4STAbits.TRMT == 0)) {
+        rx_fifo[3].full ++;
+    //    return;
+    }
 
     /* still busy */
     while ((DMA3CONbits.CHEN == 1) || (U4STAbits.TRMT == 0));
@@ -581,25 +628,31 @@ int __attribute__((__weak__, __section__(".libc"))) write(int handle, void *buf,
 
 static void uart_process(void)
 {
-    int i;
+    static unsigned char i = 0;
     unsigned char *b;
     unsigned int len;
 
-    for (i = 0; i < 4; i++) {
-        if ((port_clients[i] != NULL) && (uart_count(i) > 0)) {
+    //for (i = 0; i < 4; i++) {
+        if (port_clients[i] != NULL) {
             len = uart_read(i, &b);
-            len = port_clients[i]->read(port_clients[i], b, len);
-            uart_discard(i, len);
+            while (len > 0) {
+                len = port_clients[i]->read(port_clients[i], b, len);
+                uart_discard(i, len);
+                len = uart_read(i, &b);
+            }
         }
-    }
+    if (++i == 4)
+        i = 0;    
+    //}
 }
 
-
-void uart_set_client(unsigned char port, unsigned char client_id)
+void uart_set_client(unsigned char port, unsigned char client_id,
+                        unsigned char force)
 {
     struct uart_client **clist = uart_client_list;
     struct uart_client **c = &port_clients[port];
     extern int __C30_UART;
+    unsigned char i;
 
     if (port > 3)
         return;
@@ -618,7 +671,20 @@ void uart_set_client(unsigned char port, unsigned char client_id)
         return;
     
     while (*clist != NULL) {
-        if (((*clist)->id == client_id) && ((*clist)->write == NULL)) {
+        if (((*clist)->id == client_id) &&
+                    (((*clist)->write == NULL) || (force == 1))) {
+            
+            if ((*clist)->write != NULL) {
+                for (i = 0; i < 4; i++) {
+                    if (port_clients[i] == (*clist)) {
+                        if (port_clients[i]->close != NULL)
+                            port_clients[i]->close(port_clients[i]);
+                        port_clients[i] = NULL;
+                        break;
+                    }
+                }
+            }
+            
             if (client_id == UART_CLIENT_CONFIG)
                 __C30_UART = port+1;
             *c = *clist;
@@ -682,11 +748,11 @@ void uart_set_props(unsigned char port, unsigned int props)
 
 void uart_set_config_clients(void)
 {
-    uart_set_client(0, config.uart[0].mode);
-    uart_set_client(1, config.uart[1].mode);
+    uart_set_client(0, config.uart[0].mode, 0);
+    uart_set_client(1, config.uart[1].mode, 0);
     if (hw_rev > 0x02) {
-        uart_set_client(2, config.uart[2].mode);
-        uart_set_client(3, config.uart[3].mode);
+        uart_set_client(2, config.uart[2].mode, 0);
+        uart_set_client(3, config.uart[3].mode, 0);
     }
 }
 
@@ -725,6 +791,8 @@ void uart_init(void)
     extern int __C30_UART;
     __C30_UART = 1;
 
+    memset(rx_fifo, 0, sizeof(struct uart_fifo) * 4);
+    
     uart_set_config_pins();
 
     uart_init_(0);
@@ -736,7 +804,7 @@ void uart_init(void)
         uart_init_(3);
         params_add(params_uart34);
     }
-    process_add(uart_process);
+    process_add(uart_process, "UART");
 }
 
 
@@ -773,6 +841,17 @@ static void shell_cmd_stats(char *args, void *data)
                 cli[i]->port, UART_CLIENT_NAMES[cli[i]->id], cli[i]->ch,
                 cli[i]->init, cli[i]->close, cli[i]->read, cli[i]->write);
     }
+    
+    shell_printf("\nStats:\n");
+    for (i = 0; i < 4; i++) {
+        shell_printf(" port%d: overrun=%u overflows=%u fulls=%d loops=%d max=%u\n", i,
+                rx_fifo[i].overrun, rx_fifo[i].overflow, rx_fifo[i].full,
+                rx_fifo[i].m, rx_fifo[i].max);
+        rx_fifo[i].m = 0;
+        rx_fifo[i].max = 0;
+        rx_fifo[i].overflow = 0;
+        rx_fifo[i].full = 0;
+    }
 }
 
 #define SHELL_CMD_CONFIG_ARGS   5
@@ -803,7 +882,7 @@ static void shell_cmd_config(char *args, void *data)
     } else {
         now = shell_get_argval(argval, 'n');
         port = atoi(p->val);
-        if ((port < 0) || (port > UART_PORTS)) {
+        if ((port < 0) || (port >= UART_PORTS)) {
             shell_printf("\nerror: invalid port '%d'\n", port);
             return;
         }
@@ -829,7 +908,7 @@ static void shell_cmd_config(char *args, void *data)
                 if (strcmp(p->val, UART_CLIENT_NAMES[i]) == 0) {
                     config.uart[port].mode = i;
                     if (now)
-                        uart_set_client(port, i);
+                        uart_set_client(port, i, 0);
                     break;
                 }
             }
