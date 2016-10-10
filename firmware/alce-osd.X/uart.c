@@ -135,10 +135,10 @@ static struct uart_fifo rx_fifo[4];
 
 
 /* tx dma buffers */
-__eds__ unsigned char uart1TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-DMA_BUF_SIZE)));
-__eds__ unsigned char uart2TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(DMA_BUF_SIZE*2))));
-__eds__ unsigned char uart3TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(DMA_BUF_SIZE*3))));
-__eds__ unsigned char uart4TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(DMA_BUF_SIZE*4))));
+__eds__ unsigned char uart1TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x5000-DMA_BUF_SIZE)));
+__eds__ unsigned char uart2TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x5000-(DMA_BUF_SIZE*2))));
+__eds__ unsigned char uart3TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x5000-(DMA_BUF_SIZE*3))));
+__eds__ unsigned char uart4TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x5000-(DMA_BUF_SIZE*4))));
 
 
 static const char keywords[] = "I want to enter AlceOSD setup";
@@ -804,7 +804,7 @@ void uart_init(void)
         uart_init_(3);
         params_add(params_uart34);
     }
-    process_add(uart_process, "UART");
+    process_add(uart_process, "UART", 50);
 }
 
 

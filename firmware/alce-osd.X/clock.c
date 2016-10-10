@@ -160,7 +160,7 @@ static void clock_process(void)
     static unsigned char i = 0;
     struct timer *t = timers;
 
-#if 0
+#if 1
     
     do {
         if (i == nr_timers) {
@@ -201,5 +201,5 @@ void clock_init(void)
     /* period = 1 / (70000000 / 1) * 4375 = 62.5us */
     PR1 = 4375;
 
-    process_add(clock_process, "CLOCK");
+    process_add(clock_process, "CLOCK", 1);
 }

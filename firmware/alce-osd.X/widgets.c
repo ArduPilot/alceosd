@@ -495,7 +495,7 @@ void widgets_init(void)
         w++;
     }
 
-    process_add(widgets_process, "WIDGETS");
+    process_add(widgets_process, "WIDGETS", 10);
 }
 
 

@@ -115,6 +115,8 @@ static struct canvas *rendering_canvas = NULL;
 
 static unsigned char videocore_ctrl = 0;
 
+unsigned long nbusy_time = 0, render_time = 0, wait_time = 0, mpw = 0, mpwt = 0;
+
 static struct video_config *cfg = &config.video[0];
 
 const struct osd_xsize_tbl video_xsizes[] = {
@@ -138,9 +140,9 @@ static struct canvas_pipe_s {
 
 
 #define SCRATCHPAD1_SIZE 0x4000
-#define SCRATCHPAD2_SIZE 0x2000
+#define SCRATCHPAD2_SIZE 0x3000
 __eds__ unsigned char scratchpad1[SCRATCHPAD1_SIZE]  __attribute__ ((eds, noload, address(0x8000)));
-__eds__ unsigned char scratchpad2[SCRATCHPAD2_SIZE]  __attribute__ ((eds, noload, address(0x6000)));
+__eds__ unsigned char scratchpad2[SCRATCHPAD2_SIZE]  __attribute__ ((eds, noload, address(0x5000)));
 
 struct scratchpad_s {
     __eds__ unsigned char *mem;
@@ -149,10 +151,10 @@ struct scratchpad_s {
 };
 
 struct scratchpad_s scratchpad[2] = {
-    {   .mem = scratchpad1,
-        .alloc_size = 0, .alloc_max = SCRATCHPAD1_SIZE },
     {   .mem = scratchpad2,
         .alloc_size = 0, .alloc_max = SCRATCHPAD2_SIZE },
+    {   .mem = scratchpad1,
+        .alloc_size = 0, .alloc_max = SCRATCHPAD1_SIZE },
 };
 
 
@@ -806,6 +808,9 @@ static void render_process(void)
     __eds__ static unsigned char *b;
     static union sram_addr addr;
     static unsigned int xsize;
+    
+    static unsigned long t = 0, t2 = 0, t3 = 0;
+    
 
     unsigned int x;
 
@@ -823,11 +828,24 @@ static void render_process(void)
 
             xsize = (video_xsizes[cfg->x_size_id].xsize) >> 2;
             addr.l = x + ((unsigned long) xsize *  y);
+            
+            t3 = get_micros();
+            if (sram_busy)
+                t2 = t3;
         } else {
             /* render */
+            t = get_micros();
+            
+            if ((t2 > 0) && (!sram_busy)) {
+                wait_time += (t - t2);
+                t2 = 0;
+            }
+            
             for (;;) {
-                if (sram_busy)
+                if (sram_busy) {
+                    render_time += (get_micros() - t);
                     return;
+                }
 
                 CS_LOW;
                 sram_byteo_sqi(SRAM_WRITE);
@@ -846,6 +864,11 @@ static void render_process(void)
             canvas_pipe.prd++;
             canvas_pipe.prd &= MAX_CANVAS_PIPE_MASK;
             rendering_canvas = NULL;
+
+            mpw += (get_micros() - t3);
+            mpwt++;
+            
+            render_time += (get_micros() - t);
         }
     }
 }
@@ -889,7 +912,7 @@ void init_video(void)
         params_add(params_video0v1);
     else
         params_add(params_video0v3);
-    process_add(render_process, "RENDER");
+    process_add(render_process, "RENDER", 100);
 }
 
 
@@ -932,6 +955,8 @@ static void render_line(void)
     static unsigned int osdxsize;
     static unsigned int last_line = 200;
     
+    static unsigned long t = 0;
+    
     if (line < cfg->y_offset-2) {
         /* do nothing */
     } else if (line < cfg->y_offset-1) {
@@ -954,6 +979,7 @@ static void render_line(void)
 #endif
         
         sram_busy = 1;
+        nbusy_time += (get_micros() - t);
         addr.l = 0;
 
         if ((videocore_ctrl & CTRL_COMPSYNC) == 0) {
@@ -1013,6 +1039,7 @@ static void render_line(void)
         CS_HIGH;
         SRAM_OUTQ;
         sram_busy = 0;
+        t = get_micros();
     }
 }
 
@@ -1360,6 +1387,8 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
 static void shell_cmd_stats(char *args, void *data)
 {
     unsigned char dac_status[VIDEO_DAC_BUF_SIZE], i;
+    float f;
+    
     shell_printf("\nVideo config:\n");
     shell_printf(" standard=%s,%s\n",
         (cfg->mode & VIDEO_MODE_STANDARD_MASK) != 0 ? "ntsc" : "pal",
@@ -1396,6 +1425,15 @@ static void shell_cmd_stats(char *args, void *data)
                 (canvas_pipe.pwr - canvas_pipe.prd) & MAX_CANVAS_PIPE_MASK, canvas_pipe.peak, MAX_CANVAS_PIPE_MASK+1);
     shell_printf(" status: last_line_cnt=%u sram_busy=%u int_sync_cnt=%u\n",
                 last_line_cnt, sram_busy, int_sync_cnt);
+    shell_printf(" nbusy_time=%lu render_time=%lu wait_time=%lu R%=%.2f W%=%.2f\n",
+                nbusy_time, render_time, wait_time,
+                (float) (render_time * 100.0) / nbusy_time,
+                (float) (wait_time * 100.0) / render_time);
+    
+    f = (float) mpw / ((float)mpwt);
+    shell_printf(" mpw=%.2fus wps=%.2f\n",
+                f, 1.0 / (f / 1e6));
+    
 }
 
 #define SHELL_CMD_CONFIG_ARGS   10
