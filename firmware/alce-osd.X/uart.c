@@ -18,7 +18,8 @@
 
 #include "alce-osd.h"
 
-#define UART_FIFO_MASK 0x3ff
+#define UART_PROCESS_PRIO   50
+#define UART_FIFO_MASK      0x3ff
 
 #define DMA_UART1
 #define DMA_UART2
@@ -124,6 +125,7 @@ static const struct hw_pin_map_table {
 #define UART_CLIENTS_MAX 10
 static struct uart_client *uart_client_list[UART_CLIENTS_MAX] = { NULL };
 static struct uart_client *port_clients[4] = {NULL, NULL, NULL, NULL};
+static int uart_pid[4] = {-1, -1, -1, -1};
 
 struct uart_fifo {
     unsigned char buf[UART_FIFO_MASK+1];
@@ -135,10 +137,10 @@ static struct uart_fifo rx_fifo[4];
 
 
 /* tx dma buffers */
-__eds__ unsigned char uart1TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x5000-DMA_BUF_SIZE)));
-__eds__ unsigned char uart2TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x5000-(DMA_BUF_SIZE*2))));
-__eds__ unsigned char uart3TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x5000-(DMA_BUF_SIZE*3))));
-__eds__ unsigned char uart4TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x5000-(DMA_BUF_SIZE*4))));
+__eds__ unsigned char uart1TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-DMA_BUF_SIZE)));
+__eds__ unsigned char uart2TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(DMA_BUF_SIZE*2))));
+__eds__ unsigned char uart3TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(DMA_BUF_SIZE*3))));
+__eds__ unsigned char uart4TxDataBuf[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(DMA_BUF_SIZE*4))));
 
 
 static const char keywords[] = "I want to enter AlceOSD setup";
@@ -391,68 +393,6 @@ static void uart_init_(unsigned char port)
     *(UARTS[port].STA) |= 0x0400;
 }
 
-
-static void uart_set_pins(unsigned char port, unsigned char pins)
-{
-    unsigned char i;
-    
-    if (((hw_rev < 0x03) && (port > 1)) || (pins >= UART_PINS))
-        return;
-
-    /* check if pins are already taken by another port */
-    for (i = 0; i < 4; i++) {
-        if ((config.uart[i].pins == pins) && (i != port)) {
-            return;
-        }
-    }
-    
-    if (pins == UART_PINS_OFF)
-        *(UARTS[port].RXRP) = 0;
-    else
-        *(UARTS[port].RXRP) = hw_pin_map[hw_rev-1][pins].rx;
-    
-    switch (pins) {
-        case UART_PINS_TELEMETRY:
-            if (hw_rev >= 0x03) {
-                _RP42R = UARTS[port].TXRP;
-                //*(UARTS[port].RXRP) = 43;
-            } else {
-                _RP37R = UARTS[port].TXRP;
-                //*(UARTS[port].RXRP) = 38;
-            }
-            break;
-        case UART_PINS_CON2:
-            if (hw_rev >= 0x03) {
-                _RP37R = UARTS[port].TXRP;
-                //*(UARTS[port].RXRP) = 38;
-            } else {
-                // TX
-                if (hw_rev == 0x01)
-                    _RP41R = UARTS[port].TXRP;
-                else
-                    _RP36R = UARTS[port].TXRP;
-                // RX
-                //*(UARTS[port].RXRP) = 20;
-            }
-            break;
-        case UART_PINS_ICSP:
-            if (hw_rev == 0x01)
-                break;
-            _RP35R = UARTS[port].TXRP;
-            //*(UARTS[port].RXRP) = 34;
-            break;
-        case UART_PINS_CON3:
-            if (hw_rev < 0x03)
-                break;
-            _RP39R = UARTS[port].TXRP;
-            //*(UARTS[port].RXRP) = 45;
-            break;
-        default:
-            //*(UARTS[port].RXRP) = 0;
-            break;
-    }
-}
-
 static unsigned int uart_read(unsigned char port, unsigned char **buf)
 {
     unsigned int wr = rx_fifo[port].wr;
@@ -626,24 +566,126 @@ int __attribute__((__weak__, __section__(".libc"))) write(int handle, void *buf,
 }
 #endif
 
-static void uart_process(void)
+inline static int uart_process(unsigned char port)
 {
-    static unsigned char i = 0;
     unsigned char *b;
     unsigned int len;
 
-    //for (i = 0; i < 4; i++) {
-        if (port_clients[i] != NULL) {
-            len = uart_read(i, &b);
-            while (len > 0) {
-                len = port_clients[i]->read(port_clients[i], b, len);
-                uart_discard(i, len);
-                len = uart_read(i, &b);
+    if (port_clients[port] == NULL)
+        return 0;
+    
+    len = uart_read(port, &b);
+    while (len > 0) {
+        len = port_clients[port]->read(port_clients[port], b, len);
+        uart_discard(port, len);
+        len = uart_read(port, &b);
+    }
+}
+
+static void uart1_process(void)
+{
+    uart_process(UART_PORT1);
+}
+static void uart2_process(void)
+{
+    uart_process(UART_PORT2);
+}
+static void uart3_process(void)
+{
+    uart_process(UART_PORT3);
+}
+static void uart4_process(void)
+{
+    uart_process(UART_PORT4);
+}
+
+static void uart_set_pins(unsigned char port, unsigned char pins)
+{
+    unsigned char i;
+    int pid;
+    
+    if (((hw_rev < 0x03) && (port > 1)) || (pins >= UART_PINS))
+        return;
+    
+    if (pins == UART_PINS_OFF) {
+        /* kill process */
+        process_remove(uart_pid[port]);
+        /* disable rx pins*/
+        *(UARTS[port].RXRP) = 0;
+    } else {
+        /* check if pins are already taken by another port */
+        for (i = 0; i < 4; i++) {
+            if ((config.uart[i].pins == pins) && (i != port)) {
+                return;
             }
         }
-    if (++i == 4)
-        i = 0;    
-    //}
+
+        /* setup rx pins */
+        *(UARTS[port].RXRP) = hw_pin_map[hw_rev-1][pins].rx;
+
+        /* start uart process */
+        if (uart_pid[port] != -1)
+            process_remove(uart_pid[port]);
+        switch (port) {
+            case UART_PORT1:
+                pid = process_add(uart1_process, "UART1", UART_PROCESS_PRIO);
+                break;
+            case UART_PORT2:
+                pid = process_add(uart2_process, "UART2", UART_PROCESS_PRIO);
+                break;
+            case UART_PORT3:
+                pid = process_add(uart3_process, "UART3", UART_PROCESS_PRIO);
+                break;
+            case UART_PORT4:
+                pid = process_add(uart4_process, "UART4", UART_PROCESS_PRIO);
+                break;
+            default:
+                pid = -1;
+                break;
+        }
+        uart_pid[port] = pid;
+    }
+    
+    /* setup tx pins */
+    switch (pins) {
+        case UART_PINS_TELEMETRY:
+            if (hw_rev >= 0x03) {
+                _RP42R = UARTS[port].TXRP;
+                //*(UARTS[port].RXRP) = 43;
+            } else {
+                _RP37R = UARTS[port].TXRP;
+                //*(UARTS[port].RXRP) = 38;
+            }
+            break;
+        case UART_PINS_CON2:
+            if (hw_rev >= 0x03) {
+                _RP37R = UARTS[port].TXRP;
+                //*(UARTS[port].RXRP) = 38;
+            } else {
+                // TX
+                if (hw_rev == 0x01)
+                    _RP41R = UARTS[port].TXRP;
+                else
+                    _RP36R = UARTS[port].TXRP;
+                // RX
+                //*(UARTS[port].RXRP) = 20;
+            }
+            break;
+        case UART_PINS_ICSP:
+            if (hw_rev == 0x01)
+                break;
+            _RP35R = UARTS[port].TXRP;
+            //*(UARTS[port].RXRP) = 34;
+            break;
+        case UART_PINS_CON3:
+            if (hw_rev < 0x03)
+                break;
+            _RP39R = UARTS[port].TXRP;
+            //*(UARTS[port].RXRP) = 45;
+            break;
+        default:
+            break;
+    }
 }
 
 void uart_set_client(unsigned char port, unsigned char client_id,
@@ -804,7 +846,7 @@ void uart_init(void)
         uart_init_(3);
         params_add(params_uart34);
     }
-    process_add(uart_process, "UART", 50);
+    //process_add(uart_process, "UART", 50);
 }
 
 
