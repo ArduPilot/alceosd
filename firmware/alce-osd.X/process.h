@@ -19,7 +19,8 @@
 #ifndef PROCESS_H
 #define	PROCESS_H
 
-void process_add(void *f, const char *name, unsigned char priority);
+int process_add(void *f, const char *name, unsigned char priority);
+void process_remove(int pid);
 void process_run(void);
 void shell_cmd_process(char *args, void *data);
 

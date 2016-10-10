@@ -19,60 +19,94 @@
 #include "alce-osd.h"
 
 
-#define MAX_PROCESSES   10
+#define MAX_PROCESSES   20
+
+//#define DEBUG_PROCESS
+#ifdef DEBUG_PROCESS
+#define DPROC(x...) \
+    do { \
+        shell_printf("PROCESS: "); \
+        shell_printf(x); \
+    } while(0)
+#else
+#define DPROC(x...)
+#endif
 
 struct process {
     void (*process)(void);
     unsigned long time, calls;
     unsigned char priority;
     unsigned char weight;
+    unsigned int id;
     const char *name;
 };
 
-static struct process process_list[MAX_PROCESSES] = { { .process = NULL} };
+static struct process process_list[MAX_PROCESSES];
 static unsigned char nr_processes = 0;
 
 
-void process_add(void *f, const char *name, unsigned char priority)
+int process_add(void *f, const char *name, unsigned char priority)
 {
+    struct process *p = &process_list[nr_processes];
     if (nr_processes < MAX_PROCESSES) {
-        process_list[nr_processes].name = name;
-        process_list[nr_processes].time = 0;
-        process_list[nr_processes].calls = 0;
-        process_list[nr_processes].priority = priority;
-        process_list[nr_processes].weight = 100;
-        process_list[nr_processes++].process = f;
-        process_list[nr_processes].process = NULL;
+        p->name = name;
+        p->time = 0;
+        p->calls = 0;
+        p->priority = priority;
+        p->weight = 100;
+        p->process = f;
+        p->id = (p-1)->id+1;
+        DPROC("Added process %s, pid %d\n", p->name, nr_processes);
+        nr_processes++;
     }
+    return p->id;
+}
+
+void process_remove(int pid)
+{
+    unsigned char i;
+    
+    for (i = 0; i < nr_processes; i++) {
+        if (process_list[i].id == pid)
+            break;
+    }
+    if (i == nr_processes)
+        return;
+    
+    DPROC("Removing process %s, pid %d\n", process_list[i].name, pid);
+
+    for (; i < nr_processes-1; i++) {
+        memcpy(&process_list[i], &process_list[i+1], sizeof(struct process));
+    }
+    nr_processes--;
 }
 
 static struct process *get_next_process(void)
 {
     struct process *p = process_list, *n = process_list;
-    int i;
-    unsigned char j;
+    unsigned char i, j;
+    int c;
     
-    //shell_printf("\nweights: ");
-    while (p->process != NULL) {
-        //shell_printf("%s=%u ", p->name, p->weight);
+    for (i = 0; i < nr_processes; i++) {
+        if (p->process == NULL)
+            continue;
         if (p->weight > n->weight)
             n = p;
         p++;
     }
-    //shell_printf("RUN: %s", n->name);
-    
+
     j = 100 - n->weight;
-    i = (-4 * ((int)n->priority))/50 + 9;
-    i = ((int) n->weight) - i;
-    n->weight = (unsigned char) i;
+    c = (-4 * ((int)n->priority))/50 + 9;
+    c = ((int) n->weight) - c;
+    n->weight = (unsigned char) c;
     p = process_list;
-    while (p->process != NULL) {
+    for (i = 0; i < nr_processes; i++) {
+        if (p->process == NULL)
+            continue;
         (p++)->weight += j;
     }
-    
     return n;
 }
-
 
 void process_run(void)
 {
@@ -80,20 +114,12 @@ void process_run(void)
     unsigned int t;
     
     for (;;) {
-
         p = get_next_process();
-
         t = get_micros();
         p->process();
         t = get_micros() - t;
         p->calls++;
         p->time += t;
-
-        //p++;
-        //if (p->process == NULL) {
-        //    p = process_list;
-        //    ClrWdt();
-        //}
     }
 }
 
@@ -110,14 +136,15 @@ static void shell_cmd_stats(char *args, void *data)
     for (i = 0; i < nr_processes; i++) {
         t = ((float) process_list[i].time / 1000) / (float) millis * 100.0;
         total += process_list[i].time / 1000;
-        shell_printf("%2d %-10s time(ms)=%6lu time(%%)=%.2f calls=%lu(%.2f%%) \n", i,
+        shell_printf("%2d %-10s time(ms)=%6lu time(%%)=%.2f calls=%lu(%.2f%%) \n",
+                process_list[i].id,
                 process_list[i].name, process_list[i].time / 1000, t,
                 process_list[i].calls,
                 (float) process_list[i].calls/total_calls * 100.0);
     }
     total = millis - total;
     t = ((float) total) / (float) millis * 100.0;
-    shell_printf("%2d %-10s time(ms)=%6lu time(%%)=%.2f\n", i,
+    shell_printf("   %-10s time(ms)=%6lu time(%%)=%.2f\n",
             "IRQS", total, t);
 }
 
@@ -152,8 +179,18 @@ static void shell_cmd_stack(char *args, void *data)
     }
 }
 
+static void shell_cmd_kill(char *args, void *data)
+{
+    int pid;
+    
+    pid = atoi(args);
+    shell_printf("\nRemoving process %s (%d)\n", process_list[pid].name, pid);
+    process_remove(pid);
+}
+
 static const struct shell_cmdmap_s process_cmdmap[] = {
-    {"stats", shell_cmd_stats, "stats", SHELL_CMD_SIMPLE},
+    {"list", shell_cmd_stats, "stats", SHELL_CMD_SIMPLE},
+    {"kill", shell_cmd_kill, "kill process", SHELL_CMD_SIMPLE},
     {"stack", shell_cmd_stack, "dump stack", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
 };
