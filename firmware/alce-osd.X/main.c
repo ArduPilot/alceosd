@@ -104,7 +104,10 @@ void debug_putc(char c)
 void debug_puts(char *c)
 {
     while (*c != 0) {
+        if (*c == '\n')
+            debug_putc('\r');
         debug_putc(*(c++));
+        
     }
 }
 
@@ -135,6 +138,8 @@ void stack_dump(unsigned int *stack_pos)
             for (i = 0; i < 16; i++) {
                 if ((*c) > 20)
                     debug_putc(*c);
+                else
+                    debug_putc('.');
                 c++;
             }
             snprintf(buf, 100, "\n0x%4p : ", p);
@@ -291,7 +296,10 @@ void hw_init(void)
     }
 }
 
-
+void clear_wdt(struct timer *t, void *d)
+{
+    ClrWdt();
+}
 
 int main(void) {
     /* generic hw init */
@@ -356,6 +364,8 @@ int main(void) {
     /* enable all interrupts */
     _IPL = 0;
     _IPL3 = 1;
+    /* add watchdog timer */
+    add_timer(TIMER_ALWAYS, 60000, clear_wdt, NULL);
 
     console_printf("Processes running...\n");
     /* main loop */
