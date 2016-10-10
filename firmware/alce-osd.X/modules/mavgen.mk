@@ -16,5 +16,5 @@ MAVLINK_OUTPUT_DIR := $(ROOT)/include/mavlink/v1.0
 $(MAVLINK_HEADERS): $(MESSAGE_DEFINITIONS)/ardupilotmega.xml $(MESSAGE_DEFINITIONS)/common.xml
 	echo "Generating MAVLink headers..."
 	echo "Generating C code using mavgen.py located at" $(ROOT)/modules/mavlink/
-	-PYTHONPATH=$(MAVLINK_DIR) python $(MAVLINK_DIR)/pymavlink/tools/mavgen.py --lang=C --wire-protocol=1.0 --output=$(MAVLINK_OUTPUT_DIR) $(MAVLINK_DIR)/message_definitions/v1.0/ardupilotmega.xml
+	python $(MAVLINK_DIR)/pymavlink/tools/mavgen.py --lang=C --wire-protocol=1.0 --output=$(MAVLINK_OUTPUT_DIR) $(MAVLINK_DIR)/message_definitions/v1.0/ardupilotmega.xml
 
