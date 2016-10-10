@@ -139,10 +139,10 @@ static struct canvas_pipe_s {
 };
 
 
-#define SCRATCHPAD1_SIZE 0x4000
-#define SCRATCHPAD2_SIZE 0x3000
+#define SCRATCHPAD1_SIZE 0x5000
+#define SCRATCHPAD2_SIZE 0x2000
 __eds__ unsigned char scratchpad1[SCRATCHPAD1_SIZE]  __attribute__ ((eds, noload, address(0x8000)));
-__eds__ unsigned char scratchpad2[SCRATCHPAD2_SIZE]  __attribute__ ((eds, noload, address(0x5000)));
+__eds__ unsigned char scratchpad2[SCRATCHPAD2_SIZE]  __attribute__ ((eds, noload, address(0x6000)));
 
 struct scratchpad_s {
     __eds__ unsigned char *mem;
