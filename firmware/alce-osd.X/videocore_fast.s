@@ -104,14 +104,14 @@ copy_line_loop:
 
 .global _clear_canvas
 _clear_canvas:
-    MOV DSRPAG, W6
-    MOV W1, DSRPAG
+    MOV DSWPAG, W6
+    MOV W1, DSWPAG
 
     DEC W2,W2
 
     REPEAT W2
     MOV.B W3, [W0++]
 
-    MOV W6, DSRPAG
+    MOV W6, DSWPAG
     RETURN
 
