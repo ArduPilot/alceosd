@@ -33,6 +33,8 @@ void remove_timers(unsigned char type);
 inline void set_timer_period(struct timer *t, unsigned long period);
 unsigned long get_micros(void);
 void shell_cmd_clock(char *args, void *data);
+void udelay(unsigned long d);
+void mdelay(unsigned long d);
 
 /* clock_fast.s */
 extern unsigned long get_jiffies(void);

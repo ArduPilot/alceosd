@@ -192,6 +192,18 @@ static void clock_process(void)
 #endif
 }
 
+void udelay(unsigned long d)
+{
+    unsigned long t = get_micros;
+    while ((get_micros() - t) < d);
+}
+
+void mdelay(unsigned long d)
+{
+    unsigned long t = get_millis;
+    while ((get_millis() - t) < d);
+}
+
 void clock_init(void)
 {
     T1CON = 0x8000;
