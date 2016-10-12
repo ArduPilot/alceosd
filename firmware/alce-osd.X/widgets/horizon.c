@@ -74,7 +74,7 @@ static int open(struct widget *w)
     w->ca.width = X_SIZE;
     w->ca.height = Y_SIZE;
         
-    add_timer(TIMER_WIDGET, 80, pre_render, w);
+    add_timer(TIMER_WIDGET, 50, pre_render, w);
     return 0;
 }
 
