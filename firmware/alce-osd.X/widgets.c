@@ -171,7 +171,7 @@ static void close_widgets(void)
 
 static inline void render_widget(struct widget *w)
 {
-    if (init_canvas(&w->ca, 0) == 0) {
+    if (init_canvas(&w->ca) == 0) {
         w->ops->render(w);
         schedule_canvas(&w->ca);
     }

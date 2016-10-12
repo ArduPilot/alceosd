@@ -57,7 +57,8 @@
 
 #define VIN_SEL LATAbits.LATA4
 
-#define LINE_TMR (278*12)-2
+#define LINE_TMR_ (278*12)-2
+static unsigned int LINE_TMR = LINE_TMR_;
 
 #define CNT_INT_MODE    (10 * 1000)
 
@@ -116,6 +117,7 @@ static struct canvas *rendering_canvas = NULL;
 static unsigned char videocore_ctrl = 0;
 
 unsigned long nbusy_time = 0, render_time = 0, wait_time = 0, mpw = 0, mpwt = 0;
+int video_pid = -1;
 
 static struct video_config *cfg = &config.video[0];
 
@@ -232,12 +234,24 @@ void clear_sram(void)
     register unsigned long i;
 
     CS_LOW;
+    if (int_sync_cnt >= CNT_INT_MODE) {
+    sram_byteo_sqi(SRAM_WRITE);
+    sram_byteo_sqi(0);
+    sram_byteo_sqi(0);
+    sram_byteo_sqi(0);
+    for (i = 0; i < SRAM_SIZE; i++) {
+        sram_byteo_sqi(0xff);
+    }
+        
+    } else {
+    
     sram_byteo_sqi(SRAM_WRITE);
     sram_byteo_sqi(0);
     sram_byteo_sqi(0);
     sram_byteo_sqi(0);
     for (i = 0; i < SRAM_SIZE; i++) {
         sram_byteo_sqi(0x00);
+    }
     }
     CS_HIGH;
 }
@@ -269,7 +283,7 @@ static unsigned char test_sram_0(unsigned char b)
         if (r != b) {
             CS_HIGH;
             SRAM_OUTQ;
-            printf("test_ram: expected = 0x%02x read = 0x%02x\n", b, r);
+            shell_printf("test_ram: addr 0x05x expected = 0x%02x read = 0x%02x\n", i, b, r);
             return 1;
         }
     }
@@ -280,16 +294,16 @@ static unsigned char test_sram_0(unsigned char b)
 
 static void test_sram(void)
 {
-    unsigned char test[4] = {0x00, 0x5a, 0xa5, 0xff};
+    unsigned char test[4] = {0xff, 0x5a, 0xa5, 0x00};
     unsigned char i, j;
-    printf("Testing SRAM\n");
+    shell_printf("Testing SRAM\n");
     
     for (i = 0; i < 4; i++) {
         j = test[i];
         if (test_sram_0(j))
-            printf("0x%02x (fail)\n", j);
+            shell_printf("0x%02x (fail)\n", j);
         else
-            printf("0x%02x (pass)\n", j);
+            shell_printf("0x%02x (pass)\n", j);
     }
 }
 
@@ -688,38 +702,6 @@ void video_get_size(unsigned int *xsize, unsigned int *ysize)
         *ysize *= 2;
 }
 
-void video_pause(void)
-{
-    while (sram_busy);
-
-    if (videocore_ctrl & CTRL_SYNCGEN) {
-        _T4IE = 0;
-    }
-
-    if (videocore_ctrl & CTRL_COMPSYNC) {
-        _IC1IE = 0;
-    } else {
-        _INT2IE = 0;
-        _INT1IE = 0;
-    }
-}
-
-void video_resume(void)
-{
-    if (videocore_ctrl & CTRL_COMPSYNC) {
-        _IC1IF = 0;
-        _IC1IE = 1;
-    } else {
-        _INT1IF = 0;
-        _INT1IE = 1;
-    }
-
-    if ((videocore_ctrl & CTRL_SYNCGEN) && (cfg->mode & VIDEO_MODE_SYNC_MASK)) {
-        _T4IF = 0;
-        _T4IE = 1;
-    }
-}
-
 void free_mem(void)
 {
     scratchpad[0].alloc_size = 0;
@@ -784,11 +766,14 @@ int alloc_canvas(struct canvas *c, void *widget_cfg)
 }
 
 
-int init_canvas(struct canvas *ca, unsigned char b)
+int init_canvas(struct canvas *ca)
 {
     if (ca->lock)
         return -1;
-    clear_canvas(ca->buf, ca->size, b);
+    if (int_sync_cnt >= CNT_INT_MODE)
+        clear_canvas(ca->buf, ca->size, 0xff);
+    else
+        clear_canvas(ca->buf, ca->size, 0);
     return 0;
 }
 
@@ -912,9 +897,43 @@ void init_video(void)
         params_add(params_video0v1);
     else
         params_add(params_video0v3);
-    process_add(render_process, "RENDER", 100);
+    video_pid = process_add(render_process, "RENDER", 100);
 }
 
+void video_pause(void)
+{
+    while (sram_busy);
+    
+    process_remove(video_pid);
+
+    if (videocore_ctrl & CTRL_SYNCGEN) {
+        _T4IE = 0;
+    }
+
+    if (videocore_ctrl & CTRL_COMPSYNC) {
+        _IC1IE = 0;
+    } else {
+        _INT2IE = 0;
+        _INT1IE = 0;
+    }
+}
+
+void video_resume(void)
+{
+    if (videocore_ctrl & CTRL_COMPSYNC) {
+        _IC1IF = 0;
+        _IC1IE = 1;
+    } else {
+        _INT1IF = 0;
+        _INT1IE = 1;
+    }
+
+    if ((videocore_ctrl & CTRL_SYNCGEN) && (cfg->mode & VIDEO_MODE_SYNC_MASK)) {
+        _T4IF = 0;
+        _T4IE = 1;
+    }
+    video_pid = process_add(render_process, "RENDER", 100);
+}
 
 /* line timer */
 void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
@@ -936,6 +955,18 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
             OE_RAM = 1;
         } else {
             OE_RAM2 = 1;
+
+            if (int_sync_cnt >= CNT_INT_MODE) {
+                _TRISA2 = 1;
+                _TRISA3 = 1;
+                _LATA2 = 1;
+                _LATA3 = 1;
+            } else {
+                _TRISA2 = 0;
+                _TRISA3 = 0;
+                _TRISA2 = 1;
+                _TRISA3 = 1;
+            }
         }
         CS_HIGH;
         SRAM_OUT;
@@ -947,15 +978,13 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
     }
 }
 
-static unsigned int x_offset;
-
 static void render_line(void)
 {
     static union sram_addr addr __attribute__((aligned(2)));
     static unsigned int osdxsize;
     static unsigned int last_line = 200;
-    
     static unsigned long t = 0;
+    unsigned int x_offset;
     
     if (line < cfg->y_offset-2) {
         /* do nothing */
@@ -1022,6 +1051,17 @@ static void render_line(void)
             _RP54R = SCK2_O;
 
         /* line start timer - x_offset */
+        x_offset = cfg->x_offset;
+
+        if (hw_rev < 0x03) {
+            x_offset += 75;
+        }
+        if (int_sync_cnt >= CNT_INT_MODE) {
+            if (hw_rev < 0x03)
+                x_offset += 50;
+            else
+                x_offset += 105;
+        }
         PR2 = x_offset * 5;
         T2CONbits.TON = 1;
 
@@ -1047,8 +1087,6 @@ static void render_line(void)
 /* external sync */
 void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
 {
-    x_offset = cfg->x_offset;
-    
     last_line_cnt = line;
     line = 0;
     int_sync_cnt = 0;
@@ -1121,7 +1159,6 @@ void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
             _CNPUA3 = 0;
             _CNPDA3 = 1;
             _T4IP = 3;
-            x_offset = cfg->x_offset;
             vsync = std;
             last_line_cnt = line+10;
             line = 10;
@@ -1168,9 +1205,6 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
         int_sync_cnt++;
     } else if (int_sync_cnt < CNT_INT_MODE + 1) {
         /* prepare internal sync */
-        x_offset = cfg->x_offset + 95;
-        if (hw_rev < 0x03)
-            x_offset -= 50;
 
         last_line_cnt = 312;
         line = 0;
@@ -1581,6 +1615,9 @@ static void shell_cmd_config(char *args, void *data)
                     int_var = atoi(argval[i].val);
                     PR5 = (unsigned int) int_var;
                     break;
+                case 'k':
+                    LINE_TMR = atoi(argval[i].val);
+                    break;
                 default:
                     break;
             }
@@ -1590,7 +1627,148 @@ static void shell_cmd_config(char *args, void *data)
 }
 
 
+static void toggle_video_pins(struct timer *t, void *data)
+{
+    LATC =~ LATC;
+    if (hw_rev >= 0x03) {
+        _LATA2 =~ _LATA2;
+        _LATA3 =~ _LATA3;
+        _LATA9 =~ _LATA9;
+    } else {
+        _LATB8 =~ _LATB8;
+    }
+    if (hw_rev >= 0x04) {
+        _LATA4 =~ _LATA4;
+        _LATA7 =~ _LATA7;
+    }
+}
+
+#define SHELL_CMD_TEST_ARGS   2
+static void shell_cmd_test(char *args, void *data)
+{
+    struct shell_argval argval[SHELL_CMD_TEST_ARGS+1];
+    unsigned char t, i;
+    int v, p;
+    
+    t = shell_arg_parser(args, argval, SHELL_CMD_TEST_ARGS);
+
+    if (t < 1) {
+        shell_printf("\nVideocore test arguments:\n");
+        shell_printf(" -r               test SRAM\n");
+        shell_printf(" -e <state>       start or stop engine (0 or 1)\n");
+        shell_printf(" -a <amux>        analog mux state (0 to 3)\n");
+        shell_printf(" -d <dmux>        digital mux state\n");
+        shell_printf("                      bit1~0 <state>\n");
+        shell_printf("                      bit2   <[en|dis]able>\n");
+        shell_printf(" -q <spi>         sram spi\n");
+        shell_printf("                      bit3~0 <data>\n");
+        shell_printf("                      bit4   <clk>\n");
+        shell_printf("                      bit5   <cs>\n");
+        shell_printf(" -t <0|1>         toggle all videocore related pins at 100kHz\n");
+    } else {
+        for (i = 0; i < t; i++) {
+            switch (argval[i].key) {
+                case 'r':
+                    video_pause();
+                    test_sram();
+                    video_resume();
+                    break;
+                case 'e':
+                    v = atoi(argval[i].val);
+                    if (v)
+                        video_resume();
+                    else
+                        video_pause();
+                    break;
+                case 'd':
+                    v = atoi(argval[i].val);
+                    if (hw_rev <= 0x02) {
+                        if (v & 0x04)
+                            OE_RAM = 1;
+                        else
+                            OE_RAM = 0;
+                    } else {
+                        if (v & 0x04)
+                            OE_RAM2 = 1;
+                        else
+                            OE_RAM2 = 0;
+
+                         /* input */
+                        _TRISA2 = 1;
+                        _TRISA3 = 1;
+                        
+                        /* set value on sio<1:0> */
+                        v &= 3;
+                        LATC &= ~3;
+                        LATC |= v;
+                        mdelay(100);
+                        p = (PORTA & 0xc) >> 2;
+                        shell_printf("\nsio<1:0>=%u; b<1:0>=%u ", v, p);
+                        if (v == p)
+                            shell_printf("[OK]\n");
+                        else
+                            shell_printf("[FAIL]\n");
+                    }
+                    break;
+                case 'a':
+                    v = atoi(argval[i].val);
+                    if (hw_rev <= 0x02) {
+                        if (v & 0x04)
+                            OE_RAM = 1;
+                        else
+                            OE_RAM = 0;
+                    } else {
+                        if (v & 0x04)
+                            OE_RAM2 = 1;
+                        else
+                            OE_RAM2 = 0;
+                        _TRISA2 = 1;
+                        _TRISA3 = 1;
+                    }
+                    v &= 3;
+                    LATC &= ~3;
+                    LATC |= v;
+                    shell_printf("\nanalog mux output=");
+                    switch(v) {
+                        default:
+                        case 0:
+                            shell_printf("video input\n");
+                            break;
+                        case 1:
+                            shell_printf("white level\n");
+                            break;
+                        case 2:
+                            shell_printf("gray level\n");
+                            break;
+                        case 3:
+                            shell_printf("sync/black level\n");
+                            break;
+                    }
+                    
+                    break;
+                case 't':
+                    v = atoi(argval[i].val);
+                    SRAM_OUTQ;
+                    if (hw_rev <= 0x02) {
+                        OE_RAM_DIR = 0;
+                    } else {
+                        OE_RAM_DIR2 = 0;
+                    }
+                    if (v)
+                        add_timer(100, 10, toggle_video_pins, NULL);
+                    else
+                        remove_timers(100);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+
 static const struct shell_cmdmap_s video_cmdmap[] = {
+    {"test", shell_cmd_test, "Test video circuits", SHELL_CMD_SIMPLE},
     {"config", shell_cmd_config, "Configure video settings", SHELL_CMD_SIMPLE},
     {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
