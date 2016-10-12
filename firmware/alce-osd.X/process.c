@@ -55,7 +55,10 @@ int process_add(void *f, const char *name, unsigned char priority)
         p->priority = priority;
         p->weight = 100;
         p->process = f;
-        p->id = (p-1)->id+1;
+        if (nr_processes > 0)
+            p->id = (p-1)->id+1;
+        else
+            p->id = 0;
         DPROC("Added process %s, pid %d\n", p->name, nr_processes);
         nr_processes++;
     }
