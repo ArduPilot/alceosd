@@ -620,7 +620,7 @@ void mav_param_set(mavlink_message_t *msg, void *d)
 
 static void mavlink_request_data_stream(unsigned char id, unsigned char rate)
 {
-    mavlink_message_t msg;
+    mavlink_message_t msg __attribute__((aligned(2)));
     unsigned char i, start_stop = (rate == 0) ? 0 : 1;
 
     if (id >= sizeof(mavlink_stream_map))
@@ -775,7 +775,7 @@ static void shell_cmd_rates(char *args, void *data)
             } else {
                 p = shell_get_argval(argval, 'r');
                 val = atoi(p->val);
-                if (val > 10)
+                if (val > 20)
                     val = 0;
                 shell_printf("\nSetting stream id %u to %uHz\n", i, val);
                 mavlink_request_data_stream(i, val);
