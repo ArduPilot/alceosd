@@ -19,25 +19,6 @@
 #ifndef TABS_H
 #define	TABS_H
 
-enum {
-    TAB_CHANGE_CHANNEL = 0,
-    TAB_CHANGE_FLIGHTMODE,
-    TAB_CHANGE_TOGGLE,
-    TAB_CHANGE_DEMO,
-    TAB_CHANGE_MODES_END,
-};
-
-struct tab_change_config {
-    /* tab change channel settings */
-    unsigned int tab_change_ch_min;
-    unsigned int tab_change_ch_max;
-
-    unsigned char time_window;
-    /* tab change channel */
-    unsigned char ch;
-    /* tab change mode */
-    unsigned char mode;
-};
 
 void tabs_init(void);
 void load_tab(unsigned char tab);

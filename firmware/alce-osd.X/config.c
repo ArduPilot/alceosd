@@ -75,11 +75,20 @@ struct alceosd_config config = {
             .y_size = 260,
         },
     },
-    .tab_change.tab_change_ch_min = 1000,
-    .tab_change.tab_change_ch_max = 2000,
-    .tab_change.ch = 5,
-    .tab_change.mode = TAB_CHANGE_CHANNEL,
-    .tab_change.time_window = 20,
+    .video_sw = {
+        .ch = 7,
+        .ch_min = 1000,
+        .ch_max = 2000,
+        .mode = SW_MODE_CHANNEL,
+        .time = 20,
+    },
+    .tab_sw = {
+        .ch = 5,
+        .ch_min = 1000,
+        .ch_max = 2000,
+        .mode = SW_MODE_CHANNEL,
+        .time = 20,
+    },
 
     .mav.streams = {3, 1, 4, 1, 4, 10, 10, 1},
     .mav.osd_sysid = 200,
@@ -132,6 +141,29 @@ unsigned char get_units(struct widget_config *cfg)
     else
         return cfg->props.units;
 }
+
+/* return rc_channel in percentage according to switch config values */
+unsigned char get_sw_state(struct ch_switch *sw)
+{
+    unsigned int *val;
+    void *rc;
+    long x;    
+    
+    if (mavdata_age(MAVDATA_RC_CHANNELS) < 5000)
+        rc = mavdata_get(MAVDATA_RC_CHANNELS);
+    else
+        rc = mavdata_get(MAVDATA_RC_CHANNELS_RAW);
+    val = (unsigned int*) (rc + 4 + 2 * sw->ch);
+    x = (long) *(val);
+    x = ( ((x - sw->ch_min) * 100) /
+          (sw->ch_max - sw->ch_min));
+    if (x < 0)
+        x = 0;
+    else if (x > 100)
+        x = 100;
+    return (unsigned char) x;
+}
+
 
 static void load_config(void)
 {

@@ -63,6 +63,21 @@ enum {
     UNITS_CUSTOM_5,
 };
 
+enum {
+    SW_MODE_CHANNEL = 0,
+    SW_MODE_FLIGHTMODE,
+    SW_MODE_TOGGLE,
+    SW_MODE_DEMO,
+    SW_MODE_END,
+};
+
+struct ch_switch {
+    unsigned char ch;
+    unsigned int ch_min;
+    unsigned int ch_max;
+    unsigned char mode;
+    unsigned char time;
+};
 
 struct alceosd_config {
     /* uart config */
@@ -70,9 +85,12 @@ struct alceosd_config {
 
     /* video config */
     struct video_config video[CONFIG_MAX_VIDEO];
+    
+    /* video input switcher */
+    struct ch_switch video_sw;
 
-    /* tab changing config */
-    struct tab_change_config tab_change;
+    /* tab switcher */
+    struct ch_switch tab_sw;
 
     /* default unit system */
     unsigned char default_units;
@@ -89,6 +107,7 @@ void config_init(void);
 void shell_cmd_cfg(char *args, void *data);
 
 unsigned char get_units(struct widget_config *cfg);
+unsigned char get_sw_state(struct ch_switch *sw);
 
 
 #endif

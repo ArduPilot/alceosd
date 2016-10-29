@@ -107,6 +107,13 @@ const struct param_def params_video0v3[] = {
     PARAM_END,
 };
 
+const struct param_def params_video0v4[] = {
+    PARAM("VIDEO_CHMODE", MAV_PARAM_TYPE_UINT8, &config.video_sw.mode, NULL),
+    PARAM("VIDEO_CHTIME", MAV_PARAM_TYPE_UINT8, &config.video_sw.time, NULL),
+    PARAM("VIDEO_CH", MAV_PARAM_TYPE_UINT8, &config.video_sw.ch, NULL),
+    PARAM("VIDEO_CH_MAX", MAV_PARAM_TYPE_UINT16, &config.video_sw.ch_max, NULL),
+    PARAM("VIDEO_CH_MIN", MAV_PARAM_TYPE_UINT16, &config.video_sw.ch_min, NULL),
+};
 
 static volatile unsigned int int_sync_cnt = 0;
 volatile unsigned char sram_busy = 0;
@@ -886,6 +893,125 @@ void render_canvas(struct canvas *ca)
     }
 }
 
+#define VIDEO_TIMER_IDLE   (0xff)
+
+static void video_switch_task(struct timer *t, void *d)
+{
+    static unsigned char tmr = VIDEO_TIMER_IDLE;
+    static unsigned char prev_val = 255, source_mode = 0xff;
+    struct ch_switch *sw = d;
+    unsigned int val;
+    
+    switch (sw->mode) {
+        case SW_MODE_CHANNEL:
+        default:
+            val = get_sw_state(sw);
+            if (val > 50)
+                val = 1;
+            else
+                val = 0;
+            if ((unsigned char) val != prev_val) {
+                /* change video input */
+                if (val)
+                    cfg->mode |= VIDEO_MODE_INPUT_MASK;
+                else
+                    cfg->mode &= ~VIDEO_MODE_INPUT_MASK;
+                video_apply_config_cbk();
+                prev_val = (unsigned char) val;
+            }
+            break;
+        case SW_MODE_TOGGLE:
+            val = get_sw_state(sw);
+            if (val < 50)
+                val = 1;
+            else
+                val = 2;            
+
+            /* store idle position */
+            if (prev_val == 255)
+                prev_val = (unsigned char) val;
+            
+            /* idle */
+            if (tmr == VIDEO_TIMER_IDLE) {
+                if ((unsigned char) val != prev_val)
+                    tmr = 0;
+            } else if (tmr < sw->time) {
+                tmr++;
+                /* switch returned to idle position */
+                if (prev_val == (unsigned char) val) {
+                    /* swap video in */
+                    if (cfg->mode & VIDEO_MODE_INPUT_MASK)
+                        cfg->mode &= ~VIDEO_MODE_INPUT_MASK;
+                    else
+                        cfg->mode |= VIDEO_MODE_INPUT_MASK;
+                    video_apply_config_cbk();
+                    tmr = VIDEO_TIMER_IDLE;
+                }
+            } else {
+                /* wait until switch returns to idle state */
+                if ((unsigned char) val == prev_val)
+                    tmr = VIDEO_TIMER_IDLE;
+            }            
+            break;
+        case SW_MODE_FLIGHTMODE:
+        {
+            mavlink_heartbeat_t *hb = mavdata_get(MAVDATA_HEARTBEAT);
+            unsigned char i;
+            const unsigned char mode_ignore_list[] = {
+                PLANE_MODE_CIRCLE, PLANE_MODE_AUTO,
+                PLANE_MODE_RTL, PLANE_MODE_LOITER,
+                COPTER_MODE_AUTO, COPTER_MODE_LOITER,
+                COPTER_MODE_RTL, COPTER_MODE_CIRCLE,
+            };
+
+            if (tmr < sw->time)
+                tmr++;
+            else
+                tmr = VIDEO_TIMER_IDLE;
+            
+            val = (unsigned char) hb->custom_mode;
+            if (hb->type != MAV_TYPE_FIXED_WING)
+                val += 100;
+
+            /* don't switch tab in case failsafe triggers */
+            for (i = 0; i < sizeof(mode_ignore_list); i++)
+                if (mode_ignore_list[i] == (unsigned char) val)
+                    return;
+
+            if ((unsigned char) val != prev_val) {
+                /* mode changed */
+                if (tmr != VIDEO_TIMER_IDLE) {
+                    if (source_mode == (unsigned char) val) {
+                        /* swap video in */
+                        if (cfg->mode & VIDEO_MODE_INPUT_MASK)
+                            cfg->mode &= ~VIDEO_MODE_INPUT_MASK;
+                        else
+                            cfg->mode |= VIDEO_MODE_INPUT_MASK;
+                        video_apply_config_cbk();
+                    }
+                    tmr = VIDEO_TIMER_IDLE;
+                } else {
+                    tmr = 0;
+                    source_mode = prev_val;
+                }
+                prev_val = (unsigned char) val;
+            }            
+            break;
+        }
+        case SW_MODE_DEMO:
+            tmr++;
+            if (tmr > sw->time) {
+                /* next video input */
+                if (cfg->mode & VIDEO_MODE_INPUT_MASK)
+                    cfg->mode &= ~VIDEO_MODE_INPUT_MASK;
+                else
+                    cfg->mode |= VIDEO_MODE_INPUT_MASK;
+                video_apply_config_cbk();
+                tmr = 0;
+            }
+            break;
+    }
+}
 
 void init_video(void)
 {
@@ -897,6 +1023,12 @@ void init_video(void)
         params_add(params_video0v1);
     else
         params_add(params_video0v3);
+    
+    if (hw_rev >= 0x04) {
+        params_add(params_video0v4);
+        add_timer(TIMER_ALWAYS, 100, video_switch_task, &config.video_sw);
+    }
+    
     video_pid = process_add(render_process, "RENDER", 100);
 }
 
@@ -1766,11 +1898,63 @@ static void shell_cmd_test(char *args, void *data)
     }
 }
 
+#define SHELL_CMD_CONFIGSW_ARGS 4
+static void shell_cmd_swconfig(char *args, void *data)
+{
+    struct ch_switch *cfg = &config.video_sw;
+    struct shell_argval argval[SHELL_CMD_CONFIGSW_ARGS+1], *p;
+    unsigned char t, i;
+    unsigned int w;
+
+    t = shell_arg_parser(args, argval, SHELL_CMD_CONFIGSW_ARGS);
+    if (t < 1) {
+        shell_printf("\nVideo switch:\n");
+        shell_printf(" Mode:    %d (0:ch%; 1:flight mode; 2:toggle)\n", cfg->mode);
+        shell_printf(" Ch:   CH%d\n", cfg->ch + 1);
+        shell_printf(" Min:  %d\n", cfg->ch_min);
+        shell_printf(" Max:  %d\n", cfg->ch_max);
+        shell_printf(" Time: %d00ms\n", cfg->time);
+        shell_printf("\nopt: -m <mode> -c <ch> -l <min> -h <max> -t <time>\n");
+    } else {
+        p = shell_get_argval(argval, 'm');
+        if (p != NULL) {
+            i = atoi(p->val);
+            if (i < SW_MODE_END)
+                cfg->mode = i;
+        }
+        p = shell_get_argval(argval, 'c');
+        if (p != NULL) {
+            i = atoi(p->val) - 1;
+            i = min(i, 18);
+            cfg->ch = i;
+        }
+        p = shell_get_argval(argval, 'l');
+        if (p != NULL) {
+            w = atoi(p->val);
+            w = TRIM(w, 900, 2100);
+            cfg->ch_min = w;
+        }
+        p = shell_get_argval(argval, 'h');
+        if (p != NULL) {
+            w = atoi(p->val);
+            w = TRIM(w, 900, 2100);
+            cfg->ch_max = w;
+        }
+        p = shell_get_argval(argval, 't');
+        if (p != NULL) {
+            w = atoi(p->val);
+            w = w / 100;
+            cfg->time = w;
+        }
+    }
+}
+
 
 static const struct shell_cmdmap_s video_cmdmap[] = {
     {"test", shell_cmd_test, "Test video circuits", SHELL_CMD_SIMPLE},
     {"config", shell_cmd_config, "Configure video settings", SHELL_CMD_SIMPLE},
     {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
+    {"sw", shell_cmd_swconfig, "Video sw", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
 };
 

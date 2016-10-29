@@ -38,11 +38,11 @@ unsigned char tab_list[MAX_TABS];
 static unsigned char active_tab = 0xff;
 
 static const struct param_def params_tabs[] = {
-    PARAM("TABS_MODE", MAV_PARAM_TYPE_UINT8, &config.tab_change.mode, NULL),
-    PARAM("TABS_TIME", MAV_PARAM_TYPE_UINT8, &config.tab_change.time_window, NULL),
-    PARAM("TABS_CH", MAV_PARAM_TYPE_UINT8, &config.tab_change.ch, NULL),
-    PARAM("TABS_CH_MAX", MAV_PARAM_TYPE_UINT16, &config.tab_change.tab_change_ch_max, NULL),
-    PARAM("TABS_CH_MIN", MAV_PARAM_TYPE_UINT16, &config.tab_change.tab_change_ch_min, NULL),
+    PARAM("TABS_MODE", MAV_PARAM_TYPE_UINT8, &config.tab_sw.mode, NULL),
+    PARAM("TABS_TIME", MAV_PARAM_TYPE_UINT8, &config.tab_sw.time, NULL),
+    PARAM("TABS_CH", MAV_PARAM_TYPE_UINT8, &config.tab_sw.ch, NULL),
+    PARAM("TABS_CH_MAX", MAV_PARAM_TYPE_UINT16, &config.tab_sw.ch_max, NULL),
+    PARAM("TABS_CH_MIN", MAV_PARAM_TYPE_UINT16, &config.tab_sw.ch_min, NULL),
     PARAM_END,
 };
 
@@ -141,40 +141,17 @@ unsigned char *get_tab_list(void)
     return tab_list;
 }
 
-/* return rc_channel in percentage according to config values */
-static unsigned char get_rc_channel(struct tab_change_config *cfg)
-{
-    unsigned int *val;
-    void *rc;
-    long x;    
-    
-    if (mavdata_age(MAVDATA_RC_CHANNELS) < 5000)
-        rc = mavdata_get(MAVDATA_RC_CHANNELS);
-    else
-        rc = mavdata_get(MAVDATA_RC_CHANNELS_RAW);
-    val = (unsigned int*) (rc + 4 + 2 * cfg->ch);
-    x = (long) *(val);
-    x = ( ((x - cfg->tab_change_ch_min) * 100) /
-          (cfg->tab_change_ch_max - cfg->tab_change_ch_min));
-    if (x < 0)
-        x = 0;
-    else if (x > 100)
-        x = 100;
-    DTABS("cbk: percent = %ld\n", x);
-    return (unsigned char) x;
-}
-
 static void tab_switch_task(struct timer *t, void *d)
 {
     static unsigned char tmr = TAB_TIMER_IDLE;
     static unsigned char prev_val = 255, active_tab_idx = 0, source_mode = 0xff;
-    struct tab_change_config *cfg = d;
+    struct ch_switch *cfg = d;
     unsigned int val;
     
     switch (cfg->mode) {
-        case TAB_CHANGE_CHANNEL:
+        case SW_MODE_CHANNEL:
         default:
-            val = get_rc_channel(cfg);
+            val = get_sw_state(cfg);
             val = ((val * tab_list[0]) / 101) + 1;
             if ((unsigned char) val != prev_val) {
                 DTABS("tab_change_channel: change to tab %d\n", tab_list[val]);
@@ -182,8 +159,8 @@ static void tab_switch_task(struct timer *t, void *d)
                 prev_val = (unsigned char) val;
             }
             break;
-        case TAB_CHANGE_TOGGLE:
-            val = get_rc_channel(cfg);
+        case SW_MODE_TOGGLE:
+            val = get_sw_state(cfg);
             if (val < 50)
                 val = 1;
             else
@@ -197,7 +174,7 @@ static void tab_switch_task(struct timer *t, void *d)
             if (tmr == TAB_TIMER_IDLE) {
                 if ((unsigned char) val != prev_val)
                     tmr = 0;
-            } else if (tmr < cfg->time_window) {
+            } else if (tmr < cfg->time) {
                 tmr++;
                 /* switch returned to idle position */
                 if (prev_val == (unsigned char) val) {
@@ -208,7 +185,7 @@ static void tab_switch_task(struct timer *t, void *d)
                     load_tab(tab_list[active_tab_idx+1]);
                     tmr = TAB_TIMER_IDLE;
                 }
-            } else if (tmr == cfg->time_window) {
+            } else if (tmr == cfg->time) {
                 tmr++;
                 /* previous tab */
                 if (active_tab_idx == 0)
@@ -222,7 +199,7 @@ static void tab_switch_task(struct timer *t, void *d)
                     tmr = TAB_TIMER_IDLE;
             }            
             break;
-        case TAB_CHANGE_FLIGHTMODE:
+        case SW_MODE_FLIGHTMODE:
         {
             mavlink_heartbeat_t *hb = mavdata_get(MAVDATA_HEARTBEAT);
             unsigned char i;
@@ -233,7 +210,7 @@ static void tab_switch_task(struct timer *t, void *d)
                 COPTER_MODE_RTL, COPTER_MODE_CIRCLE,
             };
 
-            if (tmr < cfg->time_window)
+            if (tmr < cfg->time)
                 tmr++;
             else
                 tmr = TAB_TIMER_IDLE;
@@ -270,9 +247,9 @@ static void tab_switch_task(struct timer *t, void *d)
             }            
             break;
         }
-        case TAB_CHANGE_DEMO:
+        case SW_MODE_DEMO:
             tmr++;
-            if (tmr > cfg->time_window) {
+            if (tmr > cfg->time) {
                 /* next tab */
                 active_tab_idx++;
                 if (active_tab_idx >= tab_list[0])
@@ -299,32 +276,32 @@ void tabs_init(void)
     build_tab_list();
     /* 5 seconds on tab 0 */
     load_tab(0);
-    add_timer(TIMER_ONCE, 5000, start_tab_switch_task, &config.tab_change);
+    add_timer(TIMER_ONCE, 5000, start_tab_switch_task, &config.tab_sw);
 }
 
 
 #define SHELL_CMD_CONFIG_ARGS 4
 static void shell_cmd_config(char *args, void *data)
 {
-    struct tab_change_config *cfg = &config.tab_change;
+    struct ch_switch *cfg = &config.tab_sw;
     struct shell_argval argval[SHELL_CMD_CONFIG_ARGS+1], *p;
     unsigned char t, i;
     unsigned int w;
 
     t = shell_arg_parser(args, argval, SHELL_CMD_CONFIG_ARGS);
     if (t < 1) {
-        shell_printf("\nTab configuration:\n");
-        shell_printf(" Change mode:    %d (0:ch percent; 1:flight mode; 2:ch toggle; 3:demo)\n", cfg->mode);
-        shell_printf(" Change channel: CH%d\n", cfg->ch + 1);
-        shell_printf(" Channel min:    %d\n", cfg->tab_change_ch_min);
-        shell_printf(" Channel max:    %d\n", cfg->tab_change_ch_max);
-        shell_printf(" Time window:    %d00ms\n", cfg->time_window);
-        shell_printf("\nsyntax: config -m <mode> -c <channel> -l <chmin> -h <chmax> -t <time>\n");
+        shell_printf("\nTab switch config:\n");
+        shell_printf(" Mode: %d (0:ch percent; 1:flight mode; 2:ch toggle)\n", cfg->mode);
+        shell_printf(" Ch:   CH%d\n", cfg->ch + 1);
+        shell_printf(" Min:  %d\n", cfg->ch_min);
+        shell_printf(" Max:  %d\n", cfg->ch_max);
+        shell_printf(" Time: %d00ms\n", cfg->time);
+        shell_printf("\noptions: -m <mode> -c <ch> -l <min> -h <max> -t <time>\n");
     } else {
         p = shell_get_argval(argval, 'm');
         if (p != NULL) {
             i = atoi(p->val);
-            if (i < TAB_CHANGE_MODES_END)
+            if (i < SW_MODE_END)
                 cfg->mode = i;
         }
         p = shell_get_argval(argval, 'c');
@@ -337,19 +314,19 @@ static void shell_cmd_config(char *args, void *data)
         if (p != NULL) {
             w = atoi(p->val);
             w = TRIM(w, 900, 2100);
-            cfg->tab_change_ch_min = w;
+            cfg->ch_min = w;
         }
         p = shell_get_argval(argval, 'h');
         if (p != NULL) {
             w = atoi(p->val);
             w = TRIM(w, 900, 2100);
-            cfg->tab_change_ch_max = w;
+            cfg->ch_max = w;
         }
         p = shell_get_argval(argval, 't');
         if (p != NULL) {
             w = atoi(p->val);
             w = w / 100;
-            cfg->time_window = w;
+            cfg->time = w;
         }
     }
 }
