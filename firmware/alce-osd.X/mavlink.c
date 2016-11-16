@@ -43,6 +43,7 @@ extern struct alceosd_config config;
 const struct param_def params_mavlink[] = {
     PARAM("MAV_UAVSYSID", MAV_PARAM_TYPE_UINT8, &config.mav.uav_sysid, NULL),
     PARAM("MAV_OSDSYSID", MAV_PARAM_TYPE_UINT8, &config.mav.osd_sysid, NULL),
+    PARAM("MAV_HRTBEAT", MAV_PARAM_TYPE_UINT8, &config.mav.heartbeat, NULL),
     PARAM_END,
 };
 
@@ -682,7 +683,8 @@ void mavlink_init(void)
     /* LED heartbeat timer */
     t = add_timer(TIMER_ALWAYS, 1000, mav_heartbeat_blink, NULL);
     /* heartbeat timer */
-    add_timer(TIMER_ALWAYS, 1000, mav_heartbeat, t);
+    if (config.mav.heartbeat)
+        add_timer(TIMER_ALWAYS, 1000, mav_heartbeat, t);
 
     /* parameter request handlers */
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_LIST, mav_param_request_list, CALLBACK_PERSISTENT, NULL);

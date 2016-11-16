@@ -28,6 +28,7 @@
 struct mavlink_config {
     unsigned char streams[8];
     unsigned char uav_sysid, osd_sysid;
+    unsigned char heartbeat;
 };
 
 struct mavlink_callback {
