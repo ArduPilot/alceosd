@@ -68,6 +68,15 @@ typedef union {
     unsigned char b[4];
 } u32union __attribute__((aligned(2)));
 
+typedef unsigned char u8;
+typedef unsigned int u16;
+typedef unsigned long u32;
+typedef unsigned long long u64;
+
+typedef char s8;
+typedef int s16;
+typedef long s32;
+typedef long long s64;
 
 extern void console_print(char *str);
 extern int console_printf(const char *fmt, ...);
