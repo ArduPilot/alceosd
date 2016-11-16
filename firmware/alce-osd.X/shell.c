@@ -20,6 +20,11 @@
 
 #define MAX_SHELL_LINE_LEN  50
 
+#define BACKSPACE   8
+#define TAB         9
+#define CR          13
+#define CTRL_R      18
+#define CTRL_D      4
 
 extern unsigned char hw_rev;
 static void shell_cmd_version(char *args, void *data)
@@ -72,6 +77,17 @@ int shell_printf(const char *fmt, ...)
         shell_puts(buf);
     }
     return ret;
+}
+
+static struct shell_getter_s {
+    unsigned char (*func)(unsigned char *buf, unsigned int len, unsigned long data);
+    unsigned long data;
+} shell_getter;
+
+void shell_get(void *f, unsigned long data)
+{
+    shell_getter.func = f;
+    shell_getter.data = data;
 }
 
 unsigned char shell_arg_parser(char *args, struct shell_argval *v, unsigned char max)
@@ -146,11 +162,6 @@ void shell_exec(char *cmd_line, const struct shell_cmdmap_s *c, void *data)
     }
 }
 
-#define BACKSPACE   8
-#define TAB         9
-#define CR          13
-#define CTRL_R      18
-
 void shell_parser(unsigned char *buf, unsigned int len)
 {
     static unsigned char cmd_len = 0;
@@ -160,7 +171,14 @@ void shell_parser(unsigned char *buf, unsigned int len)
     char tmp[MAX_SHELL_LINE_LEN], *p;
     struct shell_cmdmap_s *ac[20], **a, **b;
     int size;
-    
+
+    if (shell_getter.func != NULL) {
+        i = shell_getter.func(buf, len, shell_getter.data);
+        if (i)
+            shell_getter.func = NULL;
+        return;
+    }
+
     for (i = 0; i < len; i++) {
         //printf("<%d>", buf[i]);
         switch (buf[i]) {
