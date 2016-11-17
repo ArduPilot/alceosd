@@ -190,7 +190,7 @@ static void sram_exit_sdi(void)
 {
     CS_LOW;
     SRAM_OUTQ;
-    LATC = (LATC & 0xfff0) | 0x000f;
+    LATC |= 0x000f;
     CLK_HIGH;CLK_LOW;
     CLK_HIGH;CLK_LOW;
     CLK_HIGH;CLK_LOW;
@@ -241,24 +241,12 @@ void clear_sram(void)
     register unsigned long i;
 
     CS_LOW;
-    if (int_sync_cnt >= CNT_INT_MODE) {
-    sram_byteo_sqi(SRAM_WRITE);
-    sram_byteo_sqi(0);
-    sram_byteo_sqi(0);
-    sram_byteo_sqi(0);
-    for (i = 0; i < SRAM_SIZE; i++) {
-        sram_byteo_sqi(0xff);
-    }
-        
-    } else {
-    
     sram_byteo_sqi(SRAM_WRITE);
     sram_byteo_sqi(0);
     sram_byteo_sqi(0);
     sram_byteo_sqi(0);
     for (i = 0; i < SRAM_SIZE; i++) {
         sram_byteo_sqi(0x00);
-    }
     }
     CS_HIGH;
 }
@@ -399,8 +387,6 @@ static void video_read_dac(unsigned char *dac_status)
         if (((i+1) % 3) == 0)
             printf("\n");
     }*/
-    
-    
 }
 
 static void video_init_dac(void)
@@ -777,10 +763,7 @@ int init_canvas(struct canvas *ca)
 {
     if (ca->lock)
         return -1;
-    if (int_sync_cnt >= CNT_INT_MODE)
-        clear_canvas(ca->buf, ca->size, 0xff);
-    else
-        clear_canvas(ca->buf, ca->size, 0);
+    clear_canvas(ca->buf, ca->size, 0);
     return 0;
 }
 
