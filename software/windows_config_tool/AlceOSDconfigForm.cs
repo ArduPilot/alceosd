@@ -12,8 +12,14 @@ using System.IO;
 using System.IO.Ports;
 using System.Globalization;
 
+using AlceOSD;
+
 namespace AlceOSD_updater
 {
+
+
+
+
     public partial class AlceOSDconfigForm : Form
     {
         Dictionary<string, Dictionary<string, double>> widgets = new Dictionary<string, Dictionary<string, double>>();
@@ -46,7 +52,9 @@ namespace AlceOSD_updater
 
         SerialPort comPort = new SerialPort();
 
+        UserSettings settings;
 
+        
         /* flasher stuff */
         UInt32 PAGE_SIZE = 0x400;
         Dictionary<UInt32, UInt32[]> pages = new Dictionary<UInt32, UInt32[]>();
@@ -112,7 +120,6 @@ namespace AlceOSD_updater
             int v0 = ans.IndexOf('v') + 1;
             version = ans.Substring(v0, 3);
 
-            //txt_log.AppendText("\nbootloader:\n" + ans + "\n");
             txt_log.AppendText("AlceOSD bootloader version " + version + "\n");
 
             System.Threading.Thread.Sleep(500);
@@ -1358,6 +1365,8 @@ namespace AlceOSD_updater
                     return;
                 save_cfg(ofd_savecfg.FileName);
             }
+
+            settings.Save();
         }
 
         private void readConfigToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1379,7 +1388,19 @@ namespace AlceOSD_updater
             bool finished = false;
             while (! finished)
             {
-                line = comPort.ReadLine();
+                try
+                {
+                    line = comPort.ReadLine();
+                }
+                catch
+                {
+                    MessageBox.Show("Error waiting for config!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    txt_log.AppendText("Error waiting for config!\n");
+                    comPort.Close();
+                    return;
+                }
+
+
                 if (line.Contains("AlceOSD config"))
                 {
                     started = true;
@@ -1790,7 +1811,19 @@ namespace AlceOSD_updater
 
         private void downloadFirmwareToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            System.Diagnostics.Process.Start("https://github.com/diydrones/alceosd/releases");
+            System.Diagnostics.Process.Start("https://github.com/ArduPilot/alceosd/releases");
+        }
+
+        private void AlceOSDconfigForm_Load(object sender, EventArgs e)
+        {
+            settings = new UserSettings();
+            cb_comport.Text = settings.ComPort;
+        }
+
+        private void cb_comport_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            settings.ComPort = cb_comport.Text;
+            settings.Save();
         }
     }
 }
