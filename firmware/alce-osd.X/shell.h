@@ -44,5 +44,6 @@ unsigned char shell_arg_parser(char *args, struct shell_argval *v, unsigned char
 struct shell_argval* shell_get_argval(struct shell_argval *v, char k);
 
 int shell_printf(const char *fmt, ...);
+void shell_putc(unsigned char c);
 
 #endif

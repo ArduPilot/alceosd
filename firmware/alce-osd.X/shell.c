@@ -22,6 +22,7 @@
 
 #define BACKSPACE   8
 #define TAB         9
+#define LF          10
 #define CR          13
 #define CTRL_R      18
 #define CTRL_D      4
@@ -93,8 +94,17 @@ void shell_get(void *f, unsigned long data)
 unsigned char shell_arg_parser(char *args, struct shell_argval *v, unsigned char max)
 {
     char *p, *s;
-    unsigned char i = 0;
+    u8 i;
+    u16 len = strlen(args) - 1;
 
+    /* deal with negative numbers replacing the minus with 0xff */
+    for (i = 0; i < len; i++) {
+        if ((args[i] == '-') && (args[i+1] >= '0') && (args[i+1] <= '9')) {
+            args[i] = 0xff;
+        }
+    }
+    
+    i = 0;
     p = strtok(args, "-");
     while (p != NULL) {
         v[i].key = *p++;
@@ -104,6 +114,10 @@ unsigned char shell_arg_parser(char *args, struct shell_argval *v, unsigned char
         s = strchr(v[i].val, ' ');
         if (s != NULL)
             *s = '\0';
+        /* replace the minus marker */
+        s = strchr(v[i].val, 0xff);
+        if (s != NULL)
+            *s = '-';
         p = strtok(NULL, "-");
         i++;
         if (i == max)
@@ -234,6 +248,7 @@ void shell_parser(unsigned char *buf, unsigned int len)
                 }
                 continue;
             case CR:
+            case LF:
                 cmd_line[cmd_len] = '\0';
                 strcpy(prev_cmd_line, cmd_line);
                 shell_exec(cmd_line, root_cmdmap, NULL);
