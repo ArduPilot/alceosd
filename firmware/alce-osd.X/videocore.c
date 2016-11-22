@@ -111,8 +111,9 @@ const struct param_def params_video0v4[] = {
     PARAM("VIDEO_CHMODE", MAV_PARAM_TYPE_UINT8, &config.video_sw.mode, NULL),
     PARAM("VIDEO_CHTIME", MAV_PARAM_TYPE_UINT8, &config.video_sw.time, NULL),
     PARAM("VIDEO_CH", MAV_PARAM_TYPE_UINT8, &config.video_sw.ch, NULL),
-    PARAM("VIDEO_CH_MAX", MAV_PARAM_TYPE_UINT16, &config.video_sw.ch_max, NULL),
-    PARAM("VIDEO_CH_MIN", MAV_PARAM_TYPE_UINT16, &config.video_sw.ch_min, NULL),
+    PARAM("VIDEO_CHMAX", MAV_PARAM_TYPE_UINT16, &config.video_sw.ch_max, NULL),
+    PARAM("VIDEO_CHMIN", MAV_PARAM_TYPE_UINT16, &config.video_sw.ch_min, NULL),
+    PARAM_END,
 };
 
 static volatile unsigned int int_sync_cnt = 0;
