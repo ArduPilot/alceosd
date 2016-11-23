@@ -66,9 +66,9 @@ const struct widget_ops *all_widget_ops[] = {
     NULL,
 };
 
-#define WIDGET_FIFO_MASK    (0x1f)
-#define MAX_WIDGET_ALLOC_MEM (0x400)
-#define MAX_ACTIVE_WIDGETS  (50)
+#define WIDGET_FIFO_MASK        (0x1f)
+#define MAX_WIDGET_ALLOC_MEM    (0x400)
+#define MAX_ACTIVE_WIDGETS      (50)
 
 struct widgets_mem_s {
     unsigned char mem[MAX_WIDGET_ALLOC_MEM];
@@ -207,6 +207,11 @@ void schedule_widget(struct widget *w)
     wfifo.peak = max(wfifo.peak, wfifo.wr - wfifo.rd);
 }
 
+void reconfig_widget(struct widget *w)
+{
+    reconfig_canvas(&w->ca, w->cfg);
+    schedule_widget(w);
+}
 
 void widgets_reset(void)
 {
@@ -711,6 +716,138 @@ static void shell_cmd_rm(char *args, void *data)
     }
 }
 
+static void shell_cmd_bitmap(char *args, void *data)
+{
+    struct widget *w;
+    s16 id, uid, i;
+    s8 *ptr, found = 0;
+    
+    if (strlen(args) == 0) {
+        shell_printf("\nsyntax: widgets bitmap <id>+<uid>\n");
+        shell_printf("      <id>    widget global id\n");
+        shell_printf("      <uid>   widget unique id (on same widget type)\n");
+    } else {
+        ptr = strchr(args, '+');
+        *ptr++ = '\0';
+        id = atoi(args);
+        uid = atoi(ptr);
+        for (i = 0; i < total_active_widgets; i++) {
+            w = active_widgets[i];
+            if ((w->cfg->uid == uid) && (w->cfg->widget_id == id)) {
+                found = 1;
+                break;
+            }
+        }
+        if (found) {
+            shell_printf("\nw:%u\nh:%u\n", w->ca.rwidth, w->ca.height);
+            shell_write_eds(w->ca.buf, w->ca.size);
+        } else {
+            shell_printf("\nw:0\nh:0\n");
+        }
+    }
+}
+
+#define SHELL_CMD_CFG_ARGS 13
+static void shell_cmd_config(char *args, void *data)
+{
+    struct shell_argval argval[SHELL_CMD_CFG_ARGS+1], *p;
+    struct widget *w;
+    s16 id, uid, i, t, val;
+    s8 *ptr, found = 0;
+
+    t = shell_arg_parser(args, argval, SHELL_CMD_CFG_ARGS);
+    p = shell_get_argval(argval, 'i');
+    if (p == NULL) {
+        shell_printf("\nsyntax: widgets cfg -i <id+uid> <options...>\n");
+        shell_printf("      -i <id+uid>     widget global id + unique id\n");
+        shell_printf("    Options:\n");
+        shell_printf("      -t <tab id>     tab id number (1-254)\n");
+        shell_printf("      -x <x pos>      x position\n");
+        shell_printf("      -y <y pos>      y position\n");
+        shell_printf("      -h <h just>     horizontal justification\n");
+        shell_printf("      -v <v just>     vertical justification\n");
+
+        shell_printf("      -m <mode>       drawing mode\n");
+        shell_printf("      -s <source>     data source\n");
+        shell_printf("      -u <units>      units\n");
+
+        shell_printf("      -a <value>      param1 value\n");
+        shell_printf("      -b <value>      param2 value\n");
+        shell_printf("      -c <value>      param3 value\n");
+        shell_printf("      -d <value>      param4 value\n");
+    } else if (t == 1) {
+        /* dump widget config */
+    } else {
+        /* widget id+uid */
+        ptr = strchr(p->val, '+');
+        *ptr++ = '\0';
+        id = atoi(p->val);
+        uid = atoi(ptr);
+        for (i = 0; i < total_active_widgets; i++) {
+            w = active_widgets[i];
+            if ((w->cfg->uid == uid) && (w->cfg->widget_id == id)) {
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found) {
+            shell_printf("\n\nWidget not found: %02d+%02d", id, uid);
+            return;
+        }
+        
+        for (i = 0; i < t; i++) {
+            //shell_printf("\nkey=%c val=%s", argval[i].key, argval[i].val);
+            val = atoi(argval[i].val);
+            switch (argval[i].key) {
+                case 't':
+                    /* change tab */
+                    val = max(1, min(254, val));
+                    w->cfg->tab = val;
+                    break;
+                case 'x':
+                    w->cfg->x = val;
+                    break;
+                case 'y':
+                    w->cfg->y = val;
+                    break;
+                case 'h':
+                    w->cfg->props.hjust = (val & 3);
+                    break;
+                case 'v':
+                    w->cfg->props.vjust = (val & 3);
+                    break;
+                case 'm':
+                    w->cfg->props.mode = (val & 0xf);
+                    break;
+                case 's':
+                    w->cfg->props.source = (val & 3);
+                    break;
+                case 'u':
+                    w->cfg->props.units = (val & 3);
+                    break;
+                case 'a':
+                    w->cfg->params[0] = val;
+                    break;
+                case 'b':
+                    w->cfg->params[1] = val;
+                    break;
+                case 'c':
+                    w->cfg->params[2] = val;
+                    break;
+                case 'd':
+                    w->cfg->params[3] = val;
+                    break;
+                default:
+                    break;
+            }
+        }
+        reconfig_widget(w);
+        shell_printf("\n\nChanged widget: %02u+%02u", id, uid);
+    }
+}
+
+
 static const struct shell_cmdmap_s widgets_cmdmap[] = {
     {"stats", shell_cmd_stats, "Widgets module stats", SHELL_CMD_SIMPLE},
     {"loaded", shell_cmd_loaded, "List loaded widgets", SHELL_CMD_SIMPLE},
@@ -718,6 +855,8 @@ static const struct shell_cmdmap_s widgets_cmdmap[] = {
     {"available", shell_cmd_avail, "List all available widgets", SHELL_CMD_SIMPLE},
     {"add", shell_cmd_add, "Add widget", SHELL_CMD_SIMPLE},
     {"rm", shell_cmd_rm, "Remove widget", SHELL_CMD_SIMPLE},
+    {"bitmap", shell_cmd_bitmap, "Get widget bitmap", SHELL_CMD_SIMPLE},
+    {"cfg", shell_cmd_config, "Config widget", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
 };
 
