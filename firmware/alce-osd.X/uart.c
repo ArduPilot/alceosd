@@ -21,8 +21,6 @@
 #define UART_PROCESS_PRIO   50
 #define UART_FIFO_MASK      0x3ff
 
-#define DMA_BUF_SIZE    (128)
-
 extern struct alceosd_config config;
 extern unsigned char hw_rev;
 
@@ -135,10 +133,10 @@ static struct uart_fifo_s uart_fifo[4];
 
 
 /* tx dma buffers */
-__eds__ unsigned char tx_buf1[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-DMA_BUF_SIZE)));
-__eds__ unsigned char tx_buf2[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(DMA_BUF_SIZE*2))));
-__eds__ unsigned char tx_buf3[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(DMA_BUF_SIZE*3))));
-__eds__ unsigned char tx_buf4[DMA_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(DMA_BUF_SIZE*4))));
+__eds__ unsigned char tx_buf1[UART_TX_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-UART_TX_BUF_SIZE)));
+__eds__ unsigned char tx_buf2[UART_TX_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(UART_TX_BUF_SIZE*2))));
+__eds__ unsigned char tx_buf3[UART_TX_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(UART_TX_BUF_SIZE*3))));
+__eds__ unsigned char tx_buf4[UART_TX_BUF_SIZE] __attribute__((eds,space(dma),address(0x6000-(UART_TX_BUF_SIZE*4))));
 
 
 static const char keywords[] = "I want to enter AlceOSD setup";
@@ -198,9 +196,9 @@ inline static void handle_uart_int(unsigned char port)
         if (keywords[key_idx[port]] == ch) {
             key_idx[port]++;
             if (key_idx[port] == (sizeof(keywords)-1)) {
-                if (uart_get_client(port)->id == UART_CLIENT_CONFIG)
+                if (uart_get_client(port)->id == UART_CLIENT_SHELL)
                     return;
-                uart_set_client(port, UART_CLIENT_CONFIG, 1);
+                uart_set_client(port, UART_CLIENT_SHELL, 1);
                 uart_get_client(port)->write((unsigned char*) answer, sizeof(answer)-1);
                 //while ( (*(UARTS[port].STA) & 0x0100) == 0);
                 uart_fifo[port].rd = uart_fifo[port].wr;
@@ -403,7 +401,7 @@ static inline void uart_discard(unsigned char port, unsigned int count)
     uart_fifo[port].rd &= UART_FIFO_MASK;
 }
 
-void uart1_write(unsigned char *buf, unsigned int len)
+static void uart1_write(unsigned char *buf, unsigned int len)
 {
     __eds__ unsigned char *b = tx_buf1;
     
@@ -415,7 +413,7 @@ void uart1_write(unsigned char *buf, unsigned int len)
         while (U1STAbits.TRMT == 0);
     }
 
-    len = min(len, DMA_BUF_SIZE);
+    len = min(len, UART_TX_BUF_SIZE);
     DMA0CNT = len - 1;
     while (len-- > 0)
         *b++ = *buf++;
@@ -424,7 +422,7 @@ void uart1_write(unsigned char *buf, unsigned int len)
     DMA0REQbits.FORCE = 1;
 }
 
-void uart2_write(unsigned char *buf, unsigned int len)
+static void uart2_write(unsigned char *buf, unsigned int len)
 {
     __eds__ unsigned char *b = tx_buf2;
     
@@ -436,7 +434,7 @@ void uart2_write(unsigned char *buf, unsigned int len)
         while (U2STAbits.TRMT == 0);
     }
 
-    len = min(len, DMA_BUF_SIZE);
+    len = min(len, UART_TX_BUF_SIZE);
     DMA1CNT = len - 1;
     while (len-- > 0)
         *b++ = *buf++;
@@ -457,7 +455,7 @@ static void uart3_write(unsigned char *buf, unsigned int len)
         while (U3STAbits.TRMT == 0);
     }
 
-    len = min(len, DMA_BUF_SIZE);
+    len = min(len, UART_TX_BUF_SIZE);
     DMA2CNT = len - 1;
     while (len-- > 0)
         *b++ = *buf++;
@@ -466,7 +464,7 @@ static void uart3_write(unsigned char *buf, unsigned int len)
     DMA2REQbits.FORCE = 1;
 }
 
-void uart4_write(unsigned char *buf, unsigned int len)
+static void uart4_write(unsigned char *buf, unsigned int len)
 {
     __eds__ unsigned char *b = tx_buf4;
     
@@ -478,7 +476,7 @@ void uart4_write(unsigned char *buf, unsigned int len)
         while (U4STAbits.TRMT == 0);
     }
 
-    len = min(len, DMA_BUF_SIZE);
+    len = min(len, UART_TX_BUF_SIZE);
     DMA3CNT = len - 1;
     while (len-- > 0)
         *b++ = *buf++;
@@ -512,13 +510,13 @@ int __attribute__((__weak__, __section__(".libc"))) write(int handle, void *buf,
 }
 #endif
 
-inline static int uart_process(unsigned char port)
+inline static void uart_process(unsigned char port)
 {
     unsigned char *b;
     unsigned int len;
 
     if (port_clients[port] == NULL)
-        return 0;
+        return;
     
     len = uart_read(port, &b);
     while (len > 0) {
@@ -673,7 +671,7 @@ void uart_set_client(unsigned char port, unsigned char client_id,
                 }
             }
             
-            if (client_id == UART_CLIENT_CONFIG)
+            if (client_id == UART_CLIENT_SHELL)
                 __C30_UART = port+1;
             *c = *clist;
             switch (port) {

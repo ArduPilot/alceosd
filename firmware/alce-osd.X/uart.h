@@ -47,7 +47,7 @@ enum {
     UART_CLIENT_NONE = 0,
     UART_CLIENT_MAVLINK,
     UART_CLIENT_UAVTALK,
-    UART_CLIENT_CONFIG,
+    UART_CLIENT_SHELL,
     UART_CLIENT_FRSKY,
     UART_CLIENTS,
 };
@@ -62,6 +62,7 @@ enum {
 #define UART_PROP_RX_INVERTED       2
 #define UART_PROP_HALF_DUPLEX       4
 
+#define UART_TX_BUF_SIZE    (128)
 
 struct uart_config {
     unsigned char mode;
