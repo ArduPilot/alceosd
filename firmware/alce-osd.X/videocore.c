@@ -705,13 +705,41 @@ void free_mem(void)
     rendering_canvas = NULL;
 }
 
-
+static void set_canvas_pos(struct canvas *c, struct widget_config *wcfg)
+{
+    u16 osdxsize, osdysize;
+    video_get_size(&osdxsize, &osdysize);
+    
+    switch (wcfg->props.vjust) {
+        case VJUST_TOP:
+        default:
+            c->y = wcfg->y;
+            break;
+        case VJUST_BOT:
+            c->y = osdysize - c->height + wcfg->y;
+            break;
+        case VJUST_CENTER:
+            c->y = (osdysize - c->height)/2 + wcfg->y;
+            break;
+    }
+    switch (wcfg->props.hjust) {
+        case HJUST_LEFT:
+        default:
+            c->x = wcfg->x;
+            break;
+        case HJUST_RIGHT:
+            c->x = osdxsize - c->width + wcfg->x;
+            break;
+        case HJUST_CENTER:
+            c->x = (osdxsize - c->width)/2 + wcfg->x;
+            break;
+    }
+}
 
 int alloc_canvas(struct canvas *c, void *widget_cfg)
 {
-    unsigned int osdxsize, osdysize, i;
+    u16 i;
     struct widget_config *wcfg = widget_cfg;
-    video_get_size(&osdxsize, &osdysize);
 
     c->width = (c->width & 0xfffc);
     c->rwidth = c->width >> 2;
@@ -725,36 +753,9 @@ int alloc_canvas(struct canvas *c, void *widget_cfg)
         c->lock = 1;
         return -1;
     }
-
-    switch (wcfg->props.vjust) {
-        case VJUST_TOP:
-        default:
-            c->y = wcfg->y;
-            break;
-        case VJUST_BOT:
-            c->y = osdysize - c->height + wcfg->y;
-            break;
-        case VJUST_CENTER:
-            c->y = (osdysize - c->height)/2 + wcfg->y;
-            break;
-    }
-
-    switch (wcfg->props.hjust) {
-        case HJUST_LEFT:
-        default:
-            c->x = wcfg->x;
-            break;
-        case HJUST_RIGHT:
-            c->x = osdxsize - c->width + wcfg->x;
-            break;
-        case HJUST_CENTER:
-            c->x = (osdxsize - c->width)/2 + wcfg->x;
-            break;
-    }
-
     c->buf = &scratchpad[i].mem[scratchpad[i].alloc_size];
     scratchpad[i].alloc_size += c->size;
-
+    set_canvas_pos(c, wcfg);
     c->lock = 0;
     return 0;
 }
@@ -851,17 +852,17 @@ static void render_process(void)
 
 
 /* blocking render */
-void render_canvas(struct canvas *ca)
+static void render_canvas(struct canvas *ca)
 {
-    unsigned int x, h;
-    __eds__ unsigned char *b;
+    __eds__ unsigned char *b = ca->buf;
     union sram_addr addr;
-    unsigned int osdxsize, osdysize;
+    u16 osdxsize, osdysize, h;
+    u32 y_offset;
+    
     video_get_size(&osdxsize, &osdysize);
 
-    x = ca->x >> 2;
-    b = ca->buf;
-    addr.l =  x + (osdxsize/4 * (unsigned long) ca->y);
+    y_offset = (u32) osdxsize >> 2;
+    addr.l = (u32) ca->y * y_offset + (ca->x >> 2);
 
     /* render */
     for (h = 0; h < ca->height; h++) {
@@ -873,9 +874,18 @@ void render_canvas(struct canvas *ca)
         sram_byteo_sqi(addr.b0);
         b = copy_line(b, ca->rwidth);
         CS_HIGH;
-        addr.l += osdxsize/4;
+        addr.l += y_offset;
     }
 }
+
+void reconfig_canvas(struct canvas *ca, void *widget_cfg)
+{
+    struct widget_config *cfg = (struct widget_config*) widget_cfg;
+    clear_canvas(ca->buf, ca->size, 0);
+    render_canvas(ca);
+    set_canvas_pos(ca, cfg);
+}
+
 
 #define VIDEO_TIMER_IDLE   (0xff)
 
