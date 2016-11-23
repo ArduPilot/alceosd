@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Text.RegularExpressions;
 
 using System.IO;
 using System.IO.Ports;
@@ -16,12 +17,22 @@ using AlceOSD;
 
 namespace AlceOSD_updater
 {
-
-
-
-
     public partial class AlceOSDconfigForm : Form
     {
+        private struct Canvas
+        {
+            public byte[] bitmap;
+            public int width;
+            public int height;
+            public int x0;
+            public int y0;
+        }
+        Dictionary<string, Canvas> ca = new Dictionary<string,Canvas>();
+        Dictionary<string, int> widget_ids = new Dictionary<string, int>();
+        String selected_widget = "";
+
+        int xsize = 0, ysize = 0;
+
         Dictionary<string, Dictionary<string, double>> widgets = new Dictionary<string, Dictionary<string, double>>();
         Dictionary<string, string> widget_name_map = new Dictionary<string, string>() {
             {"Altitude", "ALTITUD"},
@@ -54,7 +65,6 @@ namespace AlceOSD_updater
 
         UserSettings settings;
 
-        
         /* flasher stuff */
         UInt32 PAGE_SIZE = 0x400;
         Dictionary<UInt32, UInt32[]> pages = new Dictionary<UInt32, UInt32[]>();
@@ -188,37 +198,62 @@ namespace AlceOSD_updater
         }
         private bool reset_board(bool flash)
         {
-            List<int> baudrates = new List<int> {115200, 57600, 19200};
+            List<int> baudrates = new List<int> { 115200, 57600, 19200 };
             bool in_setup = false;
 
-            /* enter setup (fw0v9+ & bootloader0v5+) */
+
+            /* check if already in shell */
             foreach (int b in baudrates)
             {
                 comPort.BaudRate = b;
+                System.Threading.Thread.Sleep(100);
                 comPort.DiscardInBuffer();
-                comPort.Write("I want to enter AlceOSD setup");
+                comPort.Write("\n");
                 System.Threading.Thread.Sleep(100);
                 string ans = comPort.ReadExisting();
-                //txt_log.AppendText(ans + "\n");
-                if (ans.EndsWith("AlceOSD setup starting"))
+                //txt_log.AppendText("ans:" + ans + "\n");
+                if (ans.EndsWith("> "))
                 {
+                    txt_log.AppendText("got shell\n");
                     in_setup = true;
                     break;
                 }
-
             }
 
-            //comPort.BaudRate = 115200;
+            /* enter setup (fw0v9+ & bootloader0v5+) */
+            if (!in_setup)
+            {
+                foreach (int b in baudrates)
+                {
+                    comPort.BaudRate = b;
+                    comPort.DiscardInBuffer();
+                    comPort.Write("I want to enter AlceOSD setup");
+                    System.Threading.Thread.Sleep(100);
+                    string ans = comPort.ReadExisting();
+                    //txt_log.AppendText(ans + "\n");
+                    if (ans.EndsWith("AlceOSD setup starting"))
+                    {
+                        comPort.Write("\n");
+                        System.Threading.Thread.Sleep(100);
+                        ans = comPort.ReadExisting();
+                        txt_log.AppendText("soft-start\n");
+                        in_setup = true;
+                        break;
+                    }
+
+                }
+            }
+
 
             if (in_setup)
             {
-                txt_log.AppendText("soft-start\n");
                 System.Threading.Thread.Sleep(500);
                 comPort.DiscardInBuffer();
                 if (flash)
                 {
                     System.Threading.Thread.Sleep(10);
-                    comPort.Write("#");
+                    comPort.Write("reboot\n");
+                    comPort.BaudRate = 115200;
                     System.Threading.Thread.Sleep(100);
                     comPort.Write("alceosd");
                 }
@@ -226,6 +261,7 @@ namespace AlceOSD_updater
             else
             {
                 /* bootloader < 0v5 */
+                txt_log.AppendText("hard-reset\n");
                 comPort.DtrEnable = true;
                 comPort.RtsEnable = true;
                 System.Threading.Thread.Sleep(50);
@@ -238,6 +274,7 @@ namespace AlceOSD_updater
 
                 if (flash)
                 {
+                    comPort.BaudRate = 115200;
                     System.Threading.Thread.Sleep(100);
                     comPort.Write("alceosd");
                     return true;
@@ -289,6 +326,12 @@ namespace AlceOSD_updater
             config.Add("SERIAL4_PINS = " + Convert.ToDouble(cb_port4.SelectedIndex));
 
             /* video */
+            config.Add("VIDEO_CHMODE = " + Convert.ToDouble(cb_vswmode.SelectedIndex));
+            config.Add("VIDEO_CHTIME = " + (Convert.ToDouble(nud_vswtimer.Value) / 100).ToString());
+            config.Add("VIDEO_CH = " + Convert.ToDouble(cb_vswch.SelectedIndex));
+            config.Add("VIDEO_CHMIN = " + Convert.ToDouble(nud_vswmin.Value));
+            config.Add("VIDEO_CHMAX = " + Convert.ToDouble(nud_vswmax.Value));
+
             int vidmode = cb_vidstd.SelectedIndex | ((cbx_isync.Checked ? 1 : 0) << 2);
             config.Add("VIDE0_STD = " + Convert.ToDouble(vidmode));
             config.Add("VIDE0_XSIZE = " + Convert.ToDouble(cb_xsize.SelectedIndex));
@@ -325,6 +368,7 @@ namespace AlceOSD_updater
             /* mavlink */
             config.Add("MAV_UAVSYSID = " + Convert.ToDouble(nud_uavsysid.Value));
             config.Add("MAV_OSDSYSID = " + Convert.ToDouble(nud_osdsysid.Value));
+            config.Add("MAV_HRTBEAT = " + Convert.ToDouble(cbx_mavhb.Checked ? 1 : 0));
 
             config.Add("MAV_RAWSENS = " + Convert.ToDouble(nud_streamRawSensors.Value));
             config.Add("MAV_EXTSTAT = " + Convert.ToDouble(nud_streamExtStatus.Value));
@@ -383,6 +427,7 @@ namespace AlceOSD_updater
                     val = String.Join("_", entry, 1, entry.Length - 1);
                     switch (entry.ElementAt(0))
                     {
+                        case "VIDEO":
                         case "VIDE0":
                         case "VIDE1":
                             vidcfg.Add(value);
@@ -414,14 +459,14 @@ namespace AlceOSD_updater
 
                 }
             }
+            try { populateVideoConfig(vidcfg); } catch { MessageBox.Show("Error parsing video config!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            try { populateUARTConfig(uartcfg); } catch { MessageBox.Show("Error parsing UART config!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            try { populateTabswitchConfig(tabscfg); } catch { MessageBox.Show("Error parsing tab switch config!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            try { populateMavlinkConfig(mavcfg); } catch { MessageBox.Show("Error parsing mavlink config!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            try { populateMiscConfig(misccfg); } catch { MessageBox.Show("Error parsing misc config!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
 
-            populateVideoConfig(vidcfg);
-            populateUARTConfig(uartcfg);
-            populateTabswitchConfig(tabscfg);
-            populateMavlinkConfig(mavcfg);
-            populateMiscConfig(misccfg);
+            try { populateWidgetsConfig(widgetscfg); } catch { MessageBox.Show("Error parsing widgets config!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
 
-            populateWidgetsConfig(widgetscfg);
         }
 
 
@@ -470,6 +515,9 @@ namespace AlceOSD_updater
                 bool isync = true;
                 int std = -1, xsize = -1, ysize = -1, xoffset = -1, yoffset = -1;
                 int bright = -1, white = -1, gray = -1, black = -1;
+
+                int chmode = -1, chtimer = -1, ch = -1, chmin = -1, chmax = -1;
+
                 switch (param)
                 {
                     case "STD":
@@ -500,13 +548,38 @@ namespace AlceOSD_updater
                     case "BLACK":
                         black = Convert.ToInt16(dval);
                         break;
+
+                    /* common */
+                    case "CHMODE":
+                        chmode = Convert.ToInt16(dval);
+                        break;
+                    case "CHTIME":
+                        chtimer = Convert.ToInt16(dval);
+                        break;
+                    case "CH":
+                        ch = Convert.ToInt16(dval);
+                        break;
+                    case "CHMIN":
+                        chmin = Convert.ToInt16(dval);
+                        break;
+                    case "CHMAX":
+                        chmax = Convert.ToInt16(dval);
+                        break;
+
                     default:
                         break;
                 }
                 switch (key)
                 {
                     default:
+                    case "VIDEO":
                     case "VIDE0":
+                        if (chmode != -1) cb_vswmode.SelectedIndex = chmode;
+                        if (chtimer != -1) nud_vswtimer.Value = chtimer * 100;
+                        if (ch != -1) cb_vswch.SelectedIndex = ch;
+                        if (chmin != -1) nud_vswmin.Value = chmin;
+                        if (chmax != -1) nud_vswmax.Value = chmax;
+
                         if (std != -1)
                         {
                             cb_vidstd.SelectedIndex = std;
@@ -573,7 +646,7 @@ namespace AlceOSD_updater
                     default:
                         break;
                 }
-                
+
                 switch (key)
                 {
                     case "SERIAL1":
@@ -690,6 +763,9 @@ namespace AlceOSD_updater
                     case "EXTRA3":
                         nud_streamExtra3.Value = Convert.ToByte(dval);
                         break;
+                    case "HRTBEAT":
+                        cbx_mavhb.Checked = (Convert.ToByte(dval) == 1) ? true : false;
+                        break;
                     default:
                         break;
                 }
@@ -728,6 +804,36 @@ namespace AlceOSD_updater
             }
         }
 
+        private void submit_widget_config(String name)
+        {
+            if (!widgets.ContainsKey(name))
+                return;
+            
+            if (!shell_active)
+                return;
+
+            Dictionary<String, Double> w = widgets[name];
+
+            string wname = name.Substring(0, name.Length - 1);
+
+            int id = -1;
+            if (widget_ids.ContainsKey(wname))
+            {
+                id = widget_ids[wname];
+            }
+            int uid = name.ElementAt(name.Length - 1) - '0';
+
+            string full_id = id.ToString() + "+" + uid.ToString();
+
+            string cmd = "widgets cfg -i " + full_id;
+            cmd += " -x " + w["X"];
+            cmd += " -y " + w["Y"];
+            cmd += " -h " + w["HJUST"];
+            cmd += " -v " + w["VJUST"];
+            comPort.WriteLine(cmd);
+        }
+
+
         private void populateWidgetsConfig(List<string> config)
         {
 
@@ -764,12 +870,12 @@ namespace AlceOSD_updater
             foreach (KeyValuePair<string, Dictionary<string, double>> pair in widgets)
             {
 
-                tb_log.AppendText(pair.Key + ": ");
+                txt_log.AppendText(pair.Key + ": ");
                 foreach (KeyValuePair<string, double> pair2 in pair.Value)
-                    tb_log.AppendText(pair2.Key + "=" + pair2.Value + "; ");
-                tb_log.AppendText("\n");
-            }*/
-
+                    txt_log.AppendText(pair2.Key + "=" + pair2.Value + "; ");
+                txt_log.AppendText("\n");
+            }
+            */
         }
 
 
@@ -789,6 +895,11 @@ namespace AlceOSD_updater
 
         private void nud_seltab_ValueChanged(object sender, EventArgs e)
         {
+            if (shell_active)
+            {
+                comPort.WriteLine("tabs load -t " + nud_seltab.Value);
+
+            }
             update_lb_widgets();
         }
 
@@ -802,6 +913,8 @@ namespace AlceOSD_updater
         }
 
 
+        bool timer_submit_allowed = true;
+
         private void lb_widgets_SelectedIndexChanged(object sender, EventArgs e)
         {
             string key;
@@ -813,8 +926,12 @@ namespace AlceOSD_updater
             }
             //tb_log.AppendText(key + "\n");
 
-
             string wid = key.Substring(0, key.Length - 1);
+
+            timer_submit_allowed = false;
+
+            selected_widget = key;
+            pb_osd.Invalidate();
 
             lbl_wp1.Visible = false;
             lbl_wp2.Visible = false;
@@ -998,7 +1115,7 @@ namespace AlceOSD_updater
                     break;
             }
 
-            
+
 
             Dictionary<string, double> wcfg = widgets[key];
 
@@ -1019,6 +1136,7 @@ namespace AlceOSD_updater
             if (cb_wsource.Items.Count > 0)
                 cb_wsource.SelectedIndex = Convert.ToByte(wcfg["SOURCE"]);
 
+            timer_submit_allowed = true;
 
         }
 
@@ -1098,7 +1216,7 @@ namespace AlceOSD_updater
             prompt.Controls.Add(cancel);
             prompt.Controls.Add(textLabel);
             prompt.AcceptButton = confirmation;
-            
+
             foreach (KeyValuePair<string, string> pair in widget_name_map)
             {
                 cb.Items.Add(pair.Key);
@@ -1117,7 +1235,7 @@ namespace AlceOSD_updater
                 {
                     r = "";
                 }
-                
+
             }
             else
             {
@@ -1143,7 +1261,7 @@ namespace AlceOSD_updater
 
             int i;
             for (i = 0; i < 10; i++) {
-                if ( ! widgets.Keys.Contains(wid + i.ToString()) )
+                if (!widgets.Keys.Contains(wid + i.ToString()))
                     break;
             }
 
@@ -1196,6 +1314,37 @@ namespace AlceOSD_updater
         }
 
 
+        private int pos2canvas(String name, int pos, char dir)
+        {
+            Dictionary<String, Double> w = widgets[name];
+            int div = (int) w[dir + "JUST"];
+            int osd_size = (dir == 'H') ? xsize : ysize;
+            int wid_size = (dir == 'H') ? ca[name].width * 4 : ca[name].height;
+            int ret = 0;
+
+            if (div > 0)
+                ret = (osd_size - wid_size) / div;
+
+            return ret + pos;
+        }
+
+
+
+        private void flag_submit()
+        {
+            if (ca.ContainsKey(selected_widget))
+            {
+                Canvas c = ca[selected_widget];
+                c.x0 = pos2canvas(selected_widget, (int)nud_wxpos.Value, 'H');
+                c.y0 = pos2canvas(selected_widget, (int)nud_wypos.Value, 'V');
+                ca[selected_widget] = c;
+                pb_osd.Invalidate();
+            }
+
+            timer_submit.Stop();
+            if (timer_submit_allowed)
+                timer_submit.Start();
+        }
 
 
         private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1233,6 +1382,7 @@ namespace AlceOSD_updater
                 return;
             string w = lb_widgets.SelectedItem.ToString();
             widgets[w]["X"] = Convert.ToDouble(nud_wxpos.Value);
+            flag_submit();
         }
 
         private void nud_wypos_ValueChanged(object sender, EventArgs e)
@@ -1241,6 +1391,7 @@ namespace AlceOSD_updater
                 return;
             string w = lb_widgets.SelectedItem.ToString();
             widgets[w]["Y"] = Convert.ToDouble(nud_wypos.Value);
+            flag_submit();
         }
 
         private void cb_wvjust_SelectedIndexChanged(object sender, EventArgs e)
@@ -1257,6 +1408,10 @@ namespace AlceOSD_updater
                 return;
             string w = lb_widgets.SelectedItem.ToString();
             widgets[w]["HJUST"] = Convert.ToDouble(cb_whjust.SelectedIndex);
+
+            //if (ca.ContainsKey(w))
+            //    redraw_widget(w);
+
         }
 
         private void cb_wmode_SelectedIndexChanged(object sender, EventArgs e)
@@ -1380,13 +1535,13 @@ namespace AlceOSD_updater
             txt_log.AppendText("Port " + comPort.PortName + " opened for config read\n");
 
             /* dump config */
-            comPort.Write("d");
+            comPort.Write("config dump\n");
 
             List<string> config = new List<string> { };
             string line;
             bool started = false;
             bool finished = false;
-            while (! finished)
+            while (!finished)
             {
                 try
                 {
@@ -1418,7 +1573,7 @@ namespace AlceOSD_updater
             comPort.Write("x");
             comPort.Close();
             MessageBox.Show("Config successfully read", "Config", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            
+
             parse_config(config.ToArray());
 
         }
@@ -1433,11 +1588,11 @@ namespace AlceOSD_updater
 
             txt_log.AppendText("Port " + comPort.PortName + " opened for config upload\n");
 
-            comPort.Write("l");
+            comPort.Write("config load\n");
             System.Threading.Thread.Sleep(100);
 
             string[] config = dump_config();
-            
+
 
             string line;
             while (comPort.BytesToRead > 0)
@@ -1471,18 +1626,14 @@ namespace AlceOSD_updater
 
             }
             pb.Value = 100;
-
+            comPort.Write(".\n");
             txt_log.AppendText("Done!\n");
-            comPort.Write(".\ns");
-            System.Threading.Thread.Sleep(100);
-            while (comPort.BytesToRead > 0)
-            {
-                line = comPort.ReadLine();
-                txt_log.AppendText(line + '\n');
-            }
-            comPort.Write("x");
+
+            comPort.Write("config save\n");
+            System.Threading.Thread.Sleep(500);
+            comPort.Write("reboot\r");
             comPort.Close();
-            MessageBox.Show("Config successfully uploaded", "Config", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("Config successfully uploaded, rebooting", "Config", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
 
@@ -1814,10 +1965,54 @@ namespace AlceOSD_updater
             System.Diagnostics.Process.Start("https://github.com/ArduPilot/alceosd/releases");
         }
 
+
+        private void recalculate_pb_osd_size()
+        {
+            switch (cb_xsize.SelectedIndex)
+            {
+                case 0:
+                default:
+                    xsize = 480;
+                    break;
+                case 1:
+                    xsize = 480;
+                    break;
+                case 2:
+                    xsize = 560;
+                    break;
+                case 3:
+                    xsize = 672;
+                    break;
+            }
+            ysize = (int) nud_ysize.Value;
+
+            if (cb_vidstd.Text.Contains("nterlaced"))
+                ysize *= 2;
+
+            Size s = new Size();
+            s.Height = ysize + 10;
+            s.Width = xsize + 10;
+            pb_osd.Size = s;
+        }
+
+
         private void AlceOSDconfigForm_Load(object sender, EventArgs e)
         {
             settings = new UserSettings();
             cb_comport.Text = settings.ComPort;
+
+            cb_vswch.Items.Clear();
+            cb_tabch.Items.Clear();
+            for (int i = 1; i < 18; i++)
+            {
+                cb_vswch.Items.Add("RC" + i.ToString());
+                cb_tabch.Items.Add("RC" + i.ToString());
+            }
+
+
+            recalculate_pb_osd_size();
+
+
         }
 
         private void cb_comport_SelectedIndexChanged(object sender, EventArgs e)
@@ -1825,5 +2020,561 @@ namespace AlceOSD_updater
             settings.ComPort = cb_comport.Text;
             settings.Save();
         }
+
+
+
+
+        private void get_widget_ids()
+        {
+            widget_ids.Clear();
+
+            comPort.Write("widgets available\n");
+            System.Threading.Thread.Sleep(100);
+
+            string ans = "";
+            do {
+                ans += comPort.ReadExisting();
+            } while (!ans.EndsWith("> "));
+
+            string[] lines = ans.Split('\n');
+
+            bool s = false;
+            foreach (string value in lines)
+            {
+                if (value.Contains("---------"))
+                {
+                    s = true;
+                    continue;
+                }
+
+                if (s)
+                {
+                    string[] l = value.Split('|');
+
+                    if (l.Length < 5)
+                        continue;
+
+                    txt_log.AppendText(l[0] + "," + l[2] + "\n");
+                    widget_ids.Add(l[2].Trim(), Convert.ToInt16(l[0]));
+
+
+                }
+
+
+            }
+        }
+
+
+        private void get_config()
+        {
+            comPort.Write("config dump\n");
+
+            List<string> config = new List<string> { };
+            string line;
+            bool started = false;
+            bool finished = false;
+            while (!finished)
+            {
+                line = comPort.ReadLine();
+                if (line.Contains("AlceOSD config"))
+                {
+                    started = true;
+                    txt_log.AppendText(line + '\n');
+                }
+                if (started)
+                {
+                    config.Add(line);
+                    if (line.StartsWith("--"))
+                        finished = true;
+                }
+            }
+            parse_config(config.ToArray());
+        }
+
+
+        bool shell_active = false;
+
+        int his_idx = 0;
+        List<string> cmd_history = new List<string> { };
+
+        private void bt_conn_Click(object sender, EventArgs e)
+        {
+            if (shell_active)
+            {
+                timer_com.Enabled = false;
+                comPort.Close();
+                shell_active = false;
+                bt_conn.Text = "Connect";
+
+                his_idx = 0;
+                lb_history.Items.Clear();
+
+            }
+            else
+            {
+                setup_comport();
+                if (!open_comport())
+                    return;
+                if (!reset_board(false))
+                    return;
+
+                comPort.Write("\n");
+                System.Threading.Thread.Sleep(100);
+                comPort.DiscardInBuffer();
+
+
+                get_config();
+
+                get_widget_ids();
+
+                
+
+
+
+                shell_active = true;
+                timer_com.Enabled = true;
+                comPort.Write("version\n");
+                bt_conn.Text = "Disconnect";
+            }
+
+
+
+
+
+        }
+
+        private void timer_com_Tick(object sender, EventArgs e)
+        {
+            if (!shell_active)
+                timer_com.Enabled = false;
+
+            if (comPort.BytesToRead < 1)
+                return;
+
+            string ans = comPort.ReadExisting();
+            foreach (char c in ans)
+            {
+                if (c == '\n')
+                    txt_shell.AppendText("\r");
+                txt_shell.AppendText(c.ToString());
+            }
+
+
+            
+        }
+
+        private void tb_cmdLine_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == '\t')
+            {
+                //e.Handled = true;
+            }
+        }
+
+        private void tb_cmdLine_KeyDown(object sender, KeyEventArgs e)
+        {
+            if ((e.KeyCode == Keys.Tab) || (e.KeyCode == Keys.Enter))
+            {
+                e.SuppressKeyPress = true;
+            }
+
+            if (!comPort.IsOpen)
+                return;
+
+            if (!shell_active)
+                return;
+
+            string cmd = tb_cmdLine.Text.Trim('\n').Trim('\r');
+
+            switch (e.KeyCode)
+            {
+                case Keys.Enter:
+                    bool add2hist = true;
+                    if (cmd == "")
+                        add2hist = false;
+
+                    if ((cmd_history.Count > 0) && (cmd == cmd_history.ElementAt(cmd_history.Count - 1)))
+                        add2hist = false;
+
+                    if (add2hist)
+                    {
+                        cmd_history.Add(cmd);
+                        lb_history.Items.Add(cmd);
+                    }
+
+                    comPort.Write(cmd + "\n");
+                    tb_cmdLine.Clear();
+                    e.Handled = true;
+                    his_idx = 0;
+                    break;
+
+                case Keys.Up:
+                    if (cmd_history.Count == 0)
+                        break;
+                    his_idx++;
+                    if (his_idx > cmd_history.Count)
+                        his_idx = cmd_history.Count;
+                    tb_cmdLine.Text = cmd_history.ElementAt(cmd_history.Count - his_idx);
+                    tb_cmdLine.SelectionStart = tb_cmdLine.Text.Length;
+                    break;
+
+                case Keys.Down:
+                    his_idx--;
+                    if (his_idx <= 0)
+                    {
+                        tb_cmdLine.Text = "";
+                        his_idx = 0;
+                    }
+                    else
+                    {
+                        tb_cmdLine.Text = cmd_history.ElementAt(cmd_history.Count - his_idx);
+                    }
+                    break;
+
+                case Keys.Tab:
+                    comPort.Write(tb_cmdLine.Text + "\t");
+                    break;
+
+                default:
+                    break;
+            }
+
+
+        }
+
+
+
+
+
+
+        private Canvas get_widget_bitmap(string id)
+        {
+            Canvas c = new Canvas();
+            String line;
+            c.width = 0; c.height = 0;
+
+            timer_com.Enabled = false;
+            comPort.Write("widgets bitmap "+id+"\n");
+            System.Threading.Thread.Sleep(100);
+
+            do
+            {
+                Match m;
+                line = comPort.ReadLine();
+
+                m = Regex.Match(line, @"^w:(\d+)");
+                if (m.Success)
+                {
+                    c.width = Convert.ToInt16(m.Groups[1].Value);
+                    continue;
+                }
+
+                m = Regex.Match(line, @"^h:(\d+)");
+                if (m.Success)
+                {
+                    c.height = Convert.ToInt16(m.Groups[1].Value);
+                }
+
+            } while (!line.StartsWith("h:"));
+
+            int size = c.width * c.height;
+            if (size > 0)
+            {
+                int left = size;
+                List<byte> recievedData = new List<byte>();
+                do
+                {
+                    int avail = comPort.BytesToRead;
+                    int n = (avail > left) ? left : avail;
+                    byte[] data = new byte[n];
+                    comPort.Read(data, 0, data.Length);
+                    data.ToList().ForEach(b => recievedData.Add(b));
+                    left -= n;
+                } while (left > 0);
+
+                c.bitmap = recievedData.ToArray();
+            }
+
+            System.Threading.Thread.Sleep(100);
+            comPort.DiscardInBuffer();
+
+            timer_com.Enabled = true;
+            return c;
+        }
+
+
+
+        private void pb_osd_Paint(object sender, PaintEventArgs e)
+        {
+            IntPtr hdc = e.Graphics.GetHdc();
+            int x, y, b, v, d;
+            uint bgr;
+
+            foreach(KeyValuePair<string, Canvas> _c in ca)
+            {
+                Canvas c = _c.Value;
+                txt_log.AppendText("canvas w" + c.width + "\n");
+                for (y = 0; y < c.height; y++)
+                {
+                    for (x = 0; x < c.width; x++)
+                    {
+                        if (y * c.width + x < c.bitmap.Length)
+                        {
+                            v = c.bitmap[y * c.width + x];
+                            for (b = 0; b < 4; b++)
+                            {
+
+                                d = (v >> (6 - (2 * b))) & 3;
+                                bgr = 0;
+                                switch (d)
+                                {
+                                    case 1:
+                                        bgr = 0xffffff;
+                                        break;
+                                    case 2:
+                                        bgr = 0x808080;
+                                        break;
+                                    case 3:
+                                        bgr = 0x000000;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                if (d > 0)
+                                    GDI.SetPixel(hdc, c.x0 + x * 4 + b, c.y0 + y, bgr);
+
+                            }
+                        }
+                    }
+                }
+            }
+
+            e.Graphics.ReleaseHdc(hdc);
+
+            if (ca.ContainsKey(selected_widget))
+            {
+                Canvas c = ca[selected_widget];
+                Rectangle ee = new Rectangle(c.x0, c.y0, c.width * 4, c.height);
+                using (Pen pen = new Pen(Color.Red, 2)) { e.Graphics.DrawRectangle(pen, ee); }
+            }
+
+        }
+
+
+        private void set_widget_position(Canvas c)
+        {
+
+        }
+
+
+        private Canvas get_widget_canvas(String name, Dictionary<string, double> cfg)
+        {
+            string wname = name.Substring(0, name.Length - 1);
+
+            int id = -1;
+            if (widget_ids.ContainsKey(wname))
+            {
+                id = widget_ids[wname];
+            }
+
+            int uid = name.ElementAt(name.Length - 1) - '0';
+            txt_log.AppendText("uid=" + uid + "\n");
+            txt_log.AppendText("id=" + id + "\n");
+
+            string req = id.ToString() + "+" + uid.ToString();
+
+            int hjust = (int)cfg["HJUST"];
+            int vjust = (int)cfg["VJUST"];
+            int x = (int)cfg["X"];
+            int y = (int)cfg["Y"];
+
+            //txt_log.AppendText("hj" + hjust + "vj" + vjust + "x" + x + "y" + y + "\n");
+
+            int xsize;
+            switch (cb_xsize.SelectedIndex)
+            {
+                case 0:
+                default:
+                    xsize = 480;
+                    break;
+                case 1:
+                    xsize = 480;
+                    break;
+                case 2:
+                    xsize = 560;
+                    break;
+                case 3:
+                    xsize = 672;
+                    break;
+            }
+
+            int ysize = (int)nud_ysize.Value;
+
+            Canvas c = get_widget_bitmap(req);
+            if (c.width > 0)
+            {
+                switch (hjust)
+                {
+                    case 0:
+                    default:
+                        c.x0 = x;
+                        break;
+                    case 1:
+                        c.x0 = xsize + x - c.width * 4;
+                        break;
+                    case 2:
+                        c.x0 = xsize / 2 + x - (c.width * 4) / 2;
+                        break;
+                }
+                switch (vjust)
+                {
+                    case 0:
+                    default:
+                        c.y0 = y;
+                        break;
+                    case 1:
+                        c.y0 = ysize + y - c.height;
+                        break;
+                    case 2:
+                        c.y0 = ysize / 2 + y - c.height / 2;
+                        break;
+                }
+            }
+
+            return c;
+        }
+
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Graphics g = pb_osd.CreateGraphics();
+
+
+            int xsize;
+            switch (cb_xsize.SelectedIndex)
+            {
+                case 0:
+                default:
+                    xsize = 480;
+                    break;
+                case 1:
+                    xsize = 480;
+                    break;
+                case 2:
+                    xsize = 560;
+                    break;
+                case 3:
+                    xsize = 672;
+                    break;
+            }
+            int ysize = (int)nud_ysize.Value;
+            Size s = new Size();
+            s.Height = ysize + 10;
+            s.Width = xsize + 10;
+            pb_osd.Size = s;
+
+
+            ca.Clear();
+            foreach (KeyValuePair<string, Dictionary<string, double>> pair in widgets)
+            {
+                if (pair.Value["TAB"] != (double)nud_seltab.Value)
+                    continue;
+
+                Canvas c = get_widget_canvas(pair.Key, pair.Value);
+                if (c.width > 0)
+                    ca[pair.Key] = c;
+
+            }
+
+
+            //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+            //g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            //g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.None;
+            pb_osd.Invalidate();
+        }
+
+        Point _startPt = new Point();
+        bool _tracking = false;
+        decimal nud_x0, nud_y0;
+
+        private void pb_osd_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == System.Windows.Forms.MouseButtons.Left)
+            {
+                _startPt = e.Location;
+                if (ca.ContainsKey(selected_widget))
+                {
+                    Canvas c = ca[selected_widget];
+                    if ( (_startPt.X >= c.x0) && (_startPt.X <= (c.x0 + c.width*4)) &&
+                         (_startPt.Y >= c.y0) && (_startPt.Y <= (c.y0 + c.height)))
+                    {
+                        _tracking = true;
+                    }
+                }
+
+                if (! _tracking)
+                {
+                    foreach(KeyValuePair<String,Canvas> pair in ca)
+                    {
+                        Canvas c = pair.Value;
+                        if ((_startPt.X >= c.x0) && (_startPt.X <= (c.x0 + c.width * 4)) &&
+                            (_startPt.Y >= c.y0) && (_startPt.Y <= (c.y0 + c.height)))
+                        {
+                            selected_widget = pair.Key;
+                            lb_widgets.SelectedItem = selected_widget;
+                            _tracking = true;
+                            pb_osd.Invalidate();
+                            break;
+                        }
+                    }
+                }
+
+                if (_tracking)
+                {
+                    nud_x0 = nud_wxpos.Value;
+                    nud_y0 = nud_wypos.Value;
+                }
+
+
+            }
+        }
+
+        private void pb_osd_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (_tracking)
+            {
+
+                int dx = (e.X - _startPt.X);
+                int dy = (e.Y - _startPt.Y);
+
+                nud_wxpos.Value = (int) (nud_x0 + dx) & ~3;
+                nud_wypos.Value = nud_y0 + dy;
+
+            }
+
+        }
+
+        private void pb_osd_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (_tracking)
+            {
+                _tracking = false;
+                //submit_widget_config(selected_widget);
+            }
+        }
+
+        private void timer_submit_Tick(object sender, EventArgs e)
+        {
+            submit_widget_config(selected_widget);
+            timer_submit.Stop();
+        }
+
+        private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Console.WriteLine("selected={0} widgets={1}", tabControl1.SelectedIndex, tabControl1.TabPages.IndexOfKey("tabWidgets"));
+            if (tabControl1.SelectedIndex == tabControl1.TabPages.IndexOfKey("tabWidgets"))
+                recalculate_pb_osd_size();
+        }
+
     }
 }

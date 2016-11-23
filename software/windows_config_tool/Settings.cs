@@ -8,6 +8,17 @@ using System.Configuration;
 
 namespace AlceOSD
 {
+
+
+
+    public class GDI
+    {
+        [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+        internal static extern bool SetPixel(IntPtr hdc, int X, int Y, uint crColor);
+    }
+
+
+
     public class UserSettings : ApplicationSettingsBase
     {
         [UserScopedSetting()]
