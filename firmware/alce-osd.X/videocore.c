@@ -384,9 +384,9 @@ static void video_read_dac(unsigned char *dac_status)
     while (I2C1CONbits.PEN == 1);
     
     /*for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
-        printf("0x%02x ", dac_status[i]);
+        shell_printf("0x%02x ", dac_status[i]);
         if (((i+1) % 3) == 0)
-            printf("\n");
+            shell_printf("\n");
     }*/
 }
 
@@ -1567,7 +1567,7 @@ static void shell_cmd_stats(char *args, void *data)
         for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
             shell_printf("0x%02x ", dac_status[i]);
             if (((i+1) % 3) == 0)
-                printf("\n  ");
+                shell_printf("\n  ");
         }
         shell_printf("\n");
     }

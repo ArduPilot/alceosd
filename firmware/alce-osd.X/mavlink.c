@@ -341,7 +341,7 @@ static void mavlink_learn_route(unsigned char ch, mavlink_message_t *msg)
         //}
         total_routes++;
 #ifdef ROUTING_DEBUG
-        printf("learned route %u %u via %u\n",
+        shell_printf("learned route %u %u via %u\n",
                  (unsigned)msg->sysid, 
                  (unsigned)msg->compid,
                  (unsigned)ch);
@@ -706,7 +706,7 @@ static void shell_cmd_callbacks(char *args, void *data)
     shell_printf("\n\nMavlink callbacks:\n");
     for (i = 0; i < nr_callbacks; i++) {
         if (c->cbk != NULL) {
-            printf(" type=%d sysid=%3d msgid=%3d cbk=%p data=%p\n",
+            shell_printf(" type=%d sysid=%3d msgid=%3d cbk=%p data=%p\n",
                         c->type, c->sysid, c->msgid, c->cbk, c->data);
             t++;
         }

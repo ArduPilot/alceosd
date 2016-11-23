@@ -67,7 +67,7 @@ static void shell_cmd_timers(char *args, void *data)
             if ((void *) &timers[i] == (void *) a) {
                 t = &timers[i];
                 t->last_tick = get_millis();
-                printf("\n\ntimer=%p type=%u period=%5lums last_tick=%5lums cbk=%p data=%p\n",
+                shell_printf("\n\ntimer=%p type=%u period=%5lums last_tick=%5lums cbk=%p data=%p\n",
                     t, t->type, t->period, t->last_tick, t->cbk, t->data);
             }
         }
@@ -77,7 +77,7 @@ static void shell_cmd_timers(char *args, void *data)
     shell_printf("\n\nWidget timers:\n");
     for (i = 0; i < nr_timers; i++) {
         if (t->cbk != NULL) {
-            printf(" timer=%p type=%u period=%5lums last_tick=%5lums cbk=%p data=%p\n",
+            shell_printf(" timer=%p type=%u period=%5lums last_tick=%5lums cbk=%p data=%p\n",
                     t, t->type, t->period, t->last_tick, t->cbk, t->data);
             total++;
         }
