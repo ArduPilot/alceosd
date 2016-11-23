@@ -90,9 +90,12 @@ struct alceosd_config config = {
         .time = 20,
     },
 
-    .mav.streams = {3, 1, 4, 1, 4, 10, 10, 1},
-    .mav.osd_sysid = 200,
-    .mav.uav_sysid = 1,
+    .mav = {
+        .streams = {3, 1, 4, 1, 4, 10, 10, 1},
+        .osd_sysid = 200,
+        .uav_sysid = 1,
+        .heartbeat = 1,
+    },
     
     .default_units = UNITS_METRIC,
 
@@ -131,8 +134,6 @@ const struct param_def params_config[] = {
     PARAM_END,
 };
 
-static struct uart_client config_uart_client;
-
 
 unsigned char get_units(struct widget_config *cfg)
 {
@@ -164,7 +165,6 @@ unsigned char get_sw_state(struct ch_switch *sw)
     return (unsigned char) x;
 }
 
-
 static void load_config(void)
 {
     unsigned long status;
@@ -182,7 +182,7 @@ static void load_config(void)
         status = ((unsigned long) buf[0]) |
                  ((unsigned long) buf[1] << 8) |
                  ((unsigned long) buf[2] << 16);
-        //printf("signature: %4x%4x\n", (unsigned int) (status>>16), (unsigned int) status);
+        //shell_printf("signature: %4x%4x\n", (unsigned int) (status>>16), (unsigned int) status);
         if (status == CONFIG_VERSION_SIG)
             break;
 
@@ -190,7 +190,7 @@ static void load_config(void)
     }
 
     if (addr < CONFIG_ADDR_END) {
-        //printf("valid config found at %4x\n", (unsigned int) addr);
+        //shell_printf("valid config found at %4x\n", (unsigned int) addr);
         valid_config_addr = addr;
         read_flash(addr + 4, sizeof(struct alceosd_config), (unsigned char *) &config);
     }
@@ -241,7 +241,7 @@ static void write_config(void)
     /* write config */
     /* flag valid config */
 #ifdef DEBUG_CONFIG
-    printf("last_addr=%04x%04x\n", (unsigned int) (valid_config_addr>>16), (unsigned int) (valid_config_addr));
+    shell_printf("last_addr=%04x%04x\n", (unsigned int) (valid_config_addr>>16), (unsigned int) (valid_config_addr));
 #endif
     write_word(valid_config_addr, CONFIG_VERSION_SIG);
 
@@ -267,7 +267,7 @@ static void write_config(void)
     }
 
 #ifdef DEBUG_CONFIG
-    printf("last_addr=%04x%04x\n", (unsigned int) (addr>>16), (unsigned int) (addr));
+    shell_printf("last_addr=%04x%04x\n", (unsigned int) (addr>>16), (unsigned int) (addr));
 #endif
     RESTORE_CPU_IPL(ipl);
 }
@@ -275,27 +275,8 @@ static void write_config(void)
 
 extern unsigned char hw_rev;
 
-static void dump_config_text(void)
-{
-    char param_name[17];
-    float value;
-    unsigned int i;
-    
-    printf("\nAlceOSD config hw%dv%d fw%d.%d.%d\n==\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
-
-    for (i = 0; i < params_get_total(); i++) {
-        value = params_get_value(i, param_name);
-        printf("%s = %f\n", param_name, (double) value);
-    }
-
-    printf("--\n");
-
-}
-
-static unsigned int config_process(struct uart_client *cli, unsigned char *buf, unsigned int len);
-
 #define MAX_LINE_LEN 50
-static unsigned int load_config_text(struct uart_client *cli, unsigned char *buf, unsigned int len)
+static u8 load_config_text(unsigned char *buf, unsigned int len, void *data)
 {
     static unsigned char line[MAX_LINE_LEN];
     static unsigned char llen = 0;
@@ -307,91 +288,36 @@ static unsigned int load_config_text(struct uart_client *cli, unsigned char *buf
     while (*buf != '\n') {
         line[llen++] = *(buf++);
         if (++i == len)
-            return len;
+            return 0;
     }
     line[llen] = '\0';
     i++;
 
-    /* process line */
     if (llen == 0)
-        return i;
+        return 0;
 
     /* the end */
     if (line[0] == '.') {
-        config_uart_client.read = config_process;
         llen = 0;
-        load_tab(0);
-        return i;
+        load_tab(1);
+        return 1;
     }
 
     /* reset widgets config */
-    if (memcmp("==", line, 2) == 0)
+    if (memcmp("==", line, 2) == 0) {
         config.widgets[0].tab = TABS_END;
-
-    sscanf((const char *) line, "%20s = %f", param, &value);
-    params_set_value(param, value, 0);
-    printf("got: '%s' = '%f'\n", param, (double) value);
-
+    } else {
+        int ret = sscanf((const char *) line, "%20s = %f", param, &value);
+        if (ret == 2) {
+            params_set_value(param, value, 0);
+            shell_printf("ret=%d, got: '%s' = '%f'\n", ret, param, (double) value);
+        }
+    }
     llen = 0;
-    return i;
+    return 0;
 }
-
-static void exit_config(void)
-{
-    uart_set_config_pins();
-    uart_set_config_baudrates();
-    uart_set_config_clients();
-}
-
-
-enum {
-    MENU_MAIN,
-    MENU_TABS,
-    MENU_TAB_WIDGETS,
-    MENU_ADD_WIDGET,
-    MENU_EDIT_WIDGET,
-};
-
-const char menu_main[] = "\n\n"
-                         "AlceOSD setup\n\n"
-                         "3 - Configure tabs\n"
-                         "4 - Units (global setting): %s\n"
-                         "\n"
-                         "s - Save settings to FLASH\n"
-                         "d - Dump setting to console\n"
-                         "l - Load settings from console\n"
-                         "x - Exit config\n";
-
-const char menu_tabs[] = "\n\nAlceOSD :: TAB %d config\n\n"
-                         "e - Edit tab\n"
-                         "x - Go back\n";
-
-const char menu_tab_widgets[] = "\n\nAlceOSD :: TAB %d widgets config\n\n"
-                                "0 - Add widget\n"
-                                "x - Go Back\n\n";
-
-const char menu_add_widgets[] = "\n\nAlceOSD :: Add widget\n\n"
-                                "0 - Go back\n";
-
-const char menu_edit_widget[] = "\n\nAlceOSD :: Edit widget\n\n"
-                                "1 - Horizontal justification: %d\n"
-                                "2 - Vertical justification: %d\n"
-                                "3/4 - Mode: %d\n"
-                                "5/6 - Units: %d\n"
-                                "7/8 - Source: %d\n"
-                                "w/e - X position: %d\n"
-                                "q/a - Y position: %d\n"
-                                "0 - Remove\n"
-                                "\nx - Go back\n";
-
 
 extern const struct widget_ops *all_widget_ops[];
-
-static unsigned int shell_process(struct uart_client *cli, unsigned char *buf, unsigned int len)
-{
-    shell_parser(buf, len);
-    return len;
-}
 
 static void shell_cmd_stats(char *args, void *data)
 {
@@ -418,12 +344,22 @@ static void shell_cmd_savecfg(char *args, void *data)
 static void shell_cmd_loadcfg(char *args, void *data)
 {
     shell_printf("Loading config...\n");
-    config_uart_client.read = load_config_text;
+    shell_get(load_config_text, NULL);
 }
 
 static void shell_cmd_dumpcfg(char *args, void *data)
 {
-    dump_config_text();
+    char param_name[17];
+    float value;
+    u16 i, t = params_get_total();
+    
+    shell_printf("\nAlceOSD config hw%dv%d fw%d.%d.%d\n==\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
+
+    for (i = 0; i < t; i++) {
+        value = params_get_value(i, param_name);
+        shell_printf("%s = %f\n", param_name, (double) value);
+    }
+    shell_printf("--\n");
 }
 
 static const struct shell_cmdmap_s config_cmdmap[] = {
@@ -439,281 +375,8 @@ void shell_cmd_cfg(char *args, void *data)
     shell_exec(args, config_cmdmap, data);
 }
 
-
-static unsigned int config_process(struct uart_client *cli, unsigned char *buf, unsigned int len)
-{
-    static unsigned char state = MENU_MAIN;
-    unsigned int osdxsize, osdysize;
-    static unsigned int options[30];
-    static unsigned char nr_opt = 0;
-
-    video_get_size(&osdxsize, &osdysize);
-
-    static unsigned char current_tab = 1;
-    static struct widget_config *wcfg;
-
-    char c = *buf;
-
-    switch (state) {
-        case MENU_MAIN:
-        default:
-            switch (c) {
-                case '3':
-                    state = MENU_TABS;
-                    break;
-                case '4':
-                    if (config.default_units == UNITS_METRIC)
-                        config.default_units = UNITS_IMPERIAL;
-                    else
-                        config.default_units = UNITS_METRIC;
-                    load_tab(current_tab);
-                    break;
-                case 's':
-                    printf("Saving config to FLASH...\n");
-                    write_config();
-                    break;
-                case 'd':
-                    printf("Dumping config to console...\n");
-                    dump_config_text();
-                    break;
-                case 'l':
-                    printf("Loading config from console...\n");
-                    config_uart_client.read = load_config_text;
-                    return 1;
-                case 'x':
-                    exit_config();
-                    return 1;
-                    
-                case '+':
-                    break;
-                case '-':
-                    break;
-                    
-                case '!':
-                    config_uart_client.read = shell_process;
-                    break;
-
-                case '#':
-                    __asm__ volatile ("reset");
-                    break;
-                default:
-                    break;
-            }
-
-            break;
-        case MENU_TABS:
-            switch (c) {
-                case '1':
-                    current_tab--;
-                    load_tab(current_tab);
-                    break;
-                case '2':
-                    current_tab++;
-                    load_tab(current_tab);
-                    break;
-                case 'e':
-                    state = MENU_TAB_WIDGETS;
-                    break;
-                case 'x':
-                    state = MENU_MAIN;
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case MENU_TAB_WIDGETS:
-            switch (c) {
-                case '0':
-                    state = MENU_ADD_WIDGET;
-                    break;
-                case 'x':
-                    state = MENU_TABS;
-                    break;
-                default:
-                    if (c > '9')
-                        c -= ('a' - 9);
-                    else
-                        c -= '1';
-                    if (c > nr_opt)
-                        break;
-                    nr_opt = c;
-                    state = MENU_EDIT_WIDGET;
-            }
-            break;
-        case MENU_ADD_WIDGET:
-            switch (c) {
-                case '0':
-                    state = MENU_TAB_WIDGETS;
-                    break;
-                default:
-                    if (c > '9')
-                        c -= ('a' - 9);
-                    else
-                        c -= '1';
-                    if (c > nr_opt)
-                        break;
-                    nr_opt = c;
-
-                    wcfg = &config.widgets[0];
-                    while (wcfg->tab != TABS_END)
-                        wcfg++;
-
-                    wcfg->uid = widget_get_uid(options[nr_opt]);
-                    wcfg->tab = current_tab;
-                    wcfg->widget_id = options[nr_opt];
-                    wcfg->x = 0;
-                    wcfg->y = 0;
-                    wcfg->props.raw = JUST_VCENTER | JUST_HCENTER;
-
-                    wcfg++;
-
-                    wcfg->tab = TABS_END;
-
-                    load_tab(current_tab);
-
-                    state = MENU_TAB_WIDGETS;
-                    break;
-            }
-            break;
-        case MENU_EDIT_WIDGET:
-            switch (c) {
-                case 'a':
-                    wcfg->y++;
-                    break;
-                case 'q':
-                    wcfg->y--;
-                    break;
-                case 'w':
-                    wcfg->x-=4;
-                    break;
-                case 'e':
-                    wcfg->x+=4;
-                    break;
-                case '1':
-                    wcfg->props.hjust++;
-                    if (wcfg->props.hjust > 2)
-                        wcfg->props.hjust = 0;
-                    break;
-                case '2':
-                    wcfg->props.vjust++;
-                    if (wcfg->props.vjust > 2)
-                        wcfg->props.vjust = 0;
-                    break;
-                case '3':
-                    wcfg->props.mode--;
-                    break;
-                case '4':
-                    wcfg->props.mode++;
-                    break;
-                case '5':
-                    wcfg->props.units--;
-                    break;
-                case '6':
-                    wcfg->props.units++;
-                    break;
-                case '7':
-                    wcfg->props.source--;
-                    break;
-                case '8':
-                    wcfg->props.source++;
-                    break;
-                case 'x':
-                    state = MENU_TAB_WIDGETS;
-                    break;
-                case '0': {
-                    struct widget_config *wcfg2 = config.widgets;
-                    while (wcfg2 != wcfg)
-                        wcfg2++;
-                    wcfg++;
-                    while (wcfg->tab != TABS_END) {
-                        memcpy(wcfg2++, wcfg++, sizeof(struct widget_config));
-                    }
-                    wcfg2->tab = TABS_END;
-                    state = MENU_TAB_WIDGETS;
-                }
-                default:
-                    break;
-            }
-            load_tab(current_tab);
-            break;
-    }
-
-
-    switch (state) {
-        case MENU_MAIN:
-        default:
-            printf(menu_main,
-                    (config.default_units == UNITS_METRIC) ? "METRIC" : "IMPERIAL");
-            break;
-        case MENU_TABS:
-            printf(menu_tabs, current_tab);
-            break;
-        case MENU_TAB_WIDGETS: {
-            wcfg = &config.widgets[0];
-            const struct widget_ops *w_ops;
-            char c = '1';
-            nr_opt = 0;
-
-            printf(menu_tab_widgets, current_tab);
-            while (wcfg->tab != TABS_END) {
-                if (wcfg->tab == current_tab) {
-                    w_ops = get_widget_ops(wcfg->widget_id);
-                    if (w_ops != NULL) {
-                        printf("%c - %s\n", c++, w_ops->name);
-                        if (c == ('9'+1))
-                            c = 'a';
-                        options[nr_opt++] = (int) wcfg;
-                    }
-                }
-                wcfg++;
-            }
-            break;
-        }
-
-        case MENU_ADD_WIDGET: {
-            const struct widget_ops **w_ops;
-            char c = '1';
-            nr_opt = 0;
-
-            printf(menu_add_widgets);
-
-            w_ops = all_widget_ops;
-            while (*w_ops != NULL) {
-                printf("%c - %s\n", c++, (*w_ops)->name);
-                if (c == ('9'+1))
-                    c = 'a';
-                options[nr_opt++] = (*w_ops)->id;
-                w_ops++;
-            }
-            break;
-        }
-        case MENU_EDIT_WIDGET: {
-            wcfg = (struct widget_config*) options[nr_opt];
-            // struct widget_ops *w_ops = get_widget_ops(wcfg->widget_id);
-
-            printf(menu_edit_widget,
-                wcfg->props.hjust,
-                wcfg->props.vjust,
-                wcfg->props.mode,
-                wcfg->props.units,
-                wcfg->props.source,
-                wcfg->x,
-                wcfg->y);
-            break;
-        }
-
-    }
-    return 1;
-}
-
 void config_init(void)
 {
     params_add(params_config);
-
     load_config();
-
-    memset(&config_uart_client, 0, sizeof(struct uart_client));
-    config_uart_client.read = config_process;
-    config_uart_client.id = UART_CLIENT_CONFIG;
-    uart_add_client(&config_uart_client);
 }
