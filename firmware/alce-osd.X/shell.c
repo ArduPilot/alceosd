@@ -27,7 +27,9 @@
 #define CTRL_R      18
 #define CTRL_D      4
 
+static struct uart_client shell_uart_client;
 extern unsigned char hw_rev;
+
 static void shell_cmd_version(char *args, void *data)
 {
     shell_printf("\nAlceOSD hw%dv%d fw%d.%d.%d\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
@@ -54,6 +56,31 @@ static const struct shell_cmdmap_s root_cmdmap[] = {
     {"", NULL, ""},
 };
 
+
+void shell_write(u8 *buf, u16 len)
+{
+    u16 wr;
+    u8 *b = buf;
+    do {
+        wr = min(UART_TX_BUF_SIZE, len);
+        shell_uart_client.write(b, wr);
+        b += wr;
+        len -= wr;
+    } while (len > 0);
+}
+
+void shell_write_eds(__eds__ unsigned char *buf, u16 len)
+{
+    u8 _buf[UART_TX_BUF_SIZE];
+    u16 wr, i;
+    do {
+        wr = min(UART_TX_BUF_SIZE, len);
+        for (i = 0; i < wr; i++)
+            _buf[i] = *(buf++);
+        shell_uart_client.write(_buf, wr);
+        len -= wr;
+    } while (len > 0);
+}
 
 void shell_putc(unsigned char c)
 {
@@ -146,7 +173,7 @@ void shell_exec(char *cmd_line, const struct shell_cmdmap_s *c, void *data)
     if (args != NULL)
         *args++ = '\0';
 
-    //printf("\r\nexec: [%s] [%s] [%p]\r\n", cmd, args, data);
+    //shell_printf("\r\nexec: [%s] [%s] [%p]\r\n", cmd, args, data);
     if (strcmp(cmd, "help") == 0) {
         if (ac == NULL) {
             shell_printf("\r\n");
@@ -156,7 +183,7 @@ void shell_exec(char *cmd_line, const struct shell_cmdmap_s *c, void *data)
             }
         } else {
             while (c->handler != NULL) {
-                (*ac) = c;
+                (*ac) = (struct shell_cmdmap_s*) c;
                 ac++;
                 c++;
             }
@@ -194,7 +221,7 @@ void shell_parser(unsigned char *buf, unsigned int len)
     }
 
     for (i = 0; i < len; i++) {
-        //printf("<%d>", buf[i]);
+        //shell_printf("<%d>", buf[i]);
         switch (buf[i]) {
             case BACKSPACE:
                 if (cmd_len > 0) {
@@ -264,4 +291,18 @@ void shell_parser(unsigned char *buf, unsigned int len)
         }
 
     }
+}
+
+static unsigned int shell_process(struct uart_client *cli, unsigned char *buf, unsigned int len)
+{
+    shell_parser(buf, len);
+    return len;
+}
+
+void shell_init(void)
+{
+    memset(&shell_uart_client, 0, sizeof(struct uart_client));
+    shell_uart_client.read = shell_process;
+    shell_uart_client.id = UART_CLIENT_SHELL;
+    uart_add_client(&shell_uart_client);
 }

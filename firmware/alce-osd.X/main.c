@@ -307,6 +307,9 @@ int main(void) {
     
     /* init uart */
     uart_init();
+    
+    /* init shell */
+    shell_init();
 
 #ifdef DEBUG_INIT
     shell_printf("AlceOSD hw%dv%d fw%d.%d.%d\r\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);

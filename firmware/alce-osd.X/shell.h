@@ -19,6 +19,7 @@
 #ifndef _SHELL_H
 #define	_SHELL_H
 
+#include "alce-types.h"
 #define MAX_SHELL_ARGVAL_LEN    15
 
 enum {
@@ -38,12 +39,14 @@ struct shell_argval {
     char val[MAX_SHELL_ARGVAL_LEN];
 };
 
+void shell_init(void);
 void shell_exec(char *cmd, const struct shell_cmdmap_s *c, void *data);
 void shell_parser(unsigned char *buf, unsigned int len);
 unsigned char shell_arg_parser(char *args, struct shell_argval *v, unsigned char max);
 struct shell_argval* shell_get_argval(struct shell_argval *v, char k);
 
 int shell_printf(const char *fmt, ...);
-void shell_putc(unsigned char c);
+void shell_write(u8 *buf, u16 len);
+void shell_write_eds(__eds__ u8 *buf, u16 len);
 
 #endif
