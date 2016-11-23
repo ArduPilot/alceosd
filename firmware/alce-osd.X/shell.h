@@ -46,6 +46,7 @@ unsigned char shell_arg_parser(char *args, struct shell_argval *v, unsigned char
 struct shell_argval* shell_get_argval(struct shell_argval *v, char k);
 
 int shell_printf(const char *fmt, ...);
+void shell_get(void *f, u32 data);
 void shell_write(u8 *buf, u16 len);
 void shell_write_eds(__eds__ u8 *buf, u16 len);
 

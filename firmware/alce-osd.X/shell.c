@@ -84,12 +84,12 @@ void shell_write_eds(__eds__ unsigned char *buf, u16 len)
 
 void shell_putc(unsigned char c)
 {
-    printf("%c", c);
+    shell_write(&c, 1);
 }
 
 void shell_puts(char *s)
 {
-    printf("%s", s);
+    shell_write((u8*) s, strlen(s));
 }
 
 int shell_printf(const char *fmt, ...)
@@ -112,7 +112,7 @@ static struct shell_getter_s {
     unsigned long data;
 } shell_getter;
 
-void shell_get(void *f, unsigned long data)
+void shell_get(void *f, u32 data)
 {
     shell_getter.func = f;
     shell_getter.data = data;
