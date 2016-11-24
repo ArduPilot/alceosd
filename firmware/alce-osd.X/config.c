@@ -337,7 +337,7 @@ static void shell_cmd_stats(char *args, void *data)
 
 static void shell_cmd_savecfg(char *args, void *data)
 {
-    shell_printf("Saving config...\n");
+    shell_printf("\nSaving config...\n");
     write_config();
 }
 
