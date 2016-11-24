@@ -122,10 +122,13 @@ unsigned char shell_arg_parser(char *args, struct shell_argval *v, unsigned char
 {
     char *p, *s;
     u8 i;
-    u16 len = strlen(args) - 1;
+    u16 len = strlen(args);
+    
+    if (len == 0)
+        return 0;
 
-    /* deal with negative numbers replacing the minus with 0xff */
-    for (i = 0; i < len; i++) {
+    /* deal with negative numbers replacing the minus with a marker (0xff) */
+    for (i = 0; i < len - 1; i++) {
         if ((args[i] == '-') && (args[i+1] >= '0') && (args[i+1] <= '9')) {
             args[i] = 0xff;
         }
@@ -203,7 +206,7 @@ void shell_exec(char *cmd_line, const struct shell_cmdmap_s *c, void *data)
     }
 }
 
-void shell_parser(unsigned char *buf, unsigned int len)
+static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, unsigned int len)
 {
     static unsigned char cmd_len = 0;
     static char cmd_line[MAX_SHELL_LINE_LEN];
@@ -217,7 +220,7 @@ void shell_parser(unsigned char *buf, unsigned int len)
         i = shell_getter.func(buf, len, shell_getter.data);
         if (i)
             shell_getter.func = NULL;
-        return;
+        return len;
     }
 
     for (i = 0; i < len; i++) {
@@ -291,18 +294,13 @@ void shell_parser(unsigned char *buf, unsigned int len)
         }
 
     }
-}
-
-static unsigned int shell_process(struct uart_client *cli, unsigned char *buf, unsigned int len)
-{
-    shell_parser(buf, len);
     return len;
 }
 
 void shell_init(void)
 {
     memset(&shell_uart_client, 0, sizeof(struct uart_client));
-    shell_uart_client.read = shell_process;
+    shell_uart_client.read = shell_parser;
     shell_uart_client.id = UART_CLIENT_SHELL;
     uart_add_client(&shell_uart_client);
 }
