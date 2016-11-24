@@ -209,8 +209,10 @@ void schedule_widget(struct widget *w)
 
 void reconfig_widget(struct widget *w)
 {
-    reconfig_canvas(&w->ca, w->cfg);
-    schedule_widget(w);
+    if (w->ops->render) {
+        reconfig_canvas(&w->ca, w->cfg);
+        schedule_widget(w);
+    }
 }
 
 void widgets_reset(void)
@@ -733,7 +735,7 @@ static void shell_cmd_bitmap(char *args, void *data)
         uid = atoi(ptr);
         for (i = 0; i < total_active_widgets; i++) {
             w = active_widgets[i];
-            if ((w->cfg->uid == uid) && (w->cfg->widget_id == id)) {
+            if ((w->cfg->uid == uid) && (w->cfg->widget_id == id) && (w->ca.size > 0)) {
                 found = 1;
                 break;
             }
@@ -775,8 +777,6 @@ static void shell_cmd_config(char *args, void *data)
         shell_printf("      -b <value>      param2 value\n");
         shell_printf("      -c <value>      param3 value\n");
         shell_printf("      -d <value>      param4 value\n");
-    } else if (t == 1) {
-        /* dump widget config */
     } else {
         /* widget id+uid */
         ptr = strchr(p->val, '+');
@@ -793,6 +793,19 @@ static void shell_cmd_config(char *args, void *data)
 
         if (!found) {
             shell_printf("\n\nWidget not found: %02d+%02d", id, uid);
+            return;
+        }
+        
+        if (t == 1) {
+            /* dump widget config */
+            shell_printf("\nt:%u x:%d y:%d h:%u v:%u ",
+                    w->cfg->tab, w->cfg->x, w->cfg->y,
+                    w->cfg->props.hjust, w->cfg->props.vjust);
+            shell_printf("m:%u s:%u u:%u ", w->cfg->props.mode,
+                    w->cfg->props.source, w->cfg->props.units);
+            shell_printf("a:%u b:%u c:%u d:%u\n",
+                    w->cfg->params[0], w->cfg->params[1],
+                    w->cfg->params[2], w->cfg->params[3]);
             return;
         }
         
