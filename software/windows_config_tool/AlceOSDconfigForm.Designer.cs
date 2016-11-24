@@ -32,12 +32,14 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AlceOSDconfigForm));
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage6 = new System.Windows.Forms.TabPage();
+            this.label60 = new System.Windows.Forms.Label();
+            this.bt_commitCfg = new System.Windows.Forms.Button();
             this.lb_history = new System.Windows.Forms.ListBox();
             this.tb_cmdLine = new System.Windows.Forms.TextBox();
             this.bt_conn = new System.Windows.Forms.Button();
             this.txt_shell = new System.Windows.Forms.TextBox();
             this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.groupBox9 = new System.Windows.Forms.GroupBox();
+            this.gb_vid0v4 = new System.Windows.Forms.GroupBox();
             this.nud_vswmax = new System.Windows.Forms.NumericUpDown();
             this.nud_vswmin = new System.Windows.Forms.NumericUpDown();
             this.label55 = new System.Windows.Forms.Label();
@@ -89,28 +91,28 @@
             this.nud_xoffset = new System.Windows.Forms.NumericUpDown();
             this.nud_yoffset = new System.Windows.Forms.NumericUpDown();
             this.tabPage2 = new System.Windows.Forms.TabPage();
-            this.groupBox6 = new System.Windows.Forms.GroupBox();
+            this.gb_uart4 = new System.Windows.Forms.GroupBox();
             this.label22 = new System.Windows.Forms.Label();
             this.label23 = new System.Windows.Forms.Label();
             this.label24 = new System.Windows.Forms.Label();
             this.cb_port4 = new System.Windows.Forms.ComboBox();
             this.cb_baud4 = new System.Windows.Forms.ComboBox();
             this.cb_mode4 = new System.Windows.Forms.ComboBox();
-            this.groupBox5 = new System.Windows.Forms.GroupBox();
+            this.gb_uart3 = new System.Windows.Forms.GroupBox();
             this.label14 = new System.Windows.Forms.Label();
             this.label19 = new System.Windows.Forms.Label();
             this.label21 = new System.Windows.Forms.Label();
             this.cb_port3 = new System.Windows.Forms.ComboBox();
             this.cb_baud3 = new System.Windows.Forms.ComboBox();
             this.cb_mode3 = new System.Windows.Forms.ComboBox();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.gb_uart2 = new System.Windows.Forms.GroupBox();
             this.cb_port2 = new System.Windows.Forms.ComboBox();
             this.cb_baud2 = new System.Windows.Forms.ComboBox();
             this.label11 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.cb_mode2 = new System.Windows.Forms.ComboBox();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.gb_uart1 = new System.Windows.Forms.GroupBox();
             this.label10 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
@@ -157,7 +159,6 @@
             this.cb_tabmode = new System.Windows.Forms.ComboBox();
             this.label26 = new System.Windows.Forms.Label();
             this.tabWidgets = new System.Windows.Forms.TabPage();
-            this.button1 = new System.Windows.Forms.Button();
             this.pb_osd = new System.Windows.Forms.PictureBox();
             this.tb_wp4 = new System.Windows.Forms.TextBox();
             this.tb_wp3 = new System.Windows.Forms.TextBox();
@@ -215,7 +216,7 @@
             this.tabControl1.SuspendLayout();
             this.tabPage6.SuspendLayout();
             this.tabPage1.SuspendLayout();
-            this.groupBox9.SuspendLayout();
+            this.gb_vid0v4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_vswmax)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_vswmin)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_vswtimer)).BeginInit();
@@ -236,10 +237,10 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_xoffset)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_yoffset)).BeginInit();
             this.tabPage2.SuspendLayout();
-            this.groupBox6.SuspendLayout();
-            this.groupBox5.SuspendLayout();
-            this.groupBox2.SuspendLayout();
-            this.groupBox1.SuspendLayout();
+            this.gb_uart4.SuspendLayout();
+            this.gb_uart3.SuspendLayout();
+            this.gb_uart2.SuspendLayout();
+            this.gb_uart1.SuspendLayout();
             this.tabPage3.SuspendLayout();
             this.groupBox4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_streamExtra3)).BeginInit();
@@ -281,30 +282,57 @@
             this.tabControl1.Location = new System.Drawing.Point(12, 27);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(1146, 545);
+            this.tabControl1.Size = new System.Drawing.Size(1081, 599);
             this.tabControl1.TabIndex = 0;
             this.tabControl1.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
             // 
             // tabPage6
             // 
+            this.tabPage6.Controls.Add(this.label60);
+            this.tabPage6.Controls.Add(this.bt_commitCfg);
             this.tabPage6.Controls.Add(this.lb_history);
             this.tabPage6.Controls.Add(this.tb_cmdLine);
             this.tabPage6.Controls.Add(this.bt_conn);
             this.tabPage6.Controls.Add(this.txt_shell);
             this.tabPage6.Location = new System.Drawing.Point(4, 22);
             this.tabPage6.Name = "tabPage6";
-            this.tabPage6.Size = new System.Drawing.Size(1138, 519);
+            this.tabPage6.Size = new System.Drawing.Size(1073, 573);
             this.tabPage6.TabIndex = 5;
             this.tabPage6.Text = "Shell";
             this.tabPage6.UseVisualStyleBackColor = true;
             // 
+            // label60
+            // 
+            this.label60.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label60.AutoSize = true;
+            this.label60.Location = new System.Drawing.Point(950, 28);
+            this.label60.Name = "label60";
+            this.label60.Size = new System.Drawing.Size(87, 13);
+            this.label60.TabIndex = 5;
+            this.label60.Text = "Command history";
+            // 
+            // bt_commitCfg
+            // 
+            this.bt_commitCfg.Enabled = false;
+            this.bt_commitCfg.Location = new System.Drawing.Point(84, 3);
+            this.bt_commitCfg.Name = "bt_commitCfg";
+            this.bt_commitCfg.Size = new System.Drawing.Size(81, 23);
+            this.bt_commitCfg.TabIndex = 4;
+            this.bt_commitCfg.Text = "Save config";
+            this.bt_commitCfg.UseVisualStyleBackColor = true;
+            this.bt_commitCfg.Click += new System.EventHandler(this.bt_commitCfg_Click);
+            // 
             // lb_history
             // 
+            this.lb_history.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.lb_history.FormattingEnabled = true;
-            this.lb_history.Location = new System.Drawing.Point(676, 53);
+            this.lb_history.Location = new System.Drawing.Point(950, 44);
             this.lb_history.Name = "lb_history";
-            this.lb_history.Size = new System.Drawing.Size(120, 277);
+            this.lb_history.Size = new System.Drawing.Size(120, 498);
             this.lb_history.TabIndex = 3;
+            this.lb_history.TabStop = false;
+            this.lb_history.DoubleClick += new System.EventHandler(this.lb_history_DoubleClick);
             // 
             // tb_cmdLine
             // 
@@ -312,14 +340,13 @@
             this.tb_cmdLine.AcceptsTab = true;
             this.tb_cmdLine.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tb_cmdLine.AutoCompleteCustomSource.AddRange(new string[] {
-            "version"});
-            this.tb_cmdLine.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Suggest;
-            this.tb_cmdLine.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.CustomSource;
-            this.tb_cmdLine.Location = new System.Drawing.Point(0, 451);
+            this.tb_cmdLine.BackColor = System.Drawing.SystemColors.Window;
+            this.tb_cmdLine.Font = new System.Drawing.Font("Consolas", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tb_cmdLine.ForeColor = System.Drawing.SystemColors.WindowText;
+            this.tb_cmdLine.Location = new System.Drawing.Point(3, 542);
             this.tb_cmdLine.Multiline = true;
             this.tb_cmdLine.Name = "tb_cmdLine";
-            this.tb_cmdLine.Size = new System.Drawing.Size(846, 20);
+            this.tb_cmdLine.Size = new System.Drawing.Size(941, 28);
             this.tb_cmdLine.TabIndex = 2;
             this.tb_cmdLine.KeyDown += new System.Windows.Forms.KeyEventHandler(this.tb_cmdLine_KeyDown);
             this.tb_cmdLine.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tb_cmdLine_KeyPress);
@@ -347,40 +374,41 @@
             this.txt_shell.Name = "txt_shell";
             this.txt_shell.ReadOnly = true;
             this.txt_shell.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txt_shell.Size = new System.Drawing.Size(846, 413);
+            this.txt_shell.Size = new System.Drawing.Size(944, 504);
             this.txt_shell.TabIndex = 0;
+            this.txt_shell.VisibleChanged += new System.EventHandler(this.txt_shell_VisibleChanged);
             // 
             // tabPage1
             // 
-            this.tabPage1.Controls.Add(this.groupBox9);
+            this.tabPage1.Controls.Add(this.gb_vid0v4);
             this.tabPage1.Controls.Add(this.groupBox8);
             this.tabPage1.Controls.Add(this.groupBox7);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(1138, 519);
+            this.tabPage1.Size = new System.Drawing.Size(1073, 573);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Video";
             this.tabPage1.UseVisualStyleBackColor = true;
             // 
-            // groupBox9
+            // gb_vid0v4
             // 
-            this.groupBox9.Controls.Add(this.nud_vswmax);
-            this.groupBox9.Controls.Add(this.nud_vswmin);
-            this.groupBox9.Controls.Add(this.label55);
-            this.groupBox9.Controls.Add(this.label56);
-            this.groupBox9.Controls.Add(this.cb_vswch);
-            this.groupBox9.Controls.Add(this.nud_vswtimer);
-            this.groupBox9.Controls.Add(this.label57);
-            this.groupBox9.Controls.Add(this.label58);
-            this.groupBox9.Controls.Add(this.cb_vswmode);
-            this.groupBox9.Controls.Add(this.label59);
-            this.groupBox9.Location = new System.Drawing.Point(617, 6);
-            this.groupBox9.Name = "groupBox9";
-            this.groupBox9.Size = new System.Drawing.Size(202, 303);
-            this.groupBox9.TabIndex = 8;
-            this.groupBox9.TabStop = false;
-            this.groupBox9.Text = "Video input (hw_0v4)";
+            this.gb_vid0v4.Controls.Add(this.nud_vswmax);
+            this.gb_vid0v4.Controls.Add(this.nud_vswmin);
+            this.gb_vid0v4.Controls.Add(this.label55);
+            this.gb_vid0v4.Controls.Add(this.label56);
+            this.gb_vid0v4.Controls.Add(this.cb_vswch);
+            this.gb_vid0v4.Controls.Add(this.nud_vswtimer);
+            this.gb_vid0v4.Controls.Add(this.label57);
+            this.gb_vid0v4.Controls.Add(this.label58);
+            this.gb_vid0v4.Controls.Add(this.cb_vswmode);
+            this.gb_vid0v4.Controls.Add(this.label59);
+            this.gb_vid0v4.Location = new System.Drawing.Point(617, 6);
+            this.gb_vid0v4.Name = "gb_vid0v4";
+            this.gb_vid0v4.Size = new System.Drawing.Size(202, 303);
+            this.gb_vid0v4.TabIndex = 8;
+            this.gb_vid0v4.TabStop = false;
+            this.gb_vid0v4.Text = "Video input (hw_0v4)";
             // 
             // nud_vswmax
             // 
@@ -1083,41 +1111,41 @@
             // 
             // tabPage2
             // 
-            this.tabPage2.Controls.Add(this.groupBox6);
-            this.tabPage2.Controls.Add(this.groupBox5);
-            this.tabPage2.Controls.Add(this.groupBox2);
-            this.tabPage2.Controls.Add(this.groupBox1);
+            this.tabPage2.Controls.Add(this.gb_uart4);
+            this.tabPage2.Controls.Add(this.gb_uart3);
+            this.tabPage2.Controls.Add(this.gb_uart2);
+            this.tabPage2.Controls.Add(this.gb_uart1);
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(1138, 519);
+            this.tabPage2.Size = new System.Drawing.Size(1073, 573);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Serial ports";
             this.tabPage2.UseVisualStyleBackColor = true;
             // 
-            // groupBox6
+            // gb_uart4
             // 
-            this.groupBox6.Controls.Add(this.label22);
-            this.groupBox6.Controls.Add(this.label23);
-            this.groupBox6.Controls.Add(this.label24);
-            this.groupBox6.Controls.Add(this.cb_port4);
-            this.groupBox6.Controls.Add(this.cb_baud4);
-            this.groupBox6.Controls.Add(this.cb_mode4);
-            this.groupBox6.Location = new System.Drawing.Point(323, 143);
-            this.groupBox6.Name = "groupBox6";
-            this.groupBox6.Size = new System.Drawing.Size(311, 132);
-            this.groupBox6.TabIndex = 7;
-            this.groupBox6.TabStop = false;
-            this.groupBox6.Text = "UART4";
+            this.gb_uart4.Controls.Add(this.label22);
+            this.gb_uart4.Controls.Add(this.label23);
+            this.gb_uart4.Controls.Add(this.label24);
+            this.gb_uart4.Controls.Add(this.cb_port4);
+            this.gb_uart4.Controls.Add(this.cb_baud4);
+            this.gb_uart4.Controls.Add(this.cb_mode4);
+            this.gb_uart4.Location = new System.Drawing.Point(323, 143);
+            this.gb_uart4.Name = "gb_uart4";
+            this.gb_uart4.Size = new System.Drawing.Size(311, 132);
+            this.gb_uart4.TabIndex = 7;
+            this.gb_uart4.TabStop = false;
+            this.gb_uart4.Text = "UART4";
             // 
             // label22
             // 
             this.label22.AutoSize = true;
             this.label22.Location = new System.Drawing.Point(15, 85);
             this.label22.Name = "label22";
-            this.label22.Size = new System.Drawing.Size(26, 13);
+            this.label22.Size = new System.Drawing.Size(56, 13);
             this.label22.TabIndex = 2;
-            this.label22.Text = "Port";
+            this.label22.Text = "Connector";
             // 
             // label23
             // 
@@ -1180,29 +1208,29 @@
             this.cb_mode4.TabIndex = 3;
             this.cb_mode4.Text = "Disabled";
             // 
-            // groupBox5
+            // gb_uart3
             // 
-            this.groupBox5.Controls.Add(this.label14);
-            this.groupBox5.Controls.Add(this.label19);
-            this.groupBox5.Controls.Add(this.label21);
-            this.groupBox5.Controls.Add(this.cb_port3);
-            this.groupBox5.Controls.Add(this.cb_baud3);
-            this.groupBox5.Controls.Add(this.cb_mode3);
-            this.groupBox5.Location = new System.Drawing.Point(6, 143);
-            this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Size = new System.Drawing.Size(311, 132);
-            this.groupBox5.TabIndex = 6;
-            this.groupBox5.TabStop = false;
-            this.groupBox5.Text = "UART3";
+            this.gb_uart3.Controls.Add(this.label14);
+            this.gb_uart3.Controls.Add(this.label19);
+            this.gb_uart3.Controls.Add(this.label21);
+            this.gb_uart3.Controls.Add(this.cb_port3);
+            this.gb_uart3.Controls.Add(this.cb_baud3);
+            this.gb_uart3.Controls.Add(this.cb_mode3);
+            this.gb_uart3.Location = new System.Drawing.Point(6, 143);
+            this.gb_uart3.Name = "gb_uart3";
+            this.gb_uart3.Size = new System.Drawing.Size(311, 132);
+            this.gb_uart3.TabIndex = 6;
+            this.gb_uart3.TabStop = false;
+            this.gb_uart3.Text = "UART3";
             // 
             // label14
             // 
             this.label14.AutoSize = true;
             this.label14.Location = new System.Drawing.Point(15, 85);
             this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(26, 13);
+            this.label14.Size = new System.Drawing.Size(56, 13);
             this.label14.TabIndex = 2;
-            this.label14.Text = "Port";
+            this.label14.Text = "Connector";
             // 
             // label19
             // 
@@ -1265,20 +1293,20 @@
             this.cb_mode3.TabIndex = 3;
             this.cb_mode3.Text = "Disabled";
             // 
-            // groupBox2
+            // gb_uart2
             // 
-            this.groupBox2.Controls.Add(this.cb_port2);
-            this.groupBox2.Controls.Add(this.cb_baud2);
-            this.groupBox2.Controls.Add(this.label11);
-            this.groupBox2.Controls.Add(this.label12);
-            this.groupBox2.Controls.Add(this.label8);
-            this.groupBox2.Controls.Add(this.cb_mode2);
-            this.groupBox2.Location = new System.Drawing.Point(323, 6);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(311, 131);
-            this.groupBox2.TabIndex = 5;
-            this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "UART2";
+            this.gb_uart2.Controls.Add(this.cb_port2);
+            this.gb_uart2.Controls.Add(this.cb_baud2);
+            this.gb_uart2.Controls.Add(this.label11);
+            this.gb_uart2.Controls.Add(this.label12);
+            this.gb_uart2.Controls.Add(this.label8);
+            this.gb_uart2.Controls.Add(this.cb_mode2);
+            this.gb_uart2.Location = new System.Drawing.Point(323, 6);
+            this.gb_uart2.Name = "gb_uart2";
+            this.gb_uart2.Size = new System.Drawing.Size(311, 131);
+            this.gb_uart2.TabIndex = 5;
+            this.gb_uart2.TabStop = false;
+            this.gb_uart2.Text = "UART2";
             // 
             // cb_port2
             // 
@@ -1313,9 +1341,9 @@
             this.label11.AutoSize = true;
             this.label11.Location = new System.Drawing.Point(20, 85);
             this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(26, 13);
+            this.label11.Size = new System.Drawing.Size(56, 13);
             this.label11.TabIndex = 6;
-            this.label11.Text = "Port";
+            this.label11.Text = "Connector";
             // 
             // label12
             // 
@@ -1350,29 +1378,29 @@
             this.cb_mode2.TabIndex = 5;
             this.cb_mode2.Text = "Mavlink";
             // 
-            // groupBox1
+            // gb_uart1
             // 
-            this.groupBox1.Controls.Add(this.label10);
-            this.groupBox1.Controls.Add(this.label9);
-            this.groupBox1.Controls.Add(this.label7);
-            this.groupBox1.Controls.Add(this.cb_port1);
-            this.groupBox1.Controls.Add(this.cb_baud1);
-            this.groupBox1.Controls.Add(this.cb_mode1);
-            this.groupBox1.Location = new System.Drawing.Point(6, 6);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(311, 131);
-            this.groupBox1.TabIndex = 4;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "UART1";
+            this.gb_uart1.Controls.Add(this.label10);
+            this.gb_uart1.Controls.Add(this.label9);
+            this.gb_uart1.Controls.Add(this.label7);
+            this.gb_uart1.Controls.Add(this.cb_port1);
+            this.gb_uart1.Controls.Add(this.cb_baud1);
+            this.gb_uart1.Controls.Add(this.cb_mode1);
+            this.gb_uart1.Location = new System.Drawing.Point(6, 6);
+            this.gb_uart1.Name = "gb_uart1";
+            this.gb_uart1.Size = new System.Drawing.Size(311, 131);
+            this.gb_uart1.TabIndex = 4;
+            this.gb_uart1.TabStop = false;
+            this.gb_uart1.Text = "UART1";
             // 
             // label10
             // 
             this.label10.AutoSize = true;
             this.label10.Location = new System.Drawing.Point(15, 85);
             this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(26, 13);
+            this.label10.Size = new System.Drawing.Size(56, 13);
             this.label10.TabIndex = 2;
-            this.label10.Text = "Port";
+            this.label10.Text = "Connector";
             // 
             // label9
             // 
@@ -1447,7 +1475,7 @@
             this.tabPage3.Location = new System.Drawing.Point(4, 22);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage3.Size = new System.Drawing.Size(1138, 519);
+            this.tabPage3.Size = new System.Drawing.Size(1073, 573);
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "Misc";
             this.tabPage3.UseVisualStyleBackColor = true;
@@ -1994,7 +2022,6 @@
             // 
             // tabWidgets
             // 
-            this.tabWidgets.Controls.Add(this.button1);
             this.tabWidgets.Controls.Add(this.pb_osd);
             this.tabWidgets.Controls.Add(this.tb_wp4);
             this.tabWidgets.Controls.Add(this.tb_wp3);
@@ -2025,20 +2052,10 @@
             this.tabWidgets.Location = new System.Drawing.Point(4, 22);
             this.tabWidgets.Name = "tabWidgets";
             this.tabWidgets.Padding = new System.Windows.Forms.Padding(3);
-            this.tabWidgets.Size = new System.Drawing.Size(1138, 519);
+            this.tabWidgets.Size = new System.Drawing.Size(1073, 573);
             this.tabWidgets.TabIndex = 3;
             this.tabWidgets.Text = "Widgets";
             this.tabWidgets.UseVisualStyleBackColor = true;
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(185, 438);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 8;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // pb_osd
             // 
@@ -2299,7 +2316,7 @@
             this.lb_widgets.FormattingEnabled = true;
             this.lb_widgets.Location = new System.Drawing.Point(18, 38);
             this.lb_widgets.Name = "lb_widgets";
-            this.lb_widgets.Size = new System.Drawing.Size(156, 433);
+            this.lb_widgets.Size = new System.Drawing.Size(156, 485);
             this.lb_widgets.TabIndex = 2;
             this.lb_widgets.SelectedIndexChanged += new System.EventHandler(this.lb_widgets_SelectedIndexChanged);
             // 
@@ -2372,7 +2389,7 @@
             this.tabPage5.Location = new System.Drawing.Point(4, 22);
             this.tabPage5.Name = "tabPage5";
             this.tabPage5.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage5.Size = new System.Drawing.Size(1138, 519);
+            this.tabPage5.Size = new System.Drawing.Size(1073, 573);
             this.tabPage5.TabIndex = 4;
             this.tabPage5.Text = "Log";
             this.tabPage5.UseVisualStyleBackColor = true;
@@ -2399,7 +2416,7 @@
             this.boardToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1170, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(1105, 24);
             this.menuStrip1.TabIndex = 1;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -2522,9 +2539,9 @@
             // 
             this.pb.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.pb.Location = new System.Drawing.Point(12, 579);
+            this.pb.Location = new System.Drawing.Point(12, 633);
             this.pb.Name = "pb";
-            this.pb.Size = new System.Drawing.Size(1142, 23);
+            this.pb.Size = new System.Drawing.Size(1077, 23);
             this.pb.TabIndex = 5;
             // 
             // timer_com
@@ -2540,7 +2557,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1170, 614);
+            this.ClientSize = new System.Drawing.Size(1105, 668);
             this.Controls.Add(this.pb);
             this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.menuStrip1);
@@ -2554,8 +2571,8 @@
             this.tabPage6.ResumeLayout(false);
             this.tabPage6.PerformLayout();
             this.tabPage1.ResumeLayout(false);
-            this.groupBox9.ResumeLayout(false);
-            this.groupBox9.PerformLayout();
+            this.gb_vid0v4.ResumeLayout(false);
+            this.gb_vid0v4.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_vswmax)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_vswmin)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_vswtimer)).EndInit();
@@ -2578,14 +2595,14 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_xoffset)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_yoffset)).EndInit();
             this.tabPage2.ResumeLayout(false);
-            this.groupBox6.ResumeLayout(false);
-            this.groupBox6.PerformLayout();
-            this.groupBox5.ResumeLayout(false);
-            this.groupBox5.PerformLayout();
-            this.groupBox2.ResumeLayout(false);
-            this.groupBox2.PerformLayout();
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
+            this.gb_uart4.ResumeLayout(false);
+            this.gb_uart4.PerformLayout();
+            this.gb_uart3.ResumeLayout(false);
+            this.gb_uart3.PerformLayout();
+            this.gb_uart2.ResumeLayout(false);
+            this.gb_uart2.PerformLayout();
+            this.gb_uart1.ResumeLayout(false);
+            this.gb_uart1.PerformLayout();
             this.tabPage3.ResumeLayout(false);
             this.tabPage3.PerformLayout();
             this.groupBox4.ResumeLayout(false);
@@ -2644,8 +2661,8 @@
         private System.Windows.Forms.ToolStripMenuItem openConfigToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveConfigToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
-        private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.GroupBox gb_uart1;
+        private System.Windows.Forms.GroupBox gb_uart2;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.ComboBox cb_mode2;
         private System.Windows.Forms.Label label7;
@@ -2714,14 +2731,14 @@
         private System.Windows.Forms.SaveFileDialog ofd_savecfg;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
-        private System.Windows.Forms.GroupBox groupBox5;
+        private System.Windows.Forms.GroupBox gb_uart3;
         private System.Windows.Forms.Label label14;
         private System.Windows.Forms.Label label19;
         private System.Windows.Forms.Label label21;
         private System.Windows.Forms.ComboBox cb_port3;
         private System.Windows.Forms.ComboBox cb_baud3;
         private System.Windows.Forms.ComboBox cb_mode3;
-        private System.Windows.Forms.GroupBox groupBox6;
+        private System.Windows.Forms.GroupBox gb_uart4;
         private System.Windows.Forms.Label label22;
         private System.Windows.Forms.Label label23;
         private System.Windows.Forms.Label label24;
@@ -2785,7 +2802,7 @@
         private System.Windows.Forms.NumericUpDown nud_xoffset1;
         private System.Windows.Forms.NumericUpDown nud_yoffset1;
         private System.Windows.Forms.GroupBox groupBox7;
-        private System.Windows.Forms.GroupBox groupBox9;
+        private System.Windows.Forms.GroupBox gb_vid0v4;
         private System.Windows.Forms.NumericUpDown nud_vswmax;
         private System.Windows.Forms.NumericUpDown nud_vswmin;
         private System.Windows.Forms.Label label55;
@@ -2804,7 +2821,8 @@
         private System.Windows.Forms.Timer timer_com;
         private System.Windows.Forms.ListBox lb_history;
         private System.Windows.Forms.PictureBox pb_osd;
-        private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Timer timer_submit;
+        private System.Windows.Forms.Button bt_commitCfg;
+        private System.Windows.Forms.Label label60;
     }
 }
