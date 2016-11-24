@@ -19,6 +19,7 @@
 #ifndef VIDEOCORE_H
 #define	VIDEOCORE_H
 
+#include "alce-types.h"
 
 enum {
     VIDEO_XSIZE_420 = 0,
@@ -70,6 +71,8 @@ struct canvas {
     unsigned int size;
     __eds__ unsigned char *buf;
     unsigned char lock;
+    
+    u8 buf_nr;
 };
 
 struct video_config {
@@ -98,6 +101,7 @@ void init_video(void);
 
 /* canvas related functions */
 int alloc_canvas(struct canvas *ca, void *widget_cfg);
+void free_canvas(struct canvas *c);
 void reconfig_canvas(struct canvas *ca, void *widget_cfg);
 int init_canvas(struct canvas *ca);
 void schedule_canvas(struct canvas *ca);

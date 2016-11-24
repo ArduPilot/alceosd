@@ -745,6 +745,11 @@ int alloc_canvas(struct canvas *c, void *widget_cfg)
     c->rwidth = c->width >> 2;
     c->size = c->rwidth * c->height;
 
+    if (c->size == 0) {
+        c->lock = 1;
+        return 0;
+    }
+    
     for (i = 0; i < 2; i++) {
         if ((scratchpad[i].alloc_size + c->size) < scratchpad[i].alloc_max)
             break;
@@ -757,9 +762,26 @@ int alloc_canvas(struct canvas *c, void *widget_cfg)
     scratchpad[i].alloc_size += c->size;
     set_canvas_pos(c, wcfg);
     c->lock = 0;
+    
+    c->buf_nr = i;
+    
     return 0;
 }
 
+void free_canvas(struct canvas *c)
+{
+    struct scratchpad_s *s = &scratchpad[c->buf_nr];
+    __eds__ u8 *dst = c->buf;
+    __eds__ u8 *src = c->buf + c->size;
+    __eds__ u8 *end = &s->mem[s->alloc_size];
+    
+    do {
+        *(dst++) = *(src++);
+    } while (src != end);
+    
+    s->alloc_size -= c->size;
+    
+}
 
 int init_canvas(struct canvas *ca)
 {
