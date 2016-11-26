@@ -637,7 +637,6 @@ void uart_set_client(unsigned char port, unsigned char client_id,
 {
     struct uart_client **clist = uart_client_list;
     struct uart_client **c = &port_clients[port];
-    extern int __C30_UART;
     unsigned char i;
 
     if (port > 3)
@@ -671,8 +670,6 @@ void uart_set_client(unsigned char port, unsigned char client_id,
                 }
             }
             
-            if (client_id == UART_CLIENT_SHELL)
-                __C30_UART = port+1;
             *c = *clist;
             switch (port) {
                 case UART_PORT1:
