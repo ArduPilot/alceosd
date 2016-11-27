@@ -41,7 +41,6 @@ struct shell_argval {
 
 void shell_init(void);
 void shell_exec(char *cmd, const struct shell_cmdmap_s *c, void *data);
-void shell_parser(unsigned char *buf, unsigned int len);
 unsigned char shell_arg_parser(char *args, struct shell_argval *v, unsigned char max);
 struct shell_argval* shell_get_argval(struct shell_argval *v, char k);
 

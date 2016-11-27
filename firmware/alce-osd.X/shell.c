@@ -27,8 +27,11 @@
 #define CTRL_R      18
 #define CTRL_D      4
 
+#define SERIAL_CONTROL_DEV_OSDSHELL 9
+
 static struct uart_client shell_uart_client;
 extern unsigned char hw_rev;
+extern struct alceosd_config config;
 
 static void shell_cmd_version(char *args, void *data)
 {
@@ -56,9 +59,31 @@ static const struct shell_cmdmap_s root_cmdmap[] = {
     {"", NULL, ""},
 };
 
+static u8 mavlink_shell_enabled = 0;
 
-void shell_write(u8 *buf, u16 len)
+inline static void _shell_write_mavlink(u8 *buf, u16 len)
 {
+    mavlink_serial_control_t sc __attribute__((aligned(2)));
+    mavlink_message_t msg __attribute__((aligned(2)));
+    u16 wr;
+    u8 *b = buf;
+    do {
+        wr = min(MAVLINK_MSG_SERIAL_CONTROL_FIELD_DATA_LEN, len);
+        memcpy(sc.data, b, wr);
+        sc.count = wr;
+        sc.device = SERIAL_CONTROL_DEV_OSDSHELL;
+        mavlink_msg_serial_control_encode(config.mav.osd_sysid, MAV_COMP_ID_OSD, &msg, &sc);
+        mavlink_send_msg(&msg);
+        b += wr;
+        len -= wr;
+    } while (len > 0);
+}
+
+inline static void _shell_write_uart(u8 *buf, u16 len)
+{
+    if (shell_uart_client.write == NULL)
+        return;
+    
     u16 wr;
     u8 *b = buf;
     do {
@@ -69,25 +94,35 @@ void shell_write(u8 *buf, u16 len)
     } while (len > 0);
 }
 
+void shell_write(u8 *buf, u16 len)
+{
+    _shell_write_uart(buf, len);
+    if (mavlink_shell_enabled)
+        _shell_write_mavlink(buf, len);
+}
+
+#define EDS_TMP_BUF_SIZE (UART_TX_BUF_SIZE)
 void shell_write_eds(__eds__ unsigned char *buf, u16 len)
 {
-    u8 _buf[UART_TX_BUF_SIZE];
+    u8 _buf[EDS_TMP_BUF_SIZE];
     u16 wr, i;
     do {
-        wr = min(UART_TX_BUF_SIZE, len);
+        wr = min(EDS_TMP_BUF_SIZE, len);
         for (i = 0; i < wr; i++)
             _buf[i] = *(buf++);
-        shell_uart_client.write(_buf, wr);
+        _shell_write_uart(_buf, wr);
+        if (mavlink_shell_enabled)
+            _shell_write_mavlink(_buf, wr);
         len -= wr;
     } while (len > 0);
 }
 
-void shell_putc(unsigned char c)
+inline static void shell_putc(unsigned char c)
 {
     shell_write(&c, 1);
 }
 
-void shell_puts(char *s)
+inline static void shell_puts(char *s)
 {
     shell_write((u8*) s, strlen(s));
 }
@@ -297,8 +332,25 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
     return len;
 }
 
+void mavlink_serial_cmd(mavlink_message_t *msg, void *data)
+{
+    u8 buf[70];
+    u8 len;
+    
+    if (mavlink_msg_serial_control_get_device(msg) != SERIAL_CONTROL_DEV_OSDSHELL)
+        return;
+    
+    mavlink_shell_enabled = 1;
+    
+    len = mavlink_msg_serial_control_get_count(msg);
+    mavlink_msg_serial_control_get_data(msg, buf);
+    shell_parser(NULL, buf, len);
+}
+
 void shell_init(void)
 {
+    add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_SERIAL_CONTROL, mavlink_serial_cmd, CALLBACK_PERSISTENT, NULL);
+    
     memset(&shell_uart_client, 0, sizeof(struct uart_client));
     shell_uart_client.read = shell_parser;
     shell_uart_client.id = UART_CLIENT_SHELL;
