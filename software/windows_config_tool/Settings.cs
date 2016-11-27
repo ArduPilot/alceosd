@@ -23,17 +23,29 @@ namespace AlceOSD
     {
         [UserScopedSetting()]
         [DefaultSettingValue("")]
-        public String ComPort
+        public string ComPort
         {
             get
             {
-                return ((String)this["ComPort"]);
+                return ((string)this["ComPort"]);
             }
             set
             {
-                this["ComPort"] = (String)value;
+                this["ComPort"] = (string)value;
+            }
+        }
+        [UserScopedSetting()]
+        [DefaultSettingValue("115200")]
+        public int MavlinkBaudrate
+        {
+            get
+            {
+                return ((int)this["MavlinkBaudrate"]);
+            }
+            set
+            {
+                this["MavlinkBaudrate"] = (int)value;
             }
         }
     }
-
 }

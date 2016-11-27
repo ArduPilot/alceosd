@@ -32,6 +32,8 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AlceOSDconfigForm));
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage6 = new System.Windows.Forms.TabPage();
+            this.button1 = new System.Windows.Forms.Button();
+            this.cbx_mavmode = new System.Windows.Forms.CheckBox();
             this.label60 = new System.Windows.Forms.Label();
             this.bt_commitCfg = new System.Windows.Forms.Button();
             this.lb_history = new System.Windows.Forms.ListBox();
@@ -213,6 +215,11 @@
             this.pb = new System.Windows.Forms.ProgressBar();
             this.timer_com = new System.Windows.Forms.Timer(this.components);
             this.timer_submit = new System.Windows.Forms.Timer(this.components);
+            this.timer_heartbeat = new System.Windows.Forms.Timer(this.components);
+            this.mavlinkBaudrateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsm_mav19200 = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsm_mav57600 = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsm_mav115200 = new System.Windows.Forms.ToolStripMenuItem();
             this.tabControl1.SuspendLayout();
             this.tabPage6.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -288,6 +295,8 @@
             // 
             // tabPage6
             // 
+            this.tabPage6.Controls.Add(this.button1);
+            this.tabPage6.Controls.Add(this.cbx_mavmode);
             this.tabPage6.Controls.Add(this.label60);
             this.tabPage6.Controls.Add(this.bt_commitCfg);
             this.tabPage6.Controls.Add(this.lb_history);
@@ -300,6 +309,26 @@
             this.tabPage6.TabIndex = 5;
             this.tabPage6.Text = "Shell";
             this.tabPage6.UseVisualStyleBackColor = true;
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(206, 3);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 7;
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // cbx_mavmode
+            // 
+            this.cbx_mavmode.AutoSize = true;
+            this.cbx_mavmode.Location = new System.Drawing.Point(84, 7);
+            this.cbx_mavmode.Name = "cbx_mavmode";
+            this.cbx_mavmode.Size = new System.Drawing.Size(92, 17);
+            this.cbx_mavmode.TabIndex = 6;
+            this.cbx_mavmode.Text = "Mavlink mode";
+            this.cbx_mavmode.UseVisualStyleBackColor = true;
             // 
             // label60
             // 
@@ -314,7 +343,7 @@
             // bt_commitCfg
             // 
             this.bt_commitCfg.Enabled = false;
-            this.bt_commitCfg.Location = new System.Drawing.Point(84, 3);
+            this.bt_commitCfg.Location = new System.Drawing.Point(950, 236);
             this.bt_commitCfg.Name = "bt_commitCfg";
             this.bt_commitCfg.Size = new System.Drawing.Size(81, 23);
             this.bt_commitCfg.TabIndex = 4;
@@ -329,7 +358,7 @@
             this.lb_history.FormattingEnabled = true;
             this.lb_history.Location = new System.Drawing.Point(950, 44);
             this.lb_history.Name = "lb_history";
-            this.lb_history.Size = new System.Drawing.Size(120, 498);
+            this.lb_history.Size = new System.Drawing.Size(120, 186);
             this.lb_history.TabIndex = 3;
             this.lb_history.TabStop = false;
             this.lb_history.DoubleClick += new System.EventHandler(this.lb_history_DoubleClick);
@@ -2482,7 +2511,8 @@
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.cb_comport});
+            this.cb_comport,
+            this.mavlinkBaudrateToolStripMenuItem});
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
             this.toolStripMenuItem1.Size = new System.Drawing.Size(187, 22);
             this.toolStripMenuItem1.Text = "Setup";
@@ -2552,6 +2582,47 @@
             // 
             this.timer_submit.Interval = 500;
             this.timer_submit.Tick += new System.EventHandler(this.timer_submit_Tick);
+            // 
+            // timer_heartbeat
+            // 
+            this.timer_heartbeat.Interval = 1000;
+            this.timer_heartbeat.Tick += new System.EventHandler(this.timer_heartbeat_Tick);
+            // 
+            // mavlinkBaudrateToolStripMenuItem
+            // 
+            this.mavlinkBaudrateToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsm_mav19200,
+            this.tsm_mav57600,
+            this.tsm_mav115200});
+            this.mavlinkBaudrateToolStripMenuItem.Name = "mavlinkBaudrateToolStripMenuItem";
+            this.mavlinkBaudrateToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.mavlinkBaudrateToolStripMenuItem.Text = "Mavlink baudrate";
+            // 
+            // tsm_mav19200
+            // 
+            this.tsm_mav19200.CheckOnClick = true;
+            this.tsm_mav19200.Name = "tsm_mav19200";
+            this.tsm_mav19200.Size = new System.Drawing.Size(152, 22);
+            this.tsm_mav19200.Text = "19200";
+            this.tsm_mav19200.Click += new System.EventHandler(this.tsm_mav19200_Click);
+            // 
+            // tsm_mav57600
+            // 
+            this.tsm_mav57600.CheckOnClick = true;
+            this.tsm_mav57600.Name = "tsm_mav57600";
+            this.tsm_mav57600.Size = new System.Drawing.Size(152, 22);
+            this.tsm_mav57600.Text = "57600";
+            this.tsm_mav57600.Click += new System.EventHandler(this.tsm_mav57600_Click);
+            // 
+            // tsm_mav115200
+            // 
+            this.tsm_mav115200.Checked = true;
+            this.tsm_mav115200.CheckOnClick = true;
+            this.tsm_mav115200.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.tsm_mav115200.Name = "tsm_mav115200";
+            this.tsm_mav115200.Size = new System.Drawing.Size(152, 22);
+            this.tsm_mav115200.Text = "115200";
+            this.tsm_mav115200.Click += new System.EventHandler(this.tsm_mav115200_Click);
             // 
             // AlceOSDconfigForm
             // 
@@ -2824,5 +2895,12 @@
         private System.Windows.Forms.Timer timer_submit;
         private System.Windows.Forms.Button bt_commitCfg;
         private System.Windows.Forms.Label label60;
+        private System.Windows.Forms.CheckBox cbx_mavmode;
+        private System.Windows.Forms.Timer timer_heartbeat;
+        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.ToolStripMenuItem mavlinkBaudrateToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem tsm_mav19200;
+        private System.Windows.Forms.ToolStripMenuItem tsm_mav57600;
+        private System.Windows.Forms.ToolStripMenuItem tsm_mav115200;
     }
 }

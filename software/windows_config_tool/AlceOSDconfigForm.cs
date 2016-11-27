@@ -14,6 +14,7 @@ using System.IO.Ports;
 using System.Globalization;
 
 using AlceOSD;
+using MavLink;
 
 namespace AlceOSD_updater
 {
@@ -65,8 +66,9 @@ namespace AlceOSD_updater
 
         string hw_rev = "";
         string fw_version = "";
-
-        SerialPort comPort = new SerialPort();
+        
+        Comm comPort = new Comm();
+        //SerialPort comPort = new SerialPort();
 
         UserSettings settings;
 
@@ -98,7 +100,7 @@ namespace AlceOSD_updater
             setup_comport();
             if (!open_comport())
                 return;
-            if (!reset_board(true))
+            if (!reset_board(true, false))
                 return;
 
             bool ready = false;
@@ -239,11 +241,11 @@ namespace AlceOSD_updater
                 comPort.Close();
             comPort.BaudRate = 115200;
             comPort.DataBits = 8;
-            comPort.StopBits = StopBits.One;
-            comPort.Parity = Parity.None;
+            //comPort.StopBits = StopBits.One;
+            //comPort.Parity = Parity.None;
             comPort.DtrEnable = false;
             comPort.RtsEnable = false;
-            comPort.ReadTimeout = 5000;
+            comPort.ReadTimeout = 2000;
         }
         private bool open_comport()
         {
@@ -259,33 +261,57 @@ namespace AlceOSD_updater
                 return false;
             }
         }
-        private bool reset_board(bool flash)
+        private bool reset_board(bool flash, bool mavlink)
         {
             List<int> baudrates = new List<int> { 115200, 57600, 19200 };
-            bool in_setup = false;
+            bool ready = false;
 
-
-            /* check if already in shell */
+            comPort.mode = Comm.COMM_MODE.Serial;
+            /* check if in shell */
+            Console.WriteLine("checking if shell is active");
             foreach (int b in baudrates)
             {
                 comPort.BaudRate = b;
                 System.Threading.Thread.Sleep(100);
                 comPort.DiscardInBuffer();
-                comPort.Write("\n");
+
+                comPort.WriteLine("version");
                 System.Threading.Thread.Sleep(100);
-                string ans = comPort.ReadExisting();
-                //txt_log.AppendText("ans:" + ans + "\n");
-                if (ans.EndsWith("> "))
+                string line = comPort.ReadExisting();
+                if (line.Contains("version"))
                 {
-                    txt_log.AppendText("got shell\n");
-                    in_setup = true;
+                    Console.WriteLine("got shell");
+                    ready = true;
+                    System.Threading.Thread.Sleep(100);
+                    comPort.DiscardInBuffer();
                     break;
                 }
             }
 
-            /* enter setup (fw0v9+ & bootloader0v5+) */
-            if (!in_setup)
+            if (mavlink)
             {
+                Console.WriteLine("mavlink mode");
+                if (ready)
+                {
+                    Console.WriteLine("rebooting");
+                    comPort.WriteLine("reboot");
+                    System.Threading.Thread.Sleep(100);
+                    comPort.Write("\n");
+                    System.Threading.Thread.Sleep(500);
+                }
+                comPort.BaudRate = settings.MavlinkBaudrate;
+                System.Threading.Thread.Sleep(100);
+                comPort.DiscardInBuffer();
+                comPort.mode = Comm.COMM_MODE.Mavlink;
+                System.Threading.Thread.Sleep(500);
+                comPort.DiscardInBuffer();
+                ready = true;
+            }
+
+            /* enter setup (fw0v9+ & bootloader0v5+) */
+            if (!ready)
+            {
+                Console.WriteLine("trying to start shell");
                 foreach (int b in baudrates)
                 {
                     comPort.BaudRate = b;
@@ -293,33 +319,27 @@ namespace AlceOSD_updater
                     comPort.Write("I want to enter AlceOSD setup");
                     System.Threading.Thread.Sleep(100);
                     string ans = comPort.ReadExisting();
-                    //txt_log.AppendText(ans + "\n");
-                    if (ans.EndsWith("AlceOSD setup starting"))
+                    if (ans.Contains("AlceOSD setup starting"))
                     {
                         comPort.Write("\n");
-                        System.Threading.Thread.Sleep(100);
-                        ans = comPort.ReadExisting();
-                        txt_log.AppendText("soft-start\n");
-                        in_setup = true;
+                        System.Threading.Thread.Sleep(1000);
+                        comPort.DiscardInBuffer();
+                        ready = true;
+                        Console.WriteLine("shell ready");
                         break;
                     }
-
                 }
             }
 
 
-            if (in_setup)
+            if (ready || mavlink)
             {
-                System.Threading.Thread.Sleep(100);
-                comPort.DiscardInBuffer();
-                comPort.Write("version\n");
-                string line;
-                do
-                {
-                    line = comPort.ReadLine();
-                } while (!line.Contains("AlceOSD"));
+                Console.WriteLine("trying to get version");
+                if (!send_cmd("version"))
+                    return false;
+                string ans = comPort.ReadLine();
 
-                Match m = Regex.Match(line, @"hw(.+)\sfw(.+)");
+                Match m = Regex.Match(ans, @"hw(.+)\sfw(.+)");
                 if (m.Success)
                 {
                     hw_rev = m.Groups[1].Value;
@@ -333,8 +353,7 @@ namespace AlceOSD_updater
 
                 if (flash)
                 {
-                    System.Threading.Thread.Sleep(10);
-                    comPort.Write("reboot\n");
+                    send_cmd("reboot");
                     comPort.BaudRate = 115200;
                     System.Threading.Thread.Sleep(100);
                     comPort.Write("alceosd");
@@ -342,6 +361,7 @@ namespace AlceOSD_updater
             }
             else
             {
+                Console.WriteLine("hard-reset (only on telemetry port)");
                 /* bootloader < 0v5 */
                 txt_log.AppendText("hard-reset\n");
                 comPort.DtrEnable = true;
@@ -902,6 +922,7 @@ namespace AlceOSD_updater
             {
                 id = widget_ids[name];
             }
+            Console.WriteLine("get_widget_id() nuid={0} id={1}", name_uid, id);
             return id;
         }
         private string get_widget_iduid(string name_uid)
@@ -925,7 +946,7 @@ namespace AlceOSD_updater
             cmd += " -y " + w["Y"];
             cmd += " -h " + w["HJUST"];
             cmd += " -v " + w["VJUST"];
-            comPort.WriteLine(cmd);
+            send_cmd(cmd);
         }
 
 
@@ -949,7 +970,7 @@ namespace AlceOSD_updater
             cmd += " -b " + w["PARAM2"];
             cmd += " -c " + w["PARAM3"];
             cmd += " -d " + w["PARAM4"];
-            comPort.WriteLine(cmd);
+            send_cmd(cmd);
             System.Threading.Thread.Sleep(100);
             comPort.DiscardInBuffer();
 
@@ -1419,7 +1440,7 @@ namespace AlceOSD_updater
             if (shell_active)
             {
                 int id = get_widget_id(name_uid);
-                comPort.WriteLine("widgets add -i " + id + " -t " + ((int)nud_seltab.Value) + "\n");
+                send_cmd("widgets add -i " + id + " -t " + ((int)nud_seltab.Value));
                 System.Threading.Thread.Sleep(100);
 
             }
@@ -1439,7 +1460,7 @@ namespace AlceOSD_updater
                 if (shell_active)
                 {
                     int id = get_widget_id(name_uid);
-                    comPort.WriteLine("widgets rm " + id + "\n");
+                    send_cmd("widgets rm " + id);
                     System.Threading.Thread.Sleep(100);
 
                 }
@@ -1582,7 +1603,6 @@ namespace AlceOSD_updater
             string w = lb_widgets.SelectedItem.ToString();
             widgets[w]["MODE"] = Convert.ToDouble(cb_wmode.SelectedIndex);
             flag_submit("O");
-            Console.WriteLine("changed");
         }
 
         private void cb_wunits_SelectedIndexChanged(object sender, EventArgs e)
@@ -1692,7 +1712,7 @@ namespace AlceOSD_updater
             setup_comport();
             if (!open_comport())
                 return;
-            if (!reset_board(false))
+            if (!reset_board(false, cbx_mavmode.Checked))
                 return;
 
             txt_log.AppendText("Port " + comPort.PortName + " opened for config read\n");
@@ -1733,7 +1753,6 @@ namespace AlceOSD_updater
                 }
                 //System.Threading.Thread.Sleep(10);
             }
-            comPort.Write("x");
             comPort.Close();
             MessageBox.Show("Config successfully read", "Config", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
@@ -1746,7 +1765,7 @@ namespace AlceOSD_updater
             setup_comport();
             if (!open_comport())
                 return;
-            if (!reset_board(false))
+            if (!reset_board(false, cbx_mavmode.Checked))
                 return;
 
             txt_log.AppendText("Port " + comPort.PortName + " opened for config upload\n");
@@ -2177,7 +2196,28 @@ namespace AlceOSD_updater
         private void AlceOSDconfigForm_Load(object sender, EventArgs e)
         {
             settings = new UserSettings();
+
             cb_comport.Text = settings.ComPort;
+            switch (settings.MavlinkBaudrate)
+            {
+                case 19200:
+                    tsm_mav19200.Checked = true;
+                    tsm_mav57600.Checked = false;
+                    tsm_mav115200.Checked = false;
+                    break;
+                case 57600:
+                    tsm_mav19200.Checked = false;
+                    tsm_mav57600.Checked = true;
+                    tsm_mav115200.Checked = false;
+                    break;
+                case 115200:
+                default:
+                    tsm_mav19200.Checked = false;
+                    tsm_mav57600.Checked = false;
+                    tsm_mav115200.Checked = true;
+                    break;
+
+            }
 
             cb_vswch.Items.Clear();
             cb_tabch.Items.Clear();
@@ -2198,54 +2238,27 @@ namespace AlceOSD_updater
             settings.ComPort = cb_comport.Text;
             settings.Save();
         }
-
-
-
+        
 
         private void get_widget_ids()
         {
+            send_cmd("widgets available 1");
+
             widget_ids.Clear();
-
-            comPort.Write("widgets available\n");
-            System.Threading.Thread.Sleep(100);
-
-            string ans = "";
-            do {
-                ans += comPort.ReadExisting();
-            } while (!ans.EndsWith("> "));
-
-            string[] lines = ans.Split('\n');
-
-            bool s = false;
-            foreach (string value in lines)
-            {
-                if (value.Contains("---------"))
-                {
-                    s = true;
-                    continue;
-                }
-
-                if (s)
-                {
-                    string[] l = value.Split('|');
-
-                    if (l.Length < 5)
-                        continue;
-
-                    //txt_log.AppendText(l[0] + "," + l[2] + "\n");
-                    widget_ids.Add(l[2].Trim(), Convert.ToInt16(l[0]));
-
-
-                }
-
-
+            while (true) {
+                string line = comPort.ReadLine();
+                Console.WriteLine("get_widget_ids() {0}", line);
+                if (line == "--")
+                    break;
+                string[] info = line.Split(',');
+                widget_ids.Add(info[2].Trim(), Convert.ToInt16(info[0]));
             }
         }
 
 
         private void get_config()
         {
-            comPort.Write("config dump\n");
+            send_cmd("config dump");
 
             List<string> config = new List<string> { };
             string line;
@@ -2269,60 +2282,94 @@ namespace AlceOSD_updater
             parse_config(config.ToArray());
         }
 
-
         bool shell_active = false;
 
         int his_idx = 0;
         List<string> cmd_history = new List<string> { };
-
         private void bt_conn_Click(object sender, EventArgs e)
         {
             if (shell_active)
             {
+                
+                timer_heartbeat.Enabled = false;
+
                 timer_com.Enabled = false;
-                comPort.Close();
                 shell_active = false;
+                comPort.Close();
 
                 his_idx = 0;
                 lb_history.Items.Clear();
+                cmd_history.Clear();
 
                 bt_conn.Text = "Connect";
                 readConfigToolStripMenuItem.Enabled = true;
                 writeConfigToolStripMenuItem.Enabled = true;
                 flashFirmwareToolStripMenuItem.Enabled = true;
                 bt_commitCfg.Enabled = false;
+                cbx_mavmode.Enabled = true;
             }
             else
             {
                 setup_comport();
                 if (!open_comport())
                     return;
-                if (!reset_board(false))
+
+                if (!reset_board(false, cbx_mavmode.Checked))
                     return;
 
                 shell_active = true;
 
-                get_config();
                 get_widget_ids();
+                get_config();
                 load_lb_widgets_canvas();
 
-                System.Threading.Thread.Sleep(100);
-                comPort.DiscardInBuffer();
-                comPort.Write("version\n");
                 timer_com.Enabled = true;
+
+                send_cmd("version");
 
                 bt_conn.Text = "Disconnect";
                 readConfigToolStripMenuItem.Enabled = false;
                 writeConfigToolStripMenuItem.Enabled = false;
                 flashFirmwareToolStripMenuItem.Enabled = false;
+                cbx_mavmode.Enabled = false;
                 bt_commitCfg.Enabled = true;
 
             }
+        }
 
+        private string[] cmd_get_answer()
+        {
+            List<string> s = new List<string> ();
+            string line;
+            do
+            {
+                line = comPort.ReadLine();
+                Console.WriteLine("line={0}", line);
+                s.Add(line);
+            } while (line != "> ");
+            return s.ToArray();
+        }
 
+        private bool send_cmd(string cmd)
+        {
+            if (!comPort.IsOpen)
+                return false;
 
-
-
+            comPort.DiscardInBuffer();
+            comPort.Write(cmd + "\n");
+            try
+            {
+                string ans = comPort.ReadLine();
+                if (ans.Contains(cmd))
+                    return true;
+                else
+                    return false;
+            }
+            catch
+            {
+                //MessageBox.Show("shell_cmd: no response", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
         }
 
         private void timer_com_Tick(object sender, EventArgs e)
@@ -2377,7 +2424,7 @@ namespace AlceOSD_updater
                         lb_history.Items.Add(cmd);
                     }
 
-                    comPort.Write(cmd + "\n");
+                    send_cmd(cmd);
                     tb_cmdLine.Clear();
                     e.Handled = true;
                     his_idx = 0;
@@ -2389,6 +2436,9 @@ namespace AlceOSD_updater
                     his_idx++;
                     if (his_idx > cmd_history.Count)
                         his_idx = cmd_history.Count;
+
+                    lb_history.SelectedIndex = cmd_history.Count - his_idx;
+
                     tb_cmdLine.Text = cmd_history.ElementAt(cmd_history.Count - his_idx);
                     tb_cmdLine.SelectionStart = tb_cmdLine.Text.Length;
                     break;
@@ -2399,15 +2449,17 @@ namespace AlceOSD_updater
                     {
                         tb_cmdLine.Text = "";
                         his_idx = 0;
+                        lb_history.SelectedIndex = -1;
                     }
                     else
                     {
                         tb_cmdLine.Text = cmd_history.ElementAt(cmd_history.Count - his_idx);
+                        lb_history.SelectedIndex = cmd_history.Count - his_idx;
                     }
                     break;
 
                 case Keys.Tab:
-                    comPort.Write(tb_cmdLine.Text + "\t");
+                    //comPort.Write(tb_cmdLine.Text + "\t");
                     break;
 
                 default:
@@ -2429,7 +2481,7 @@ namespace AlceOSD_updater
             char uid = name_uid.ElementAt(name_uid.Length - 1);
             string req = widget_ids[wid].ToString() + "+" + uid.ToString();
 
-            comPort.Write("widgets cfg -i " + req + "\n");
+            send_cmd("widgets cfg -i " + req);
             System.Threading.Thread.Sleep(100);
 
             string line;
@@ -2487,8 +2539,7 @@ namespace AlceOSD_updater
             c.width = 0; c.height = 0;
 
             timer_com.Enabled = false;
-            comPort.Write("widgets bitmap "+id+"\n");
-            System.Threading.Thread.Sleep(100);
+            send_cmd("widgets bitmap " + id);
 
             do
             {
@@ -2509,33 +2560,40 @@ namespace AlceOSD_updater
                 }
 
             } while (!line.StartsWith("h:"));
-
             int size = c.width * c.height;
+            Console.WriteLine("w:{0} h:{1} s:{2}", c.width, c.height, size);
             if (size > 0)
             {
-                pb.Value = 0;
-                int progress, total = 0;
+                //pb.Value = 0;
+                //int progress, total = 0;
 
                 int left = size;
-                List<byte> recievedData = new List<byte>();
-                do
-                {
-                    int avail = comPort.BytesToRead;
-                    int n = Math.Min(left, avail);
-                    byte[] data = new byte[n];
-                    comPort.Read(data, 0, data.Length);
-                    data.ToList().ForEach(b => recievedData.Add(b));
-                    left -= n;
+                //List<byte> recievedData = new List<byte>();
 
-                    total += n;
-                    progress = (total * 100) / size;
-                    if (progress != pb.Value)
-                    {
-                        pb.Value = progress;
-                        Application.DoEvents();
-                    }
-                } while (left > 0);
-                c.bitmap = recievedData.ToArray();
+                byte[] data = new byte[size];
+                comPort.Read(data, 0, size);
+
+                /*                do
+                                {
+                                    int avail = comPort.BytesToRead;
+                                    int n = Math.Min(left, avail);
+
+                                    comPort.Read(data, 0, data.Length);
+
+                                    data.ToList().ForEach(b => recievedData.Add(b));
+                                    left -= n;
+
+                                    total += n;
+                                    progress = (total * 100) / size;
+                                    if (progress != pb.Value)
+                                    {
+                                        pb.Value = progress;
+                                        Application.DoEvents();
+                                    }
+                                } while (left > 0);*/
+                c.bitmap = data; // recievedData.ToArray();
+                //c.bitmap.ToList().ForEach(_b => Console.Write(" {0:X}", _b));
+                //Console.WriteLine("");
             }
 
             System.Threading.Thread.Sleep(100);
@@ -2563,6 +2621,10 @@ namespace AlceOSD_updater
                 Canvas c = _c.Value;
                 if (!c.shown)
                     continue;
+
+                //c.bitmap.ToList().ForEach(_b => Console.Write(" {0:X}", _b));
+                //Console.WriteLine("");
+
                 //txt_log.AppendText("canvas w" + c.width + "\n");
                 for (y = 0; y < c.height; y++)
                 {
@@ -2616,6 +2678,7 @@ namespace AlceOSD_updater
         private Canvas get_widget_canvas(string name_uid)
         {
             string iduid = get_widget_iduid(name_uid);
+            Console.WriteLine("get_widget_canvas() iduid={0} {1}", iduid, name_uid);
             Canvas c = get_widget_bitmap(iduid);
             if (c.width > 0)
             {
@@ -2639,7 +2702,7 @@ namespace AlceOSD_updater
 
             int tab = (int) nud_seltab.Value;
 
-            comPort.WriteLine("tabs load -t " + tab);
+            send_cmd("tabs load -t " + tab);
             System.Threading.Thread.Sleep(200);
             comPort.DiscardInBuffer();
 
@@ -2655,6 +2718,8 @@ namespace AlceOSD_updater
 
             string[] lst = new string[lb_widgets.Items.Count];
             lb_widgets.Items.CopyTo(lst, 0);
+
+            int total = 0, size = lst.Length;
             foreach (string name_uid in lst)
             {
                 if (!ca.ContainsKey(name_uid))
@@ -2666,6 +2731,15 @@ namespace AlceOSD_updater
                         ca[name_uid] = c;
                     }
                 }
+
+                total++;
+                int progress = (total * 100) / size;
+                if (progress != pb.Value)
+                {
+                    pb.Value = progress;
+                    Application.DoEvents();
+                }
+
             }
             pb_osd.Invalidate();
             load_lock = false;
@@ -2750,12 +2824,12 @@ namespace AlceOSD_updater
                 return;
 
             string cmd = lb_history.SelectedItem.ToString();
-            comPort.Write(cmd + "\n");
+            send_cmd(cmd);
         }
 
         private void bt_commitCfg_Click(object sender, EventArgs e)
         {
-            comPort.WriteLine("config save\n");
+            send_cmd("config save");
         }
 
         private void txt_shell_VisibleChanged(object sender, EventArgs e)
@@ -2765,6 +2839,52 @@ namespace AlceOSD_updater
                 txt_shell.SelectionStart = txt_shell.Text.Length;
                 txt_shell.ScrollToCaret();
             }
+        }
+
+        private void timer_heartbeat_Tick(object sender, EventArgs e)
+        {
+            /*MavlinkPacket p = new MavlinkPacket();
+            Msg_heartbeat hb = new Msg_heartbeat();
+
+            hb.autopilot = (byte) MAV_AUTOPILOT.MAV_AUTOPILOT_INVALID;
+            hb.type = (byte)MAV_TYPE.MAV_TYPE_GCS;
+
+            p.Message = hb;
+            p.SystemId = 254;
+            p.ComponentId = 0;
+
+            byte[] buf = mav.Send(p);
+
+            comPort.Write(buf, 0, buf.Length);*/
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void tsm_mav19200_Click(object sender, EventArgs e)
+        {
+            tsm_mav57600.Checked = false;
+            tsm_mav115200.Checked = false;
+            settings.MavlinkBaudrate = 19200;
+            settings.Save();
+        }
+
+        private void tsm_mav57600_Click(object sender, EventArgs e)
+        {
+            tsm_mav19200.Checked = false;
+            tsm_mav115200.Checked = false;
+            settings.MavlinkBaudrate = 57600;
+            settings.Save();
+        }
+
+        private void tsm_mav115200_Click(object sender, EventArgs e)
+        {
+            tsm_mav19200.Checked = false;
+            tsm_mav57600.Checked = false;
+            settings.MavlinkBaudrate = 115200;
+            settings.Save();
         }
 
         private void timer_submit_Tick(object sender, EventArgs e)

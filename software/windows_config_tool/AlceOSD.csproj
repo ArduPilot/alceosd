@@ -107,6 +107,12 @@
     <Compile Include="AlceOSDconfigForm.Designer.cs">
       <DependentUpon>AlceOSDconfigForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ByteArrayUtil.cs" />
+    <Compile Include="Comm.cs" />
+    <Compile Include="FrameworkBitConverter.cs" />
+    <Compile Include="mav.generated.cs" />
+    <Compile Include="Mavlink.cs" />
+    <Compile Include="mav_codec.generated.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
