@@ -211,7 +211,7 @@ void reconfig_widget(struct widget *w)
 {
     if (w->ops->render) {
         reconfig_canvas(&w->ca, w->cfg);
-        schedule_widget(w);
+        w->ops->render(w);
     }
 }
 
@@ -597,14 +597,25 @@ static void shell_cmd_avail(char *args, void *data)
 {
     const struct widget_ops **w_ops = all_widget_ops;
 
-    shell_printf("\nTab %u widgets\n", get_active_tab());
-    shell_printf("\n id | name                 | mavname  | init | open | render | close\n");
-    shell_printf(  "----+----------------------+----------+------+------+--------+-------\n");
-    while ((*w_ops) != NULL) {
-        shell_printf(" %02u | %20s | %8s | %4p | %4p |   %4p |  %4p\n",
-            (*w_ops)->id, (*w_ops)->name, (*w_ops)->mavname,
-            (*w_ops)->init, (*w_ops)->open, (*w_ops)->render, (*w_ops)->close);
-        w_ops++;
+    if ((strlen(args) > 0) && atoi(args) == 1) {
+        /* raw mode */
+        shell_printf("\n");
+        while ((*w_ops) != NULL) {
+            shell_printf("%u,%s,%s\n",
+                (*w_ops)->id, (*w_ops)->name, (*w_ops)->mavname);
+            w_ops++;
+        }
+        shell_printf("--\n");
+    } else {
+        shell_printf("\nTab %u widgets\n", get_active_tab());
+        shell_printf("\n id | name                 | mavname  | init | open | render | close\n");
+        shell_printf(  "----+----------------------+----------+------+------+--------+-------\n");
+        while ((*w_ops) != NULL) {
+            shell_printf(" %02u | %20s | %8s | %4p | %4p |   %4p |  %4p\n",
+                (*w_ops)->id, (*w_ops)->name, (*w_ops)->mavname,
+                (*w_ops)->init, (*w_ops)->open, (*w_ops)->render, (*w_ops)->close);
+            w_ops++;
+        }
     }
 }
 
