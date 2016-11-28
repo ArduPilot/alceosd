@@ -496,7 +496,7 @@ static void mav_heartbeat(struct timer *t, void *d)
     mavlink_message_t msg;
     struct timer *led_timer = d;
 
-    if (mavdata_age(MAVDATA_HEARTBEAT) > UAV_LAST_SEEN_TIMEOUT) {
+    if (mavdata_age(MAVLINK_MSG_ID_HEARTBEAT) > UAV_LAST_SEEN_TIMEOUT) {
         set_timer_period(t, 5000);
         set_timer_period(led_timer, 500);
     } else {
@@ -644,7 +644,7 @@ static void mavlink_request_data_streams(struct timer *t, void *d)
 {
     unsigned char i;
     
-    if (mavdata_age(MAVDATA_HEARTBEAT) > UAV_LAST_SEEN_TIMEOUT)
+    if (mavdata_age(MAVLINK_MSG_ID_HEARTBEAT) > UAV_LAST_SEEN_TIMEOUT)
         return;
     
     for (i = 1; i < sizeof(mavlink_stream_map); i++)
@@ -729,7 +729,7 @@ static void shell_cmd_stats(char *args, void *data)
         shell_printf(" packet_rx_success_count=%d\n", status->packet_rx_success_count);
     }
     shell_printf("\nActive channel mask=%x\n", active_channel_mask);
-    shell_printf("\nUAV last seen %lums ago\n", mavdata_age(MAVDATA_HEARTBEAT));
+    shell_printf("\nUAV last seen %lums ago\n", mavdata_age(MAVLINK_MSG_ID_HEARTBEAT));
 }
 
 static void shell_cmd_route(char *args, void *data)

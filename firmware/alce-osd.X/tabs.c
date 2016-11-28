@@ -201,7 +201,7 @@ static void tab_switch_task(struct timer *t, void *d)
             break;
         case SW_MODE_FLIGHTMODE:
         {
-            mavlink_heartbeat_t *hb = mavdata_get(MAVDATA_HEARTBEAT);
+            mavlink_heartbeat_t *hb = mavdata_get(MAVLINK_MSG_ID_HEARTBEAT);
             unsigned char i;
             const unsigned char mode_ignore_list[] = {
                 PLANE_MODE_CIRCLE, PLANE_MODE_AUTO,

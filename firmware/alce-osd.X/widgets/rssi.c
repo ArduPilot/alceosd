@@ -53,20 +53,20 @@ static void pre_render(mavlink_message_t *msg, void *d)
     switch (w->cfg->props.source) {
         case RSSI_SOURCE_RSSI:
         default:
-            if (mavdata_age(MAVDATA_RC_CHANNELS) < 5000) {
-                rc = mavdata_get(MAVDATA_RC_CHANNELS);
+            if (mavdata_age(MAVLINK_MSG_ID_RC_CHANNELS) < 5000) {
+                rc = mavdata_get(MAVLINK_MSG_ID_RC_CHANNELS);
                 priv->rssi = rc->rssi;
             } else {
-                rcr = mavdata_get(MAVDATA_RC_CHANNELS_RAW);
+                rcr = mavdata_get(MAVLINK_MSG_ID_RC_CHANNELS_RAW);
                 priv->rssi = rcr->rssi;
             }
             break;
         case RSSI_SOURCE_RCCH:
-            if (mavdata_age(MAVDATA_RC_CHANNELS) < 5000) {
-                rc = mavdata_get(MAVDATA_RC_CHANNELS);
+            if (mavdata_age(MAVLINK_MSG_ID_RC_CHANNELS) < 5000) {
+                rc = mavdata_get(MAVLINK_MSG_ID_RC_CHANNELS);
                 val = &rc->chan1_raw;
             } else {
-                rcr = mavdata_get(MAVDATA_RC_CHANNELS_RAW);
+                rcr = mavdata_get(MAVLINK_MSG_ID_RC_CHANNELS_RAW);
                 val = &rcr->chan1_raw;
             }
             priv->rssi = *(val + w->cfg->params[RSSI_PARAM_RCCH]);

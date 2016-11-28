@@ -131,7 +131,7 @@ static unsigned int frsky_receive(struct uart_client *cli, unsigned char *buf, u
 /* GPS */
 static void send_frsky_data(struct timer *t, void *d)
 {
-    mavlink_gps_raw_int_t *gps = mavdata_get(MAVDATA_GPS_RAW_INT);
+    mavlink_gps_raw_int_t *gps = mavdata_get(MAVLINK_MSG_ID_GPS_RAW_INT);
     unsigned long data;
     float tmp;
     

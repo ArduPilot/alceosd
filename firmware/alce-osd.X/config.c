@@ -150,10 +150,10 @@ unsigned char get_sw_state(struct ch_switch *sw)
     void *rc;
     long x;    
     
-    if (mavdata_age(MAVDATA_RC_CHANNELS) < 5000)
-        rc = mavdata_get(MAVDATA_RC_CHANNELS);
+    if (mavdata_age(MAVLINK_MSG_ID_RC_CHANNELS) < 5000)
+        rc = mavdata_get(MAVLINK_MSG_ID_RC_CHANNELS);
     else
-        rc = mavdata_get(MAVDATA_RC_CHANNELS_RAW);
+        rc = mavdata_get(MAVLINK_MSG_ID_RC_CHANNELS_RAW);
     val = (unsigned int*) (rc + 4 + 2 * sw->ch);
     x = (long) *(val);
     x = ( ((x - sw->ch_min) * 100) /

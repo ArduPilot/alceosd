@@ -18,6 +18,16 @@
 
 #include "alce-osd.h"
 
+
+#define MAVDATA_INFO(x, y) \
+        mavlink_##y##_t alce_##y; \
+        const mavlink_message_info_t __attribute__((space(psv))) mi_##x = MAVLINK_MESSAGE_INFO_##x
+#define MAVDATA_DEF(x,y) \
+        m[MAVLINK_MSG_ID_##x].data = &alce_##y; \
+        m[MAVLINK_MSG_ID_##x].decode = ((void*) mavlink_msg_##y##_decode); \
+        m[MAVLINK_MSG_ID_##x].info = &mi_##x; \
+        m[MAVLINK_MSG_ID_##x].info_pag = __builtin_psvpage(&mi_##x)
+
 extern struct alceosd_config config;
 
 const char *mavdata_type_name[] = {
@@ -28,56 +38,45 @@ const char *mavdata_type_name[] = {
     "FLOAT", "DOUBLE"
 };
 
-#define MAVDATA_INFO(x, y) const mavlink_message_info_t mi_##x = MAVLINK_MESSAGE_INFO_##x ; static mavlink_##y##_t y
-#define MAVDATA_STATE(x,y) [MAVDATA_##x] = { .data = &y, .id = MAVLINK_MSG_ID_##x }
-#define MAVDATA_OPS(x,y) [MAVLINK_MSG_ID_##x] = { \
-        .decode = ((void*) mavlink_msg_##y##_decode), \
-        .offset = MAVDATA_##x, \
-        .info = &mi_##x }
+struct mavdata_state m[256];
 
 MAVDATA_INFO(HEARTBEAT, heartbeat);
 MAVDATA_INFO(SYS_STATUS, sys_status);
-MAVDATA_INFO(ATTITUDE, attitude);
-MAVDATA_INFO(GLOBAL_POSITION_INT, global_position_int);
+MAVDATA_INFO(ATTITUDE, attitude);                           /* 30 */
+MAVDATA_INFO(GLOBAL_POSITION_INT, global_position_int);     /* 33 */
 MAVDATA_INFO(MISSION_ITEM, mission_item);
 MAVDATA_INFO(VFR_HUD, vfr_hud);
 MAVDATA_INFO(RC_CHANNELS_RAW, rc_channels_raw);
 MAVDATA_INFO(RC_CHANNELS, rc_channels);
 MAVDATA_INFO(HOME_POSITION, home_position);
-MAVDATA_INFO(GPS_RAW_INT, gps_raw_int);
+MAVDATA_INFO(GPS_RAW_INT, gps_raw_int);                     /* 24 */
 MAVDATA_INFO(GPS2_RAW, gps2_raw);
+MAVDATA_INFO(TERRAIN_REPORT, terrain_report);
 
-static struct mavdata_state m[MAVDATA_TOTAL] = {
-    MAVDATA_STATE(HEARTBEAT, heartbeat),
-    MAVDATA_STATE(SYS_STATUS, sys_status),
-    MAVDATA_STATE(ATTITUDE, attitude),
-    MAVDATA_STATE(GLOBAL_POSITION_INT, global_position_int),
-    MAVDATA_STATE(MISSION_ITEM, mission_item),
-    MAVDATA_STATE(VFR_HUD, vfr_hud),
-    MAVDATA_STATE(RC_CHANNELS_RAW, rc_channels_raw),
-    MAVDATA_STATE(RC_CHANNELS, rc_channels),
-    MAVDATA_STATE(HOME_POSITION, home_position),
-    MAVDATA_STATE(GPS_RAW_INT, gps_raw_int),
-    MAVDATA_STATE(GPS2_RAW, gps2_raw),
-};
-
-static const struct mavdata_decode_ops decode_ops[256] = {
-    MAVDATA_OPS(HEARTBEAT, heartbeat),
-    MAVDATA_OPS(SYS_STATUS, sys_status),
-    MAVDATA_OPS(ATTITUDE, attitude),
-    MAVDATA_OPS(GLOBAL_POSITION_INT, global_position_int),
-    MAVDATA_OPS(MISSION_ITEM, mission_item),
-    MAVDATA_OPS(VFR_HUD, vfr_hud),
-    MAVDATA_OPS(RC_CHANNELS_RAW, rc_channels_raw),
-    MAVDATA_OPS(RC_CHANNELS, rc_channels),
-    MAVDATA_OPS(HOME_POSITION, home_position),
-    MAVDATA_OPS(GPS_RAW_INT, gps_raw_int),
-    MAVDATA_OPS(GPS2_RAW, gps2_raw),
-};
+void mavdata_init(void)
+{
+    /* mavlink info section is > 32k
+       due to pic33ep architecture it needs to be inited on runtine 
+       because the __builtin_psvpage isn't able to generate the page
+       address at compile time */
+    
+    memset(m, 0, sizeof(struct mavdata_state) * 256);
+    MAVDATA_DEF(HEARTBEAT, heartbeat);
+    MAVDATA_DEF(SYS_STATUS, sys_status);
+    MAVDATA_DEF(ATTITUDE, attitude);
+    MAVDATA_DEF(GLOBAL_POSITION_INT, global_position_int);
+    MAVDATA_DEF(MISSION_ITEM, mission_item);
+    MAVDATA_DEF(VFR_HUD, vfr_hud);
+    MAVDATA_DEF(RC_CHANNELS_RAW, rc_channels_raw);
+    MAVDATA_DEF(RC_CHANNELS, rc_channels);
+    MAVDATA_DEF(HOME_POSITION, home_position);
+    MAVDATA_DEF(GPS_RAW_INT, gps_raw_int);
+    MAVDATA_DEF(GPS2_RAW, gps2_raw);
+    MAVDATA_DEF(TERRAIN_REPORT, terrain_report);    
+}
 
 void mavdata_store(mavlink_message_t *msg)
 {
-    const struct mavdata_decode_ops *ops = &decode_ops[msg->msgid];
     struct mavdata_state *s;
     unsigned long t;
     int target_sys, target_comp;
@@ -87,9 +86,9 @@ void mavdata_store(mavlink_message_t *msg)
     if (! ((target_sys == -1) || (target_sys == config.mav.osd_sysid)))
         return;
    
-    if (ops->decode != NULL) {
-        s = &m[ops->offset];
-        ops->decode(msg, s->data);
+    s = &m[msg->msgid];
+    if (s->decode != NULL) {
+        s->decode(msg, s->data);
         t = get_millis();
         s->period = t - s->time;
         s->time = t;
@@ -119,16 +118,82 @@ unsigned long mavdata_period(unsigned int id)
     return m[id].period;
 }
 
+static void mavdata_info_name(u16 id, char *name)
+{
+    int pag, new_pag = m[id].info_pag;
+    char *src;
+
+    pag = DSRPAG;
+    DSRPAG = new_pag;
+    src = (s8*) m[id].info->name;
+    do {
+        *(name++) = *(src);
+    } while (*(src++) != '\0');
+    DSRPAG = pag;
+}
+
+static u16 mavdata_info_num_fields(u16 id)
+{
+    int pag, new_pag = m[id].info_pag;
+    u16 ret = 0;
+
+    pag = DSRPAG;
+    DSRPAG = new_pag;
+    ret = m[id].info->num_fields;
+    DSRPAG = pag;
+    return ret;
+}
+
+static u16 mavdata_info_field_type(u16 id, u8 nr)
+{
+    int pag, new_pag = m[id].info_pag;
+    u16 ret = 0;
+
+    pag = DSRPAG;
+    DSRPAG = new_pag;
+    ret = (u16) m[id].info->fields[nr].type;
+    DSRPAG = pag;
+    return ret;
+}
+
+static u16 mavdata_info_field_structoffset(u16 id, u8 nr)
+{
+    int pag, new_pag = m[id].info_pag;
+    u16 ret = 0;
+
+    pag = DSRPAG;
+    DSRPAG = new_pag;
+    ret = m[id].info->fields[nr].structure_offset;
+    DSRPAG = pag;
+    return ret;
+}
+
+static void mavdata_info_field_name(u16 id, u8 nr, char *name)
+{
+    int pag, new_pag = m[id].info_pag;
+    char *src;
+
+    pag = DSRPAG;
+    DSRPAG = new_pag;
+    src = (s8*) m[id].info->fields[nr].name;
+    do {
+        *(name++) = *(src);
+    } while (*(src++) != '\0');
+    DSRPAG = pag;
+}
 
 static void shell_cmd_stats(char *args, void *data)
 {
-    unsigned char i;
+    u16 i;
     unsigned long now = get_millis(), age;
-
-    shell_printf("\n id | age(ms) | rate(Hz) | name\n");
+    char buf[20];
+    
+    shell_printf(" id | age(ms) | rate(Hz) | name\n");
     shell_printf("----+---------+----------+---------------\n");
-    for (i = 0; i < MAVDATA_TOTAL; i++) {
-        shell_printf("%3d | ", m[i].id);
+    for (i = 0; i < 256; i++) {
+        if (m[i].decode == NULL)
+            continue;
+        shell_printf("%3d | ", i);
         age = (now - mavdata_time(i));
         if (mavdata_time(i) == 0) {
             shell_printf(" unseen |          | ");
@@ -139,39 +204,42 @@ static void shell_cmd_stats(char *args, void *data)
             else
                 shell_printf("         | ");
         }
-        shell_printf("%s\n", decode_ops[m[i].id].info->name);
+        mavdata_info_name(i, buf);
+        shell_printf("%s\n", buf);
     }
 }
 
 #define SHELL_CMD_DISPLAY_ARGS 1
 static void shell_cmd_display(char *args, void *data)
 {
-    const struct mavdata_decode_ops *ops;
-    const mavlink_message_info_t *info;
     struct shell_argval argval[SHELL_CMD_DISPLAY_ARGS+1], *p;
-    unsigned char t, i, j;
-    unsigned int data_offset;
+    unsigned char t, j;
+    u16 i;
+    char buf[40];
+    u16 num_fields;
     
     t = shell_arg_parser(args, argval, SHELL_CMD_DISPLAY_ARGS);
     
     p = shell_get_argval(argval, 'i');
     if ((t < 1) || (p == NULL)) {
-        shell_printf("\ndisplay mavlink data: [-i <msgid>]\n");
+        shell_printf("display mavlink data: [-i <msgid>]\n");
         shell_printf(" -i <msgid>  mavlink msgid (0=ALL)\n");
     } else {
         i = atoi(p->val);
-        ops = &decode_ops[i];
-        if (ops->decode == NULL) {
-            shell_printf("\nnot found\n");
+        if (m[i].decode == NULL) {
+            shell_printf("not found\n");
             return;
         }
-        info = ops->info;
-        shell_printf("\n%s\n", info->name);
-        for (j = 0; j < info->num_fields; j++) {
-            shell_printf("[%8s] ", mavdata_type_name[info->fields[j].type]);
-            shell_printf("%34s = ", info->fields[j].name);
-            data_offset = (unsigned int) (m[ops->offset].data + info->fields[j].structure_offset);
-            switch (info->fields[j].type) {
+        mavdata_info_name(i, buf);
+        num_fields = mavdata_info_num_fields(i);
+        shell_printf("%s\n", buf);
+        for (j = 0; j < num_fields; j++) {
+            u16 ftype = mavdata_info_field_type(i, j);
+            u16 data_offset = (u16) (mavdata_info_field_structoffset(i, j) + m[i].data);
+            mavdata_info_field_name(i, j, buf);
+            shell_printf("[%8s] ", mavdata_type_name[ftype]);
+            shell_printf("%34s = ", buf);
+            switch (ftype) {
                 case MAVLINK_TYPE_CHAR:
             	case MAVLINK_TYPE_INT8_T:
                 {

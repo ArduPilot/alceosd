@@ -355,6 +355,9 @@ int main(void) {
     /* init mavlink module */
     mavlink_init();
 
+    /* init mavdata */
+    mavdata_init();
+    
     /* init uavtalk module */
     uavtalk_init();
     

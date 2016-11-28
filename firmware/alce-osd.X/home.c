@@ -37,14 +37,14 @@ struct home_data* get_home_data(void)
 
 static void calc_home(struct timer *t, void *d)
 {
-    mavlink_heartbeat_t *hb = mavdata_get(MAVDATA_HEARTBEAT);
+    mavlink_heartbeat_t *hb = mavdata_get(MAVLINK_MSG_ID_HEARTBEAT);
 
     mavlink_message_t this_msg;
     
     switch (home.lock) {
         case HOME_NONE:
         default:
-            if (mavdata_age(MAVDATA_HEARTBEAT) > 5000)
+            if (mavdata_age(MAVLINK_MSG_ID_HEARTBEAT) > 5000)
                 return;
 
             /* check arming status */
@@ -54,13 +54,13 @@ static void calc_home(struct timer *t, void *d)
             break;
         case HOME_WAIT:
             
-            if (mavdata_age(MAVDATA_MISSION_ITEM) > 2000) {
+            if (mavdata_age(MAVLINK_MSG_ID_MISSION_ITEM) > 2000) {
                 /* when UAV is armed, home is WP0 */
                 mavlink_msg_mission_request_pack(config.mav.osd_sysid, MAV_COMP_ID_OSD, &this_msg,
                                     config.mav.uav_sysid, MAV_COMP_ID_ALL, 0);
                 mavlink_send_msg(&this_msg);
             } else {
-                mavlink_mission_item_t *mi = mavdata_get(MAVDATA_MISSION_ITEM);
+                mavlink_mission_item_t *mi = mavdata_get(MAVLINK_MSG_ID_MISSION_ITEM);
                 priv.home_coord.lat = DEG2RAD(mi->x);
                 priv.home_coord.lon = DEG2RAD(mi->y);
                 priv.home_altitude = (unsigned int) mi->z;
@@ -74,7 +74,7 @@ static void calc_home(struct timer *t, void *d)
             break;
         case HOME_LOCKED:
         {
-            mavlink_global_position_int_t *gpi = mavdata_get(MAVDATA_GLOBAL_POSITION_INT);
+            mavlink_global_position_int_t *gpi = mavdata_get(MAVLINK_MSG_ID_GLOBAL_POSITION_INT);
  
             priv.uav_coord.lat = DEG2RAD(gpi->lat / 10000000.0);
             priv.uav_coord.lon = DEG2RAD(gpi->lon / 10000000.0);

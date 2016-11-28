@@ -40,14 +40,14 @@ static void mav_callback(struct timer *t, void *d) //(mavlink_message_t *msg, vo
     
     unsigned long p;
     
-    mavlink_sys_status_t *s = mavdata_get(MAVDATA_SYS_STATUS);
+    mavlink_sys_status_t *s = mavdata_get(MAVLINK_MSG_ID_SYS_STATUS);
     
     priv->bat_voltage = s->voltage_battery / 1000.0;
     priv->bat_current = s->current_battery / 100.0;
     priv->bat_remaining = (int) s->battery_remaining;
 
     
-    p = mavdata_period(MAVDATA_SYS_STATUS);
+    p = mavdata_period(MAVLINK_MSG_ID_SYS_STATUS);
     p = max(p, 200);
     p = min(p, 1000);
     set_timer_period(t, p);

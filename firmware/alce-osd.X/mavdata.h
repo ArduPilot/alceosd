@@ -19,34 +19,17 @@
 #ifndef _UAV_H
 #define	_UAV_H
 
-enum {
-    MAVDATA_HEARTBEAT,
-    MAVDATA_SYS_STATUS,
-    MAVDATA_ATTITUDE,
-    MAVDATA_GLOBAL_POSITION_INT,
-    MAVDATA_MISSION_ITEM,
-    MAVDATA_VFR_HUD,
-    MAVDATA_RC_CHANNELS_RAW,
-    MAVDATA_RC_CHANNELS,
-    MAVDATA_HOME_POSITION,
-    MAVDATA_GPS_RAW_INT,
-    MAVDATA_GPS2_RAW,
-    MAVDATA_TOTAL,
-};
-
 struct mavdata_state {
     void *data;
     unsigned long time;
     unsigned long period;
-    unsigned char id;
-};
 
-struct mavdata_decode_ops {
     void (*decode)(mavlink_message_t *msg, void *d);
-    unsigned int offset;
     const mavlink_message_info_t *info;
+    int info_pag;
 };
 
+void mavdata_init(void);
 void mavdata_store(mavlink_message_t *msg);
 void* mavdata_get(unsigned int id);
 unsigned long mavdata_time(unsigned int id);

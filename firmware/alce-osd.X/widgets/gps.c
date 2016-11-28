@@ -31,14 +31,14 @@ static void pre_render(struct timer *t, void *d)
     struct widget_priv *priv = w->priv;
 
     if (w->cfg->props.source == 0) {
-        mavlink_gps_raw_int_t *gps = mavdata_get(MAVDATA_GPS_RAW_INT);
+        mavlink_gps_raw_int_t *gps = mavdata_get(MAVLINK_MSG_ID_GPS_RAW_INT);
         priv->gps_lat = gps->lat / 10000000.0;
         priv->gps_lon = gps->lon / 10000000.0;
         priv->gps_fix_type = gps->fix_type;
         priv->gps_nrsats = gps->satellites_visible;
         priv->gps_eph = (float) gps->eph / 100.0;
     } else {
-        mavlink_gps2_raw_t *gps2 = mavdata_get(MAVDATA_GPS2_RAW);
+        mavlink_gps2_raw_t *gps2 = mavdata_get(MAVLINK_MSG_ID_GPS2_RAW);
         priv->gps_lat = gps2->lat / 10000000.0;
         priv->gps_lon = gps2->lon / 10000000.0;
         priv->gps_fix_type = gps2->fix_type;

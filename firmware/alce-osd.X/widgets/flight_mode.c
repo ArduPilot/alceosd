@@ -27,7 +27,7 @@ static void callback(struct timer *t, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
-    mavlink_heartbeat_t *hb = mavdata_get(MAVDATA_HEARTBEAT);
+    mavlink_heartbeat_t *hb = mavdata_get(MAVLINK_MSG_ID_HEARTBEAT);
 
     if (hb->custom_mode == priv->prev_mode)
         return;
@@ -67,7 +67,7 @@ static void render(struct widget *w)
     struct canvas *ca = &w->ca;
     char mode[17];
     unsigned int cust_mode;
-    mavlink_heartbeat_t *hb = mavdata_get(MAVDATA_HEARTBEAT);
+    mavlink_heartbeat_t *hb = mavdata_get(MAVLINK_MSG_ID_HEARTBEAT);
 
     cust_mode = hb->custom_mode;
     if (hb->type !=  MAV_TYPE_FIXED_WING)

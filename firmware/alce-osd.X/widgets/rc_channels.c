@@ -42,12 +42,12 @@ static int open(struct widget *w)
         return -1;
     w->priv = priv;
 
-    if (mavdata_age(MAVDATA_RC_CHANNELS) < 5000) {
-        mavlink_rc_channels_t *rc = mavdata_get(MAVDATA_RC_CHANNELS);
+    if (mavdata_age(MAVLINK_MSG_ID_RC_CHANNELS) < 5000) {
+        mavlink_rc_channels_t *rc = mavdata_get(MAVLINK_MSG_ID_RC_CHANNELS);
         priv->total_ch = rc->chancount;
         priv->ch = &rc->chan1_raw;
     } else {
-        mavlink_rc_channels_raw_t *rc_raw = mavdata_get(MAVDATA_RC_CHANNELS_RAW);
+        mavlink_rc_channels_raw_t *rc_raw = mavdata_get(MAVLINK_MSG_ID_RC_CHANNELS_RAW);
         priv->total_ch = 8;
         priv->ch = &rc_raw->chan1_raw;
     }
