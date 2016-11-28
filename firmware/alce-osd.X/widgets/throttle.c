@@ -18,7 +18,7 @@
 
 #include "alce-osd.h"
 
-#define X_SIZE  8
+#define X_SIZE  12
 #define Y_SIZE  45
 
 struct widget_priv {
@@ -61,12 +61,15 @@ static void render(struct widget *w)
     struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     unsigned v = priv->throttle * (Y_SIZE-4) / 100;
+    char buf[5];
     
     draw_rect(0, 0, X_SIZE-1, Y_SIZE-1, 3, ca);
     draw_rect(1, 1, X_SIZE-2, Y_SIZE-2, 1, ca);
     if (priv->throttle > 0) {
-        draw_frect(2, Y_SIZE-3 - v, X_SIZE-3, Y_SIZE-3, 1, ca);
+        draw_frect(2, Y_SIZE-3 - v, X_SIZE-3, Y_SIZE-3, 2, ca);
     }
+    snprintf(buf, 5, "%d", priv->throttle);
+    draw_jstr(buf, X_SIZE/2, Y_SIZE/2, JUST_HCENTER|JUST_VCENTER, ca, 0);
 }
 
 
