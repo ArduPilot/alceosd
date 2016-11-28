@@ -34,12 +34,13 @@ struct widget_priv {
     int y;
 };
 
-static void mav_callback(mavlink_message_t *msg, void *d)
+static void render_timer(struct timer *t, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
+    mavlink_vfr_hud_t *vfr_hud = mavdata_get(MAVLINK_MSG_ID_VFR_HUD);
     
-    priv->climb = mavlink_msg_vfr_hud_get_climb(msg) * 60.0;
+    priv->climb = vfr_hud->climb * 60.0;
     priv->avg = priv->avg - (int) (((float) priv->avg - priv->climb) * ALPHA);
 
     priv->y = -(priv->avg / SCALE) + (Y_SIZE/2)-1;
@@ -68,7 +69,7 @@ static int open(struct widget *w)
     w->ca.width = X_SIZE;
     w->ca.height = Y_SIZE;
 
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET, w);
+    add_timer(TIMER_WIDGET, 250, render_timer, w);
     return 0;
 }
 

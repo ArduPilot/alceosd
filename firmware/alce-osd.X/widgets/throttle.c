@@ -25,12 +25,13 @@ struct widget_priv {
     unsigned char throttle, last_throttle;
 };
 
-static void mav_callback(mavlink_message_t *msg, void *d)
+static void render_timer(struct timer *t, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
+    mavlink_vfr_hud_t *vfr_hud = mavdata_get(MAVLINK_MSG_ID_VFR_HUD);
 
-    priv->throttle = (unsigned char) mavlink_msg_vfr_hud_get_throttle(msg);
+    priv->throttle = (unsigned char) vfr_hud->throttle;
     if (priv->throttle ==  priv->last_throttle)
         return;
 
@@ -51,7 +52,7 @@ static int open(struct widget *w)
     priv->last_throttle = 0xff;
     w->ca.width = X_SIZE;
     w->ca.height = Y_SIZE;
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET, w);
+    add_timer(TIMER_WIDGET, 250, render_timer, w);
     return 0;
 }
 

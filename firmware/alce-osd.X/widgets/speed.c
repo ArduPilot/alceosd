@@ -29,10 +29,11 @@ struct widget_priv {
     float speed;
 };
 
-static void mav_callback(mavlink_message_t *msg, void *d)
+static void render_timer(struct timer *t, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
+    mavlink_vfr_hud_t *vfr_hud = mavdata_get(MAVLINK_MSG_ID_VFR_HUD);
 
     /* sources:
        0) airspeed
@@ -40,10 +41,10 @@ static void mav_callback(mavlink_message_t *msg, void *d)
     switch (w->cfg->props.source) {
         case 0:
         default:
-            priv->speed = mavlink_msg_vfr_hud_get_airspeed(msg) * 3600 / 1000.0;
+            priv->speed = vfr_hud->airspeed * 3600 / 1000.0;
             break;
         case 1:
-            priv->speed = mavlink_msg_vfr_hud_get_groundspeed(msg) * 3600 / 1000.0;
+            priv->speed = vfr_hud->groundspeed * 3600 / 1000.0;
             break;
     }
 
@@ -74,8 +75,8 @@ static int open(struct widget *w)
             w->ca.height = 20;
             break;
     }
-    
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET, w);
+
+    add_timer(TIMER_WIDGET, 250, render_timer, w);
     return 0;
 }
 

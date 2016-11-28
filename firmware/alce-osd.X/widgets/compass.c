@@ -33,12 +33,13 @@ struct widget_priv {
     char heading_s[4];
 };
 
-static void mav_callback(mavlink_message_t *msg, void *d)
+static void render_callback(struct timer *t, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
+    mavlink_vfr_hud_t *vfr_hud = mavdata_get(MAVLINK_MSG_ID_VFR_HUD);
     
-    priv->heading = mavlink_msg_vfr_hud_get_heading(msg);
+    priv->heading = vfr_hud->heading;
     priv->heading_s[0] = '0' + (priv->heading / 100);
     priv->heading_s[1] = '0' + ((priv->heading % 100) / 10);
     priv->heading_s[2] = '0' + (priv->heading % 10);
@@ -56,9 +57,10 @@ static int open(struct widget *w)
     w->priv = priv;
 
     priv->heading_s[3] = '\0';
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback, CALLBACK_WIDGET, w);
     w->ca.width = X_SIZE;
     w->ca.height = Y_SIZE;
+    
+    add_timer(TIMER_WIDGET, 250, render_callback, w);
     return 0;
 }
 

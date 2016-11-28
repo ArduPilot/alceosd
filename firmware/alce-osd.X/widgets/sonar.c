@@ -21,45 +21,29 @@
 #define X_SIZE  64
 #define Y_SIZE  17
 
-struct widget_priv {
-    //float voltage;
-    float distance;
-};
 
-static void mav_callback(mavlink_message_t *msg, void *d)
+static void render_timer(struct timer *t, void *d)
 {
     struct widget *w = d;
-    struct widget_priv *priv = w->priv;
-
-    //priv->voltage = mavlink_msg_rangefinder_get_voltage(msg);
-    priv->distance = mavlink_msg_rangefinder_get_distance(msg);
-    
     schedule_widget(w);
 }
 
 static int open(struct widget *w)
 {
-    struct widget_priv *priv;
-
-    priv = (struct widget_priv*) widget_malloc(sizeof(struct widget_priv));
-    if (priv == NULL)
-        return -1;
-    w->priv = priv;
-
     w->ca.width = X_SIZE;
     w->ca.height = Y_SIZE;
-    add_mavlink_callback(MAVLINK_MSG_ID_RANGEFINDER, mav_callback, CALLBACK_WIDGET, w);
+    add_timer(TIMER_WIDGET, 500, render_timer, w);
     return 0;
 }
 
-
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
     char buf[10];
+    mavlink_rangefinder_t *rfinder = mavdata_get(MAVLINK_MSG_ID_RANGEFINDER);
+    float distance = rfinder->distance;
 
-    sprintf(buf, "%.2fm", priv->distance);
+    sprintf(buf, "%.2fm", (double) distance);
     draw_jstr(buf, X_SIZE, Y_SIZE/2, JUST_RIGHT | JUST_VCENTER, ca, 2);
 }
 

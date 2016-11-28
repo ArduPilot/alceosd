@@ -52,6 +52,10 @@ MAVDATA_INFO(HOME_POSITION, home_position);
 MAVDATA_INFO(GPS_RAW_INT, gps_raw_int);                     /* 24 */
 MAVDATA_INFO(GPS2_RAW, gps2_raw);
 MAVDATA_INFO(TERRAIN_REPORT, terrain_report);
+MAVDATA_INFO(NAV_CONTROLLER_OUTPUT, nav_controller_output);
+MAVDATA_INFO(MISSION_CURRENT, mission_current);
+MAVDATA_INFO(RANGEFINDER, rangefinder);
+MAVDATA_INFO(WIND, wind);
 
 void mavdata_init(void)
 {
@@ -72,7 +76,11 @@ void mavdata_init(void)
     MAVDATA_DEF(HOME_POSITION, home_position);
     MAVDATA_DEF(GPS_RAW_INT, gps_raw_int);
     MAVDATA_DEF(GPS2_RAW, gps2_raw);
-    MAVDATA_DEF(TERRAIN_REPORT, terrain_report);    
+    MAVDATA_DEF(TERRAIN_REPORT, terrain_report);
+    MAVDATA_DEF(NAV_CONTROLLER_OUTPUT, nav_controller_output);
+    MAVDATA_DEF(MISSION_CURRENT, mission_current);
+    MAVDATA_DEF(RANGEFINDER, rangefinder);
+    MAVDATA_DEF(WIND, wind);
 }
 
 void mavdata_store(mavlink_message_t *msg)

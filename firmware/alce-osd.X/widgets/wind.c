@@ -29,21 +29,17 @@ struct widget_priv {
     float speed_z;
 };
 
-static void mav_callback_vfr_hud(mavlink_message_t *msg, void *d)
+static void render_timer(struct timer *t, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
-    priv->heading = mavlink_msg_vfr_hud_get_heading(msg);
-}
-
-static void mav_callback_wind(mavlink_message_t *msg, void *d)
-{
-    struct widget *w = d;
-    struct widget_priv *priv = w->priv;
-    priv->direction = mavlink_msg_wind_get_direction(msg);
-    priv->speed = mavlink_msg_wind_get_speed(msg);
-    priv->speed_z = mavlink_msg_wind_get_speed_z(msg);
-    schedule_widget(w);
+    mavlink_vfr_hud_t *vfr_hud = mavdata_get(MAVLINK_MSG_ID_VFR_HUD);
+    mavlink_wind_t *wind = mavdata_get(MAVLINK_MSG_ID_WIND);
+    
+    priv->heading = vfr_hud->heading;
+    priv->direction = wind->direction;
+    priv->speed = wind->speed;
+    priv->speed_z = wind->speed_z;
 }
 
 static int open(struct widget *w)
@@ -62,8 +58,7 @@ static int open(struct widget *w)
     w->ca.width = X_SIZE;
     w->ca.height = Y_SIZE;
 
-    add_mavlink_callback(MAVLINK_MSG_ID_WIND, mav_callback_wind, CALLBACK_WIDGET, w);
-    add_mavlink_callback(MAVLINK_MSG_ID_VFR_HUD, mav_callback_vfr_hud, CALLBACK_WIDGET, w);
+    add_timer(TIMER_WIDGET, 500, render_timer, w);
     return 0;
 }
 
