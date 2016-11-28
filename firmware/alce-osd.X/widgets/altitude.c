@@ -27,11 +27,10 @@
 struct widget_priv {
     long altitude;
     int range;
-    struct home_data *home;
 };
 
 
-static void mav_callback(mavlink_message_t *msg, void *d)
+static void pre_render(struct timer *t, void *d)
 {
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
@@ -39,21 +38,29 @@ static void mav_callback(mavlink_message_t *msg, void *d)
     
     switch (w->cfg->props.source) {
         case 0:
-        default:
-            altitude = mavlink_msg_gps_raw_int_get_alt(msg) / 1000.0;
+        default: {
+            mavlink_gps_raw_int_t *gps = mavdata_get(MAVLINK_MSG_ID_GPS_RAW_INT);
+            altitude = gps->alt / 1000.0;
             break;
-        case 1:
-            if (priv->home->lock == HOME_LOCKED)
-                altitude = (long) priv->home->altitude;
+        }
+        case 1: {
+            struct home_data *home = get_home_data();
+            if (home->lock == HOME_LOCKED)
+                altitude = (long) home->altitude;
             else
                 altitude = 0;
             break;
-        case 2:
-            altitude = mavlink_msg_gps2_raw_get_alt(msg) / 1000.0;
+        }
+        case 2: {
+            mavlink_gps2_raw_t *gps = mavdata_get(MAVLINK_MSG_ID_GPS2_RAW);
+            altitude = gps->alt / 1000.0;
             break;
-        case 3:
-            altitude = mavlink_msg_terrain_report_get_current_height(msg);
+        }
+        case 3: {
+            mavlink_terrain_report_t *terrain = mavdata_get(MAVLINK_MSG_ID_TERRAIN_REPORT);
+            altitude = terrain->current_height;
             break;
+        }
     }
     
     if (get_units(w->cfg) == UNITS_IMPERIAL)
@@ -74,8 +81,6 @@ static int open(struct widget *w)
 
     w->priv = priv;
 
-    priv->home = get_home_data();
-
     switch (get_units(w->cfg)) {
         case UNITS_METRIC:
         default:
@@ -86,19 +91,7 @@ static int open(struct widget *w)
             break;
     }
 
-    switch (w->cfg->props.source) {
-        case 0:
-        case 1:
-        default:
-            add_mavlink_callback(MAVLINK_MSG_ID_GPS_RAW_INT, mav_callback, CALLBACK_WIDGET, w);
-            break;
-        case 2:
-            add_mavlink_callback(MAVLINK_MSG_ID_GPS2_RAW, mav_callback, CALLBACK_WIDGET, w);
-            break;
-        case 3:
-            add_mavlink_callback(MAVLINK_MSG_ID_TERRAIN_REPORT, mav_callback, CALLBACK_WIDGET, w);
-            break;
-    }
+    add_timer(TIMER_WIDGET, 500, pre_render, w);
     
     switch (w->cfg->props.mode) {
         case 0:
