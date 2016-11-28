@@ -337,7 +337,7 @@ static void shell_cmd_stats(char *args, void *data)
 
 static void shell_cmd_savecfg(char *args, void *data)
 {
-    shell_printf("\nSaving config...\n");
+    shell_printf("Saving config...\n");
     write_config();
 }
 
@@ -353,7 +353,7 @@ static void shell_cmd_dumpcfg(char *args, void *data)
     float value;
     u16 i, t = params_get_total();
     
-    shell_printf("\nAlceOSD config hw%dv%d fw%d.%d.%d\n==\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
+    shell_printf("AlceOSD config hw%dv%d fw%d.%d.%d\n==\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
 
     for (i = 0; i < t; i++) {
         value = params_get_value(i, param_name);

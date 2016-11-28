@@ -703,7 +703,7 @@ static void shell_cmd_callbacks(char *args, void *data)
     unsigned char i, t = 0;
     struct mavlink_callback *c = callbacks;
 
-    shell_printf("\n\nMavlink callbacks:\n");
+    shell_printf("Mavlink callbacks:\n");
     for (i = 0; i < nr_callbacks; i++) {
         if (c->cbk != NULL) {
             shell_printf(" type=%d sysid=%3d msgid=%3d cbk=%p data=%p\n",
@@ -736,7 +736,7 @@ static void shell_cmd_route(char *args, void *data)
 {
     unsigned char i;
     
-    shell_printf("\nMavlink routing table:\n");
+    shell_printf("Mavlink routing table:\n");
     for(i = 0; i < total_routes; i++) {
         shell_printf(" sysid(%3u) compid(%3u) on channel(%u)\n",
                 (unsigned) routes[i].sysid, 
@@ -758,7 +758,7 @@ static void shell_cmd_rates(char *args, void *data)
     p = shell_get_argval(argval, 's');
 
     if ((t < 2) || (p == NULL)) {
-        shell_printf("\nMavlink stream rates:\n");
+        shell_printf("Mavlink stream rates:\n");
         shell_printf("id - rate stream\n");
         for (i = 0; i < sizeof(mavlink_stream_map)-1; i++) {
             v = (unsigned char*) params_mavlink_rates[i].value;
@@ -773,13 +773,13 @@ static void shell_cmd_rates(char *args, void *data)
         if (p != NULL) {
             i = atoi(p->val);
             if (i > sizeof(mavlink_stream_map)) {
-                shell_printf("\nInvalid stream id\n");
+                shell_printf("Invalid stream id\n");
             } else {
                 p = shell_get_argval(argval, 'r');
                 val = atoi(p->val);
                 if (val > 20)
                     val = 0;
-                shell_printf("\nSetting stream id %u to %uHz\n", i, val);
+                shell_printf("Setting stream id %u to %uHz\n", i, val);
                 mavlink_request_data_stream(i, val);
             }
         }
@@ -814,13 +814,13 @@ static void shell_cmd_watch(char *args, void *data)
     p = shell_get_argval(argval, 'r');
     if (p != NULL) {
         del_mavlink_callbacks(CALLBACK_WATCH);
-        shell_printf("\nRemoved all watches\n");
+        shell_printf("Removed all watches\n");
         return;
     }
     
     p = shell_get_argval(argval, 'i');
     if ((t < 1) || (p == NULL)) {
-        shell_printf("\nMavlink watch:\n");
+        shell_printf("Mavlink watch:\n");
         
         shell_printf("\nwatch mavlink messages: [-i <msgid> -o <output>]\n");
         shell_printf(" -r          remove watches\n");
@@ -828,7 +828,7 @@ static void shell_cmd_watch(char *args, void *data)
         //shell_printf(" -o <msgid>  output (0=shell; 1=console widget)\n");
     } else {
         i = atoi(p->val);
-        shell_printf("\nCreated watch for msgid=%d\n", i);
+        shell_printf("Created watch for msgid=%d\n", i);
         add_mavlink_callback_sysid(MAV_SYS_ID_ANY, i, watch_cbk, CALLBACK_WATCH, NULL);
     } 
 }
@@ -844,7 +844,7 @@ static void shell_cmd_cmd(char *args, void *data)
     t = shell_arg_parser(args, argval, SHELL_CMD_CMD_ARGS);
     
     cmd = atoi(args);
-    shell_printf("\nsending command %d\n", cmd);
+    shell_printf("sending command %d\n", cmd);
     mavlink_msg_command_long_pack(config.mav.osd_sysid, MAV_COMP_ID_OSD, &this_msg, config.mav.uav_sysid, MAV_COMP_ID_ALL,
         cmd, 0, 0, 0, 0, 0, 0, 0, 0);
     mavlink_send_msg(&this_msg);

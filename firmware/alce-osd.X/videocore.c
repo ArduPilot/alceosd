@@ -1571,7 +1571,7 @@ static void shell_cmd_stats(char *args, void *data)
     unsigned char dac_status[VIDEO_DAC_BUF_SIZE], i;
     float f;
     
-    shell_printf("\nVideo config:\n");
+    shell_printf("Video config:\n");
     shell_printf(" standard=%s,%s\n",
         (cfg->mode & VIDEO_MODE_STANDARD_MASK) != 0 ? "ntsc" : "pal",
         (cfg->mode & VIDEO_MODE_SCAN_MASK) != 0 ? "interlaced" : "progressive");
@@ -1629,7 +1629,7 @@ static void shell_cmd_config(char *args, void *data)
     t = shell_arg_parser(args, argval, SHELL_CMD_CONFIG_ARGS);
 
     if (t < 1) {
-        shell_printf("\narguments:\n");
+        shell_printf("arguments:\n");
         shell_printf(" -s <standard>    video standard: [p]al or [n]tsc\n");
         shell_printf(" -m <scan_mode>   video scan mode: [p]rogressive or [i]nterlaced\n");
         shell_printf(" -i <int_sync>    internal sync: 0 or 1\n");
@@ -1757,7 +1757,7 @@ static void shell_cmd_config(char *args, void *data)
                             f = 0;
                             break;
                     }
-                    shell_printf("\nvref=%0.3f\n", f);
+                    shell_printf("vref=%0.3f\n", f);
                     break;
                 case 'l':
                     int_var = atoi(argval[i].val);
@@ -1801,7 +1801,7 @@ static void shell_cmd_test(char *args, void *data)
     t = shell_arg_parser(args, argval, SHELL_CMD_TEST_ARGS);
 
     if (t < 1) {
-        shell_printf("\nVideocore test arguments:\n");
+        shell_printf("Videocore test arguments:\n");
         shell_printf(" -r               test SRAM\n");
         shell_printf(" -e <state>       start or stop engine (0 or 1)\n");
         shell_printf(" -a <amux>        analog mux state (0 to 3)\n");
@@ -1851,7 +1851,7 @@ static void shell_cmd_test(char *args, void *data)
                         LATC |= v;
                         mdelay(100);
                         p = (PORTA & 0xc) >> 2;
-                        shell_printf("\nsio<1:0>=%u; b<1:0>=%u ", v, p);
+                        shell_printf("sio<1:0>=%u; b<1:0>=%u ", v, p);
                         if (v == p)
                             shell_printf("[OK]\n");
                         else
@@ -1876,7 +1876,7 @@ static void shell_cmd_test(char *args, void *data)
                     v &= 3;
                     LATC &= ~3;
                     LATC |= v;
-                    shell_printf("\nanalog mux output=");
+                    shell_printf("analog mux output=");
                     switch(v) {
                         default:
                         case 0:
@@ -1924,7 +1924,7 @@ static void shell_cmd_swconfig(char *args, void *data)
 
     t = shell_arg_parser(args, argval, SHELL_CMD_CONFIGSW_ARGS);
     if (t < 1) {
-        shell_printf("\nVideo switch:\n");
+        shell_printf("Video switch:\n");
         shell_printf(" Mode:    %d (0:ch%; 1:flight mode; 2:toggle)\n", cfg->mode);
         shell_printf(" Ch:   CH%d\n", cfg->ch + 1);
         shell_printf(" Min:  %d\n", cfg->ch_min);

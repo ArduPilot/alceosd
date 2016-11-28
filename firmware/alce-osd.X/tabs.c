@@ -290,7 +290,7 @@ static void shell_cmd_config(char *args, void *data)
 
     t = shell_arg_parser(args, argval, SHELL_CMD_CONFIG_ARGS);
     if (t < 1) {
-        shell_printf("\nTab switch config:\n");
+        shell_printf("Tab switch config:\n");
         shell_printf(" Mode: %d (0:ch percent; 1:flight mode; 2:ch toggle)\n", cfg->mode);
         shell_printf(" Ch:   CH%d\n", cfg->ch + 1);
         shell_printf(" Min:  %d\n", cfg->ch_min);
@@ -342,21 +342,21 @@ static void shell_cmd_load(char *args, void *data)
     idx = shell_get_argval(argval, 'i');
     tab = shell_get_argval(argval, 't');
     if ((t != 1) && ((idx == NULL) && (tab == NULL))) {
-        shell_printf("\nload tab: [-i <tab index> | -t <tab number>]\n");
+        shell_printf("load tab: [-i <tab index> | -t <tab number>]\n");
         shell_printf(" -i <tab index>   tab index (0 to %d)\n", tab_list[0]-1);
         shell_printf(" -t <tab id>      tab id\n");
     } else {
         if (idx != NULL) {
             j = atoi(idx->val);
             if (j < tab_list[0]) {
-                shell_printf("\nLoading tab index %d of %d\n", j, tab_list[0]-1);
+                shell_printf("Loading tab index %d of %d\n", j, tab_list[0]-1);
                 load_tab(tab_list[j+1]);
             } else {
-                shell_printf("\nOut of range [0 ... %d]\n", tab_list[0]-1);
+                shell_printf("Out of range [0 ... %d]\n", tab_list[0]-1);
             }
         } else {
             j = atoi(tab->val);
-            shell_printf("\nLoading tab id %d\n", j);
+            shell_printf("Loading tab id %d\n", j);
             load_tab(j);
         }
     }

@@ -135,7 +135,7 @@ static void shell_cmd_stats(char *args, void *data)
     for (i = 0; i < nr_processes; i++)
         total_calls += process_list[i].calls;
     
-    shell_printf("\nProcess list\n");
+    shell_printf("Process list\n");
     for (i = 0; i < nr_processes; i++) {
         t = ((float) process_list[i].time / 1000) / (float) millis * 100.0;
         total += process_list[i].time / 1000;
@@ -164,7 +164,7 @@ static void shell_cmd_stack(char *args, void *data)
     
     c = (unsigned char*) p;
     
-    shell_printf("\nStack dump :: [0x%04p--->0x%04p   0x%04p]\n\n", p, stack_pos, t);
+    shell_printf("Stack dump :: [0x%04p--->0x%04p   0x%04p]\n\n", p, stack_pos, t);
     i = 0;
     shell_printf("0x%4p | ", p);
     while (p < stack_pos) {
@@ -187,7 +187,7 @@ static void shell_cmd_kill(char *args, void *data)
     int pid;
     
     pid = atoi(args);
-    shell_printf("\nRemoving process %s (%d)\n", process_list[pid].name, pid);
+    shell_printf("Removing process %s (%d)\n", process_list[pid].name, pid);
     process_remove(pid);
 }
 

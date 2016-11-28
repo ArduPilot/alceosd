@@ -52,7 +52,7 @@ static void shell_cmd_timers(char *args, void *data)
 
         for (i = 0; i < nr_timers; i++) {
             if ((void *) &timers[i] == (void *) a) {
-                shell_printf("\n\nRemoved timer: %p\n", (void *) a);
+                shell_printf("Removed timer: %p\n", (void *) a);
                 timers[i].cbk = NULL;
             }
         }
@@ -67,14 +67,14 @@ static void shell_cmd_timers(char *args, void *data)
             if ((void *) &timers[i] == (void *) a) {
                 t = &timers[i];
                 t->last_tick = get_millis();
-                shell_printf("\n\ntimer=%p type=%u period=%5lums last_tick=%5lums cbk=%p data=%p\n",
+                shell_printf(" timer=%p type=%u period=%5lums last_tick=%5lums cbk=%p data=%p\n",
                     t, t->type, t->period, t->last_tick, t->cbk, t->data);
             }
         }
     }
 
     t = timers;
-    shell_printf("\n\nWidget timers:\n");
+    shell_printf("\nWidget timers:\n");
     for (i = 0; i < nr_timers; i++) {
         if (t->cbk != NULL) {
             shell_printf(" timer=%p type=%u period=%5lums last_tick=%5lums cbk=%p data=%p\n",
@@ -83,12 +83,12 @@ static void shell_cmd_timers(char *args, void *data)
         }
         t++;
     }
-    shell_printf("\n\ntotal=%d peak=%d\n", total, nr_timers);
+    shell_printf("\ntotal=%d peak=%d\n", total, nr_timers);
 }
 
 static void shell_cmd_stats(char *args, void *data)
 {
-    shell_printf("\nElapsed time since boot: %lums\n", get_millis());
+    shell_printf("Elapsed time since boot: %lums\n", get_millis());
 }
 
 static const struct shell_cmdmap_s clock_cmdmap[] = {

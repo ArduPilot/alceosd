@@ -20,6 +20,7 @@
 
 #define MAX_SHELL_LINE_LEN  50
 
+#define BELL        7
 #define BACKSPACE   8
 #define TAB         9
 #define LF          10
@@ -35,12 +36,12 @@ extern struct alceosd_config config;
 
 static void shell_cmd_version(char *args, void *data)
 {
-    shell_printf("\nAlceOSD hw%dv%d fw%d.%d.%d\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
+    shell_printf("AlceOSD hw%dv%d fw%d.%d.%d\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
 }
 
 static void shell_cmd_reboot(char *args, void *data)
 {
-    shell_printf("\nRebooting...\n");
+    shell_printf("Rebooting...\n");
     __asm__ volatile ("reset");
 }
 
@@ -214,7 +215,7 @@ void shell_exec(char *cmd_line, const struct shell_cmdmap_s *c, void *data)
     //shell_printf("\r\nexec: [%s] [%s] [%p]\r\n", cmd, args, data);
     if (strcmp(cmd, "help") == 0) {
         if (ac == NULL) {
-            shell_printf("\r\n");
+            shell_putc(LF);
             while (c->handler != NULL) {
                 shell_printf("%-10s : %s\n", c->cmd, c->usage);
                 c++;
@@ -270,7 +271,7 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
             case CTRL_R:
                 strcpy(cmd_line, prev_cmd_line);
                 cmd_len = strlen(cmd_line);
-                shell_printf("\r\n> %s", cmd_line);
+                shell_printf("\n> %s", cmd_line);
                 continue;
             case TAB:
                 cmd_line[cmd_len] = '\0';
@@ -297,28 +298,31 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
                 }
                 a = ac;
                 if (*a == NULL) {
-                    shell_printf("%c", 7);
+                    shell_putc(BELL);
                 } else if (*(a+1) == NULL) {
                     p = &cmd_line[cmd_len];
                     strcat(cmd_line, (*a)->cmd + size);
                     cmd_len += strlen((*a)->cmd) - size;
                     cmd_line[cmd_len++] = ' ';
                     cmd_line[cmd_len] = '\0';
-                    shell_printf("%s", p);
+                    shell_puts(p);
                 } else {
-                    shell_printf("\r\n");
+                    shell_putc(LF);
                     while (*a != NULL)
                         shell_printf("%s ", (*a++)->cmd);
-                    shell_printf("\r\n> %s", cmd_line);
+                    shell_printf("\n> %s", cmd_line);
                 }
                 continue;
             case CR:
             case LF:
-                cmd_line[cmd_len] = '\0';
-                strcpy(prev_cmd_line, cmd_line);
-                shell_exec(cmd_line, root_cmdmap, NULL);
-                cmd_len = 0;
-                shell_printf("\r\n> ");
+                shell_putc(LF);
+                if (cmd_len > 0) {
+                    cmd_line[cmd_len] = '\0';
+                    strcpy(prev_cmd_line, cmd_line);
+                    shell_exec(cmd_line, root_cmdmap, NULL);
+                    cmd_len = 0;
+                }
+                shell_puts("> ");
                 break;
             default:
                 cmd_line[cmd_len] = buf[i];

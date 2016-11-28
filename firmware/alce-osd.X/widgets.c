@@ -508,7 +508,7 @@ void widgets_init(void)
 
 static void shell_cmd_stats(char *args, void *data)
 {
-    shell_printf("\nWidgets mem: %u/%u bytes\n",
+    shell_printf("Widgets mem: %u/%u bytes\n",
         widgets_mem.alloc_size, MAX_WIDGET_ALLOC_MEM);
 
     shell_printf("Widgets fifo: size=%u peak=%u max=%u\n",
@@ -521,7 +521,7 @@ static void shell_cmd_loaded(char *args, void *data)
     struct widget *w;
     unsigned char i;
     
-    shell_printf("\nLoaded widgets:\n");
+    shell_printf("Loaded widgets:\n");
     shell_printf("\n id+uid | name                 |   x |   y | hjust | vjust\n");
     shell_printf(  "--------+----------------------+-----+-----+-------+-------\n");
     for (i = 0; i < total_active_widgets; i++) {
@@ -552,7 +552,7 @@ static void shell_cmd_list(char *args, void *data)
         tab = get_active_tab();
     }
 
-    shell_printf("\nsyntax: [-t <tab_id>]\n");
+    shell_printf("syntax: [-t <tab_id>]\n");
     shell_printf("    ommiting tab_id lists active tab\n");
     shell_printf("    using tab_id 0 shows all widgets\n\n");
     shell_printf("Widget configuration for ");
@@ -599,7 +599,6 @@ static void shell_cmd_avail(char *args, void *data)
 
     if ((strlen(args) > 0) && atoi(args) == 1) {
         /* raw mode */
-        shell_printf("\n");
         while ((*w_ops) != NULL) {
             shell_printf("%u,%s,%s\n",
                 (*w_ops)->id, (*w_ops)->name, (*w_ops)->mavname);
@@ -607,7 +606,7 @@ static void shell_cmd_avail(char *args, void *data)
         }
         shell_printf("--\n");
     } else {
-        shell_printf("\nTab %u widgets\n", get_active_tab());
+        shell_printf("Tab %u widgets\n", get_active_tab());
         shell_printf("\n id | name                 | mavname  | init | open | render | close\n");
         shell_printf(  "----+----------------------+----------+------+------+--------+-------\n");
         while ((*w_ops) != NULL) {
@@ -629,7 +628,7 @@ static void shell_cmd_add(char *args, void *data)
     int tab, id;
 
     if (strlen(args) == 0) {
-        shell_printf("\nsyntax: widgets add <mavname>|-i <id> [-t <tab_id>]\n");
+        shell_printf("syntax: widgets add <mavname>|-i <id> [-t <tab_id>]\n");
         shell_printf("      <mavname>       mavlink name\n");
         shell_printf("      -i <id>         widget global id\n");
         shell_printf("      -t <tab_id>     tab id number (1-254)\n");
@@ -680,9 +679,9 @@ static void shell_cmd_add(char *args, void *data)
 
             load_tab(tab);
 
-            shell_printf("\n\nAdded widget: %02u+%02u to tab %d", id, uid, tab);
+            shell_printf("Added widget: %02u+%02u to tab %d", id, uid, tab);
         } else {
-            shell_printf("\n\nWidget not found: %s / %d", args, id);
+            shell_printf("Widget not found: %s / %d", args, id);
         }
     }
 }
@@ -695,7 +694,7 @@ static void shell_cmd_rm(char *args, void *data)
     int tab;
 
     if (strlen(args) == 0) {
-        shell_printf("\nsyntax: widgets rm <id>+<uid>\n");
+        shell_printf("syntax: widgets rm <id>+<uid>\n");
         shell_printf("      <id>    widget global id\n");
         shell_printf("      <uid>   widget unique id (on same widget type)\n");
     } else {
@@ -722,9 +721,9 @@ static void shell_cmd_rm(char *args, void *data)
             
             load_tab(tab);
             
-            shell_printf("\n\nRemoved widget: %02u+%02u from tab %d", id, uid, tab);
+            shell_printf("Removed widget: %02u+%02u from tab %d\n", id, uid, tab);
         } else {
-            shell_printf("\n\nNot found: %02u+%02u", id, uid);
+            shell_printf("Not found: %02u+%02u\n", id, uid);
         }
     }
 }
@@ -736,7 +735,7 @@ static void shell_cmd_bitmap(char *args, void *data)
     s8 *ptr, found = 0;
     
     if (strlen(args) == 0) {
-        shell_printf("\nsyntax: widgets bitmap <id>+<uid>\n");
+        shell_printf("syntax: widgets bitmap <id>+<uid>\n");
         shell_printf("      <id>    widget global id\n");
         shell_printf("      <uid>   widget unique id (on same widget type)\n");
     } else {
@@ -752,10 +751,10 @@ static void shell_cmd_bitmap(char *args, void *data)
             }
         }
         if (found) {
-            shell_printf("\nw:%u\nh:%u\n", w->ca.rwidth, w->ca.height);
+            shell_printf("w:%u\nh:%u\n", w->ca.rwidth, w->ca.height);
             shell_write_eds(w->ca.buf, w->ca.size);
         } else {
-            shell_printf("\nw:0\nh:0\n");
+            shell_printf("w:0\nh:0\n");
         }
     }
 }
@@ -771,7 +770,7 @@ static void shell_cmd_config(char *args, void *data)
     t = shell_arg_parser(args, argval, SHELL_CMD_CFG_ARGS);
     p = shell_get_argval(argval, 'i');
     if (p == NULL) {
-        shell_printf("\nsyntax: widgets cfg -i <id+uid> <options...>\n");
+        shell_printf("syntax: widgets cfg -i <id+uid> <options...>\n");
         shell_printf("      -i <id+uid>     widget global id + unique id\n");
         shell_printf("    Options:\n");
         shell_printf("      -t <tab id>     tab id number (1-254)\n");
@@ -803,13 +802,13 @@ static void shell_cmd_config(char *args, void *data)
         }
 
         if (!found) {
-            shell_printf("\n\nWidget not found: %02d+%02d", id, uid);
+            shell_printf("Widget not found: %02d+%02d", id, uid);
             return;
         }
         
         if (t == 1) {
             /* dump widget config */
-            shell_printf("\nt:%u x:%d y:%d h:%u v:%u ",
+            shell_printf("t:%u x:%d y:%d h:%u v:%u ",
                     w->cfg->tab, w->cfg->x, w->cfg->y,
                     w->cfg->props.hjust, w->cfg->props.vjust);
             shell_printf("m:%u s:%u u:%u ", w->cfg->props.mode,
@@ -867,7 +866,7 @@ static void shell_cmd_config(char *args, void *data)
             }
         }
         reconfig_widget(w);
-        shell_printf("\n\nChanged widget: %02u+%02u", id, uid);
+        shell_printf("Changed widget: %02u+%02u", id, uid);
     }
 }
 

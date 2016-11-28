@@ -796,7 +796,7 @@ static void shell_cmd_stats(char *args, void *data)
     unsigned char i, total = 0;
     struct uart_client **cli;
     
-    shell_printf("\nPort settings (config):\n");
+    shell_printf("Port settings (config):\n");
     for (i = 0; i < 4; i++) {
         shell_printf(" port%d: %6lubps pins=%-9s client=%s\n",
                 i, baudrates[config.uart[i].baudrate].baudrate,
@@ -849,7 +849,7 @@ static void shell_cmd_config(char *args, void *data)
     p = shell_get_argval(argval, 'p');
 
     if ((t < 2) || (p == NULL)) {
-        shell_printf("\nsyntax: -p <port> [-n] [-b <baudrate>] [-c <client>] [-i <pins>]\n");
+        shell_printf("syntax: -p <port> [-n] [-b <baudrate>] [-c <client>] [-i <pins>]\n");
         shell_printf(" -p <port>      uart port number: 0 to 3\n");
         shell_printf(" -n             apply changes now\n");
         shell_printf(" -b <baudrate>  baudrate:");
@@ -866,7 +866,7 @@ static void shell_cmd_config(char *args, void *data)
         now = shell_get_argval(argval, 'n');
         port = atoi(p->val);
         if ((port < 0) || (port >= UART_PORTS)) {
-            shell_printf("\nerror: invalid port '%d'\n", port);
+            shell_printf("error: invalid port '%d'\n", port);
             return;
         }
         p = shell_get_argval(argval, 'b');
@@ -881,7 +881,7 @@ static void shell_cmd_config(char *args, void *data)
                 }
             }
             if (i == UART_BAUDRATES) {
-                shell_printf("\nerror: invalid baudrate '%lu'\n", baud);
+                shell_printf("error: invalid baudrate '%lu'\n", baud);
                 return;
             }
         }
@@ -896,7 +896,7 @@ static void shell_cmd_config(char *args, void *data)
                 }
             }
             if (i == UART_CLIENTS) {
-                shell_printf("\nerror: invalid client '%s'\n", p->val);
+                shell_printf("error: invalid client '%s'\n", p->val);
                 return;
             }
         }
@@ -911,7 +911,7 @@ static void shell_cmd_config(char *args, void *data)
                 }
             }
             if (i == UART_PINS) {
-                shell_printf("\nerror: invalid pins '%s'\n", p->val);
+                shell_printf("error: invalid pins '%s'\n", p->val);
                 return;
             }
         }
