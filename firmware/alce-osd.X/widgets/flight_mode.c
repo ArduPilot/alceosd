@@ -57,7 +57,7 @@ static int open(struct widget *w)
     w->ca.width = f->size * 12;
 
     priv->prev_mode = 0xff;
-    add_timer(TIMER_WIDGET, 1000, callback, w);
+    add_timer(TIMER_WIDGET, 500, callback, w);
     return 0;
 }
 
