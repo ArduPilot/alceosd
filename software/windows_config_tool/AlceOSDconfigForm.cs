@@ -1235,7 +1235,7 @@ namespace AlceOSD_updater
                     //cb_wsource.Items.Add("ADC0");
                     set_param(1, "Min value");
                     set_param(2, "Max value");
-                    set_param(3, "RC Channel(0-7)");
+                    set_param(3, "RC CH(0-17=RC1-18)");
                     break;
                 case "SONAR":
                     lbl_wname.Text = "Sonar";
@@ -1684,11 +1684,7 @@ namespace AlceOSD_updater
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            DialogResult result = MessageBox.Show(
-                "Exit Config Editor?", "Exit",
-                MessageBoxButtons.YesNo);
-            if (result == DialogResult.Yes)
-                this.Close();
+            this.Close();
         }
 
         private void Form2_FormClosing(object sender, FormClosingEventArgs e)
@@ -1705,6 +1701,7 @@ namespace AlceOSD_updater
             }
 
             settings.Save();
+            comPort.Close();
         }
 
         private void readConfigToolStripMenuItem_Click(object sender, EventArgs e)
@@ -2283,6 +2280,7 @@ namespace AlceOSD_updater
         }
 
         bool shell_active = false;
+        bool init_done = false;
 
         int his_idx = 0;
         List<string> cmd_history = new List<string> { };
@@ -2295,6 +2293,7 @@ namespace AlceOSD_updater
 
                 timer_com.Enabled = false;
                 shell_active = false;
+                init_done = false;
                 comPort.Close();
 
                 his_idx = 0;
@@ -2324,6 +2323,7 @@ namespace AlceOSD_updater
                 load_lb_widgets_canvas();
 
                 timer_com.Enabled = true;
+                init_done = true;
 
                 send_cmd("version");
 
@@ -2352,24 +2352,30 @@ namespace AlceOSD_updater
 
         private bool send_cmd(string cmd)
         {
+            bool ret = false;
             if (!comPort.IsOpen)
-                return false;
+                return ret;
 
+            timer_com.Enabled = false;
             comPort.DiscardInBuffer();
             comPort.Write(cmd + "\n");
             try
             {
                 string ans = comPort.ReadLine();
+                if (init_done)
+                    txt_shell.AppendText(ans + "\n");
                 if (ans.Contains(cmd))
-                    return true;
+                    ret = true;
                 else
-                    return false;
+                    ret = false;
             }
             catch
             {
                 //MessageBox.Show("shell_cmd: no response", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return false;
+                ret = false;
             }
+            timer_com.Enabled = true;
+            return ret;
         }
 
         private void timer_com_Tick(object sender, EventArgs e)
@@ -2885,6 +2891,164 @@ namespace AlceOSD_updater
             tsm_mav57600.Checked = false;
             settings.MavlinkBaudrate = 115200;
             settings.Save();
+        }
+
+        private void update_uart1_settings()
+        {
+            string cmd = "uart config -p0";
+            string baudrate = cb_baud1.Text;
+            string mode = cb_mode1.Text.ToLower();
+            string pins = cb_port1.Text.ToLower();
+            cmd += " -b" + baudrate;
+            cmd += " -i" + pins;
+            cmd += " -c" + mode;
+            if (init_done)
+                send_cmd(cmd);
+        }
+        private void update_uart2_settings()
+        {
+            string cmd = "uart config -p1";
+            string baudrate = cb_baud2.Text;
+            string mode = cb_mode2.Text.ToLower();
+            string pins = cb_port2.Text.ToLower();
+            cmd += " -b" + baudrate;
+            cmd += " -i" + pins;
+            cmd += " -c" + mode;
+            if (init_done)
+                send_cmd(cmd);
+        }
+        private void update_uart3_settings()
+        {
+            string cmd = "uart config -p2";
+            string baudrate = cb_baud3.Text;
+            string mode = cb_mode3.Text.ToLower();
+            string pins = cb_port3.Text.ToLower();
+            cmd += " -b" + baudrate;
+            cmd += " -i" + pins;
+            cmd += " -c" + mode;
+            if (init_done)
+                send_cmd(cmd);
+        }
+        private void update_uart4_settings()
+        {
+            string cmd = "uart config -p3";
+            string baudrate = cb_baud4.Text;
+            string mode = cb_mode4.Text.ToLower();
+            string pins = cb_port4.Text.ToLower();
+            cmd += " -b" + baudrate;
+            cmd += " -i" + pins;
+            cmd += " -c" + mode;
+            if (init_done)
+                send_cmd(cmd);
+        }
+
+        private void cb_mode1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_uart1_settings();
+        }
+
+        private void cb_baud1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_uart1_settings();
+        }
+
+        private void cb_port1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_uart1_settings();
+        }
+
+        private void cb_mode2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_uart2_settings();
+        }
+
+        private void cb_baud2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_uart2_settings();
+        }
+
+        private void cb_port2_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_uart2_settings();
+        }
+
+        private void cb_mode3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_uart3_settings();
+        }
+
+        private void cb_baud3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_uart3_settings();
+        }
+
+        private void cb_port3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_uart3_settings();
+        }
+
+        private void cb_mode4_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_uart4_settings();
+        }
+
+        private void cb_baud4_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_uart4_settings();
+        }
+
+        private void cb_port4_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_uart4_settings();
+        }
+
+        private void update_tabs_config()
+        {
+            if (!init_done)
+                return;
+            try
+            {
+                int mode = cb_tabmode.SelectedIndex;
+                int timer = (int)nud_tabtimer.Value;
+                int ch = cb_tabch.SelectedIndex + 1;
+                int chmin = (int)nud_tabmin.Value;
+                int chmax = (int)nud_tabmax.Value;
+                string cmd = "tabs config -m" + mode;
+                cmd += " -c" + ch;
+                cmd += " -l" + chmin;
+                cmd += " -h" + chmax;
+                cmd += " -t" + timer;
+                send_cmd(cmd);
+            }
+            catch
+            {
+
+            }
+        }
+
+        private void cb_tabmode_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_tabs_config();
+        }
+
+        private void nud_tabtimer_ValueChanged(object sender, EventArgs e)
+        {
+            update_tabs_config();
+        }
+
+        private void cb_tabch_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_tabs_config();
+        }
+
+        private void nud_tabmin_ValueChanged(object sender, EventArgs e)
+        {
+            update_tabs_config();
+        }
+
+        private void nud_tabmax_ValueChanged(object sender, EventArgs e)
+        {
+            update_tabs_config();
         }
 
         private void timer_submit_Tick(object sender, EventArgs e)
