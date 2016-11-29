@@ -144,16 +144,20 @@ unsigned char get_units(struct widget_config *cfg)
 }
 
 /* return rc_channel in percentage according to switch config values */
-unsigned char get_sw_state(struct ch_switch *sw)
+unsigned char get_sw_state(struct ch_switch *sw, u32 *store_age)
 {
     unsigned int *val;
     void *rc;
     long x;    
-    
-    if (mavdata_age(MAVLINK_MSG_ID_RC_CHANNELS) < 5000)
+    u32 age = mavdata_age(MAVLINK_MSG_ID_RC_CHANNELS);
+
+    if (age < 5000) {
         rc = mavdata_get(MAVLINK_MSG_ID_RC_CHANNELS);
-    else
+        *store_age = age;
+    } else {
         rc = mavdata_get(MAVLINK_MSG_ID_RC_CHANNELS_RAW);
+        *store_age = mavdata_age(MAVLINK_MSG_ID_RC_CHANNELS_RAW);
+    }
     val = (unsigned int*) (rc + 4 + 2 * sw->ch);
     x = (long) *(val);
     x = ( ((x - sw->ch_min) * 100) /

@@ -147,11 +147,12 @@ static void tab_switch_task(struct timer *t, void *d)
     static unsigned char prev_val = 255, active_tab_idx = 0, source_mode = 0xff;
     struct ch_switch *cfg = d;
     unsigned int val;
+    u32 ch_age;
     
     switch (cfg->mode) {
         case SW_MODE_CHANNEL:
         default:
-            val = get_sw_state(cfg);
+            val = get_sw_state(cfg, &ch_age);
             val = ((val * tab_list[0]) / 101) + 1;
             if ((unsigned char) val != prev_val) {
                 DTABS("tab_change_channel: change to tab %d\n", tab_list[val]);
@@ -160,7 +161,10 @@ static void tab_switch_task(struct timer *t, void *d)
             }
             break;
         case SW_MODE_TOGGLE:
-            val = get_sw_state(cfg);
+            val = get_sw_state(cfg, &ch_age);
+            if (ch_age > 2000)
+                break;
+
             if (val < 50)
                 val = 1;
             else

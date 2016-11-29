@@ -917,11 +917,12 @@ static void video_switch_task(struct timer *t, void *d)
     static unsigned char prev_val = 255, source_mode = 0xff;
     struct ch_switch *sw = d;
     unsigned int val;
+    u32 ch_age;
     
     switch (sw->mode) {
         case SW_MODE_CHANNEL:
         default:
-            val = get_sw_state(sw);
+            val = get_sw_state(sw, &ch_age);
             if (val > 50)
                 val = 1;
             else
@@ -937,7 +938,10 @@ static void video_switch_task(struct timer *t, void *d)
             }
             break;
         case SW_MODE_TOGGLE:
-            val = get_sw_state(sw);
+            val = get_sw_state(sw, &ch_age);
+            if (ch_age > 2000)
+                break;
+
             if (val < 50)
                 val = 1;
             else

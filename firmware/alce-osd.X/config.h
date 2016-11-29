@@ -107,7 +107,7 @@ void config_init(void);
 void shell_cmd_cfg(char *args, void *data);
 
 unsigned char get_units(struct widget_config *cfg);
-unsigned char get_sw_state(struct ch_switch *sw);
+unsigned char get_sw_state(struct ch_switch *sw, u32 *store_age);
 
 
 #endif
