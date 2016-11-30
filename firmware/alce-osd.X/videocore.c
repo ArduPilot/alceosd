@@ -1622,18 +1622,21 @@ static void shell_cmd_stats(char *args, void *data)
     
 }
 
-#define SHELL_CMD_CONFIG_ARGS   10
+#define SHELL_CMD_CONFIG_ARGS   12
 static void shell_cmd_config(char *args, void *data)
 {
-    struct shell_argval argval[SHELL_CMD_CONFIG_ARGS+1];
-    unsigned char t, i;
+    struct shell_argval argval[SHELL_CMD_CONFIG_ARGS+1], *p;
+    unsigned char t, i, j;
     int int_var;
     float f, vref;
+    u16 profile;
+    struct video_config *vcfg = cfg;
     
     t = shell_arg_parser(args, argval, SHELL_CMD_CONFIG_ARGS);
 
     if (t < 1) {
         shell_printf("arguments:\n");
+        shell_printf(" -p <profile>     video profile: 0 or 1 (default is active profile)\n");
         shell_printf(" -s <standard>    video standard: [p]al or [n]tsc\n");
         shell_printf(" -m <scan_mode>   video scan mode: [p]rogressive or [i]nterlaced\n");
         shell_printf(" -i <int_sync>    internal sync: 0 or 1\n");
@@ -1642,8 +1645,6 @@ static void shell_cmd_config(char *args, void *data)
             default:
                 shell_printf(" -t <brightness>  brightness: 0 (max) to 1000 (min)\n");
                 break;
-            case 0x04:
-                shell_printf(" -n <video input> select video input\n");
             case 0x03:
                 shell_printf(" -w <white_lvl>   white voltage level: 0 to \n");
                 shell_printf(" -g <gray_lvl>    gray voltage level: 0 to \n");
@@ -1663,69 +1664,69 @@ static void shell_cmd_config(char *args, void *data)
         shell_printf(" -c <comp_ref>  comparator reference\n");
         
     } else {
+        p = shell_get_argval(argval, 'p');
+        if (p != NULL) {
+            profile = atoi(p->val);
+            profile = profile ? 1 : 0;
+            vcfg = &config.video[profile];
+        }
+        
         for (i = 0; i < t; i++) {
             switch (argval[i].key) {
                 case 's':
                     if (strcmp(argval[i].val, "p") == 0)
-                        cfg->mode &= ~VIDEO_MODE_STANDARD_MASK;
+                        vcfg->mode &= ~VIDEO_MODE_STANDARD_MASK;
                     else
-                        cfg->mode |= VIDEO_MODE_STANDARD_MASK;
+                        vcfg->mode |= VIDEO_MODE_STANDARD_MASK;
                 case 'm':
                     if (strcmp(argval[i].val, "p") == 0)
-                        cfg->mode &= ~VIDEO_MODE_SCAN_MASK;
+                        vcfg->mode &= ~VIDEO_MODE_SCAN_MASK;
                     else
-                        cfg->mode |= VIDEO_MODE_SCAN_MASK;
+                        vcfg->mode |= VIDEO_MODE_SCAN_MASK;
                     break;
                 case 'i':
                     if (strcmp(argval[i].val, "0") == 0)
-                        cfg->mode &= ~VIDEO_MODE_SYNC_MASK;
+                        vcfg->mode &= ~VIDEO_MODE_SYNC_MASK;
                     else
-                        cfg->mode |= VIDEO_MODE_SYNC_MASK;
+                        vcfg->mode |= VIDEO_MODE_SYNC_MASK;
                     break;
                 case 't':
                     int_var = atoi(argval[i].val);
-                    cfg->brightness = (unsigned int) int_var;
+                    vcfg->brightness = (unsigned int) int_var;
                     break;
 
                 case 'w':
                     int_var = atoi(argval[i].val);
-                    cfg->white_lvl = (unsigned char) int_var;
+                    vcfg->white_lvl = (unsigned char) int_var;
                     break;
                 case 'g':
                     int_var = atoi(argval[i].val);
-                    cfg->gray_lvl = (unsigned char) int_var;
+                    vcfg->gray_lvl = (unsigned char) int_var;
                     break;
                 case 'b':
                     int_var = atoi(argval[i].val);
-                    cfg->black_lvl = (unsigned char) int_var;
-                    break;
-                case 'n':
-                    int_var = atoi(argval[i].val);
-                    if (int_var)
-                        cfg->mode |= VIDEO_MODE_INPUT_MASK;
-                    else
-                        cfg->mode &= ~VIDEO_MODE_INPUT_MASK;
+                    vcfg->black_lvl = (unsigned char) int_var;
                     break;
                 case 'x':
                     int_var = atoi(argval[i].val);
-                    for (i = 0; i < VIDEO_XSIZE_END; i++) {
-                        if (int_var == video_xsizes[i].xsize) {
-                            cfg->x_size_id = i;
+                    for (j = 0; j < VIDEO_XSIZE_END; j++) {
+                        if (int_var == video_xsizes[j].xsize) {
+                            vcfg->x_size_id = j;
                             break;
                         }
                     }
                     break;
                 case 'y':
                     int_var = atoi(argval[i].val);
-                    cfg->y_size = (unsigned int) int_var;
+                    vcfg->y_size = (unsigned int) int_var;
                     break;
                 case 'h':
                     int_var = atoi(argval[i].val);
-                    cfg->x_offset = (unsigned int) int_var;
+                    vcfg->x_offset = (unsigned int) int_var;
                     break;
                 case 'v':
                     int_var = atoi(argval[i].val);
-                    cfg->y_offset = (unsigned int) int_var;
+                    vcfg->y_offset = (unsigned int) int_var;
                     break;
 
                 case 'c':
@@ -1918,12 +1919,12 @@ static void shell_cmd_test(char *args, void *data)
     }
 }
 
-#define SHELL_CMD_CONFIGSW_ARGS 4
+#define SHELL_CMD_CONFIGSW_ARGS 6
 static void shell_cmd_swconfig(char *args, void *data)
 {
     struct ch_switch *cfg = &config.video_sw;
     struct shell_argval argval[SHELL_CMD_CONFIGSW_ARGS+1], *p;
-    unsigned char t, i;
+    unsigned char t, i = 0;
     unsigned int w;
 
     t = shell_arg_parser(args, argval, SHELL_CMD_CONFIGSW_ARGS);
@@ -1934,7 +1935,8 @@ static void shell_cmd_swconfig(char *args, void *data)
         shell_printf(" Min:  %d\n", cfg->ch_min);
         shell_printf(" Max:  %d\n", cfg->ch_max);
         shell_printf(" Time: %d00ms\n", cfg->time);
-        shell_printf("\nopt: -m <mode> -c <ch> -l <min> -h <max> -t <time>\n");
+        shell_printf("\nopt: -m <mode> -c <ch> -l <min> -h <max> -t <time> -i <input>\n");
+        shell_printf("    -i <input>      Change video input: 0 or 1\n", cfg->time);
     } else {
         p = shell_get_argval(argval, 'm');
         if (p != NULL) {
@@ -1944,9 +1946,9 @@ static void shell_cmd_swconfig(char *args, void *data)
         }
         p = shell_get_argval(argval, 'c');
         if (p != NULL) {
-            i = atoi(p->val) - 1;
-            i = min(i, 18);
-            cfg->ch = i;
+            i = atoi(p->val);
+            i = TRIM(i, 1, 18);
+            cfg->ch = i - 1;
         }
         p = shell_get_argval(argval, 'l');
         if (p != NULL) {
@@ -1965,6 +1967,15 @@ static void shell_cmd_swconfig(char *args, void *data)
             w = atoi(p->val);
             w = w / 100;
             cfg->time = w;
+        }
+        p = shell_get_argval(argval, 'i');
+        if (p != NULL) {
+            w = atoi(argval[i].val);
+            if (w)
+                cfg->mode |= VIDEO_MODE_INPUT_MASK;
+            else
+                cfg->mode &= ~VIDEO_MODE_INPUT_MASK;
+            video_apply_config_cbk();
         }
     }
 }
