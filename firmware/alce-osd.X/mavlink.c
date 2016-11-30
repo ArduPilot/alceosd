@@ -662,8 +662,6 @@ void mav_cmd_ack(mavlink_message_t *msg, void *d)
 
 void mav_detect_uav_sysid(mavlink_message_t *msg, void *d)
 {
-    shell_printf("AP=%d\n", mavlink_msg_heartbeat_get_autopilot(msg));
-    
     if (mavlink_msg_heartbeat_get_autopilot(msg) == MAV_AUTOPILOT_INVALID)
         return;
 
