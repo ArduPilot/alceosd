@@ -18,7 +18,7 @@
 
 #include "alce-osd.h"
 
-#define MAX_MAVLINK_CALLBACKS 40
+#define MAX_MAVLINK_CALLBACKS 20
 #define MAX_MAVLINK_ROUTES 10
 
 #define UAV_LAST_SEEN_TIMEOUT   2000
@@ -836,7 +836,7 @@ static void shell_cmd_watch(char *args, void *data)
 #define SHELL_CMD_CMD_ARGS 5
 static void shell_cmd_cmd(char *args, void *data)
 {
-    struct shell_argval argval[SHELL_CMD_CMD_ARGS+1], *p;
+    struct shell_argval argval[SHELL_CMD_CMD_ARGS+1];
     mavlink_message_t this_msg;
     unsigned char t;
     unsigned int cmd;
@@ -850,8 +850,54 @@ static void shell_cmd_cmd(char *args, void *data)
     mavlink_send_msg(&this_msg);
 }
 
+#define SHELL_CMD_MAVCONFIG_ARGS    3
+static void shell_cmd_config(char *args, void *data)
+{
+    struct shell_argval argval[SHELL_CMD_MAVCONFIG_ARGS+1];
+    unsigned char t, i, val;
+    
+    t = shell_arg_parser(args, argval, SHELL_CMD_MAVCONFIG_ARGS);
+    if (t < 1) {
+        shell_printf("Mavlink setup:\n");
+        shell_printf(" AlceOSD Heartbeat: %s\n",
+                config.mav.heartbeat ? "on" : "off");
+        shell_printf(" AlceOSD SYS_ID: %u\n", config.mav.osd_sysid);
+        shell_printf(" UAV SYS_ID: %u\n", config.mav.uav_sysid);
+        
+        shell_printf("\noptions:\n");
+        shell_printf(" -i <osd_sysid>  AlceOSD mavlink system ID\n");
+        shell_printf(" -u <uav_sysid>  UAV mavlink system ID (0 = auto-detect)\n");
+        shell_printf(" -h <heartbeat>  Enable of disable AlceOSD mavlink heartbeat (0 or 1)\n");
+    } else {
+        for (i = 0; i < t; i++) {
+            val = atoi(argval[i].val);
+            switch (argval[i].key) {
+                case 'i':
+                    val = TRIM(val, 0, 255);
+                    config.mav.osd_sysid = val;
+                    shell_printf("AlceOSD sysid = %u\n", val);
+                    break;
+                case 'u':
+                    val = TRIM(val, 0, 255);
+                    config.mav.uav_sysid = val;
+                    shell_printf("UAV sysid = %u\n", val);
+                    break;
+                case 'h':
+                    val = TRIM(val, 0, 1);
+                    config.mav.heartbeat = (u8) val;
+                    shell_printf("AlceOSD mavlink heartbeat = %u\n", val);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+
 static const struct shell_cmdmap_s mavlink_cmdmap[] = {
     {"callbacks", shell_cmd_callbacks, "Display callback info", SHELL_CMD_SIMPLE},
+    {"config", shell_cmd_config, "Config mavlink parameters", SHELL_CMD_SIMPLE},
     {"rates", shell_cmd_rates, "Mavlink stream rates", SHELL_CMD_SIMPLE},
     {"route", shell_cmd_route, "Display routing table", SHELL_CMD_SIMPLE},
     {"stats", shell_cmd_stats, "Display statistics", SHELL_CMD_SIMPLE},
