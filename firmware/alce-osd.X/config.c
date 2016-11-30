@@ -115,7 +115,7 @@ struct alceosd_config config = {
         { 1, 0, WIDGET_VARIOMETER_ID,      0,  -5, {JUST_BOT     | JUST_RIGHT}},
         { 1, 0, WIDGET_WIND_ID,            0,  30, {JUST_TOP     | JUST_RIGHT}},
 
-        { 1, 0, WIDGET_HOME_INFO_ID,      80,   0, {JUST_TOP     | JUST_LEFT}},
+        { 1, 0, WIDGET_HOME_INFO_ID,      88,   0, {JUST_TOP     | JUST_LEFT}},
         { 1, 0, WIDGET_RADAR_ID,          60, -44, {JUST_BOT     | JUST_LEFT}},
         //{ 1, 0, WIDGET_MESSAGES_ID,        0,  0, {JUST_TOP     | JUST_HCENTER}},
 
