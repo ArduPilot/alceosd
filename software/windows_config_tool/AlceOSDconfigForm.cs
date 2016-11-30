@@ -95,13 +95,14 @@ namespace AlceOSD_updater
         {
             string version = "";
 
-            tabControl1.SelectTab(4);
+            tabControl1.SelectTab(6);
 
             setup_comport();
             if (!open_comport())
                 return;
             if (!reset_board(true, false))
                 return;
+                
 
             bool ready = false;
             string ans = "";
@@ -169,7 +170,10 @@ namespace AlceOSD_updater
             if (hw_rev == "")
                 return;
 
-            int rev = Convert.ToInt32(hw_rev.ElementAt(hw_rev.Length - 1));
+            
+
+            int rev = Convert.ToInt32(hw_rev.ElementAt(hw_rev.Length - 1)) - '0';
+            Console.WriteLine("Detected hw rev {0} ({1})", hw_rev, rev);
 
             if (rev < 4)
             {
@@ -267,6 +271,20 @@ namespace AlceOSD_updater
             bool ready = false;
 
             comPort.mode = Comm.COMM_MODE.Serial;
+
+            /* check if com port is alive */
+            try
+            {
+                comPort.WriteLine("");
+            }
+            catch
+            {
+                MessageBox.Show("Error writting to " + comPort.PortName, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                comPort.Close();
+                return false;
+            }
+            
+
             /* check if in shell */
             Console.WriteLine("checking if shell is active");
             foreach (int b in baudrates)
@@ -300,9 +318,13 @@ namespace AlceOSD_updater
                     System.Threading.Thread.Sleep(500);
                 }
                 comPort.BaudRate = settings.MavlinkBaudrate;
-                System.Threading.Thread.Sleep(100);
-                comPort.DiscardInBuffer();
+
+                Console.WriteLine("mav_baudrate={0}", comPort.BaudRate);
+
                 comPort.mode = Comm.COMM_MODE.Mavlink;
+                System.Threading.Thread.Sleep(100);
+                for (int flush = 0; flush < 5; flush++)
+                    comPort.WriteLine("");
                 System.Threading.Thread.Sleep(500);
                 comPort.DiscardInBuffer();
                 ready = true;
@@ -457,7 +479,7 @@ namespace AlceOSD_updater
             config.Add("VIDE1_BLACK = " + Convert.ToDouble(nud_blacklvl1.Value));
 
             /* misc */
-            config.Add("HOME_LOCKING = " + Convert.ToDouble(nud_homelock.Value));
+            //config.Add("HOME_LOCKING = " + Convert.ToDouble(nud_homelock.Value));
             config.Add("OSD_UNITS = " + (Convert.ToDouble(cb_units.SelectedIndex + 1)));
 
             /* tabs */
@@ -894,7 +916,7 @@ namespace AlceOSD_updater
                 switch (key)
                 {
                     case "HOME_LOCKING":
-                        nud_homelock.Value = Convert.ToByte(dval);
+                        //nud_homelock.Value = Convert.ToByte(dval);
                         break;
                     case "OSD_UNITS":
                         cb_units.SelectedIndex = Convert.ToByte(dval) - 1;
@@ -1043,7 +1065,9 @@ namespace AlceOSD_updater
 
         private void nud_seltab_ValueChanged(object sender, EventArgs e)
         {
+            nud_seltab.Enabled = false;
             update_lb_widgets();
+            nud_seltab.Enabled = true;
         }
 
         private void set_param(int idx, string text)
@@ -2314,7 +2338,11 @@ namespace AlceOSD_updater
                     return;
 
                 if (!reset_board(false, cbx_mavmode.Checked))
+                {
+                    MessageBox.Show("Error: no response from board", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    comPort.Close();
                     return;
+                }
 
                 shell_active = true;
 
@@ -2333,6 +2361,8 @@ namespace AlceOSD_updater
                 flashFirmwareToolStripMenuItem.Enabled = false;
                 cbx_mavmode.Enabled = false;
                 bt_commitCfg.Enabled = true;
+
+                timer_heartbeat.Enabled = true;
 
             }
         }
@@ -2358,7 +2388,7 @@ namespace AlceOSD_updater
 
             timer_com.Enabled = false;
             comPort.DiscardInBuffer();
-            comPort.Write(cmd + "\n");
+            comPort.WriteLine(cmd);
             try
             {
                 string ans = comPort.ReadLine();
@@ -2434,8 +2464,14 @@ namespace AlceOSD_updater
                     tb_cmdLine.Clear();
                     e.Handled = true;
                     his_idx = 0;
+                    if (cmd == "reboot")
+                    {
+                        System.Threading.Thread.Sleep(200);
+                        timer_com.Enabled = false;
+                        reset_board(false, cbx_mavmode.Checked);
+                        timer_com.Enabled = true;
+                    }
                     break;
-
                 case Keys.Up:
                     if (cmd_history.Count == 0)
                         break;
@@ -2444,7 +2480,6 @@ namespace AlceOSD_updater
                         his_idx = cmd_history.Count;
 
                     lb_history.SelectedIndex = cmd_history.Count - his_idx;
-
                     tb_cmdLine.Text = cmd_history.ElementAt(cmd_history.Count - his_idx);
                     tb_cmdLine.SelectionStart = tb_cmdLine.Text.Length;
                     break;
@@ -2459,8 +2494,9 @@ namespace AlceOSD_updater
                     }
                     else
                     {
-                        tb_cmdLine.Text = cmd_history.ElementAt(cmd_history.Count - his_idx);
                         lb_history.SelectedIndex = cmd_history.Count - his_idx;
+                        tb_cmdLine.Text = cmd_history.ElementAt(cmd_history.Count - his_idx);
+                        tb_cmdLine.SelectionStart = tb_cmdLine.Text.Length;
                     }
                     break;
 
@@ -2578,26 +2614,7 @@ namespace AlceOSD_updater
 
                 byte[] data = new byte[size];
                 comPort.Read(data, 0, size);
-
-                /*                do
-                                {
-                                    int avail = comPort.BytesToRead;
-                                    int n = Math.Min(left, avail);
-
-                                    comPort.Read(data, 0, data.Length);
-
-                                    data.ToList().ForEach(b => recievedData.Add(b));
-                                    left -= n;
-
-                                    total += n;
-                                    progress = (total * 100) / size;
-                                    if (progress != pb.Value)
-                                    {
-                                        pb.Value = progress;
-                                        Application.DoEvents();
-                                    }
-                                } while (left > 0);*/
-                c.bitmap = data; // recievedData.ToArray();
+                c.bitmap = data;
                 //c.bitmap.ToList().ForEach(_b => Console.Write(" {0:X}", _b));
                 //Console.WriteLine("");
             }
@@ -2849,19 +2866,18 @@ namespace AlceOSD_updater
 
         private void timer_heartbeat_Tick(object sender, EventArgs e)
         {
-            /*MavlinkPacket p = new MavlinkPacket();
+            MavlinkPacket p = new MavlinkPacket();
             Msg_heartbeat hb = new Msg_heartbeat();
 
             hb.autopilot = (byte) MAV_AUTOPILOT.MAV_AUTOPILOT_INVALID;
             hb.type = (byte)MAV_TYPE.MAV_TYPE_GCS;
 
             p.Message = hb;
-            p.SystemId = 254;
+            p.SystemId = 201;
             p.ComponentId = 0;
 
-            byte[] buf = mav.Send(p);
-
-            comPort.Write(buf, 0, buf.Length);*/
+            byte[] packet = comPort.mav.Send(p);
+            comPort.mav_send(packet);
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -3049,6 +3065,122 @@ namespace AlceOSD_updater
         private void nud_tabmax_ValueChanged(object sender, EventArgs e)
         {
             update_tabs_config();
+        }
+
+
+        private void update_mavlink_stream_rates(int stream_id, decimal rate)
+        {
+            if (!init_done)
+                return;
+            string cmd = "mavlink rates -i" + stream_id;
+            cmd += " -r" + rate;
+            send_cmd(cmd);
+        }
+
+        private void nud_streamRawSensors_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(1, nud_streamRawSensors.Value);
+        }
+
+        private void nud_streamExtStatus_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(2, nud_streamExtStatus.Value);
+        }
+
+        private void nud_streamRcChannels_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(3, nud_streamRcChannels.Value);
+        }
+
+        private void nud_streamRawCtrl_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(4, nud_streamRawCtrl.Value);
+        }
+
+        private void nud_streamPosition_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(5, nud_streamPosition.Value);
+        }
+
+        private void nud_streamExtra1_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(6, nud_streamExtra1.Value);
+        }
+
+        private void nud_streamExtra2_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(7, nud_streamExtra2.Value);
+        }
+
+        private void nud_streamExtra3_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(8, nud_streamExtra3.Value);
+        }
+
+        private void update_mavlink_config()
+        {
+            if (!init_done)
+                return;
+            string cmd = "mavlink config -i" + nud_osdsysid.Value;
+            cmd += " -u" + nud_uavsysid.Value;
+            cmd += " -h" + (cbx_mavhb.Checked ? "1" : "0");
+            send_cmd(cmd);
+        }
+
+        private void nud_uavsysid_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_config();
+        }
+
+        private void nud_osdsysid_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_config();
+        }
+
+        private void cbx_mavhb_CheckedChanged(object sender, EventArgs e)
+        {
+            update_mavlink_config();
+        }
+
+        private void bt_refreshCanvas_Click(object sender, EventArgs e)
+        {
+            if (load_lock)
+                return;
+            load_lock = true;
+
+            string[] lst = new string[lb_widgets.Items.Count];
+            lb_widgets.Items.CopyTo(lst, 0);
+
+            int total = 0, size = lst.Length;
+            pb.Value = 0;
+            foreach (string name_uid in lst)
+            {
+                Canvas c;
+                try
+                {
+                    c = get_widget_canvas(name_uid);
+                    if (c.width > 0)
+                    {
+                        c.shown = true;
+                        ca[name_uid] = c;
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show("Error loading bitmap for " + name_uid, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+                total++;
+                int progress = (total * 100) / size;
+                if (progress != pb.Value)
+                {
+                    pb.Value = progress;
+                    Application.DoEvents();
+                }
+
+            }
+            pb_osd.Invalidate();
+            load_lock = false;
         }
 
         private void timer_submit_Tick(object sender, EventArgs e)

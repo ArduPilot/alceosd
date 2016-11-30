@@ -34,7 +34,7 @@ namespace AlceOSD
 
 
         private static SerialPort serial_port = new SerialPort();
-        private Mavlink mav = new Mavlink();
+        public Mavlink mav = new Mavlink();
 
         private byte[] buffer = new byte[0];
         public Mutex m = new Mutex();
@@ -58,7 +58,8 @@ namespace AlceOSD
             if (e.Message.GetType() == typeof(MavLink.Msg_heartbeat))
             {
                 Msg_heartbeat hb = (m as Msg_heartbeat);
-                Console.WriteLine("heartbeat: type={0} version={1} autopilot={2}", hb.type, hb.mavlink_version, hb.autopilot);
+                Console.WriteLine("heartbeat from [{3};{4}] type={0} mav_version={1} autopilot={2}",
+                        hb.type, hb.mavlink_version, hb.autopilot, e.SystemId, e.ComponentId);
             }
             else if (e.Message.GetType() == typeof(MavLink.Msg_serial_control))
             {
@@ -73,6 +74,11 @@ namespace AlceOSD
             }
         }
 
+        public void mav_send(byte[]packet)
+        {
+            //Console.WriteLine("sending mavlink packet");
+            serial_port.Write(packet, 0, packet.Length);
+        }
 
         private Thread read_thread;
         public bool IsOpen = false;
@@ -122,6 +128,12 @@ namespace AlceOSD
         {
             if (IsOpen)
             {
+                if (mode == COMM_MODE.Mavlink)
+                {
+                    byte[] dummy = new byte[1] { (byte) '\n' };
+                    mavlink_send(dummy, true);
+                }
+
                 run = false;
                 mav.PacketReceived -= Mav_PacketReceived;
                 read_thread.Join();
@@ -167,7 +179,7 @@ namespace AlceOSD
             m.WaitOne();
             if (buffer.Length > 0)
             {
-                ret = System.Text.Encoding.Default.GetString(buffer, 0, buffer.Length);
+                ret = System.Text.Encoding.UTF8.GetString(buffer, 0, buffer.Length);
                 buffer = new byte[0];
             }
             m.ReleaseMutex();
@@ -186,7 +198,6 @@ namespace AlceOSD
                     throw exp;
                 }
             }
-                
 
             Array.Copy(buffer, 0, buf, offset, len);
 
@@ -222,6 +233,16 @@ namespace AlceOSD
 
         public char ReadChar()
         {
+            int i, timeout = serial_port.ReadTimeout;
+            do
+            {
+                i = buffer.Length;
+                System.Threading.Thread.Sleep(1);
+                if (--timeout == 0)
+                {
+                    throw new Exception("Timeout waiting for chars");
+                }
+            } while (i == 0);
             char c = (char) buffer[0];
             m.WaitOne();
             byte[] new_buf = new byte[buffer.Length - 1];
@@ -231,7 +252,7 @@ namespace AlceOSD
             return c;
         }
 
-        private void mavlink_send(byte[] buf)
+        private void mavlink_send(byte[] buf, bool close)
         {
             MavlinkPacket p = new MavlinkPacket();
             Msg_serial_control sc = new Msg_serial_control();
@@ -240,9 +261,13 @@ namespace AlceOSD
             Array.Copy(buf, sc.data, buf.Length);
             sc.count = (byte) buf.Length;
             sc.device = 9;
+            sc.baudrate = (uint) (close ? 0 : 1);
+
+            //Console.WriteLine("mavlink_send() len={0} buf='{1}'",
+            //    sc.count, System.Text.Encoding.UTF8.GetString(buf));
 
             p.Message = sc;
-            p.SystemId = 254;
+            p.SystemId = 201;
             p.ComponentId = 0;
             byte[] packet = mav.Send(p);
             serial_port.Write(packet, 0, packet.Length);
@@ -262,7 +287,7 @@ namespace AlceOSD
             {
                 byte[] b = new byte[len];
                 Array.Copy(buf, b, len);
-                mavlink_send(b);
+                mavlink_send(b, false);
             }
 
         }
@@ -273,7 +298,7 @@ namespace AlceOSD
             else
             {
                 byte[] b = System.Text.Encoding.UTF8.GetBytes(buf);
-                mavlink_send(b);
+                mavlink_send(b, false);
             }
         }
         public void WriteLine(string buf)
@@ -283,7 +308,7 @@ namespace AlceOSD
             else
             {
                 byte[] b = System.Text.Encoding.UTF8.GetBytes(buf + "\n");
-                mavlink_send(b);
+                mavlink_send(b, false);
             }
         }
     }
