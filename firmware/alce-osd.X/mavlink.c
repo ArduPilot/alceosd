@@ -660,6 +660,21 @@ void mav_cmd_ack(mavlink_message_t *msg, void *d)
 }
 #endif
 
+void mav_detect_uav_sysid(mavlink_message_t *msg, void *d)
+{
+    shell_printf("AP=%d\n", mavlink_msg_heartbeat_get_autopilot(msg));
+    
+    if (mavlink_msg_heartbeat_get_autopilot(msg) == MAV_AUTOPILOT_INVALID)
+        return;
+
+    if ((mavlink_msg_heartbeat_get_type(msg) == MAV_TYPE_GIMBAL) ||
+        (mavlink_msg_heartbeat_get_type(msg) == MAV_TYPE_GCS))
+        return;
+    
+    config.mav.uav_sysid = msg->sysid;
+    del_mavlink_callback((struct mavlink_callback*) d);
+}
+
 void mavlink_init(void)
 {
     unsigned char i;
@@ -686,10 +701,19 @@ void mavlink_init(void)
     if (config.mav.heartbeat)
         add_timer(TIMER_ALWAYS, 1000, mav_heartbeat, t);
 
+    if (config.mav.uav_sysid == 0) {
+        struct mavlink_callback *c = add_mavlink_callback_sysid(MAV_SYS_ID_ANY,
+                MAVLINK_MSG_ID_HEARTBEAT, mav_detect_uav_sysid, CALLBACK_PERSISTENT, NULL);
+        c->data = (void*) c;
+    }
+    
     /* parameter request handlers */
-    add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_LIST, mav_param_request_list, CALLBACK_PERSISTENT, NULL);
-    add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_READ, mav_param_request_read, CALLBACK_PERSISTENT, NULL);
-    add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_SET, mav_param_set, CALLBACK_PERSISTENT, NULL);
+    add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_LIST,
+                mav_param_request_list, CALLBACK_PERSISTENT, NULL);
+    add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_REQUEST_READ,
+                mav_param_request_read, CALLBACK_PERSISTENT, NULL);
+    add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_PARAM_SET,
+                mav_param_set, CALLBACK_PERSISTENT, NULL);
 
     /* request stream rates periodically */
     add_timer(TIMER_ALWAYS, 60000, mavlink_request_data_streams, NULL);
