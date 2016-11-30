@@ -340,11 +340,15 @@ void mavlink_serial_cmd(mavlink_message_t *msg, void *data)
 {
     u8 buf[70];
     u8 len;
-    
+
     if (mavlink_msg_serial_control_get_device(msg) != SERIAL_CONTROL_DEV_OSDSHELL)
         return;
-    
-    mavlink_shell_enabled = 1;
+
+    if (mavlink_msg_serial_control_get_baudrate(msg) == 0) {
+        mavlink_shell_enabled = 0;
+    } else {
+        mavlink_shell_enabled = 1;
+    }
     
     len = mavlink_msg_serial_control_get_count(msg);
     mavlink_msg_serial_control_get_data(msg, buf);
