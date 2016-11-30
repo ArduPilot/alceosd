@@ -219,6 +219,7 @@
             this.label34 = new System.Windows.Forms.Label();
             this.label33 = new System.Windows.Forms.Label();
             this.bt_refreshCanvas = new System.Windows.Forms.Button();
+            this.bt_reboot = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tab_shell.SuspendLayout();
             this.tab_video.SuspendLayout();
@@ -295,6 +296,7 @@
             // 
             // tab_shell
             // 
+            this.tab_shell.Controls.Add(this.bt_reboot);
             this.tab_shell.Controls.Add(this.cbx_mavmode);
             this.tab_shell.Controls.Add(this.label60);
             this.tab_shell.Controls.Add(this.bt_commitCfg);
@@ -331,10 +333,10 @@
             // 
             // bt_commitCfg
             // 
-            this.bt_commitCfg.Enabled = false;
+            this.bt_commitCfg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.bt_commitCfg.Location = new System.Drawing.Point(950, 236);
             this.bt_commitCfg.Name = "bt_commitCfg";
-            this.bt_commitCfg.Size = new System.Drawing.Size(81, 23);
+            this.bt_commitCfg.Size = new System.Drawing.Size(120, 23);
             this.bt_commitCfg.TabIndex = 4;
             this.bt_commitCfg.Text = "Save config";
             this.bt_commitCfg.UseVisualStyleBackColor = true;
@@ -449,6 +451,7 @@
             0,
             0,
             0});
+            this.nud_vswmax.ValueChanged += new System.EventHandler(this.cb_vswmode_SelectedIndexChanged);
             // 
             // nud_vswmin
             // 
@@ -471,6 +474,7 @@
             0,
             0,
             0});
+            this.nud_vswmin.ValueChanged += new System.EventHandler(this.cb_vswmode_SelectedIndexChanged);
             // 
             // label55
             // 
@@ -507,6 +511,7 @@
             this.cb_vswch.Size = new System.Drawing.Size(93, 21);
             this.cb_vswch.TabIndex = 17;
             this.cb_vswch.Text = "RC8";
+            this.cb_vswch.SelectedIndexChanged += new System.EventHandler(this.cb_vswmode_SelectedIndexChanged);
             // 
             // nud_vswtimer
             // 
@@ -534,6 +539,7 @@
             0,
             0,
             0});
+            this.nud_vswtimer.ValueChanged += new System.EventHandler(this.cb_vswmode_SelectedIndexChanged);
             // 
             // label57
             // 
@@ -565,6 +571,7 @@
             this.cb_vswmode.Size = new System.Drawing.Size(93, 21);
             this.cb_vswmode.TabIndex = 13;
             this.cb_vswmode.Text = "Percentage";
+            this.cb_vswmode.SelectedIndexChanged += new System.EventHandler(this.cb_vswmode_SelectedIndexChanged);
             // 
             // label59
             // 
@@ -625,6 +632,7 @@
             this.cb_vidstd1.Size = new System.Drawing.Size(121, 21);
             this.cb_vidstd1.TabIndex = 7;
             this.cb_vidstd1.Text = "PAL progressive";
+            this.cb_vidstd1.SelectedIndexChanged += new System.EventHandler(this.cb_vidstd1_SelectedIndexChanged);
             // 
             // label47
             // 
@@ -648,6 +656,7 @@
             this.cb_xsize1.Size = new System.Drawing.Size(121, 21);
             this.cb_xsize1.TabIndex = 8;
             this.cb_xsize1.Text = "480";
+            this.cb_xsize1.SelectedIndexChanged += new System.EventHandler(this.cb_vidstd1_SelectedIndexChanged);
             // 
             // label48
             // 
@@ -694,6 +703,7 @@
             this.cbx_isync1.TabIndex = 21;
             this.cbx_isync1.Text = "Internal sync generator";
             this.cbx_isync1.UseVisualStyleBackColor = true;
+            this.cbx_isync1.CheckedChanged += new System.EventHandler(this.cb_vidstd1_SelectedIndexChanged);
             // 
             // label52
             // 
@@ -720,6 +730,7 @@
             0,
             0,
             0});
+            this.nud_blacklvl1.ValueChanged += new System.EventHandler(this.cb_vidstd1_SelectedIndexChanged);
             // 
             // label53
             // 
@@ -746,6 +757,7 @@
             0,
             0,
             0});
+            this.nud_graylvl1.ValueChanged += new System.EventHandler(this.cb_vidstd1_SelectedIndexChanged);
             // 
             // label54
             // 
@@ -772,6 +784,7 @@
             0,
             0,
             0});
+            this.nud_whitelvl1.ValueChanged += new System.EventHandler(this.cb_vidstd1_SelectedIndexChanged);
             // 
             // nud_ysize1
             // 
@@ -794,6 +807,7 @@
             0,
             0,
             0});
+            this.nud_ysize1.ValueChanged += new System.EventHandler(this.cb_vidstd1_SelectedIndexChanged);
             // 
             // nud_brightness1
             // 
@@ -811,6 +825,7 @@
             0,
             0,
             0});
+            this.nud_brightness1.ValueChanged += new System.EventHandler(this.cb_vidstd1_SelectedIndexChanged);
             // 
             // nud_xoffset1
             // 
@@ -828,6 +843,7 @@
             0,
             0,
             0});
+            this.nud_xoffset1.ValueChanged += new System.EventHandler(this.cb_vidstd1_SelectedIndexChanged);
             // 
             // nud_yoffset1
             // 
@@ -850,6 +866,7 @@
             0,
             0,
             0});
+            this.nud_yoffset1.ValueChanged += new System.EventHandler(this.cb_vidstd1_SelectedIndexChanged);
             // 
             // groupBox7
             // 
@@ -901,6 +918,7 @@
             this.cb_vidstd.Size = new System.Drawing.Size(121, 21);
             this.cb_vidstd.TabIndex = 1;
             this.cb_vidstd.Text = "PAL progressive";
+            this.cb_vidstd.SelectedIndexChanged += new System.EventHandler(this.cb_vidstd_SelectedIndexChanged);
             // 
             // label36
             // 
@@ -924,6 +942,7 @@
             this.cb_xsize.Size = new System.Drawing.Size(121, 21);
             this.cb_xsize.TabIndex = 1;
             this.cb_xsize.Text = "480";
+            this.cb_xsize.SelectedIndexChanged += new System.EventHandler(this.cb_vidstd_SelectedIndexChanged);
             // 
             // label35
             // 
@@ -970,6 +989,7 @@
             this.cbx_isync.TabIndex = 4;
             this.cbx_isync.Text = "Internal sync generator";
             this.cbx_isync.UseVisualStyleBackColor = true;
+            this.cbx_isync.CheckedChanged += new System.EventHandler(this.cb_vidstd_SelectedIndexChanged);
             // 
             // label4
             // 
@@ -996,6 +1016,7 @@
             0,
             0,
             0});
+            this.nud_blacklvl.ValueChanged += new System.EventHandler(this.cb_vidstd_SelectedIndexChanged);
             // 
             // label5
             // 
@@ -1022,6 +1043,7 @@
             0,
             0,
             0});
+            this.nud_graylvl.ValueChanged += new System.EventHandler(this.cb_vidstd_SelectedIndexChanged);
             // 
             // label6
             // 
@@ -1048,6 +1070,7 @@
             0,
             0,
             0});
+            this.nud_whitelvl.ValueChanged += new System.EventHandler(this.cb_vidstd_SelectedIndexChanged);
             // 
             // nud_ysize
             // 
@@ -1070,6 +1093,7 @@
             0,
             0,
             0});
+            this.nud_ysize.ValueChanged += new System.EventHandler(this.cb_vidstd_SelectedIndexChanged);
             // 
             // nud_brightness
             // 
@@ -1087,6 +1111,7 @@
             0,
             0,
             0});
+            this.nud_brightness.ValueChanged += new System.EventHandler(this.cb_vidstd_SelectedIndexChanged);
             // 
             // nud_xoffset
             // 
@@ -1104,6 +1129,7 @@
             0,
             0,
             0});
+            this.nud_xoffset.ValueChanged += new System.EventHandler(this.cb_vidstd_SelectedIndexChanged);
             // 
             // nud_yoffset
             // 
@@ -1126,6 +1152,7 @@
             0,
             0,
             0});
+            this.nud_yoffset.ValueChanged += new System.EventHandler(this.cb_vidstd_SelectedIndexChanged);
             // 
             // tab_uarts
             // 
@@ -1517,6 +1544,7 @@
             this.cb_units.Size = new System.Drawing.Size(92, 21);
             this.cb_units.TabIndex = 7;
             this.cb_units.Text = "Metric";
+            this.cb_units.SelectedIndexChanged += new System.EventHandler(this.cb_units_SelectedIndexChanged);
             // 
             // label32
             // 
@@ -2588,11 +2616,6 @@
             0,
             0,
             0});
-            this.nud_uavsysid.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
             this.nud_uavsysid.Name = "nud_uavsysid";
             this.nud_uavsysid.Size = new System.Drawing.Size(93, 20);
             this.nud_uavsysid.TabIndex = 9;
@@ -2630,6 +2653,17 @@
             this.bt_refreshCanvas.Text = "Reload OSD";
             this.bt_refreshCanvas.UseVisualStyleBackColor = true;
             this.bt_refreshCanvas.Click += new System.EventHandler(this.bt_refreshCanvas_Click);
+            // 
+            // bt_reboot
+            // 
+            this.bt_reboot.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.bt_reboot.Location = new System.Drawing.Point(950, 265);
+            this.bt_reboot.Name = "bt_reboot";
+            this.bt_reboot.Size = new System.Drawing.Size(120, 23);
+            this.bt_reboot.TabIndex = 7;
+            this.bt_reboot.Text = "Reboot";
+            this.bt_reboot.UseVisualStyleBackColor = true;
+            this.bt_reboot.Click += new System.EventHandler(this.bt_reboot_Click);
             // 
             // AlceOSDconfigForm
             // 
@@ -2908,5 +2942,6 @@
         private System.Windows.Forms.Label label34;
         private System.Windows.Forms.Label label33;
         private System.Windows.Forms.Button bt_refreshCanvas;
+        private System.Windows.Forms.Button bt_reboot;
     }
 }

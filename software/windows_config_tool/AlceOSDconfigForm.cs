@@ -385,7 +385,6 @@ namespace AlceOSD_updater
             {
                 Console.WriteLine("hard-reset (only on telemetry port)");
                 /* bootloader < 0v5 */
-                txt_log.AppendText("hard-reset\n");
                 comPort.DtrEnable = true;
                 comPort.RtsEnable = true;
                 System.Threading.Thread.Sleep(50);
@@ -1256,10 +1255,10 @@ namespace AlceOSD_updater
                     cb_wsource.Visible = true;
                     cb_wsource.Items.Add("Mavlink RSSI");
                     cb_wsource.Items.Add("RC Channel");
-                    //cb_wsource.Items.Add("ADC0");
+                    cb_wsource.Items.Add("ADC");
                     set_param(1, "Min value");
                     set_param(2, "Max value");
-                    set_param(3, "RC CH(0-17=RC1-18)");
+                    set_param(3, "RC(0-17=CH1-18)/ADC");
                     break;
                 case "SONAR":
                     lbl_wname.Text = "Sonar";
@@ -1635,6 +1634,7 @@ namespace AlceOSD_updater
                 return;
             string w = lb_widgets.SelectedItem.ToString();
             widgets[w]["UNITS"] = Convert.ToDouble(cb_wunits.SelectedIndex);
+            flag_submit("O");
         }
 
         private void cb_wsource_SelectedIndexChanged(object sender, EventArgs e)
@@ -1643,6 +1643,7 @@ namespace AlceOSD_updater
                 return;
             string w = lb_widgets.SelectedItem.ToString();
             widgets[w]["SOURCE"] = Convert.ToDouble(cb_wsource.SelectedIndex);
+            flag_submit("O");
         }
 
         private void tb_wp1_TextChanged(object sender, EventArgs e)
@@ -1658,6 +1659,7 @@ namespace AlceOSD_updater
             {
                 widgets[w]["PARAM1"] = 0.0;
             }
+            flag_submit("O");
         }
 
         private void tb_wp2_TextChanged(object sender, EventArgs e)
@@ -1674,6 +1676,7 @@ namespace AlceOSD_updater
             {
                 widgets[w]["PARAM2"] = 0.0;
             }
+            flag_submit("O");
         }
 
         private void tb_wp3_TextChanged(object sender, EventArgs e)
@@ -1689,6 +1692,7 @@ namespace AlceOSD_updater
             {
                 widgets[w]["PARAM3"] = 0.0;
             }
+            flag_submit("O");
         }
 
         private void tb_wp4_TextChanged(object sender, EventArgs e)
@@ -1704,6 +1708,7 @@ namespace AlceOSD_updater
             {
                 widgets[w]["PARAM4"] = 0.0;
             }
+            flag_submit("O");
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -2211,6 +2216,17 @@ namespace AlceOSD_updater
             s.Height = ysize + 10;
             s.Width = xsize + 10;
             pb_osd.Size = s;
+
+
+            string[] keys = ca.Keys.ToArray();
+            foreach (string name_uid in keys)
+            {
+                Canvas c = ca[name_uid];
+                c.x0 = pos2canvas(name_uid, c, 'H');
+                c.y0 = pos2canvas(name_uid, c, 'V');
+                c.shown = lb_widgets.Items.Contains(name_uid);
+                ca[name_uid] = c;
+            }
         }
 
 
@@ -2312,7 +2328,7 @@ namespace AlceOSD_updater
         {
             if (shell_active)
             {
-                
+                bt_conn.Enabled = false;
                 timer_heartbeat.Enabled = false;
 
                 timer_com.Enabled = false;
@@ -2320,27 +2336,28 @@ namespace AlceOSD_updater
                 init_done = false;
                 comPort.Close();
 
-                his_idx = 0;
-                lb_history.Items.Clear();
-                cmd_history.Clear();
-
                 bt_conn.Text = "Connect";
                 readConfigToolStripMenuItem.Enabled = true;
                 writeConfigToolStripMenuItem.Enabled = true;
                 flashFirmwareToolStripMenuItem.Enabled = true;
-                bt_commitCfg.Enabled = false;
                 cbx_mavmode.Enabled = true;
+                bt_conn.Enabled = true;
             }
             else
             {
+                bt_conn.Enabled = false;
                 setup_comport();
                 if (!open_comport())
+                {
+                    bt_conn.Enabled = true;
                     return;
+                }
 
                 if (!reset_board(false, cbx_mavmode.Checked))
                 {
                     MessageBox.Show("Error: no response from board", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     comPort.Close();
+                    bt_conn.Enabled = true;
                     return;
                 }
 
@@ -2360,10 +2377,11 @@ namespace AlceOSD_updater
                 writeConfigToolStripMenuItem.Enabled = false;
                 flashFirmwareToolStripMenuItem.Enabled = false;
                 cbx_mavmode.Enabled = false;
-                bt_commitCfg.Enabled = true;
 
-                timer_heartbeat.Enabled = true;
+                if (cbx_mavmode.Checked)
+                    timer_heartbeat.Enabled = true;
 
+                bt_conn.Enabled = true;
             }
         }
 
@@ -2391,13 +2409,28 @@ namespace AlceOSD_updater
             comPort.WriteLine(cmd);
             try
             {
-                string ans = comPort.ReadLine();
-                if (init_done)
-                    txt_shell.AppendText(ans + "\n");
-                if (ans.Contains(cmd))
+
+                if (cmd == "reboot")
+                {
+                    System.Threading.Thread.Sleep(200);
+                    timer_com.Enabled = false;
+                    reset_board(false, cbx_mavmode.Checked);
+                    System.Threading.Thread.Sleep(200);
+                    comPort.DiscardInBuffer();
+                    timer_com.Enabled = true;
+                    comPort.WriteLine("version");
                     ret = true;
+                }
                 else
-                    ret = false;
+                {
+                    string ans = comPort.ReadLine();
+                    if (init_done)
+                        txt_shell.AppendText(ans + "\n");
+                    if (ans.Contains(cmd))
+                        ret = true;
+                    else
+                        ret = false;
+                }
             }
             catch
             {
@@ -2464,13 +2497,6 @@ namespace AlceOSD_updater
                     tb_cmdLine.Clear();
                     e.Handled = true;
                     his_idx = 0;
-                    if (cmd == "reboot")
-                    {
-                        System.Threading.Thread.Sleep(200);
-                        timer_com.Enabled = false;
-                        reset_board(false, cbx_mavmode.Checked);
-                        timer_com.Enabled = true;
-                    }
                     break;
                 case Keys.Up:
                     if (cmd_history.Count == 0)
@@ -2639,7 +2665,7 @@ namespace AlceOSD_updater
             int x, y, b, v, d;
             uint bgr;
 
-            foreach(KeyValuePair<string, Canvas> _c in ca)
+            foreach (KeyValuePair<string, Canvas> _c in ca)
             {
                 Canvas c = _c.Value;
                 if (!c.shown)
@@ -3183,6 +3209,118 @@ namespace AlceOSD_updater
             load_lock = false;
         }
 
+        private void update_video_config0()
+        {
+            string cmd = "video config -p0";
+            switch (cb_vidstd.SelectedIndex)
+            {
+                default:
+                case 0:
+                    cmd += " -s p -m p";
+                    break;
+                case 1:
+                    cmd += " -s p -m i";
+                    break;
+                case 2:
+                    cmd += " -s n -m p";
+                    break;
+                case 3:
+                    cmd += " -s n -m i";
+                    break;
+            }
+            cmd += cbx_isync.Checked ? " -i1" : " -i0";
+
+            cmd += " -t" + nud_brightness.Value;
+
+            cmd += " -w" + nud_whitelvl.Value;
+            cmd += " -g" + nud_graylvl.Value;
+            cmd += " -b" + nud_blacklvl.Value;
+
+            cmd += " -x" + cb_xsize.Text;
+            cmd += " -y" + nud_ysize.Value;
+            cmd += " -h" + nud_xoffset.Value;
+            cmd += " -v" + nud_yoffset.Value;
+
+            if (init_done)
+                send_cmd(cmd);
+        }
+
+        private void update_video_config1()
+        {
+            string cmd = "video config -p1";
+            switch (cb_vidstd1.SelectedIndex)
+            {
+                default:
+                case 0:
+                    cmd += " -s p -m p";
+                    break;
+                case 1:
+                    cmd += " -s p -m i";
+                    break;
+                case 2:
+                    cmd += " -s n -m p";
+                    break;
+                case 3:
+                    cmd += " -s n -m i";
+                    break;
+            }
+            cmd += cbx_isync1.Checked ? " -i1" : " -i0";
+
+            cmd += " -t" + nud_brightness1.Value;
+
+            cmd += " -w" + nud_whitelvl1.Value;
+            cmd += " -g" + nud_graylvl1.Value;
+            cmd += " -b" + nud_blacklvl1.Value;
+
+            cmd += " -x" + cb_xsize1.Text;
+            cmd += " -y" + nud_ysize1.Value;
+            cmd += " -h" + nud_xoffset1.Value;
+            cmd += " -v" + nud_yoffset1.Value;
+            if (init_done)
+                send_cmd(cmd);
+        }
+
+        private void cb_vidstd_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_video_config0();
+        }
+
+        private void cb_vidstd1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_video_config1();
+        }
+
+        private void update_video_sw_config()
+        {
+            string cmd = "video sw -m" + cb_vswmode.SelectedIndex;
+            cmd += " -c" + (cb_vswch.SelectedIndex + 1);
+            cmd += " -l" + nud_vswmin.Value;
+            cmd += " -h" + nud_vswmax.Value;
+            cmd += " -t" + nud_vswtimer.Value;
+            if (init_done)
+                send_cmd(cmd);
+        }
+
+        private void cb_vswmode_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            update_video_sw_config();
+        }
+
+        private void nud_vswtimer_ValueChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void bt_reboot_Click(object sender, EventArgs e)
+        {
+            send_cmd("reboot");
+        }
+
+        private void cb_units_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string cmd = "config units " + cb_units.SelectedIndex;
+        }
+
         private void timer_submit_Tick(object sender, EventArgs e)
         {
             timer_submit.Stop();
@@ -3196,7 +3334,7 @@ namespace AlceOSD_updater
 
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (tabControl1.SelectedIndex == tabControl1.TabPages.IndexOfKey("tabWidgets"))
+            if (tabControl1.SelectedIndex == tabControl1.TabPages.IndexOfKey("tab_widgets"))
                 recalculate_pb_osd_size();
         }
 
