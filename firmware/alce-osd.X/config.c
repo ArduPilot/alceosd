@@ -366,11 +366,28 @@ static void shell_cmd_dumpcfg(char *args, void *data)
     shell_printf("--\n");
 }
 
+static void shell_cmd_units(char *args, void *data)
+{
+    u16 v;
+    shell_printf("syntax: config units <i>\n");
+    shell_printf("        0 - metric\n");
+    shell_printf("        1 - imperial\n\n");
+    if (strlen(args) > 0) {
+        v = atoi(args);
+        v = TRIM(v, 0, 1);
+        config.default_units = v;
+        shell_printf("Units: %s\n", (config.default_units == UNITS_METRIC) ? "metric" : "imperial");
+    } else {
+        shell_printf("Units: %s\n", (config.default_units == UNITS_METRIC) ? "metric" : "imperial");
+    }
+}
+
 static const struct shell_cmdmap_s config_cmdmap[] = {
     {"dump", shell_cmd_dumpcfg, "dump", SHELL_CMD_SIMPLE},
     {"load", shell_cmd_loadcfg, "load", SHELL_CMD_SIMPLE},
     {"save", shell_cmd_savecfg, "save", SHELL_CMD_SIMPLE},
     {"stats", shell_cmd_stats, "config statistics", SHELL_CMD_SIMPLE},
+    {"units", shell_cmd_units, "Default units", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
 };
 
