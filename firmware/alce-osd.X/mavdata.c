@@ -192,25 +192,25 @@ static void mavdata_info_field_name(u16 id, u8 nr, char *name)
 
 static void shell_cmd_stats(char *args, void *data)
 {
-    u16 i;
-    unsigned long now = get_millis(), age;
     char buf[20];
+    u32 age;
+    u16 i;
     
     shell_printf(" id | age(ms) | rate(Hz) | name\n");
     shell_printf("----+---------+----------+---------------\n");
     for (i = 0; i < 256; i++) {
         if (m[i].decode == NULL)
             continue;
-        shell_printf("%3d | ", i);
-        age = (now - mavdata_time(i));
+        shell_printf("%3d |", i);
+        age = mavdata_age(i);
         if (mavdata_time(i) == 0) {
-            shell_printf(" unseen |          | ");
+            shell_printf(" no data |          | ");
         } else {
-            shell_printf("%7lu | ", age);
+            shell_printf(" %7lu |", age);
             if (age < 60000)
-                shell_printf("%8.1f | ", 1000.0/mavdata_period(i));
+                shell_printf(" %8.1f | ", 1000.0/mavdata_period(i));
             else
-                shell_printf("         | ");
+                shell_printf("          | ");
         }
         mavdata_info_name(i, buf);
         shell_printf("%s\n", buf);
