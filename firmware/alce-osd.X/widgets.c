@@ -138,7 +138,6 @@ struct widget* load_widget_config(struct widget_config *w_cfg)
         return NULL;
 
     active_widgets[total_active_widgets++] = w;
-    
     return w;
 }
 
@@ -195,7 +194,6 @@ static void widgets_process(void)
     //}
 }
 
-
 void schedule_widget(struct widget *w)
 {
     if (w->status == WIDGET_SCHEDULED)
@@ -233,9 +231,7 @@ void widgets_reset(void)
     clear_sram();
 }
 
-
 extern struct alceosd_config config;
-
 
 enum {
     WID_PARAM_TAB = 0,
@@ -391,7 +387,6 @@ static unsigned int widgets_total_params(void)
     return WID_PARAM_END * total;
 }
 
-
 static void widgets_get_params(int idx, struct param_def *p)
 {
     struct widget_config *wcfg = config.widgets;
@@ -414,7 +409,6 @@ static void widgets_get_params(int idx, struct param_def *p)
     sprintf(p->name, "%s%1d_", wops->mavname, wcfg->uid);
     get_widget_param(param_idx, wcfg, p);
 }
-
 
 static int widgets_set_params(struct param_def *p)
 {
@@ -468,7 +462,6 @@ static int widgets_set_params(struct param_def *p)
     return idx * ret;
 }
 
-
 unsigned char widget_get_uid(unsigned char wid)
 {
     struct widget_config *wcfg = config.widgets;
@@ -493,15 +486,12 @@ const struct param_dynamic_def widget_dynamic_params = {
 void widgets_init(void)
 {
     const struct widget_ops **w = all_widget_ops;
-
     params_set_dynamic_params(&widget_dynamic_params);
-
     while ((*w) != NULL) {
         if ((*w)->init != NULL)
             (*w)->init();
         w++;
     }
-
     process_add(widgets_process, "WIDGETS", 10);
 }
 
@@ -632,6 +622,7 @@ static void shell_cmd_add(char *args, void *data)
         shell_printf("      <mavname>       mavlink name\n");
         shell_printf("      -i <id>         widget global id\n");
         shell_printf("      -t <tab_id>     tab id number (1-254)\n");
+        shell_printf("\n note: use MAVNAME or ID, not both\n\n");
     } else {
         /* tab id */
         tab = get_active_tab();
@@ -681,7 +672,7 @@ static void shell_cmd_add(char *args, void *data)
 
             shell_printf("Added widget: %02u+%02u to tab %d", id, uid, tab);
         } else {
-            shell_printf("Widget not found: %s / %d", args, id);
+            shell_printf("Widget not found: %s / %d\n", args, id);
         }
     }
 }
@@ -786,7 +777,7 @@ static void shell_cmd_config(char *args, void *data)
         shell_printf("      -a <value>      param1 value\n");
         shell_printf("      -b <value>      param2 value\n");
         shell_printf("      -c <value>      param3 value\n");
-        shell_printf("      -d <value>      param4 value\n");
+        shell_printf("      -d <value>      param4 value\n\n");
     } else {
         /* widget id+uid */
         ptr = strchr(p->val, '+');
@@ -802,7 +793,7 @@ static void shell_cmd_config(char *args, void *data)
         }
 
         if (!found) {
-            shell_printf("Widget not found: %02d+%02d", id, uid);
+            shell_printf("Widget not found: %02d+%02d\n", id, uid);
             return;
         }
         
@@ -866,7 +857,7 @@ static void shell_cmd_config(char *args, void *data)
             }
         }
         reconfig_widget(w);
-        shell_printf("Changed widget: %02u+%02u", id, uid);
+        shell_printf("Changed widget: %02u+%02u\n", id, uid);
     }
 }
 
