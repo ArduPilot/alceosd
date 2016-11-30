@@ -18,7 +18,7 @@
 
 #include "alce-osd.h"
 
-#define MAX_SHELL_LINE_LEN  50
+#define MAX_SHELL_LINE_LEN  80
 
 #define BELL        7
 #define BACKSPACE   8
