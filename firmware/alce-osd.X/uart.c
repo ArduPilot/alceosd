@@ -127,6 +127,8 @@ struct uart_fifo_s {
     
     __eds__ unsigned char *tx_buf;
     unsigned int full;
+    
+    u32 rx, tx;
 };
 
 static struct uart_fifo_s uart_fifo[4];
@@ -181,7 +183,7 @@ inline static void handle_uart_int(unsigned char port)
 {
     unsigned int n_wr = uart_fifo[port].wr;
     unsigned char ch;
-    //unsigned int cnt = 0;
+    u8 cnt = 0;
 
     /* if set, clear overflow bit */
     if (*(UARTS[port].STA) & 2) {
@@ -189,7 +191,7 @@ inline static void handle_uart_int(unsigned char port)
         uart_fifo[port].overflow++;
     }
 
-    //while (*(UARTS[port].STA) & 1) {
+    while (*(UARTS[port].STA) & 1) {
         n_wr = (n_wr + 1) & UART_FIFO_MASK;
         
         ch = *(UARTS[port].RX);
@@ -223,9 +225,10 @@ inline static void handle_uart_int(unsigned char port)
         
         uart_fifo[port].max = max(uart_fifo[port].max, (uart_fifo[port].wr - uart_fifo[port].rd) & UART_FIFO_MASK);
         
-        //cnt++;
-    //}
-    //uart_fifo[port].m = max(uart_fifo[port].m, cnt);
+        cnt++;
+    }
+    uart_fifo[port].m = max(uart_fifo[port].m, cnt);
+    uart_fifo[port].rx += (u32) cnt;
 }
 
 void __attribute__((__interrupt__, auto_psv)) _U1RXInterrupt(void)
@@ -414,6 +417,7 @@ static void uart1_write(unsigned char *buf, unsigned int len)
     }
 
     len = min(len, UART_TX_BUF_SIZE);
+    uart_fifo[0].tx += (u32) len;
     DMA0CNT = len - 1;
     while (len-- > 0)
         *b++ = *buf++;
@@ -435,6 +439,7 @@ static void uart2_write(unsigned char *buf, unsigned int len)
     }
 
     len = min(len, UART_TX_BUF_SIZE);
+    uart_fifo[1].tx += (u32) len;
     DMA1CNT = len - 1;
     while (len-- > 0)
         *b++ = *buf++;
@@ -456,6 +461,7 @@ static void uart3_write(unsigned char *buf, unsigned int len)
     }
 
     len = min(len, UART_TX_BUF_SIZE);
+    uart_fifo[2].tx += (u32) len;
     DMA2CNT = len - 1;
     while (len-- > 0)
         *b++ = *buf++;
@@ -477,6 +483,7 @@ static void uart4_write(unsigned char *buf, unsigned int len)
     }
 
     len = min(len, UART_TX_BUF_SIZE);
+    uart_fifo[3].tx += (u32) len;
     DMA3CNT = len - 1;
     while (len-- > 0)
         *b++ = *buf++;
@@ -827,7 +834,8 @@ static void shell_cmd_stats(char *args, void *data)
     
     shell_printf("\nStats:\n");
     for (i = 0; i < 4; i++) {
-        shell_printf(" port%d: overrun=%u overflows=%u fulls=%d loops=%d max=%u\n", i,
+        shell_printf(" port%d: tx=%lu rx=%lu", i, uart_fifo[i].tx, uart_fifo[i].rx);
+        shell_printf(" orun=%u oflow=%u txfull=%d (rxloop=%d max=%u)\n",
                 uart_fifo[i].overrun, uart_fifo[i].overflow, uart_fifo[i].full,
                 uart_fifo[i].m, uart_fifo[i].max);
         uart_fifo[i].m = 0;
