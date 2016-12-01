@@ -24,6 +24,7 @@ void tabs_init(void);
 void load_tab(unsigned char tab);
 unsigned char get_active_tab(void);
 unsigned char *get_tab_list(void);
+void build_tab_list(void);
 
 void shell_cmd_tabs(char *args, void *data);
 

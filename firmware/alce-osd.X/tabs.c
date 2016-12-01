@@ -105,7 +105,7 @@ void load_tab(unsigned char tab)
     DTABS("Loaded\n");
 }
 
-static void build_tab_list(void)
+void build_tab_list(void)
 {
     struct widget_config *wcfg = &config.widgets[0];
     unsigned char *p = &tab_list[1];

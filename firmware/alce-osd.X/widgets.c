@@ -464,14 +464,19 @@ static int widgets_set_params(struct param_def *p)
 
 unsigned char widget_get_uid(unsigned char wid)
 {
-    struct widget_config *wcfg = config.widgets;
-    unsigned char uid = 0;
-    while (wcfg->tab != TABS_END) {
-        if (wid == wcfg->widget_id) {
-            while (uid == wcfg->uid)
-                uid++;
+    struct widget_config *wcfg;
+    unsigned char uid = 0, busy;
+
+    for (uid = 0; uid < 10; uid++) {
+        wcfg = config.widgets;
+        busy = 0;
+        while (wcfg->tab != TABS_END) {
+            if ((wid == wcfg->widget_id) && (uid == wcfg->uid))
+                busy = 1;
+            wcfg++;
         }
-        wcfg++;
+        if (!busy)
+            break;
     }
     return uid;
 }
@@ -568,7 +573,7 @@ static void shell_cmd_list(char *args, void *data)
             if (w_cfg->tab == tab) {
                 w_ops = get_widget_ops(w_cfg->widget_id);
 
-                shell_printf("  %02u+%02u | %20s | %3d | %3d | %5d | %5d\n",
+                shell_printf("  %02u+%02u | %20s |%4d |%4d | %5d | %5d\n",
                     w_cfg->widget_id, w_cfg->uid, w_ops->name,
                     w_cfg->x, w_cfg->y, w_cfg->props.hjust, w_cfg->props.vjust);
             }
@@ -658,6 +663,10 @@ static void shell_cmd_add(char *args, void *data)
             while (w_cfg->tab != TABS_END)
                 w_cfg++;
             uid = widget_get_uid(id);
+            if (uid > 9) {
+                shell_printf("Can't add: widgets (id %d) limit reached\n", id);
+                return;
+            }
             w_cfg->uid = uid;
             w_cfg->tab = tab;
             w_cfg->widget_id = id;
@@ -668,9 +677,11 @@ static void shell_cmd_add(char *args, void *data)
             w_cfg++;
             w_cfg->tab = TABS_END;
 
+            /* rebuild tab list */
+            build_tab_list();
             load_tab(tab);
 
-            shell_printf("Added widget: %02u+%02u to tab %d", id, uid, tab);
+            shell_printf("Added widget: %02u+%02u to tab %d\n", id, uid, tab);
         } else {
             shell_printf("Widget not found: %s / %d\n", args, id);
         }
@@ -696,7 +707,7 @@ static void shell_cmd_rm(char *args, void *data)
         id = atoi(args);
         uid = atoi(ptr);
 
-        tab = -1;
+        tab = 0;
         while (w_cfg->tab != TABS_END) {
             if ((w_cfg->uid == uid) && (w_cfg->widget_id == id)) {
                 tab = w_cfg->tab;
@@ -705,7 +716,7 @@ static void shell_cmd_rm(char *args, void *data)
             w_cfg++;
         }
 
-        if (tab != -1) {
+        if (tab > 0) {
             do {
                 memcpy(w_cfg, w_cfg+1, sizeof(struct widget_config));
             } while ((w_cfg++)->tab != TABS_END);
