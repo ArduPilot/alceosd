@@ -38,6 +38,7 @@ struct home_data* get_home_data(void)
 static void calc_home(struct timer *t, void *d)
 {
     mavlink_heartbeat_t *hb = mavdata_get(MAVLINK_MSG_ID_HEARTBEAT);
+    mavlink_global_position_int_t *gpi;
 
     mavlink_message_t this_msg;
     
@@ -72,7 +73,7 @@ static void calc_home(struct timer *t, void *d)
             break;
         case HOME_LOCKED:
         {
-            mavlink_global_position_int_t *gpi = mavdata_get(MAVLINK_MSG_ID_GLOBAL_POSITION_INT);
+            gpi = mavdata_get(MAVLINK_MSG_ID_GLOBAL_POSITION_INT);
  
             priv.uav_coord.lat = DEG2RAD(gpi->lat / 10000000.0);
             priv.uav_coord.lon = DEG2RAD(gpi->lon / 10000000.0);
@@ -88,22 +89,19 @@ static void calc_home(struct timer *t, void *d)
 
             home.distance = earth_distance(&priv.home_coord, &priv.uav_coord);
             home.altitude = priv.altitude - priv.home_altitude;
-
-            if ((hb->base_mode & MAV_MODE_FLAG_SAFETY_ARMED) == 0)
-                home.lock = HOME_RESET;
             break;
         case HOME_RESET:
             home.lock = HOME_NONE;
             set_timer_period(t, 1000);
             break;
-        }
         case HOME_FORCE:
-            mavlink_global_position_int_t *gpi = mavdata_get(MAVLINK_MSG_ID_GLOBAL_POSITION_INT);
+            gpi = mavdata_get(MAVLINK_MSG_ID_GLOBAL_POSITION_INT);
             priv.home_coord.lat = DEG2RAD(gpi->lat / 10000000.0);
             priv.home_coord.lon = DEG2RAD(gpi->lon / 10000000.0);
             priv.home_altitude = (unsigned int) (gpi->alt / 1000);
             home.lock = HOME_GOT;
             break;
+        }
     }
 }
 
@@ -128,7 +126,6 @@ static void shell_cmd_stats(char *args, void *data)
             shell_printf("Home M.S.L. altitude: %um\n\n", priv.home_altitude);
             shell_printf("Relative altitude to home: %um\n", home.altitude);
             shell_printf("Home direction: %d\n", home.direction);
-            shell_printf("Home distance: %.2fm\n", home.distance);
             shell_printf("Home distance: %.2fm\n", home.distance);
             break;
     }
