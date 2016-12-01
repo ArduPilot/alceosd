@@ -69,7 +69,6 @@ static unsigned int LINE_TMR = LINE_TMR_;
 #define CTRL_EXTVREF        0x10
 #define CTRL_DUALVIN        0x20
 
-//#define DEBUG_DAC
 
 extern struct alceosd_config config;
 extern unsigned char hw_rev;
@@ -358,41 +357,40 @@ static void video_init_sram(void)
 #endif
 }
 
-#define I2C_STATE_START   0
-#define I2C_STATE_TRMT    1
-#define I2C_STATE_ACK     2
-#define I2C_STATE_STOP    3
+#define I2C_STATE_START     0
+#define I2C_STATE_TRMT      1
+#define I2C_STATE_RECV      2
+#define I2C_STATE_ACK       3
+#define I2C_STATE_STOP      4
 int i2c_wait(u8 state)
 {
-    u8 finished = 0;
+    u8 done = 0;
     u16 timeout = 20;
     do {
         switch (state) {
             case I2C_STATE_START:
-                if (I2C1CONbits.SEN == 0)
-                    finished = 1;
+                done = (I2C1CONbits.SEN == 0);
                 break;
             case I2C_STATE_TRMT:
-                if (I2C1STATbits.TRSTAT == 0)
-                    finished = 1;
+                done = (I2C1STATbits.TRSTAT == 0);
+                break;
+            case I2C_STATE_RECV:
+                done = (I2C1CONbits.RCEN == 0);
                 break;
             case I2C_STATE_ACK:
-                if (I2C1CONbits.ACKEN == 0)
-                    finished = 1;
+                done = (I2C1CONbits.ACKEN == 0);
                 break;
             case I2C_STATE_STOP:
-                if (I2C1CONbits.PEN == 0)
-                    finished = 1;
+                done = (I2C1CONbits.PEN == 0);
                 break;
             default:
-                break;
+                return 1;
         }
-        if (finished)
-            break;
+        if (done)
+            return 0;
         mdelay(10);
     } while (--timeout > 0);
-    
-    return (timeout == 0);
+    return 1;
 }
 
 static void video_init_dac(void)
@@ -410,50 +408,38 @@ static void video_init_dac(void)
 }
 
 #define VIDEO_DAC_BUF_SIZE  (3*2*4)
-static void video_read_dac(unsigned char *dac_status)
+static int video_read_dac(unsigned char *dac_status)
 {
-    //unsigned char dac_status[VIDEO_DAC_BUF_SIZE];
     unsigned char i;
     
     I2C1CONbits.SEN = 1;
     if (i2c_wait(I2C_STATE_START))
-        goto err_timeout;
-    
-    while (I2C1CONbits.SEN == 1);
+        return 1;
     
     I2C1TRN = 0xc1;
     if (i2c_wait(I2C_STATE_TRMT))
-        goto err_timeout;
+        return 1;
 
     for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
         I2C1CONbits.RCEN = 1;
-        if (i2c_wait(I2C_STATE_TRMT))
-            goto err_timeout;
+        if (i2c_wait(I2C_STATE_RECV))
+            return 1;
         
         dac_status[i] = I2C1RCV;
-        
+
         I2C1CONbits.ACKEN = 1;
         if (i2c_wait(I2C_STATE_ACK))
-            goto err_timeout;
+            return 1;
     }
 
     I2C1CONbits.PEN = 1;
     if (i2c_wait(I2C_STATE_STOP))
-        goto err_timeout;
+        return 1;
     
-    /*for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
-        shell_printf("0x%02x ", dac_status[i]);
-        if (((i+1) % 3) == 0)
-            shell_printf("\n");
-    }*/
-    return;
-    
-err_timeout:
-    shell_printf("video_update_dac() err: i2c timeout\n");
-    return;
+    return 0;
 }
 
-static void video_update_dac(struct video_config *cfg)
+static int video_update_dac(struct video_config *cfg)
 {
     unsigned int dac_values[4];
     unsigned char i;
@@ -465,31 +451,27 @@ static void video_update_dac(struct video_config *cfg)
 
     I2C1CONbits.SEN = 1;
     if (i2c_wait(I2C_STATE_START))
-        goto err_timeout;
+        return 1;
     
     I2C1TRN = 0xc0;
     if (i2c_wait(I2C_STATE_TRMT))
-        goto err_timeout;
+        return 1;
 
     for (i = 0; i < 4; i++) {
         I2C1TRN = (dac_values[i] >> 8) & 0x0f;
         if (i2c_wait(I2C_STATE_TRMT))
-            goto err_timeout;
+            return 1;
     
         I2C1TRN = dac_values[i] & 0xff;
         if (i2c_wait(I2C_STATE_TRMT))
-            goto err_timeout;
+            return 1;
 
     }
     I2C1CONbits.PEN = 1;
     if (i2c_wait(I2C_STATE_STOP))
-        goto err_timeout;
+        return 1;
 
-    return;
-    
-err_timeout:
-    shell_printf("video_update_dac() err: i2c timeout\n");
-    return;
+    return 0;
 }
 
 static void video_init_hw(void)
@@ -697,10 +679,6 @@ static void video_init_hw(void)
     
     if (videocore_ctrl & CTRL_DACBRIGHT) {
         video_init_dac();
-#ifdef DEBUG_DAC
-        video_update_dac(&config.video);
-        video_read_dac();
-#endif
     }
     
     if (videocore_ctrl & CTRL_DUALVIN) {
@@ -718,7 +696,8 @@ void video_apply_config(unsigned char profile)
     if (hw_rev < 0x03) {
         OC1RS = 0x100 + cfg->brightness;
     } else {
-        video_update_dac(cfg);
+        if (video_update_dac(cfg))
+            shell_printf("error updating DAC values\n");
     }
     
     if (hw_rev == 0x04) {
@@ -1649,7 +1628,8 @@ static void shell_cmd_stats(char *args, void *data)
                 cfg->black_lvl);
         
         shell_printf(" dac settings:\n  ");
-        video_read_dac(dac_status);
+        if (video_read_dac(dac_status))
+            shell_printf("error reading DAC values\n");
         for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
             shell_printf("0x%02x ", dac_status[i]);
             if (((i+1) % 3) == 0)
