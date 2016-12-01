@@ -126,7 +126,7 @@ void stack_dump(unsigned int *stack_pos)
     
     c = (unsigned char*) p;
     
-    snprintf(buf, 100, "\n\nStack dump :: [0x%04p--->0x%04p   0x%04p]\n\n", p, stack_pos, t);
+    snprintf(buf, 100, "\n\nStack dump :: [0x%4p--->0x%4p   0x%4p]\n\n", p, stack_pos, t);
     debug_puts(buf);
     i = 0;
     snprintf(buf, 100, "0x%4p | ", p);
