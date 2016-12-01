@@ -2120,7 +2120,7 @@
             this.txt_log.Name = "txt_log";
             this.txt_log.ReadOnly = true;
             this.txt_log.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txt_log.Size = new System.Drawing.Size(837, 438);
+            this.txt_log.Size = new System.Drawing.Size(1061, 561);
             this.txt_log.TabIndex = 0;
             // 
             // menuStrip1
