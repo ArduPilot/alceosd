@@ -220,6 +220,9 @@
             this.label33 = new System.Windows.Forms.Label();
             this.bt_refreshCanvas = new System.Windows.Forms.Button();
             this.bt_reboot = new System.Windows.Forms.Button();
+            this.bt_sendTlog = new System.Windows.Forms.Button();
+            this.ofd_tlog = new System.Windows.Forms.OpenFileDialog();
+            this.tb_tlog = new System.Windows.Forms.TrackBar();
             this.tabControl1.SuspendLayout();
             this.tab_shell.SuspendLayout();
             this.tab_video.SuspendLayout();
@@ -273,6 +276,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_streamRawSensors)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_osdsysid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_uavsysid)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tb_tlog)).BeginInit();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -296,6 +300,8 @@
             // 
             // tab_shell
             // 
+            this.tab_shell.Controls.Add(this.tb_tlog);
+            this.tab_shell.Controls.Add(this.bt_sendTlog);
             this.tab_shell.Controls.Add(this.bt_reboot);
             this.tab_shell.Controls.Add(this.cbx_mavmode);
             this.tab_shell.Controls.Add(this.label60);
@@ -2665,6 +2671,33 @@
             this.bt_reboot.UseVisualStyleBackColor = true;
             this.bt_reboot.Click += new System.EventHandler(this.bt_reboot_Click);
             // 
+            // bt_sendTlog
+            // 
+            this.bt_sendTlog.Location = new System.Drawing.Point(950, 462);
+            this.bt_sendTlog.Name = "bt_sendTlog";
+            this.bt_sendTlog.Size = new System.Drawing.Size(120, 23);
+            this.bt_sendTlog.TabIndex = 8;
+            this.bt_sendTlog.Text = "Send .tlog";
+            this.bt_sendTlog.UseVisualStyleBackColor = true;
+            this.bt_sendTlog.Click += new System.EventHandler(this.bt_sendTlog_Click);
+            // 
+            // ofd_tlog
+            // 
+            this.ofd_tlog.FileName = ".tlog";
+            this.ofd_tlog.Filter = "Telemetry log files|*.tlog";
+            // 
+            // tb_tlog
+            // 
+            this.tb_tlog.BackColor = System.Drawing.SystemColors.Window;
+            this.tb_tlog.Location = new System.Drawing.Point(950, 491);
+            this.tb_tlog.Maximum = 100;
+            this.tb_tlog.Name = "tb_tlog";
+            this.tb_tlog.Size = new System.Drawing.Size(120, 45);
+            this.tb_tlog.SmallChange = 5;
+            this.tb_tlog.TabIndex = 9;
+            this.tb_tlog.TickFrequency = 5;
+            this.tb_tlog.Scroll += new System.EventHandler(this.tb_tlog_Scroll);
+            // 
             // AlceOSDconfigForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -2746,6 +2779,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_streamRawSensors)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_osdsysid)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_uavsysid)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tb_tlog)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -2943,5 +2977,8 @@
         private System.Windows.Forms.Label label33;
         private System.Windows.Forms.Button bt_refreshCanvas;
         private System.Windows.Forms.Button bt_reboot;
+        private System.Windows.Forms.Button bt_sendTlog;
+        private System.Windows.Forms.OpenFileDialog ofd_tlog;
+        private System.Windows.Forms.TrackBar tb_tlog;
     }
 }

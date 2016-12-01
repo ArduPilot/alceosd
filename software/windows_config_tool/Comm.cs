@@ -38,6 +38,8 @@ namespace AlceOSD
 
         private byte[] buffer = new byte[0];
         public Mutex m = new Mutex();
+        public Mutex send_m = new Mutex();
+
 
         private void AppendToBuffer(byte[] inbuf)
         {
@@ -74,11 +76,90 @@ namespace AlceOSD
             }
         }
 
-        public void mav_send(byte[]packet)
+        public void mav_packet_send(byte[] packet)
         {
-            //Console.WriteLine("sending mavlink packet");
+            //Console.Write("mav_packet_send() [{0}] ", packet.Length);
+            //packet.ToList().ForEach(_b => Console.Write(" {0:X}", _b));
+            //Console.WriteLine("");
+
+            m.WaitOne();
             serial_port.Write(packet, 0, packet.Length);
+            m.ReleaseMutex();
         }
+
+
+        private Mavlink tlog_mav = new Mavlink();
+        public int progress = 0;
+        public int seek = -1;
+
+        private Thread tlog_thread;
+        private bool tlog_active = false;
+        private byte[] tlog_buf = new byte[0];
+        void tlog()
+        {
+            tlog_mav.PacketReceived += Tlogmav_PacketReceived;
+            int left = tlog_buf.Length;
+            int total = left;
+            int cnt = 20;
+            int idx = 0;
+            Console.WriteLine("got {0} .tlog bytes", left);
+            do
+            {
+                if (seek != -1)
+                {
+                    idx = (seek * total) / 100;
+                    seek = -1;
+                }
+
+                int c = Math.Min(left, cnt);
+                byte[] b = new byte[cnt];
+                Array.Copy(tlog_buf, idx, b, 0, c);
+                tlog_mav.ParseBytes(b);
+                idx += c;
+                left -= c;
+
+                progress = (idx * 100) / total;
+
+                if (!tlog_active)
+                    break;
+            } while (left > 0);
+            tlog_mav.PacketReceived -= Tlogmav_PacketReceived;
+        }
+
+
+        private void Tlogmav_PacketReceived(object sender, MavlinkPacket e)
+        {
+            //Console.WriteLine("will send packet from [{0};{1}] type {2}", e.SystemId, e.ComponentId, e.Message);
+            byte[] b = tlog_mav.Send(e);
+            mav_packet_send(b);
+            System.Threading.Thread.Sleep(10);
+            //Console.WriteLine("sent .tlog packet");
+        }
+
+
+        public void send_tlog(byte[] buf)
+        {
+            if (!IsOpen)
+                return;
+
+            Array.Resize(ref tlog_buf, buf.Length);
+            Array.Copy(buf, tlog_buf, buf.Length);
+
+            seek = -1;
+            progress = 0;
+            tlog_active = true;
+            tlog_thread = new Thread(new ThreadStart(tlog));
+            tlog_thread.Start();
+        }
+
+        public void stop_tlog()
+        {
+            tlog_active = false;
+            if (tlog_thread.IsAlive)
+                tlog_thread.Join();
+        }
+
+
 
         private Thread read_thread;
         public bool IsOpen = false;
@@ -109,7 +190,6 @@ namespace AlceOSD
 
 
 
-
         public void Open()
         {
             if (!IsOpen)
@@ -130,6 +210,7 @@ namespace AlceOSD
             {
                 if (mode == COMM_MODE.Mavlink)
                 {
+                    stop_tlog();
                     byte[] dummy = new byte[1] { (byte) '\n' };
                     mavlink_send(dummy, true);
                 }
@@ -170,6 +251,7 @@ namespace AlceOSD
         public bool DtrEnable { set { serial_port.DtrEnable = value; } get { return serial_port.DtrEnable; } }
         public bool RtsEnable { set { serial_port.RtsEnable = value; } get { return serial_port.RtsEnable; } }
         public int ReadTimeout { set { serial_port.ReadTimeout = value; } get { return serial_port.ReadTimeout; } }
+        public int WriteTimeout { set { serial_port.WriteTimeout = value; } get { return serial_port.WriteTimeout; } }
         public string PortName { set { serial_port.PortName = value; } get { return serial_port.PortName; } }
 
 
@@ -256,21 +338,32 @@ namespace AlceOSD
         {
             MavlinkPacket p = new MavlinkPacket();
             Msg_serial_control sc = new Msg_serial_control();
-            sc.data = new byte[buf.Length]; // System.Text.Encoding.UTF8.GetBytes(cmd);
 
-            Array.Copy(buf, sc.data, buf.Length);
-            sc.count = (byte) buf.Length;
-            sc.device = 9;
-            sc.baudrate = (uint) (close ? 0 : 1);
+            int left = buf.Length;
+            int idx = 0;
 
-            //Console.WriteLine("mavlink_send() len={0} buf='{1}'",
-            //    sc.count, System.Text.Encoding.UTF8.GetString(buf));
+            do
+            {
+                int c = Math.Min(70, left);
+                sc.data = new byte[c]; // System.Text.Encoding.UTF8.GetBytes(cmd);
+                Array.Copy(buf, idx, sc.data, 0, c);
+                sc.count = (byte) c;
+                sc.device = 9;
+                sc.baudrate = (uint)(close ? 0 : 1);
 
-            p.Message = sc;
-            p.SystemId = 201;
-            p.ComponentId = 0;
-            byte[] packet = mav.Send(p);
-            serial_port.Write(packet, 0, packet.Length);
+                //Console.WriteLine("mavlink_send() len={0} buf='{1}'",
+                //    sc.count, System.Text.Encoding.UTF8.GetString(buf));
+
+                p.Message = sc;
+                p.SystemId = 201;
+                p.ComponentId = 0;
+                byte[] packet = mav.Send(p);
+                serial_port.Write(packet, 0, packet.Length);
+
+                idx += c;
+                left -= c;
+
+            } while (left > 0);
         }
 
 
@@ -304,7 +397,7 @@ namespace AlceOSD
         public void WriteLine(string buf)
         {
             if (mode == COMM_MODE.Serial)
-                serial_port.WriteLine(buf);
+                serial_port.Write(buf + "\n");
             else
             {
                 byte[] b = System.Text.Encoding.UTF8.GetBytes(buf + "\n");

@@ -101,8 +101,11 @@ namespace AlceOSD_updater
             if (!open_comport())
                 return;
             if (!reset_board(true, false))
+            {
+                MessageBox.Show("Error waiting for bootloader", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
-                
+            }
+
 
             bool ready = false;
             string ans = "";
@@ -250,6 +253,7 @@ namespace AlceOSD_updater
             comPort.DtrEnable = false;
             comPort.RtsEnable = false;
             comPort.ReadTimeout = 2000;
+            comPort.WriteTimeout = 2000;
         }
         private bool open_comport()
         {
@@ -330,6 +334,7 @@ namespace AlceOSD_updater
                 ready = true;
             }
 
+            bool flash_only = false;
             /* enter setup (fw0v9+ & bootloader0v5+) */
             if (!ready)
             {
@@ -339,12 +344,15 @@ namespace AlceOSD_updater
                     comPort.BaudRate = b;
                     comPort.DiscardInBuffer();
                     comPort.Write("I want to enter AlceOSD setup");
-                    System.Threading.Thread.Sleep(100);
+                    System.Threading.Thread.Sleep(500);
                     string ans = comPort.ReadExisting();
                     if (ans.Contains("AlceOSD setup starting"))
                     {
                         comPort.Write("\n");
-                        System.Threading.Thread.Sleep(1000);
+                        System.Threading.Thread.Sleep(500);
+                        ans = comPort.ReadExisting();
+                        if (ans.Contains("Exit config"))
+                            flash_only = true;
                         comPort.DiscardInBuffer();
                         ready = true;
                         Console.WriteLine("shell ready");
@@ -353,9 +361,25 @@ namespace AlceOSD_updater
                 }
             }
 
-
             if (ready || mavlink)
             {
+                if (flash_only)
+                {
+                    if (flash)
+                    {
+                        comPort.Write("#");
+                        comPort.BaudRate = 115200;
+                        System.Threading.Thread.Sleep(100);
+                        comPort.Write("alceosd");
+                        return true;
+                    }
+                    else
+                    {
+                        MessageBox.Show("FW is older than 0v11. Only flashing is possible.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                }
+
                 Console.WriteLine("trying to get version");
                 if (!send_cmd("version"))
                     return false;
@@ -375,7 +399,8 @@ namespace AlceOSD_updater
 
                 if (flash)
                 {
-                    send_cmd("reboot");
+                    Console.WriteLine("starting bootloader");
+                    comPort.WriteLine("reboot");
                     comPort.BaudRate = 115200;
                     System.Threading.Thread.Sleep(100);
                     comPort.Write("alceosd");
@@ -402,24 +427,10 @@ namespace AlceOSD_updater
                     comPort.Write("alceosd");
                     return true;
                 }
-
-                /* enter config */
-                /* bypass bootloader */
-                comPort.Write("!");
-                System.Threading.Thread.Sleep(500);
-                comPort.Write("!!!!!!!!!");
-                int timeout = 0;
-                while (comPort.BytesToRead < 1)
+                else
                 {
-                    System.Threading.Thread.Sleep(10);
-                    if (++timeout > 100)
-                    {
-                        MessageBox.Show("Error waiting for config", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        comPort.Close();
-                        return false;
-                    }
+                    return false;
                 }
-
             }
 
             return true;
@@ -2903,7 +2914,11 @@ namespace AlceOSD_updater
             p.ComponentId = 0;
 
             byte[] packet = comPort.mav.Send(p);
-            comPort.mav_send(packet);
+            comPort.mav_packet_send(packet);
+
+
+            tb_tlog.Value = comPort.progress;
+
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -3319,6 +3334,42 @@ namespace AlceOSD_updater
         private void cb_units_SelectedIndexChanged(object sender, EventArgs e)
         {
             string cmd = "config units " + cb_units.SelectedIndex;
+        }
+
+        bool tlog_active = false;
+        private void bt_sendTlog_Click(object sender, EventArgs e)
+        {
+            if (tlog_active)
+            {
+                bt_sendTlog.Enabled = false;
+
+
+                comPort.stop_tlog();
+                bt_sendTlog.Text = "Send .tlog";
+                tlog_active = false;
+                bt_sendTlog.Enabled = true;
+            }
+            else
+            {
+                bt_sendTlog.Enabled = false;
+                DialogResult result = ofd_tlog.ShowDialog();
+                if ((result != DialogResult.Cancel) && (ofd_tlog.FileName != ""))
+                {
+                    Console.WriteLine("sending .tlog '{0}'", ofd_tlog.FileName);
+                    txt_log.AppendText("Sending telemtry log file: " + ofd_tlog.FileName + "\n");
+                    byte[] bytes = System.IO.File.ReadAllBytes(ofd_tlog.FileName);
+                    comPort.send_tlog(bytes);
+                    bt_sendTlog.Text = "Abort .tlog";
+                    tlog_active = true;
+                }
+                bt_sendTlog.Enabled = true;
+            }
+
+        }
+
+        private void tb_tlog_Scroll(object sender, EventArgs e)
+        {
+            comPort.seek = tb_tlog.Value;
         }
 
         private void timer_submit_Tick(object sender, EventArgs e)
