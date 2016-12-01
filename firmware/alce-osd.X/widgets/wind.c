@@ -40,6 +40,8 @@ static void render_timer(struct timer *t, void *d)
     priv->direction = wind->direction;
     priv->speed = wind->speed;
     priv->speed_z = wind->speed_z;
+    
+    schedule_widget(w);
 }
 
 static int open(struct widget *w)
