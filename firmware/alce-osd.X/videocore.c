@@ -358,36 +358,41 @@ static void video_init_sram(void)
 #endif
 }
 
-#define VIDEO_DAC_BUF_SIZE  (3*2*4)
-static void video_read_dac(unsigned char *dac_status)
+#define I2C_STATE_START   0
+#define I2C_STATE_TRMT    1
+#define I2C_STATE_ACK     2
+#define I2C_STATE_STOP    3
+int i2c_wait(u8 state)
 {
-    //unsigned char dac_status[VIDEO_DAC_BUF_SIZE];
-    unsigned char i;
+    u8 finished = 0;
+    u16 timeout = 20;
+    do {
+        switch (state) {
+            case I2C_STATE_START:
+                if (I2C1CONbits.SEN == 0)
+                    finished = 1;
+                break;
+            case I2C_STATE_TRMT:
+                if (I2C1STATbits.TRSTAT == 0)
+                    finished = 1;
+                break;
+            case I2C_STATE_ACK:
+                if (I2C1CONbits.ACKEN == 0)
+                    finished = 1;
+                break;
+            case I2C_STATE_STOP:
+                if (I2C1CONbits.PEN == 0)
+                    finished = 1;
+                break;
+            default:
+                break;
+        }
+        if (finished)
+            break;
+        mdelay(10);
+    } while (--timeout > 0);
     
-    I2C1CONbits.SEN = 1;
-    while (I2C1CONbits.SEN == 1);
-    
-    I2C1TRN = 0xc1;
-    while (I2C1STATbits.TRSTAT == 1);
-
-    for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
-        I2C1CONbits.RCEN = 1;
-        while (I2C1CONbits.RCEN == 1);
-        
-        dac_status[i] = I2C1RCV;
-        
-        I2C1CONbits.ACKEN = 1;
-        while (I2C1CONbits.ACKEN == 1);
-    }
-
-    I2C1CONbits.PEN = 1;
-    while (I2C1CONbits.PEN == 1);
-    
-    /*for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
-        shell_printf("0x%02x ", dac_status[i]);
-        if (((i+1) % 3) == 0)
-            shell_printf("\n");
-    }*/
+    return (timeout == 0);
 }
 
 static void video_init_dac(void)
@@ -404,6 +409,49 @@ static void video_init_dac(void)
     I2C1BRG = 0x1ff;
 }
 
+#define VIDEO_DAC_BUF_SIZE  (3*2*4)
+static void video_read_dac(unsigned char *dac_status)
+{
+    //unsigned char dac_status[VIDEO_DAC_BUF_SIZE];
+    unsigned char i;
+    
+    I2C1CONbits.SEN = 1;
+    if (i2c_wait(I2C_STATE_START))
+        goto err_timeout;
+    
+    while (I2C1CONbits.SEN == 1);
+    
+    I2C1TRN = 0xc1;
+    if (i2c_wait(I2C_STATE_TRMT))
+        goto err_timeout;
+
+    for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
+        I2C1CONbits.RCEN = 1;
+        if (i2c_wait(I2C_STATE_TRMT))
+            goto err_timeout;
+        
+        dac_status[i] = I2C1RCV;
+        
+        I2C1CONbits.ACKEN = 1;
+        if (i2c_wait(I2C_STATE_ACK))
+            goto err_timeout;
+    }
+
+    I2C1CONbits.PEN = 1;
+    if (i2c_wait(I2C_STATE_STOP))
+        goto err_timeout;
+    
+    /*for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
+        shell_printf("0x%02x ", dac_status[i]);
+        if (((i+1) % 3) == 0)
+            shell_printf("\n");
+    }*/
+    return;
+    
+err_timeout:
+    shell_printf("video_update_dac() err: i2c timeout\n");
+    return;
+}
 
 static void video_update_dac(struct video_config *cfg)
 {
@@ -416,23 +464,33 @@ static void video_update_dac(struct video_config *cfg)
     dac_values[3] = 0;
 
     I2C1CONbits.SEN = 1;
-    while (I2C1CONbits.SEN == 1);
+    if (i2c_wait(I2C_STATE_START))
+        goto err_timeout;
     
     I2C1TRN = 0xc0;
-    while (I2C1STATbits.TRSTAT == 1);
+    if (i2c_wait(I2C_STATE_TRMT))
+        goto err_timeout;
 
     for (i = 0; i < 4; i++) {
         I2C1TRN = (dac_values[i] >> 8) & 0x0f;
-        while (I2C1STATbits.TRSTAT == 1);
+        if (i2c_wait(I2C_STATE_TRMT))
+            goto err_timeout;
     
         I2C1TRN = dac_values[i] & 0xff;
-        while (I2C1STATbits.TRSTAT == 1);
+        if (i2c_wait(I2C_STATE_TRMT))
+            goto err_timeout;
 
     }
     I2C1CONbits.PEN = 1;
-    while (I2C1CONbits.PEN == 1);
-}
+    if (i2c_wait(I2C_STATE_STOP))
+        goto err_timeout;
 
+    return;
+    
+err_timeout:
+    shell_printf("video_update_dac() err: i2c timeout\n");
+    return;
+}
 
 static void video_init_hw(void)
 {
@@ -993,7 +1051,7 @@ static void video_switch_task(struct timer *t, void *d)
             if (hb->type != MAV_TYPE_FIXED_WING)
                 val += 100;
 
-            /* don't switch tab in case failsafe triggers */
+            /* don't switch input in case failsafe triggers */
             for (i = 0; i < sizeof(mode_ignore_list); i++)
                 if (mode_ignore_list[i] == (unsigned char) val)
                     return;
