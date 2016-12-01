@@ -1452,6 +1452,11 @@ namespace AlceOSD_updater
                     break;
             }
 
+            if (i == 10)
+            {
+                MessageBox.Show("Maximum number of " + wid + " widgets reached.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
             string name_uid = wid + i.ToString();
 
@@ -2336,29 +2341,42 @@ namespace AlceOSD_updater
 
         int his_idx = 0;
         List<string> cmd_history = new List<string> { };
+
+
+        void disconnect()
+        {
+            bt_widSaveCfg.Enabled = false;
+            bt_sendTlog.Enabled = false;
+            bt_conn.Enabled = false;
+            timer_heartbeat.Enabled = false;
+
+            timer_com.Enabled = false;
+            shell_active = false;
+            init_done = false;
+            comPort.Close();
+
+            bt_conn.Text = "Connect";
+            readConfigToolStripMenuItem.Enabled = true;
+            writeConfigToolStripMenuItem.Enabled = true;
+            flashFirmwareToolStripMenuItem.Enabled = true;
+            cbx_mavmode.Enabled = true;
+            bt_conn.Enabled = true;
+        }
+
+
+
+
+
         private void bt_conn_Click(object sender, EventArgs e)
         {
             if (shell_active)
             {
-                bt_sendTlog.Enabled = false;
-                bt_conn.Enabled = false;
-                timer_heartbeat.Enabled = false;
-
-                timer_com.Enabled = false;
-                shell_active = false;
-                init_done = false;
-                comPort.Close();
-
-                bt_conn.Text = "Connect";
-                readConfigToolStripMenuItem.Enabled = true;
-                writeConfigToolStripMenuItem.Enabled = true;
-                flashFirmwareToolStripMenuItem.Enabled = true;
-                cbx_mavmode.Enabled = true;
-                bt_conn.Enabled = true;
+                disconnect();
             }
             else
             {
                 bt_conn.Enabled = false;
+                cbx_mavmode.Enabled = false;
                 setup_comport();
                 if (!open_comport())
                 {
@@ -2389,7 +2407,7 @@ namespace AlceOSD_updater
                 readConfigToolStripMenuItem.Enabled = false;
                 writeConfigToolStripMenuItem.Enabled = false;
                 flashFirmwareToolStripMenuItem.Enabled = false;
-                cbx_mavmode.Enabled = false;
+                bt_widSaveCfg.Enabled = true;
 
                 if (cbx_mavmode.Checked)
                 {
@@ -2919,8 +2937,11 @@ namespace AlceOSD_updater
             p.ComponentId = 0;
 
             byte[] packet = comPort.mav.Send(p);
-            comPort.mav_packet_send(packet);
-
+            if (comPort.mav_packet_send(packet))
+            {
+                MessageBox.Show("Error writing to COM port!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                disconnect();
+            }
 
             tb_tlog.Value = comPort.progress;
 
@@ -3375,6 +3396,36 @@ namespace AlceOSD_updater
         private void tb_tlog_Scroll(object sender, EventArgs e)
         {
             comPort.seek = tb_tlog.Value;
+        }
+
+
+        void refresh_selected_widget()
+        {
+            if (lb_widgets.SelectedIndex == -1)
+                return;
+            string name_uid = lb_widgets.Text;
+            Canvas c = get_widget_canvas(name_uid);
+            if (c.width > 0)
+            {
+                c.shown = true;
+                ca[name_uid] = c;
+            }
+            pb_osd.Invalidate();
+        }
+
+        private void pb_osd_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            refresh_selected_widget();
+        }
+
+        private void lb_widgets_DoubleClick(object sender, EventArgs e)
+        {
+            refresh_selected_widget();
+        }
+
+        private void bt_widSaveCfg_Click(object sender, EventArgs e)
+        {
+            send_cmd("config save");
         }
 
         private void timer_submit_Tick(object sender, EventArgs e)

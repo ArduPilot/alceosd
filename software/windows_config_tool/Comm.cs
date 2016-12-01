@@ -54,7 +54,7 @@ namespace AlceOSD
 
         private void Mav_PacketReceived(object sender, MavlinkPacket e)
         {
-            Console.WriteLine("-- incomming packet type {0} --", e.Message.GetType());
+            //Console.WriteLine("-- incomming packet type {0} --", e.Message.GetType());
             MavlinkMessage m = e.Message;
 
             if (e.Message.GetType() == typeof(MavLink.Msg_heartbeat))
@@ -76,15 +76,23 @@ namespace AlceOSD
             }
         }
 
-        public void mav_packet_send(byte[] packet)
+        public bool mav_packet_send(byte[] packet)
         {
             //Console.Write("mav_packet_send() [{0}] ", packet.Length);
             //packet.ToList().ForEach(_b => Console.Write(" {0:X}", _b));
             //Console.WriteLine("");
-
+            bool ret = false;
             m.WaitOne();
-            serial_port.Write(packet, 0, packet.Length);
+            try
+            {
+                serial_port.Write(packet, 0, packet.Length);
+            }
+            catch
+            {
+                ret = true;
+            }            
             m.ReleaseMutex();
+            return ret;
         }
 
 
@@ -132,7 +140,11 @@ namespace AlceOSD
         {
             //Console.WriteLine("will send packet from [{0};{1}] type {2}", e.SystemId, e.ComponentId, e.Message);
             byte[] b = tlog_mav.Send(e);
-            mav_packet_send(b);
+            if (mav_packet_send(b))
+            {
+                tlog_active = false;
+            }
+
             System.Threading.Thread.Sleep(10);
             //Console.WriteLine("sent .tlog packet");
         }
@@ -174,7 +186,19 @@ namespace AlceOSD
         {
             while (run)
             {
-                if (serial_port.BytesToRead > 0)
+                int avail;
+                try
+                {
+                    avail = serial_port.BytesToRead;
+                }
+                catch
+                {
+                    avail = 0;
+                }
+                
+
+
+                if ( avail > 0)
                 {
                     int len = serial_port.BytesToRead;
                     byte[] b = new byte[len];
@@ -329,8 +353,8 @@ namespace AlceOSD
                     throw new Exception("Timeout waiting for chars");
                 }
             } while (i == 0);
-            char c = (char) buffer[0];
             m.WaitOne();
+            char c = (char)buffer[0];
             byte[] new_buf = new byte[buffer.Length - 1];
             Array.Copy(buffer, new_buf, new_buf.Length);
             buffer = new_buf;
