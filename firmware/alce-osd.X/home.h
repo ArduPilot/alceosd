@@ -24,6 +24,8 @@ enum {
     HOME_WAIT,
     HOME_GOT,
     HOME_LOCKED,
+    HOME_RESET,
+    HOME_FORCE,
 };
 
 struct home_data {
@@ -36,6 +38,7 @@ struct home_data {
 
 void init_home(void);
 struct home_data* get_home_data(void);
+void shell_cmd_home(char *args, void *data);
 
 #endif	/* HOME_H */
 

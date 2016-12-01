@@ -48,6 +48,7 @@ static void shell_cmd_reboot(char *args, void *data)
 static const struct shell_cmdmap_s root_cmdmap[] = {
     {"clock", shell_cmd_clock, "Clock module", SHELL_CMD_SUBCMD},
     {"config", shell_cmd_cfg, "Config module", SHELL_CMD_SUBCMD},
+    {"home", shell_cmd_home, "Home module", SHELL_CMD_SUBCMD},
     {"mavdata", shell_cmd_mavdata, "Mavlink data storage module", SHELL_CMD_SUBCMD},
     {"mavlink", shell_cmd_mavlink, "Mavlink module", SHELL_CMD_SUBCMD},
     {"process", shell_cmd_process, "Process module", SHELL_CMD_SUBCMD},

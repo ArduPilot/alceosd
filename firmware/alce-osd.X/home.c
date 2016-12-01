@@ -53,7 +53,6 @@ static void calc_home(struct timer *t, void *d)
             
             break;
         case HOME_WAIT:
-            
             if (mavdata_age(MAVLINK_MSG_ID_MISSION_ITEM) > 2000) {
                 /* when UAV is armed, home is WP0 */
                 mavlink_msg_mission_request_pack(config.mav.osd_sysid, MAV_COMP_ID_OSD, &this_msg,
@@ -66,7 +65,6 @@ static void calc_home(struct timer *t, void *d)
                 priv.home_altitude = (unsigned int) mi->z;
                 home.lock = HOME_GOT;
             }
-
             break;
         case HOME_GOT:
             home.lock = HOME_LOCKED;
@@ -81,7 +79,6 @@ static void calc_home(struct timer *t, void *d)
             priv.altitude = (unsigned int) (gpi->alt / 1000);
             priv.heading = (int) (gpi->hdg / 100);
 
-
             home.uav_bearing = (int) get_bearing(&priv.home_coord, &priv.uav_coord);
 
             home.direction = home.uav_bearing + 180;
@@ -90,15 +87,87 @@ static void calc_home(struct timer *t, void *d)
                 home.direction += 360;
 
             home.distance = earth_distance(&priv.home_coord, &priv.uav_coord);
-            home.altitude = priv.altitude - priv.home_altitude;            
+            home.altitude = priv.altitude - priv.home_altitude;
+
+            if ((hb->base_mode & MAV_MODE_FLAG_SAFETY_ARMED) == 0)
+                home.lock = HOME_RESET;
+            break;
+        case HOME_RESET:
+            home.lock = HOME_NONE;
+            set_timer_period(t, 1000);
             break;
         }
+        case HOME_FORCE:
+            mavlink_global_position_int_t *gpi = mavdata_get(MAVLINK_MSG_ID_GLOBAL_POSITION_INT);
+            priv.home_coord.lat = DEG2RAD(gpi->lat / 10000000.0);
+            priv.home_coord.lon = DEG2RAD(gpi->lon / 10000000.0);
+            priv.home_altitude = (unsigned int) (gpi->alt / 1000);
+            home.lock = HOME_GOT;
+            break;
     }
 }
-
 
 void init_home(void)
 {
     home.lock = HOME_NONE;
     add_timer(TIMER_ALWAYS, 1000, calc_home, NULL);
+}
+
+static void shell_cmd_stats(char *args, void *data)
+{
+    switch (home.lock) {
+        default:
+        case HOME_NONE:
+            shell_printf("No home; UAV not armed\n");
+            break;
+        case HOME_WAIT:
+            shell_printf("Requesting WP0 (home)\n");
+            break;
+        case HOME_LOCKED:
+            shell_printf("Home GPS coords: lat=%.6f lon=%.6f\n", priv.home_coord.lat, priv.home_coord.lon);
+            shell_printf("Home M.S.L. altitude: %um\n\n", priv.home_altitude);
+            shell_printf("Relative altitude to home: %um\n", home.altitude);
+            shell_printf("Home direction: %d\n", home.direction);
+            shell_printf("Home distance: %.2fm\n", home.distance);
+            shell_printf("Home distance: %.2fm\n", home.distance);
+            break;
+    }
+}
+
+static void shell_cmd_lock(char *args, void *data)
+{
+    int v;
+    
+    if (strlen(args) > 0) {
+        v = atoi(args);
+        switch (v) {
+            default:
+            case 0:
+                home.lock = HOME_RESET;
+                break;
+            case 1:
+                home.lock = HOME_FORCE;
+                break;
+            case 2:
+                home.lock = HOME_WAIT;
+                break;
+        }
+    } else {
+        shell_printf("syntax: home lock <value>\n");
+        shell_printf("  Valid values:\n");
+        shell_printf("     0     restart home locking\n");
+        shell_printf("     1     force home to current GPS data\n");
+        shell_printf("     2     bypass arming\n");
+    }
+}
+
+static const struct shell_cmdmap_s home_cmdmap[] = {
+    {"stats", shell_cmd_stats, "Home stats", SHELL_CMD_SIMPLE},
+    {"lock", shell_cmd_lock, "Force home lock", SHELL_CMD_SIMPLE},
+    {"", NULL, ""},
+};
+
+void shell_cmd_home(char *args, void *data)
+{
+    shell_exec(args, home_cmdmap, data);
 }
