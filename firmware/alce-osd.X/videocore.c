@@ -1306,6 +1306,8 @@ void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
         
         if (std > 0) {
             /* pull downs - input video */
+            _LATA2 = 0;
+            _LATA3 = 0;
             _CNPUA2 = 0;
             _CNPDA2 = 1;
             _CNPUA3 = 0;
