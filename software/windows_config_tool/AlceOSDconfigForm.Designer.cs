@@ -2673,6 +2673,7 @@
             // 
             // bt_sendTlog
             // 
+            this.bt_sendTlog.Enabled = false;
             this.bt_sendTlog.Location = new System.Drawing.Point(950, 462);
             this.bt_sendTlog.Name = "bt_sendTlog";
             this.bt_sendTlog.Size = new System.Drawing.Size(120, 23);

@@ -108,6 +108,7 @@ namespace AlceOSD
                 if (seek != -1)
                 {
                     idx = (seek * total) / 100;
+                    left = total - idx;
                     seek = -1;
                 }
 
@@ -154,9 +155,12 @@ namespace AlceOSD
 
         public void stop_tlog()
         {
-            tlog_active = false;
-            if (tlog_thread.IsAlive)
-                tlog_thread.Join();
+            if (tlog_active)
+            {
+                tlog_active = false;
+                if (tlog_thread.IsAlive)
+                    tlog_thread.Join();
+            }
         }
 
 

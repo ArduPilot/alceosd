@@ -1494,7 +1494,8 @@ namespace AlceOSD_updater
                 if (shell_active)
                 {
                     int id = get_widget_id(name_uid);
-                    send_cmd("widgets rm " + id);
+                    int uid = get_widget_uid(name_uid);
+                    send_cmd("widgets rm " + id + "+" + uid);
                     System.Threading.Thread.Sleep(100);
 
                 }
@@ -1518,18 +1519,18 @@ namespace AlceOSD_updater
 
         private int pos2canvas(string name, Canvas c, char dir)
         {
+            if (!widgets.ContainsKey(name))
+                return 0;
             Dictionary<string, double> w = widgets[name];
             int pos = (int) ((dir == 'H') ? w["X"] : w["Y"]);
             int div = (int) w[dir + "JUST"];
             int osd_size = (dir == 'H') ? xsize : ysize;
-            //int wid_size = (dir == 'H') ? ca[name].width * 4 : ca[name].height;
             int wid_size = (dir == 'H') ? c.width * 4 : c.height;
-            int ret = 0;
 
             if (div > 0)
-                ret = (osd_size - wid_size) / div;
+                pos += (osd_size - wid_size) / div;
 
-            return ret + pos;
+            return pos;
         }
 
 
@@ -2339,6 +2340,7 @@ namespace AlceOSD_updater
         {
             if (shell_active)
             {
+                bt_sendTlog.Enabled = false;
                 bt_conn.Enabled = false;
                 timer_heartbeat.Enabled = false;
 
@@ -2390,7 +2392,10 @@ namespace AlceOSD_updater
                 cbx_mavmode.Enabled = false;
 
                 if (cbx_mavmode.Checked)
+                {
                     timer_heartbeat.Enabled = true;
+                    bt_sendTlog.Enabled = true;
+                }
 
                 bt_conn.Enabled = true;
             }
