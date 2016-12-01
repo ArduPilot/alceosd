@@ -364,4 +364,7 @@ void shell_init(void)
     shell_uart_client.read = shell_parser;
     shell_uart_client.id = UART_CLIENT_SHELL;
     uart_add_client(&shell_uart_client);
+    
+    /* early shell_printf */
+    uart_set_config_clients();
 }

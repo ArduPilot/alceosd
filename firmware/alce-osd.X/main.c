@@ -294,6 +294,10 @@ void hw_init(void)
         _CNPUB6 = 1;
         _CNPUA4 = 1;
     }
+
+    /* enable all interrupts */
+    _IPL = 0;
+    _IPL3 = 1;
 }
 
 void clear_wdt(struct timer *t, void *d)
@@ -301,7 +305,8 @@ void clear_wdt(struct timer *t, void *d)
     ClrWdt();
 }
 
-int main(void) {
+int main(void)
+{
     /* generic hw init */
     hw_init();
     
@@ -367,14 +372,11 @@ int main(void) {
     /* link serial ports to processes */
     uart_set_config_clients();
 
-    /* enable all interrupts */
-    _IPL = 0;
-    _IPL3 = 1;
     /* add watchdog timer */
     add_timer(TIMER_ALWAYS, 60000, clear_wdt, NULL);
 
-    console_printf("Processes running...\n");
     /* main loop */
+    console_printf("Processes running...\n");
     process_run();
 
     return 0;

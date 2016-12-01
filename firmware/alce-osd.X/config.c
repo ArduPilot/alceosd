@@ -176,11 +176,10 @@ static void load_config(void)
     unsigned char buf[3];
     int ipl;
 
-    SET_AND_SAVE_CPU_IPL(ipl, 7);
-
     /* find first valid config */
     addr = CONFIG_ADDR_START;
 
+    SET_AND_SAVE_CPU_IPL(ipl, 7);
     while (addr < CONFIG_ADDR_END) {
         read_flash(addr, 3, buf);
         status = ((unsigned long) buf[0]) |
@@ -192,12 +191,12 @@ static void load_config(void)
 
         addr += CONFIG_PAGE_SIZE;
     }
-
     if (addr < CONFIG_ADDR_END) {
         //shell_printf("valid config found at %4x\n", (unsigned int) addr);
         valid_config_addr = addr;
         read_flash(addr + 4, sizeof(struct alceosd_config), (unsigned char *) &config);
     }
+    RESTORE_CPU_IPL(ipl);
 
     /* setup video */
     video_apply_config(VIDEO_ACTIVE_CONFIG);
@@ -205,8 +204,6 @@ static void load_config(void)
     /* setup serial ports */
     uart_set_config_pins();
     uart_set_config_baudrates();
-
-    RESTORE_CPU_IPL(ipl);
 }
 
 
