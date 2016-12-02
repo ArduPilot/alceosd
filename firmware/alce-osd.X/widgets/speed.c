@@ -41,10 +41,10 @@ static void render_timer(struct timer *t, void *d)
     switch (w->cfg->props.source) {
         case 0:
         default:
-            priv->speed = vfr_hud->airspeed * 3600 / 1000.0;
+            priv->speed = vfr_hud->airspeed;
             break;
         case 1:
-            priv->speed = vfr_hud->groundspeed * 3600 / 1000.0;
+            priv->speed = vfr_hud->groundspeed;
             break;
     }
 
