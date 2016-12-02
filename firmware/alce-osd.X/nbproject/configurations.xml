@@ -58,6 +58,7 @@
         <itemPath>widgets/messages.c</itemPath>
         <itemPath>widgets/sonar.c</itemPath>
         <itemPath>widgets/video_profile.c</itemPath>
+        <itemPath>widgets/temperature.c</itemPath>
       </logicalFolder>
       <itemPath>uart.c</itemPath>
       <itemPath>main.c</itemPath>

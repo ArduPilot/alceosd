@@ -53,6 +53,7 @@ namespace AlceOSD_updater
             {"RSSI", "RSSI"},
             {"Sonar", "SONAR"},
             {"Speed", "SPEED"},
+            {"Temperature", "TEMPER"},
             {"Throttle", "THROTTL"},
             {"Variometer", "VARIO"},
             {"Video levels", "VIDLVL"},
@@ -1292,6 +1293,9 @@ namespace AlceOSD_updater
                     cb_wunits.Items.Add("m/s");
                     cb_wunits.Items.Add("f/s");
                     cb_wunits.Items.Add("kn");
+                    break;
+                case "TEMPER":
+                    lbl_wname.Text = "Temperature";
                     break;
                 case "THROTTL":
                     lbl_wname.Text = "Throttle bar";
@@ -2939,8 +2943,9 @@ namespace AlceOSD_updater
             byte[] packet = comPort.mav.Send(p);
             if (comPort.mav_packet_send(packet))
             {
-                MessageBox.Show("Error writing to COM port!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                timer_heartbeat.Enabled = false;
                 disconnect();
+                MessageBox.Show("Error writing to COM port! Disconnecting...", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
             tb_tlog.Value = comPort.progress;
