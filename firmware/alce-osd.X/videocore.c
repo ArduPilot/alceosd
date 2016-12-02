@@ -1962,7 +1962,7 @@ static void shell_cmd_test(char *args, void *data)
 #define SHELL_CMD_CONFIGSW_ARGS 6
 static void shell_cmd_swconfig(char *args, void *data)
 {
-    struct ch_switch *cfg = &config.video_sw;
+    struct ch_switch *swcfg = &config.video_sw;
     struct shell_argval argval[SHELL_CMD_CONFIGSW_ARGS+1], *p;
     unsigned char t, i = 0;
     unsigned int w;
@@ -1970,43 +1970,43 @@ static void shell_cmd_swconfig(char *args, void *data)
     t = shell_arg_parser(args, argval, SHELL_CMD_CONFIGSW_ARGS);
     if (t < 1) {
         shell_printf("Video switch:\n");
-        shell_printf(" Mode:    %d (0:ch%; 1:flight mode; 2:toggle)\n", cfg->mode);
-        shell_printf(" Ch:   CH%d\n", cfg->ch + 1);
-        shell_printf(" Min:  %d\n", cfg->ch_min);
-        shell_printf(" Max:  %d\n", cfg->ch_max);
-        shell_printf(" Time: %d00ms\n", cfg->time);
+        shell_printf(" Mode:    %d (0:ch%; 1:flight mode; 2:toggle)\n", swcfg->mode);
+        shell_printf(" Ch:   CH%d\n", swcfg->ch + 1);
+        shell_printf(" Min:  %d\n", swcfg->ch_min);
+        shell_printf(" Max:  %d\n", swcfg->ch_max);
+        shell_printf(" Time: %d00ms\n", swcfg->time);
         shell_printf("\nopt: -m <mode> -c <ch> -l <min> -h <max> -t <time> -i <input>\n");
-        shell_printf("    -i <input>      Change video input: 0 or 1\n", cfg->time);
+        shell_printf("    -i <input>      Change video input: 0 or 1\n", swcfg->time);
     } else {
         p = shell_get_argval(argval, 'm');
         if (p != NULL) {
             i = atoi(p->val);
             if (i < SW_MODE_END)
-                cfg->mode = i;
+                swcfg->mode = i;
         }
         p = shell_get_argval(argval, 'c');
         if (p != NULL) {
             i = atoi(p->val);
             i = TRIM(i, 1, 18);
-            cfg->ch = i - 1;
+            swcfg->ch = i - 1;
         }
         p = shell_get_argval(argval, 'l');
         if (p != NULL) {
             w = atoi(p->val);
             w = TRIM(w, 900, 2100);
-            cfg->ch_min = w;
+            swcfg->ch_min = w;
         }
         p = shell_get_argval(argval, 'h');
         if (p != NULL) {
             w = atoi(p->val);
             w = TRIM(w, 900, 2100);
-            cfg->ch_max = w;
+            swcfg->ch_max = w;
         }
         p = shell_get_argval(argval, 't');
         if (p != NULL) {
             w = atoi(p->val);
             w = w / 100;
-            cfg->time = w;
+            swcfg->time = w;
         }
         p = shell_get_argval(argval, 'i');
         if (p != NULL) {
