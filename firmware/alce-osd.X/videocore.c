@@ -2010,7 +2010,7 @@ static void shell_cmd_swconfig(char *args, void *data)
         }
         p = shell_get_argval(argval, 'i');
         if (p != NULL) {
-            w = atoi(argval[i].val);
+            w = atoi(p->val);
             if (w)
                 cfg->mode |= VIDEO_MODE_INPUT_MASK;
             else
