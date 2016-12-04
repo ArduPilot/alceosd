@@ -24,19 +24,27 @@ static struct param_def *all_params[MAX_CONFIG_PARAMS];
 static unsigned int nr_params = 0;
 static struct param_dynamic_def *dynamic_params;
 
-static float cast2float(struct param_def *p)
+const char *mavdata_type_name[] = {
+    "CHAR", "UINT8_T", "INT8_T",
+    "UINT16_T", "INT16_T",
+    "UINT32_T", "INT32_T",
+    "UINT64_T", "INT64_T",
+    "FLOAT", "DOUBLE"
+};
+
+float cast2float(void *value, u8 type)
 {
-    switch (p->type) {
+    switch (type) {
         case MAV_PARAM_TYPE_UINT8:
-            return (float) *((unsigned char*) (p->value));
+            return (float) *((unsigned char*) (value));
         case MAV_PARAM_TYPE_INT8:
-            return (float) *((char*) (p->value));
+            return (float) *((char*) (value));
         case MAV_PARAM_TYPE_UINT16:
-            return (float) *((unsigned int*) (p->value));
+            return (float) *((unsigned int*) (value));
         case MAV_PARAM_TYPE_INT16:
-            return (float) *((int*) (p->value));
+            return (float) *((int*) (value));
         case MAV_PARAM_TYPE_REAL32:
-            return (float) *((float*) (p->value));
+            return (float) *((float*) (value));
         default:
             return 0;
     }
@@ -105,12 +113,12 @@ float params_get_value(int idx, char *name)
 
     if (idx < nr_params) {
         strcpy(name, all_params[idx]->name);
-        return cast2float(all_params[idx]);
+        return cast2float(all_params[idx]->value, all_params[idx]->type);
     } else {
         /* TODO: implement get dynamic param by name */
         dynamic_params->get(idx - nr_params, &p);
         strcpy(name, p.name);
-        return cast2float(&p);
+        return cast2float(p.value, p.type);
     }
 }
 

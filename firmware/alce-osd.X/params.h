@@ -52,12 +52,14 @@ struct param_dynamic_def {
 #define PARAM(n, t, p, c) { .name = n, .type = t, .value = (void *) p, .cbk = c }
 #define PARAM_END { .name = "" }
 
+extern const char *mavdata_type_name[];
 
 void params_add(const struct param_def *p);
 void params_set_dynamic_params(const struct param_dynamic_def *p);
 unsigned int params_get_total(void);
 float params_get_value(int idx, char *name);
 int params_set_value(char *name, float value, unsigned char trigger_cbk);
+float cast2float(void *value, u8 type);
 
 
 #endif	/* PARAMS_H */

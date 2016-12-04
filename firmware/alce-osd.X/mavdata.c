@@ -30,14 +30,6 @@
 
 extern struct alceosd_config config;
 
-const char *mavdata_type_name[] = {
-    "CHAR", "UINT8_T", "INT8_T",
-    "UINT16_T", "INT16_T",
-    "UINT32_T", "INT32_T",
-    "UINT64_T", "INT64_T",
-    "FLOAT", "DOUBLE"
-};
-
 struct mavdata_state m[256];
 
 MAVDATA_INFO(HEARTBEAT, heartbeat);
