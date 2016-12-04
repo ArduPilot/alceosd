@@ -1,7 +1,7 @@
 /*
  * Linker script for PIC33EP512GM604
  * (c) Copyright 2013 Microchip Technology, Inc
- * Part support version 1.25.A(30-Jun-2015)
+ * Part support version 1.30.A(22-Nov-2016)
  *
  * This software is developed by Microchip Technology Inc. and its
  * subsidiaries ("Microchip").
@@ -37,6 +37,16 @@
 OUTPUT_ARCH("33EP512GM604")
 CRT0_STARTUP(crt0_extendedep.o)
 CRT1_STARTUP(crt1_extendedep.o)
+#if __XC16_VERSION__ > 1027
+/*
+ * Define how to startup, by default we initialize
+ * everything as normal; change to crt_start_mode to
+ * preserve preserved data on a restart
+ *
+ * Or define your own __crt_start_mode fucntion
+ */
+CRT_STARTMODE(crt_start_mode_normal)
+#endif
 
 OPTIONAL(-lp33EP512GM604)
 OPTIONAL(-lfx)
@@ -49,7 +59,7 @@ MEMORY
   data  (a!xr)   : ORIGIN = 0x1000,        LENGTH = 0xC000
   reset          : ORIGIN = 0x0,           LENGTH = 0x4
   ivt            : ORIGIN = 0x4,           LENGTH = 0x1FC
-  program (xr)   : ORIGIN = 0x4000,        LENGTH = 0x507EC /* 0x517EC */
+  program (xr)   : ORIGIN = 0x4000,        LENGTH = 0x517EC
   FICD           : ORIGIN = 0x557F0,       LENGTH = 0x2
   FPOR           : ORIGIN = 0x557F2,       LENGTH = 0x2
   FWDT           : ORIGIN = 0x557F4,       LENGTH = 0x2
@@ -91,6 +101,7 @@ SECTIONS
   */
 
 
+#if !defined(__CORESIDENT) || defined(__DEFINE_RESET)
   /*
   ** Reset Instruction
   */
@@ -101,6 +112,7 @@ SECTIONS
         SHORT((ABSOLUTE(__reset) >> 16) & 0x7F);
         SHORT(0);
   } >reset
+#endif
 
 
   /*
@@ -261,6 +273,14 @@ SECTIONS
 ** ================= End of Section Map ================
 */
 
+#if __XC16_VERSION < 1026
+/*
+** These definitions are not required for XC16 versions
+** later than XC16 v1.25 as the linker defines the addresses.
+**
+** These definitons will cause a link error on a newer compiler
+**
+*/
 /*
 ** Section Map for Interrupt Vector Tables
 */
@@ -593,6 +613,7 @@ SECTIONS
          ABSOLUTE(__DefaultInterrupt));
   } >ivt
 } /* SECTIONS */
+#endif
 
 
 /*
@@ -1267,7 +1288,6 @@ _C1RXF0EID    = 0x442;
 _C1RXF0EIDbits = 0x442;
  C1TXD        = 0x442;
 _C1TXD        = 0x442;
-_C1TXDbits    = 0x442;
  C1RXF1SID    = 0x444;
 _C1RXF1SID    = 0x444;
 _C1RXF1SIDbits = 0x444;
@@ -1465,7 +1485,6 @@ _C2RXF0EID    = 0x542;
 _C2RXF0EIDbits = 0x542;
  C2TXD        = 0x542;
 _C2TXD        = 0x542;
-_C2TXDbits    = 0x542;
  C2RXF1SID    = 0x544;
 _C2RXF1SID    = 0x544;
 _C2RXF1SIDbits = 0x544;
