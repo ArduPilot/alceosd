@@ -342,6 +342,12 @@ int main(void)
     /* try to load config from flash */
     config_init();
 
+    /* init mavlink module */
+    mavlink_init();
+
+    /* init mavdata */
+    mavdata_init();
+
     /* init widget modules */
     widgets_init();
     
@@ -356,12 +362,6 @@ int main(void)
     
     /* init flight status tracking */
     init_flight_stats();
-
-    /* init mavlink module */
-    mavlink_init();
-
-    /* init mavdata */
-    mavdata_init();
     
     /* init uavtalk module */
     uavtalk_init();
