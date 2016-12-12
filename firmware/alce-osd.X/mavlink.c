@@ -18,6 +18,8 @@
 
 #include "alce-osd.h"
 
+#define MAX_TX_WAIT_TIME    100
+
 #define MAX_MAVLINK_CALLBACKS 20
 #define MAX_MAVLINK_ROUTES 10
 
@@ -293,12 +295,18 @@ static void mavlink_send_msg_to_channels(unsigned char ch_mask, mavlink_message_
     unsigned char i;
     unsigned int len;
     unsigned char buf[MAVLINK_MAX_PACKET_LEN];
+    u16 t;
 
     len = mavlink_msg_to_send_buffer(buf, msg);
     
     for (i = 0; i < MAVLINK_COMM_NUM_BUFFERS; i++) {
-        if (ch_mask & 1)
-            mavlink_uart_clients[i].write(buf, len);
+        if (ch_mask & 1) {
+            t = get_millis16();
+            while ((get_millis16() - t) < MAX_TX_WAIT_TIME) {
+                if (mavlink_uart_clients[i].write(buf, len) == 0)
+                    break;
+            }
+        }
         ch_mask = ch_mask >> 1;
         if (ch_mask == 0)
             break;
