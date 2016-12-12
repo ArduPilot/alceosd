@@ -91,7 +91,7 @@ struct uart_client {
 
     /* modules should use this function to send data */
     /* pointer is set by client request function */
-    void (*write)(unsigned char *buf, unsigned int len);
+    int (*write)(unsigned char *buf, unsigned int len);
 };
 
 void uart_init(void);

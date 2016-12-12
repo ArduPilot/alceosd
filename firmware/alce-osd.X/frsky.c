@@ -104,7 +104,11 @@ static void frsky_sport_send(struct frsky_sport_data *d)
 {
     unsigned char buf[FRSKY_SPORT_PACKET_SIZE * 2];
     unsigned int len = frsky_sport_msg_pack(buf, FRSKY_DATA_FRAME, d);
-    frsky_uart_client.write(buf, len);
+    int ret;
+    
+    do {
+        ret = frsky_uart_client.write(buf, len);
+    } while (ret != 0);
 }
 
 static unsigned int frsky_receive(struct uart_client *cli, unsigned char *buf, unsigned int len)

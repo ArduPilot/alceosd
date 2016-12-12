@@ -404,16 +404,17 @@ static inline void uart_discard(unsigned char port, unsigned int count)
     uart_fifo[port].rd &= UART_FIFO_MASK;
 }
 
-static void uart1_write(unsigned char *buf, unsigned int len)
+static int uart1_write(unsigned char *buf, unsigned int len)
 {
     __eds__ unsigned char *b = tx_buf1;
     
     if (len == 0)
-        return;
+        return 0;
     
     if (U1STAbits.TRMT == 0) {
         uart_fifo[0].full++;
-        while (U1STAbits.TRMT == 0);
+        return 1;
+        //while (U1STAbits.TRMT == 0);
     }
 
     len = min(len, UART_TX_BUF_SIZE);
@@ -424,18 +425,20 @@ static void uart1_write(unsigned char *buf, unsigned int len)
 
     DMA0CONbits.CHEN = 1;
     DMA0REQbits.FORCE = 1;
+    return 0;
 }
 
-static void uart2_write(unsigned char *buf, unsigned int len)
+static int uart2_write(unsigned char *buf, unsigned int len)
 {
     __eds__ unsigned char *b = tx_buf2;
     
     if (len == 0)
-        return;
+        return 0;
     
     if (U2STAbits.TRMT == 0) {
         uart_fifo[1].full++;
-        while (U2STAbits.TRMT == 0);
+        return 1;
+        //while (U2STAbits.TRMT == 0);
     }
 
     len = min(len, UART_TX_BUF_SIZE);
@@ -446,18 +449,20 @@ static void uart2_write(unsigned char *buf, unsigned int len)
 
     DMA1CONbits.CHEN = 1;
     DMA1REQbits.FORCE = 1;
+    return 0;
 }
 
-static void uart3_write(unsigned char *buf, unsigned int len)
+static int uart3_write(unsigned char *buf, unsigned int len)
 {
     __eds__ unsigned char *b = tx_buf3;
     
     if (len == 0)
-        return;
+        return 0;
     
     if (U3STAbits.TRMT == 0) {
         uart_fifo[2].full++;
-        while (U3STAbits.TRMT == 0);
+        return 1;
+        //while (U3STAbits.TRMT == 0);
     }
 
     len = min(len, UART_TX_BUF_SIZE);
@@ -468,18 +473,20 @@ static void uart3_write(unsigned char *buf, unsigned int len)
 
     DMA2CONbits.CHEN = 1;
     DMA2REQbits.FORCE = 1;
+    return 0;
 }
 
-static void uart4_write(unsigned char *buf, unsigned int len)
+static int uart4_write(unsigned char *buf, unsigned int len)
 {
     __eds__ unsigned char *b = tx_buf4;
     
     if (len == 0)
-        return;
+        return 0;
     
     if (U4STAbits.TRMT == 0) {
         uart_fifo[3].full++;
-        while (U4STAbits.TRMT == 0);
+        return 1;
+        //while (U4STAbits.TRMT == 0);
     }
 
     len = min(len, UART_TX_BUF_SIZE);
@@ -490,6 +497,7 @@ static void uart4_write(unsigned char *buf, unsigned int len)
 
     DMA3CONbits.CHEN = 1;
     DMA3REQbits.FORCE = 1;
+    return 0;
 }
 
 unsigned char uart_getc(unsigned char port, char *c)
