@@ -21,7 +21,7 @@
 #define PERSISTENT_BUFFER
 
 #define ROWS    (10)
-#define COLS    (40)
+#define COLS    (60)
 
 #define X_SIZE  (8*COLS)
 #define Y_SIZE  (13*ROWS)
@@ -31,6 +31,7 @@ static struct widget *console = NULL;
 struct widget_priv {
     unsigned char x, y;
     char buf[ROWS][COLS];
+    s8 line0;
 };
 
 #ifdef PERSISTENT_BUFFER
@@ -44,28 +45,22 @@ static inline void print_chr(char chr)
 #else
     struct widget_priv *wp = console->priv;
 #endif
-    unsigned char i, j;
 
-    if ((chr == '\n') || (wp->x == COLS)) {
+    if ((chr == '\n') || (wp->x == COLS-1)) {
+        wp->buf[wp->y][wp->x] = '\0';
         wp->x = 0;
-        wp->y++;
 
-        if (wp->y == ROWS) {
-            for (i = 1; i < ROWS; i++) {
-                for (j = 0; j < COLS; j++)
-                    wp->buf[i-1][j] = wp->buf[i][j];
-            }
-            for (j = 0; j < COLS; j++)
-                wp->buf[ROWS-1][j] = ' ';
-            wp->y--;
-        }
+        if (++(wp->y) == ROWS)
+            wp->y = 0;
+
+        if (++(wp->line0) == ROWS)
+            wp->line0 = 0;
     }
     if (chr > 13) {
-        wp->buf[wp->y][wp->x] = chr;
-        wp->x++;
+        wp->buf[wp->y][(wp->x)++] = chr;
+        wp->buf[wp->y][wp->x] = '\0';
     }
 }
-
 
 void console_printn(char *str, unsigned int len)
 {
@@ -84,7 +79,6 @@ void console_printn(char *str, unsigned int len)
     schedule_widget(console);
 }
 
-
 void console_print(char *str)
 {
 #ifndef PERSISTENT_BUFFER
@@ -102,7 +96,6 @@ void console_print(char *str)
     schedule_widget(console);
 }
 
-
 int console_printf(const char *fmt, ...)
 {
     char buf[MAX_LINE_LENGTH];
@@ -118,7 +111,6 @@ int console_printf(const char *fmt, ...)
     return ret;
 }
 
-
 static void mav_callback(mavlink_message_t *msg, void *d)
 {
     mavlink_statustext_t s;
@@ -126,7 +118,6 @@ static void mav_callback(mavlink_message_t *msg, void *d)
     mavlink_msg_statustext_decode(msg, &s);
     console_printf("[%d] %s\n", s.severity, s.text);
 }
-
 
 static int open(struct widget *w)
 {
@@ -148,7 +139,8 @@ static int open(struct widget *w)
     w->ca.height = Y_SIZE;
 
 #ifndef PERSISTENT_BUFFER
-    memset(priv->buf, ' ', ROWS*COLS);
+    memset(priv.buf, 0, ROWS*COLS);
+    priv.line0 = -ROWS;
     add_mavlink_callback(MAVLINK_MSG_ID_STATUSTEXT, mav_callback, CALLBACK_WIDGET, NULL);
 #endif
     
@@ -167,24 +159,23 @@ static void init(void)
     console = NULL;
 #ifdef PERSISTENT_BUFFER
     add_mavlink_callback(MAVLINK_MSG_ID_STATUSTEXT, mav_callback, CALLBACK_PERSISTENT, NULL);
-    memset(priv.buf, ' ', ROWS*COLS);
+    memset(priv.buf, 0, ROWS*COLS);
+    priv.line0 = -ROWS;
 #endif
 }
 
 static void render(struct widget *w)
 {
-    struct widget_priv *priv = w->priv;
+    struct widget_priv *wp = w->priv;
     struct canvas *ca = &w->ca;
-    char buf[COLS+1];
     unsigned char y;
+    u8 line0 = max(wp->line0, 0);
 
-    
     for (y = 0; y < ROWS; y++) {
-        memcpy(buf, priv->buf[y], COLS);
-        buf[COLS] = '\0';
-        draw_str(buf, 0, y*12, ca, 1);
+        draw_str(wp->buf[line0], 0, y*12, ca, 1);
+        if (++line0 == ROWS)
+            line0 = 0;
     }
-    
 }
 
 
