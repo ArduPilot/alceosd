@@ -45,9 +45,16 @@ static void shell_cmd_reboot(char *args, void *data)
     __asm__ volatile ("reset");
 }
 
+static void shell_cmd_console(char *args, void *data)
+{
+    console_printf("%s\n", args);
+}
+
 static const struct shell_cmdmap_s root_cmdmap[] = {
     {"clock", shell_cmd_clock, "Clock module", SHELL_CMD_SUBCMD},
     {"config", shell_cmd_cfg, "Config module", SHELL_CMD_SUBCMD},
+    {"console", shell_cmd_console, "Console test", SHELL_CMD_SIMPLE},
+    {"flight", shell_cmd_flight, "Flight data module", SHELL_CMD_SUBCMD},
     {"home", shell_cmd_home, "Home module", SHELL_CMD_SUBCMD},
     {"mavdata", shell_cmd_mavdata, "Mavlink data storage module", SHELL_CMD_SUBCMD},
     {"mavlink", shell_cmd_mavlink, "Mavlink module", SHELL_CMD_SUBCMD},
@@ -62,6 +69,8 @@ static const struct shell_cmdmap_s root_cmdmap[] = {
 };
 
 static u8 mavlink_shell_enabled = 0;
+static u32 last_mav_packet = 0;
+#define MAVLINK_SHELL_MAX_RATE      50
 
 inline static void _shell_write_mavlink(u8 *buf, u16 len)
 {
@@ -69,12 +78,18 @@ inline static void _shell_write_mavlink(u8 *buf, u16 len)
     mavlink_message_t msg __attribute__((aligned(2)));
     u16 wr;
     u8 *b = buf;
+    u32 now;
+    
     do {
         wr = min(MAVLINK_MSG_SERIAL_CONTROL_FIELD_DATA_LEN, len);
         memcpy(sc.data, b, wr);
         sc.count = wr;
         sc.device = SERIAL_CONTROL_DEV_OSDSHELL;
         mavlink_msg_serial_control_encode(config.mav.osd_sysid, MAV_COMP_ID_OSD, &msg, &sc);
+        do {
+            now = get_millis();
+        } while ((now - last_mav_packet) < MAVLINK_SHELL_MAX_RATE);
+        last_mav_packet = now;
         mavlink_send_msg(&msg);
         b += wr;
         len -= wr;
@@ -88,9 +103,12 @@ inline static void _shell_write_uart(u8 *buf, u16 len)
     
     u16 wr;
     u8 *b = buf;
+    int ret;
     do {
         wr = min(UART_TX_BUF_SIZE, len);
-        shell_uart_client.write(b, wr);
+        do {
+            ret = shell_uart_client.write(b, wr);
+        } while (ret != 0);
         b += wr;
         len -= wr;
     } while (len > 0);
@@ -250,6 +268,7 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
     static char prev_cmd_line[MAX_SHELL_LINE_LEN];
     unsigned char i;
     char tmp[MAX_SHELL_LINE_LEN], *p;
+    char echo_buf[MAX_SHELL_LINE_LEN], *e = echo_buf;
     struct shell_cmdmap_s *ac[20], **a, **b;
     int size;
 
@@ -266,7 +285,8 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
             case BACKSPACE:
                 if (cmd_len > 0) {
                     cmd_len--;
-                    shell_putc(buf[i]);
+                    *e++ = buf[i];
+                    //shell_putc(buf[i]);
                 }
                 continue;
             case CTRL_R:
@@ -299,7 +319,8 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
                 }
                 a = ac;
                 if (*a == NULL) {
-                    shell_putc(BELL);
+                    *e++ = BELL;
+                    //shell_putc(BELL);
                 } else if (*(a+1) == NULL) {
                     p = &cmd_line[cmd_len];
                     strcat(cmd_line, (*a)->cmd + size);
@@ -308,7 +329,8 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
                     cmd_line[cmd_len] = '\0';
                     shell_puts(p);
                 } else {
-                    shell_putc(LF);
+                    *e++ = LF;
+                    //shell_putc(LF);
                     while (*a != NULL)
                         shell_printf("%s ", (*a++)->cmd);
                     shell_printf("\n> %s", cmd_line);
@@ -316,24 +338,33 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
                 continue;
             case CR:
             case LF:
-                shell_putc(LF);
+                *e++ = LF;
+                //shell_putc(LF);
                 if (cmd_len > 0) {
                     cmd_line[cmd_len] = '\0';
+                    *e = '\0';
+                    shell_puts(echo_buf);
+                    e = echo_buf;
                     strcpy(prev_cmd_line, cmd_line);
                     shell_exec(cmd_line, root_cmdmap, NULL);
                     cmd_len = 0;
                 }
-                shell_puts("> ");
+                *e++ = '>';
+                *e++ = ' ';
+                //shell_puts("> ");
                 break;
             default:
                 cmd_line[cmd_len] = buf[i];
                 if (cmd_len < MAX_SHELL_LINE_LEN-1)
                     cmd_len++;
-                shell_putc(buf[i]);
+                *e++ = buf[i];
+                //shell_putc(buf[i]);
                 break;
         }
 
     }
+    *e = '\0';
+    shell_puts(echo_buf);
     return len;
 }
 
