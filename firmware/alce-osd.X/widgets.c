@@ -37,7 +37,7 @@ extern const struct widget_ops flight_info_widget_ops;
 extern const struct widget_ops console_widget_ops;
 extern const struct widget_ops gimbal_widget_ops;
 extern const struct widget_ops videolvl_widget_ops;
-extern const struct widget_ops messages_widget_ops;
+extern const struct widget_ops alarms_widget_ops;
 extern const struct widget_ops sonar_widget_ops;
 extern const struct widget_ops vidprf_widget_ops;
 extern const struct widget_ops temperature_widget_ops;
@@ -61,7 +61,7 @@ const struct widget_ops *all_widget_ops[] = {
     &console_widget_ops,
     &gimbal_widget_ops,
     &videolvl_widget_ops,
-    &messages_widget_ops,
+    &alarms_widget_ops,
     &sonar_widget_ops,
     &vidprf_widget_ops,
     &temperature_widget_ops,
@@ -70,7 +70,7 @@ const struct widget_ops *all_widget_ops[] = {
 
 #define WIDGET_FIFO_MASK        (0x1f)
 #define MAX_WIDGET_ALLOC_MEM    (0x400)
-#define MAX_ACTIVE_WIDGETS      (50)
+#define MAX_ACTIVE_WIDGETS      (CONFIG_MAX_WIDGETS)
 
 struct widgets_mem_s {
     unsigned char mem[MAX_WIDGET_ALLOC_MEM];
