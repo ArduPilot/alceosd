@@ -24,9 +24,10 @@
 #include "widgets.h"
 #include "tabs.h"
 #include "mavlink.h"
+#include "flight_stats.h"
 
 
-#define CONFIG_MAX_WIDGETS      50
+#define CONFIG_MAX_WIDGETS      45
 #define CONFIG_MAX_VIDEO        2
 
 
@@ -79,6 +80,24 @@ struct ch_switch {
     unsigned char time;
 };
 
+#define RSSI_SOURCE_RC          0x00 /* 00 to 17 = CH1 to CH18 */
+#define RSSI_SOURCE_ADC0        0x1d
+#define RSSI_SOURCE_ADC1        0x1e
+#define RSSI_SOURCE_MAVLINK     0x1f
+#define RSSI_UNITS_PERCENT      0
+#define RSSI_UNITS_RAW          1
+
+struct rssi_mode {
+    unsigned source:5;
+    unsigned units:1;
+};
+
+struct rssi_config {
+    struct rssi_mode mode;
+    u16 min;
+    u16 max;
+};
+
 struct alceosd_config {
     /* uart config */
     struct uart_config uart[4];
@@ -98,9 +117,17 @@ struct alceosd_config {
     /* mavlink config */
     struct mavlink_config mav;
     
+    /* rssi config */
+    struct rssi_config rssi;
+
+    /* flight alarms */
+    struct flight_alarm_config flight_alarm[FL_ALARM_ID_END];
+    
     /* widgets config */
     struct widget_config widgets[CONFIG_MAX_WIDGETS];
 };
+
+extern struct alceosd_config config;
 
 
 void config_init(void);

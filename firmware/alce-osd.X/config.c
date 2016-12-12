@@ -30,7 +30,7 @@
 #define CONFIG_ADDR_PAGE    (0x800)
 #define CONFIG_PAGE_SIZE    (0x400)
 
-#define CONFIG_VERSION_SIG  (0xffffff-10)
+#define CONFIG_VERSION_SIG  (0xffffff-11)
 
 //#define DEBUG_CONFIG
 
@@ -97,12 +97,24 @@ struct alceosd_config config = {
         .heartbeat = 1,
     },
     
+    .rssi = {
+        .mode.source = RSSI_SOURCE_MAVLINK,
+        .mode.units = RSSI_UNITS_PERCENT,
+        .min = 0,
+        .max = 255,
+    },
+    
+    .flight_alarm = {
+        { .props.id = FL_ALARM_ID_RSSI, .props.mode = FL_ALARM_MODE_LOW, .value = 35, .timer = 0},
+        { .props.id = FL_ALARM_ID_MAVBAT, .props.mode = FL_ALARM_MODE_LOW, .value = 11700, .timer = 0},
+        { .props.id = FL_ALARM_ID_GPS, .props.mode = FL_ALARM_MODE_LOW, .value = 3, .timer = 0},
+        { .props.id = FL_ALARM_ID_ALT, .props.mode = FL_ALARM_MODE_LOW, .value = 15, .timer = 0},
+        { .props.id = FL_ALARM_ID_END },
+    },
+    
     .default_units = UNITS_METRIC,
 
     .widgets = {
-        //{ 5, 0, WIDGET_CONSOLE_ID,         0,   0, {JUST_VCENTER | JUST_HCENTER}},
-        //{ 5, 0, WIDGET_GIMBAL_ID,          0,   0, {JUST_TOP | JUST_RIGHT}},
-
         { 1, 0, WIDGET_ALTITUDE_ID,        0,   0, {JUST_VCENTER | JUST_RIGHT}},
         { 1, 0, WIDGET_BATTERY_INFO_ID,    0,   0, {JUST_TOP     | JUST_LEFT}},
         { 1, 0, WIDGET_COMPASS_ID,         0,   0, {JUST_BOT     | JUST_HCENTER}},
@@ -117,7 +129,7 @@ struct alceosd_config config = {
 
         { 1, 0, WIDGET_HOME_INFO_ID,      88,   0, {JUST_TOP     | JUST_LEFT}},
         { 1, 0, WIDGET_RADAR_ID,          60, -44, {JUST_BOT     | JUST_LEFT}},
-        //{ 1, 0, WIDGET_MESSAGES_ID,        0,  0, {JUST_TOP     | JUST_HCENTER}},
+        { 1, 0, WIDGET_ALARMS_ID,          0,   0, {JUST_TOP     | JUST_HCENTER}},
 
         { 2, 0, WIDGET_RC_CHANNELS_ID,     0,   0, {JUST_TOP     | JUST_LEFT}},
         { 2, 1, WIDGET_RADAR_ID,           0,   0, {JUST_TOP     | JUST_HCENTER}},
