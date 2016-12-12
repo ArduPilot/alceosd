@@ -18,7 +18,6 @@
 
 #include "alce-osd.h"
 
-extern unsigned char hw_rev;
 
 /* flash operation functions */
 static void erase_page0(u32union addr)

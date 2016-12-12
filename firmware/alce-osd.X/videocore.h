@@ -40,7 +40,6 @@ enum {
 #define VIDEO_MODE_SCAN_MASK        (0x01)
 #define VIDEO_MODE_STANDARD_MASK    (0x02)
 #define VIDEO_MODE_SYNC_MASK        (0x04)
-#define VIDEO_MODE_INPUT_MASK       (0x08)
 
 #define VIDEO_ACTIVE_CONFIG         0xff
 
@@ -75,7 +74,7 @@ struct canvas {
     u8 buf_nr;
 };
 
-struct video_config {
+struct video_config_profile {
     /* video standard and scan */
     unsigned char mode;
     /* video X resolution id */
@@ -86,6 +85,18 @@ struct video_config {
     unsigned int x_offset;
     /* video Y resolution */
     unsigned int y_offset;
+};
+
+typedef union {
+    u8 raw;
+    struct  {
+        unsigned vref:5;
+        unsigned source:1;
+        unsigned :2;
+    };
+} video_ctrl_t;
+
+struct video_config {
     /* video brightness */
     unsigned int brightness;
 
@@ -93,8 +104,10 @@ struct video_config {
     unsigned char white_lvl;
     unsigned char gray_lvl;
     unsigned char black_lvl;
+    
+    /* input source and comparator reference */
+    video_ctrl_t ctrl;
 };
-
 
 
 void init_video(void);

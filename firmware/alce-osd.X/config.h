@@ -103,7 +103,8 @@ struct alceosd_config {
     struct uart_config uart[4];
 
     /* video config */
-    struct video_config video[CONFIG_MAX_VIDEO];
+    struct video_config_profile video_profile[CONFIG_MAX_VIDEO];
+    struct video_config video;
     
     /* video input switcher */
     struct ch_switch video_sw;

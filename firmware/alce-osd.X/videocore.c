@@ -70,39 +70,32 @@ static unsigned int LINE_TMR = LINE_TMR_;
 #define CTRL_DUALVIN        0x20
 
 
-extern struct alceosd_config config;
-extern unsigned char hw_rev;
-
 void video_apply_config_cbk(void);
 
 const struct param_def params_video[] = {
-    PARAM("VIDE0_STD", MAV_PARAM_TYPE_UINT8, &config.video[0].mode, NULL),
-    PARAM("VIDE0_XSIZE", MAV_PARAM_TYPE_UINT8, &config.video[0].x_size_id, video_apply_config_cbk),
-    PARAM("VIDE0_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video[0].y_size, NULL),
-    PARAM("VIDE0_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video[0].x_offset, NULL),
-    PARAM("VIDE0_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video[0].y_offset, NULL),
+    PARAM("VIDE0_STD", MAV_PARAM_TYPE_UINT8, &config.video_profile[0].mode, NULL),
+    PARAM("VIDE0_XSIZE", MAV_PARAM_TYPE_UINT8, &config.video_profile[0].x_size_id, video_apply_config_cbk),
+    PARAM("VIDE0_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video_profile[0].y_size, NULL),
+    PARAM("VIDE0_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video_profile[0].x_offset, NULL),
+    PARAM("VIDE0_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video_profile[0].y_offset, NULL),
 
-    PARAM("VIDE1_STD", MAV_PARAM_TYPE_UINT8, &config.video[1].mode, NULL),
-    PARAM("VIDE1_XSIZE", MAV_PARAM_TYPE_UINT8, &config.video[1].x_size_id, video_apply_config_cbk),
-    PARAM("VIDE1_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video[1].y_size, NULL),
-    PARAM("VIDE1_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video[1].x_offset, NULL),
-    PARAM("VIDE1_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video[1].y_offset, NULL),
+    PARAM("VIDE1_STD", MAV_PARAM_TYPE_UINT8, &config.video_profile[1].mode, NULL),
+    PARAM("VIDE1_XSIZE", MAV_PARAM_TYPE_UINT8, &config.video_profile[1].x_size_id, video_apply_config_cbk),
+    PARAM("VIDE1_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video_profile[1].y_size, NULL),
+    PARAM("VIDE1_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video_profile[1].x_offset, NULL),
+    PARAM("VIDE1_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video_profile[1].y_offset, NULL),
 
     PARAM_END,
 };
 const struct param_def params_video0v1[] = {
-    PARAM("VIDE0_BRIGHT", MAV_PARAM_TYPE_UINT16, &config.video[0].brightness, video_apply_config_cbk),
-    PARAM("VIDE1_BRIGHT", MAV_PARAM_TYPE_UINT16, &config.video[1].brightness, video_apply_config_cbk),
+    PARAM("VIDEO_BRIGHT", MAV_PARAM_TYPE_UINT16, &config.video.brightness, video_apply_config_cbk),
+    PARAM("VIDEO_CTRL", MAV_PARAM_TYPE_UINT8, &config.video.ctrl.raw, video_apply_config_cbk),
     PARAM_END,
 };
 const struct param_def params_video0v3[] = {
-    PARAM("VIDE0_WHITE", MAV_PARAM_TYPE_UINT8, &config.video[0].white_lvl, video_apply_config_cbk),
-    PARAM("VIDE0_GRAY", MAV_PARAM_TYPE_UINT8, &config.video[0].gray_lvl, video_apply_config_cbk),
-    PARAM("VIDE0_BLACK", MAV_PARAM_TYPE_UINT8, &config.video[0].black_lvl, video_apply_config_cbk),
-
-    PARAM("VIDE1_WHITE", MAV_PARAM_TYPE_UINT8, &config.video[1].white_lvl, video_apply_config_cbk),
-    PARAM("VIDE1_GRAY", MAV_PARAM_TYPE_UINT8, &config.video[1].gray_lvl, video_apply_config_cbk),
-    PARAM("VIDE1_BLACK", MAV_PARAM_TYPE_UINT8, &config.video[1].black_lvl, video_apply_config_cbk),
+    PARAM("VIDEO_WHITE", MAV_PARAM_TYPE_UINT8, &config.video.white_lvl, video_apply_config_cbk),
+    PARAM("VIDEO_GRAY", MAV_PARAM_TYPE_UINT8, &config.video.gray_lvl, video_apply_config_cbk),
+    PARAM("VIDEO_BLACK", MAV_PARAM_TYPE_UINT8, &config.video.black_lvl, video_apply_config_cbk),
     PARAM_END,
 };
 
@@ -126,7 +119,7 @@ static unsigned char videocore_ctrl = 0;
 unsigned long nbusy_time = 0, render_time = 0, wait_time = 0, mpw = 0, mpwt = 0;
 int video_pid = -1;
 
-static struct video_config *cfg = &config.video[0];
+static struct video_config_profile *cfg = &config.video_profile[0];
 
 const struct osd_xsize_tbl video_xsizes[] = {
     { .xsize = 420, .clk_ps = 0 } ,
@@ -585,7 +578,7 @@ static void video_init_hw(void)
         OC1CON1bits.OCTSEL = 1;
         OC1CON2bits.SYNCSEL = 0x1f;
         OC1R = 0x100;
-        OC1RS = 0x100 + cfg->brightness;
+        OC1RS = 0x100 + config.video.brightness;
         OC1CON1bits.OCM = 0b110;
     }
 
@@ -690,20 +683,23 @@ static void video_init_hw(void)
 void video_apply_config(unsigned char profile)
 {
     if (profile < CONFIG_MAX_VIDEO)
-        cfg = &config.video[profile];
+        cfg = &config.video_profile[profile];
 
     /* brightness */
     if (hw_rev < 0x03) {
-        OC1RS = 0x100 + cfg->brightness;
+        OC1RS = 0x100 + config.video.brightness;
     } else {
-        if (video_update_dac(cfg))
+        if (video_update_dac(&config.video))
             shell_printf("error updating DAC values\n");
     }
     
     if (hw_rev == 0x04) {
-        VIN_SEL = (cfg->mode & VIDEO_MODE_INPUT_MASK) ? 0 : 1;
+        VIN_SEL = config.video.ctrl.vref ? 0 : 1;
     }
 
+    if (config.video.ctrl.vref > 0)
+        CVR1CONbits.CVR = config.video.ctrl.vref;
+    
     /* pixel clock */
     INTCON2bits.GIE = 0;
     SPI2STATbits.SPIEN = 0;
@@ -966,10 +962,7 @@ static void video_switch_task(struct timer *t, void *d)
                 val = 0;
             if ((unsigned char) val != prev_val) {
                 /* change video input */
-                if (val)
-                    cfg->mode |= VIDEO_MODE_INPUT_MASK;
-                else
-                    cfg->mode &= ~VIDEO_MODE_INPUT_MASK;
+                config.video.ctrl.source = val ? 1 : 0;
                 video_apply_config_cbk();
                 prev_val = (unsigned char) val;
             }
@@ -997,10 +990,10 @@ static void video_switch_task(struct timer *t, void *d)
                 /* switch returned to idle position */
                 if (prev_val == (unsigned char) val) {
                     /* swap video in */
-                    if (cfg->mode & VIDEO_MODE_INPUT_MASK)
-                        cfg->mode &= ~VIDEO_MODE_INPUT_MASK;
+                    if (config.video.ctrl.source)
+                        config.video.ctrl.source = 0;
                     else
-                        cfg->mode |= VIDEO_MODE_INPUT_MASK;
+                        config.video.ctrl.source = 1;
                     video_apply_config_cbk();
                     tmr = VIDEO_TIMER_IDLE;
                 }
@@ -1040,10 +1033,10 @@ static void video_switch_task(struct timer *t, void *d)
                 if (tmr != VIDEO_TIMER_IDLE) {
                     if (source_mode == (unsigned char) val) {
                         /* swap video in */
-                        if (cfg->mode & VIDEO_MODE_INPUT_MASK)
-                            cfg->mode &= ~VIDEO_MODE_INPUT_MASK;
+                        if (config.video.ctrl.source)
+                            config.video.ctrl.source = 0;
                         else
-                            cfg->mode |= VIDEO_MODE_INPUT_MASK;
+                            config.video.ctrl.source = 1;
                         video_apply_config_cbk();
                     }
                     tmr = VIDEO_TIMER_IDLE;
@@ -1059,10 +1052,10 @@ static void video_switch_task(struct timer *t, void *d)
             tmr++;
             if (tmr > sw->time) {
                 /* next video input */
-                if (cfg->mode & VIDEO_MODE_INPUT_MASK)
-                    cfg->mode &= ~VIDEO_MODE_INPUT_MASK;
+                if (config.video.ctrl.source)
+                    config.video.ctrl.source = 0;
                 else
-                    cfg->mode |= VIDEO_MODE_INPUT_MASK;
+                    config.video.ctrl.source = 1;
                 video_apply_config_cbk();
                 tmr = 0;
             }
@@ -1620,12 +1613,12 @@ static void shell_cmd_stats(char *args, void *data)
         (cfg->mode & VIDEO_MODE_SCAN_MASK) != 0 ? "interlaced" : "progressive");
     shell_printf(" internal sync=%u\n", (cfg->mode & VIDEO_MODE_SYNC_MASK) != 0 ? 1 : 0);
     if (hw_rev < 0x03) {
-        shell_printf(" brightness=%u\n", cfg->brightness);
+        shell_printf(" brightness=%u\n", config.video.brightness);
     } else {
         shell_printf(" levels: white=%u gray=%u %black=%u\n",
-                cfg->white_lvl,
-                cfg->gray_lvl,
-                cfg->black_lvl);
+                config.video.white_lvl,
+                config.video.gray_lvl,
+                config.video.black_lvl);
         
         shell_printf(" dac settings:\n  ");
         if (video_read_dac(dac_status))
@@ -1670,7 +1663,7 @@ static void shell_cmd_config(char *args, void *data)
     int int_var;
     float f, vref;
     u16 profile;
-    struct video_config *vcfg = cfg;
+    struct video_config_profile *vcfg = cfg;
     
     t = shell_arg_parser(args, argval, SHELL_CMD_CONFIG_ARGS);
 
@@ -1708,7 +1701,9 @@ static void shell_cmd_config(char *args, void *data)
         if (p != NULL) {
             profile = atoi(p->val);
             profile = profile ? 1 : 0;
-            vcfg = &config.video[profile];
+            vcfg = &config.video_profile[profile];
+            if (t == 1)
+                cfg = vcfg;
         }
         
         for (i = 0; i < t; i++) {
@@ -1732,20 +1727,20 @@ static void shell_cmd_config(char *args, void *data)
                     break;
                 case 't':
                     int_var = atoi(argval[i].val);
-                    vcfg->brightness = (unsigned int) int_var;
+                    config.video.brightness = (unsigned int) int_var;
                     break;
 
                 case 'w':
                     int_var = atoi(argval[i].val);
-                    vcfg->white_lvl = (unsigned char) int_var;
+                    config.video.white_lvl = (unsigned char) int_var;
                     break;
                 case 'g':
                     int_var = atoi(argval[i].val);
-                    vcfg->gray_lvl = (unsigned char) int_var;
+                    config.video.gray_lvl = (unsigned char) int_var;
                     break;
                 case 'b':
                     int_var = atoi(argval[i].val);
-                    vcfg->black_lvl = (unsigned char) int_var;
+                    config.video.black_lvl = (unsigned char) int_var;
                     break;
                 case 'x':
                     int_var = atoi(argval[i].val);
@@ -1776,7 +1771,9 @@ static void shell_cmd_config(char *args, void *data)
                     break;
                 case 'r':
                     int_var = atoi(argval[i].val);
-                    CVR1CONbits.CVR = (unsigned int) int_var & 0xf;
+                    int_var &= 0xf;
+                    config.video.ctrl.vref = int_var;
+                    CVR1CONbits.CVR = (unsigned int) int_var;
                     
                     int_var = CVR1CONbits.CVRR | (CVR1CONbits.CVRR1 << 1);
                     
@@ -2011,10 +2008,7 @@ static void shell_cmd_swconfig(char *args, void *data)
         p = shell_get_argval(argval, 'i');
         if (p != NULL) {
             w = atoi(p->val);
-            if (w)
-                cfg->mode |= VIDEO_MODE_INPUT_MASK;
-            else
-                cfg->mode &= ~VIDEO_MODE_INPUT_MASK;
+            config.video.ctrl.source = w ? 1 : 0;
             video_apply_config_cbk();
         }
     }

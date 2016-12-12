@@ -31,8 +31,6 @@
 #define SERIAL_CONTROL_DEV_OSDSHELL 9
 
 static struct uart_client shell_uart_client;
-extern unsigned char hw_rev;
-extern struct alceosd_config config;
 
 static void shell_cmd_version(char *args, void *data)
 {
@@ -305,6 +303,9 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
                     strcpy(p, " help");
                     p++;
                 }
+                *e = '\0';
+                shell_puts(echo_buf);
+                e = echo_buf;
                 shell_exec(tmp, root_cmdmap, ac);
                 strcpy(tmp, cmd_line);
                 size = strlen(p);
@@ -319,8 +320,7 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
                 }
                 a = ac;
                 if (*a == NULL) {
-                    *e++ = BELL;
-                    //shell_putc(BELL);
+                    shell_putc(BELL);
                 } else if (*(a+1) == NULL) {
                     p = &cmd_line[cmd_len];
                     strcat(cmd_line, (*a)->cmd + size);
@@ -329,8 +329,7 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
                     cmd_line[cmd_len] = '\0';
                     shell_puts(p);
                 } else {
-                    *e++ = LF;
-                    //shell_putc(LF);
+                    shell_putc(LF);
                     while (*a != NULL)
                         shell_printf("%s ", (*a++)->cmd);
                     shell_printf("\n> %s", cmd_line);
@@ -363,8 +362,10 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
         }
 
     }
-    *e = '\0';
-    shell_puts(echo_buf);
+    if (e != echo_buf) {
+        *e = '\0';
+        shell_puts(echo_buf);
+    }
     return len;
 }
 

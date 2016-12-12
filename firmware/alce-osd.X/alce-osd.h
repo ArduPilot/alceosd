@@ -71,5 +71,6 @@ typedef union {
 
 extern void console_print(char *str);
 extern int console_printf(const char *fmt, ...);
+extern unsigned char hw_rev;
 
 #endif	/* ALCE_OSD_H */

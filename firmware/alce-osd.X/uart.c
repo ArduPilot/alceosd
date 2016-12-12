@@ -21,8 +21,6 @@
 #define UART_PROCESS_PRIO   50
 #define UART_FIFO_MASK      0x3ff
 
-extern struct alceosd_config config;
-extern unsigned char hw_rev;
 
 const struct uart_regs {
     volatile unsigned int *BRG;
