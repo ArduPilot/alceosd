@@ -64,6 +64,11 @@ enum {
 
 #define UART_TX_BUF_SIZE    (128)
 
+struct baudrate_tbl {
+    unsigned long baudrate;
+    unsigned int brg;
+};
+
 struct uart_config {
     unsigned char mode;
     unsigned char baudrate;
@@ -106,5 +111,8 @@ void uart_set_props(unsigned char port, unsigned int props);
 void uart_set_direction(unsigned char port, unsigned char direction);
 
 void shell_cmd_uart(char *args, void *data);
+
+extern const char *UART_CLIENT_NAMES[];
+extern const char *UART_PIN_NAMES[];
 
 #endif

@@ -87,12 +87,7 @@ const struct param_def params_uart34[] = {
 };
 
 
-struct baudrate_tbl {
-    unsigned long baudrate;
-    unsigned int brg;
-};
-
-static const struct baudrate_tbl baudrates[] = {
+const struct baudrate_tbl baudrates[] = {
     { .baudrate = 19200,  .brg = 227 },
     { .baudrate = 57600,  .brg = 76 },
     { .baudrate = 115200, .brg = 37 },
@@ -320,11 +315,6 @@ static void uart_init_(unsigned char port)
 {
     uart_set_baudrate(port, UART_BAUD_115200);
     
-    /* clear status reg */
-    *(UARTS[port].STA) = 0;
-    /* enable */
-    *(UARTS[port].MODE) = 0x8000;
-    
     switch (port) {
         case UART_PORT1:
             _U1RXIP = 1;
@@ -374,8 +364,10 @@ static void uart_init_(unsigned char port)
             break;
     }
     
-    /* enable TX */
-    *(UARTS[port].STA) |= 0x0400;
+    /* enable uart */
+    *(UARTS[port].MODE) = 0x8000;
+    /* enable tx */
+    *(UARTS[port].STA)  = 0x0400;
 }
 
 static unsigned int uart_read(unsigned char port, unsigned char **buf)
@@ -526,17 +518,17 @@ int __attribute__((__weak__, __section__(".libc"))) write(int handle, void *buf,
 inline static void uart_process(unsigned char port)
 {
     unsigned char *b;
-    unsigned int len;
+    u16 avail, len;
 
     if (port_clients[port] == NULL)
         return;
     
-    len = uart_read(port, &b);
-    while (len > 0) {
-        len = port_clients[port]->read(port_clients[port], b, len);
-        uart_discard(port, len);
-        len = uart_read(port, &b);
-    }
+    avail = uart_read(port, &b);
+    if (avail == 0)
+        return;
+
+    len = port_clients[port]->read(port_clients[port], b, avail);
+    uart_discard(port, len);
 }
 
 static void uart1_process(void)
@@ -703,6 +695,11 @@ void uart_set_client(unsigned char port, unsigned char client_id,
             (*c)->port = port;
             if ((*c)->init != NULL)
                 (*c)->init(*c);
+            
+            *(UARTS[port].STA) &= ~0x00c0;
+            if (client_id == UART_CLIENT_MAVLINK)
+                *(UARTS[port].STA) |= 0x00c0;
+
             break;
         }
         clist++;
@@ -841,7 +838,7 @@ static void shell_cmd_stats(char *args, void *data)
     shell_printf("\nStats:\n");
     for (i = 0; i < 4; i++) {
         shell_printf(" port%d: tx=%lu rx=%lu", i, uart_fifo[i].tx, uart_fifo[i].rx);
-        shell_printf(" orun=%u oflow=%u txfull=%d (rxloop=%d max=%u)\n",
+        shell_printf(" orun=%u oflow=%u txfull=%u (rxloop=%u max=%u)\n",
                 uart_fifo[i].overrun, uart_fifo[i].overflow, uart_fifo[i].full,
                 uart_fifo[i].m, uart_fifo[i].max);
         uart_fifo[i].m = 0;
@@ -928,6 +925,12 @@ static void shell_cmd_config(char *args, void *data)
                 shell_printf("error: invalid pins '%s'\n", p->val);
                 return;
             }
+        }
+        p = shell_get_argval(argval, 'x');
+        if (p != NULL) {
+            u16 v = atoi(p->val) & 3;
+            *(UARTS[port].STA) &= ~0x00c0;
+            *(UARTS[port].STA) |= (v << 6);
         }
     }
 }
