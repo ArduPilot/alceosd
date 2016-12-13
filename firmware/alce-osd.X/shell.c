@@ -31,6 +31,7 @@
 #define SERIAL_CONTROL_DEV_OSDSHELL 9
 
 static struct uart_client shell_uart_client;
+static u8 local_echo = 1;
 
 static void shell_cmd_version(char *args, void *data)
 {
@@ -48,10 +49,17 @@ static void shell_cmd_console(char *args, void *data)
     console_printf("%s\n", args);
 }
 
+static void shell_cmd_echo(char *args, void *data)
+{
+    local_echo = atoi(args);
+    shell_printf("Local echo: %u\n", local_echo);
+}
+
 static const struct shell_cmdmap_s root_cmdmap[] = {
     {"clock", shell_cmd_clock, "Clock module", SHELL_CMD_SUBCMD},
     {"config", shell_cmd_cfg, "Config module", SHELL_CMD_SUBCMD},
     {"console", shell_cmd_console, "Console test", SHELL_CMD_SIMPLE},
+    {"echo", shell_cmd_echo, "Local echo", SHELL_CMD_SIMPLE},
     {"flight", shell_cmd_flight, "Flight data module", SHELL_CMD_SUBCMD},
     {"home", shell_cmd_home, "Home module", SHELL_CMD_SUBCMD},
     {"mavdata", shell_cmd_mavdata, "Mavlink data storage module", SHELL_CMD_SUBCMD},
@@ -68,7 +76,6 @@ static const struct shell_cmdmap_s root_cmdmap[] = {
 
 static u8 mavlink_shell_enabled = 0;
 static u32 last_mav_packet = 0;
-#define MAVLINK_SHELL_MAX_RATE      50
 
 inline static void _shell_write_mavlink(u8 *buf, u16 len)
 {
@@ -86,7 +93,7 @@ inline static void _shell_write_mavlink(u8 *buf, u16 len)
         mavlink_msg_serial_control_encode(config.mav.osd_sysid, MAV_COMP_ID_OSD, &msg, &sc);
         do {
             now = get_millis();
-        } while ((now - last_mav_packet) < MAVLINK_SHELL_MAX_RATE);
+        } while ((now - last_mav_packet) < config.mav.shell_rate);
         last_mav_packet = now;
         mavlink_send_msg(&msg);
         b += wr;
@@ -342,10 +349,13 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
                 if (cmd_len > 0) {
                     cmd_line[cmd_len] = '\0';
                     *e = '\0';
-                    shell_puts(echo_buf);
+                    if (local_echo)
+                        shell_puts(echo_buf);
                     e = echo_buf;
-                    strcpy(prev_cmd_line, cmd_line);
-                    shell_exec(cmd_line, root_cmdmap, NULL);
+                    if (cmd_line[0] != '#') {
+                        strcpy(prev_cmd_line, cmd_line);
+                        shell_exec(cmd_line, root_cmdmap, NULL);
+                    }
                     cmd_len = 0;
                 }
                 *e++ = '>';
@@ -362,7 +372,7 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
         }
 
     }
-    if (e != echo_buf) {
+    if (local_echo && (e != echo_buf)) {
         *e = '\0';
         shell_puts(echo_buf);
     }
