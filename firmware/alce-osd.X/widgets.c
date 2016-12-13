@@ -698,11 +698,16 @@ static void shell_cmd_rm(char *args, void *data)
     int tab;
 
     if (strlen(args) == 0) {
-        shell_printf("syntax: widgets rm <id>+<uid>\n");
+        shell_printf("syntax: widgets rm [<id>+<uid>|all]\n");
         shell_printf("      <id>    widget global id\n");
         shell_printf("      <uid>   widget unique id (on same widget type)\n");
     } else {
-    
+        
+        if (strcmp(args, "all") == 0) {
+            w_cfg->tab = TABS_END;
+            return;
+        }
+        
         ptr = strchr(args, '+');
         *ptr++ = '\0';
 
@@ -770,6 +775,7 @@ static void shell_cmd_config(char *args, void *data)
     struct widget *w;
     s16 id, uid, i, t, val;
     s8 *ptr, found = 0;
+    struct widget_config *w_cfg = config.widgets;
 
     t = shell_arg_parser(args, argval, SHELL_CMD_CFG_ARGS);
     p = shell_get_argval(argval, 'i');
@@ -794,32 +800,48 @@ static void shell_cmd_config(char *args, void *data)
     } else {
         /* widget id+uid */
         ptr = strchr(p->val, '+');
-        *ptr++ = '\0';
+        if (ptr != NULL) {
+            *ptr++ = '\0';
+            uid = atoi(ptr);
+        } else {
+            uid = -1;
+        }
         id = atoi(p->val);
-        uid = atoi(ptr);
-        for (i = 0; i < total_active_widgets; i++) {
-            w = active_widgets[i];
-            if ((w->cfg->uid == uid) && (w->cfg->widget_id == id)) {
+        
+        while (w_cfg->tab != TABS_END) {
+            if ((w_cfg->uid == uid) && (w_cfg->widget_id == id)) {
                 found = 1;
                 break;
             }
+            w_cfg++;
         }
 
         if (!found) {
-            shell_printf("Widget not found: %02d+%02d\n", id, uid);
-            return;
+            if (t == 13) {
+                /* create new if all parameters are provided */
+                (w_cfg+1)->tab = TABS_END;
+                uid = widget_get_uid(id);
+                w_cfg->uid = uid;
+                w_cfg->widget_id = id;
+                shell_printf("Created widget: %02d+%02d\n", id, uid);
+            } else {
+                shell_printf("Widget not found: %02d+%02d\n", id, uid);
+                return;
+            }
+        } else {
+            shell_printf("Changed widget: %02u+%02u\n", id, uid);
         }
         
         if (t == 1) {
             /* dump widget config */
             shell_printf("t:%u x:%d y:%d h:%u v:%u ",
-                    w->cfg->tab, w->cfg->x, w->cfg->y,
-                    w->cfg->props.hjust, w->cfg->props.vjust);
-            shell_printf("m:%u s:%u u:%u ", w->cfg->props.mode,
-                    w->cfg->props.source, w->cfg->props.units);
+                    w_cfg->tab, w_cfg->x, w_cfg->y,
+                    w_cfg->props.hjust, w_cfg->props.vjust);
+            shell_printf("m:%u s:%u u:%u ", w_cfg->props.mode,
+                    w_cfg->props.source, w_cfg->props.units);
             shell_printf("a:%u b:%u c:%u d:%u\n",
-                    w->cfg->params[0], w->cfg->params[1],
-                    w->cfg->params[2], w->cfg->params[3]);
+                    w_cfg->params[0], w_cfg->params[1],
+                    w_cfg->params[2], w_cfg->params[3]);
             return;
         }
         
@@ -830,47 +852,56 @@ static void shell_cmd_config(char *args, void *data)
                 case 't':
                     /* change tab */
                     val = max(1, min(254, val));
-                    w->cfg->tab = val;
+                    w_cfg->tab = val;
                     break;
                 case 'x':
-                    w->cfg->x = val;
+                    w_cfg->x = val;
                     break;
                 case 'y':
-                    w->cfg->y = val;
+                    w_cfg->y = val;
                     break;
                 case 'h':
-                    w->cfg->props.hjust = (val & 3);
+                    w_cfg->props.hjust = (val & 3);
                     break;
                 case 'v':
-                    w->cfg->props.vjust = (val & 3);
+                    w_cfg->props.vjust = (val & 3);
                     break;
                 case 'm':
-                    w->cfg->props.mode = (val & 0xf);
+                    w_cfg->props.mode = (val & 0xf);
                     break;
                 case 's':
-                    w->cfg->props.source = (val & 3);
+                    w_cfg->props.source = (val & 3);
                     break;
                 case 'u':
-                    w->cfg->props.units = (val & 3);
+                    w_cfg->props.units = (val & 3);
                     break;
                 case 'a':
-                    w->cfg->params[0] = val;
+                    w_cfg->params[0] = val;
                     break;
                 case 'b':
-                    w->cfg->params[1] = val;
+                    w_cfg->params[1] = val;
                     break;
                 case 'c':
-                    w->cfg->params[2] = val;
+                    w_cfg->params[2] = val;
                     break;
                 case 'd':
-                    w->cfg->params[3] = val;
+                    w_cfg->params[3] = val;
                     break;
                 default:
                     break;
             }
         }
-        reconfig_widget(w);
-        shell_printf("Changed widget: %02u+%02u\n", id, uid);
+        
+        if (found) {
+            /* check if loaded and reconfig */
+            for (i = 0; i < total_active_widgets; i++) {
+                w = active_widgets[i];
+                if ((w->cfg->uid == uid) && (w->cfg->widget_id == id)) {
+                    reconfig_widget(w);
+                    return;
+                }
+            }
+        }
     }
 }
 
