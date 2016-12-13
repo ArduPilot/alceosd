@@ -58,6 +58,8 @@ const struct param_def params_mavlink_rates[] = {
     PARAM("MAV_EXTRA1",   MAV_PARAM_TYPE_UINT8, &config.mav.streams[5], NULL),
     PARAM("MAV_EXTRA2",   MAV_PARAM_TYPE_UINT8, &config.mav.streams[6], NULL),
     PARAM("MAV_EXTRA3",   MAV_PARAM_TYPE_UINT8, &config.mav.streams[7], NULL),
+
+    PARAM("MAV_SHELL",   MAV_PARAM_TYPE_UINT8, &config.mav.shell_rate, NULL),
     PARAM_END,
 };
 
@@ -560,7 +562,7 @@ void mav_param_request_list(mavlink_message_t *msg, void *d)
     
     pidx = 0;
     total_params = params_get_total();
-    add_timer(TIMER_ALWAYS, 100, send_param_list_cbk, d);
+    add_timer(TIMER_ALWAYS, 50, send_param_list_cbk, d);
 
     console_printf("plist:sysid=%d compid=%d\n", sys, comp);
 }
@@ -752,11 +754,11 @@ static void shell_cmd_stats(char *args, void *data)
 
     for (i = 0; i < MAVLINK_COMM_NUM_BUFFERS; i++) {
         status = mavlink_get_channel_status(i);
-        shell_printf("\nMavlink channel %d\n", i);
-        shell_printf(" parse errors=%d\n", status->parse_error);
-        shell_printf(" buffer_overrun=%d\n", status->buffer_overrun);
-        shell_printf(" packet_rx_drop_count=%d\n", status->packet_rx_drop_count);
-        shell_printf(" packet_rx_success_count=%d\n", status->packet_rx_success_count);
+        shell_printf("\nMavlink channel %u\n", i);
+        shell_printf(" parse errors=%u\n", status->parse_error);
+        shell_printf(" buffer_overrun=%u\n", status->buffer_overrun);
+        shell_printf(" packet_rx_drop_count=%u\n", status->packet_rx_drop_count);
+        shell_printf(" packet_rx_success_count=%u\n", status->packet_rx_success_count);
     }
     shell_printf("\nActive channel mask=%x\n", active_channel_mask);
     shell_printf("\nUAV last seen %lums ago\n", mavdata_age(MAVLINK_MSG_ID_HEARTBEAT));
