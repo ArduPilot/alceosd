@@ -41,7 +41,7 @@ struct alceosd_config config = {
     .uart = {
         { .mode = UART_CLIENT_MAVLINK, .baudrate = UART_BAUD_115200, .pins = UART_PINS_TELEMETRY },
         { .mode = UART_CLIENT_MAVLINK, .baudrate = UART_BAUD_115200, .pins = UART_PINS_CON2 },
-        { .mode = UART_CLIENT_NONE,    .baudrate = UART_BAUD_115200, .pins = UART_PINS_OFF },
+        { .mode = UART_CLIENT_MAVLINK, .baudrate = UART_BAUD_115200, .pins = UART_PINS_CON3 },
         { .mode = UART_CLIENT_NONE,    .baudrate = UART_BAUD_115200, .pins = UART_PINS_OFF },
     },
   
@@ -87,6 +87,7 @@ struct alceosd_config config = {
 
     .mav = {
         .streams = {3, 1, 4, 1, 4, 10, 10, 1},
+        .shell_rate = 0,
         .osd_sysid = 200,
         .uav_sysid = 1,
         .heartbeat = 1,
@@ -322,8 +323,6 @@ static u8 load_config_text(unsigned char *buf, unsigned int len, void *data)
     return 0;
 }
 
-extern const struct widget_ops *all_widget_ops[];
-
 static void shell_cmd_stats(char *args, void *data)
 {
     shell_printf("Config stats:\n");
@@ -371,74 +370,90 @@ static void shell_cmd_dumpcfg2(char *args, void *data)
 {
     u16 i;
     
-    shell_printf("AlceOSD config hw%dv%d fw%d.%d.%d\n==\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
+    shell_printf("# AlceOSD config hw%dv%d fw%d.%d.%d\n==\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
+    shell_printf("echo 1\n");
 
-    
     /* uart */
-    shell_printf("# UART,port,baudrate,mode,pins\n");
+    shell_printf("# UART\n");
     for (i = 0; i < 4; i++) {
-        shell_printf("UART,%u,%u,%u,%u\n", i, config.uart[i].baudrate,
-                config.uart[i].mode, config.uart[i].pins);
+        shell_printf("uart config -p%u -b%lu -c%s -i%s\n", i,
+                uart_get_baudrate(config.uart[i].baudrate),
+                UART_CLIENT_NAMES[config.uart[i].mode],
+                UART_PIN_NAMES[config.uart[i].pins]);
     }
     
     /* video */
-    shell_printf("\n# VIDEO,brightness,white,gray,black,vref\n");
-    shell_printf("VIDEO,%u,%u,%u,%u,%u\n", config.video.brightness,
+    shell_printf("\n# VIDEO\n");
+    shell_printf("video config -t%u -w%u -g%u -b%u -r%u\n", config.video.brightness,
             config.video.white_lvl, config.video.gray_lvl,
             config.video.black_lvl, config.video.ctrl.vref);
-    shell_printf("# VIDEO_SW,mode,ch,ch_min,ch_max,timer\n");
-    shell_printf("VIDEO_SW,%u,%u,%u,%u,%u\n", config.video_sw.mode,
+    shell_printf("# VIDEO_SW\n");
+    shell_printf("video sw -m%u -c%u -l%u -h%u -t%u\n", config.video_sw.mode,
             config.video_sw.ch, config.video_sw.ch_min,
-            config.video_sw.ch_max, config.video_sw.time);
-    shell_printf("# VIDEO_PROFILE,nr,mode,x_offset,x_size_id,y_offset,y_size\n");
+            config.video_sw.ch_max, config.video_sw.time * 100);
+    shell_printf("# VIDEO_PROFILES\n");
     for (i = 0; i < 2; i++) {
-        shell_printf("VIDEO_PROFILE,%u,%u,%u,%u,%u,%u\n", i, config.video_profile[i].mode,
-                config.video_profile[i].x_offset, config.video_profile[i].x_size_id,
-                config.video_profile[i].y_offset, config.video_profile[i].y_size);
+        shell_printf("video config -p%u -m%c -s%c -i%u -x%u -y%u -h%u -v%u\n", i,
+                config.video_profile[i].mode & VIDEO_MODE_SCAN_MASK ? 'n' : 'p',
+                config.video_profile[i].mode & VIDEO_MODE_STANDARD_MASK ? 'i' : 'p',
+                config.video_profile[i].mode & VIDEO_MODE_SYNC_MASK ? 1 : 0,
+                video_xsizes[config.video_profile[i].x_size_id].xsize,
+                config.video_profile[i].y_size,
+                config.video_profile[i].x_offset,
+                config.video_profile[i].y_offset);
     }
 
     /* tab switch */
-    shell_printf("\n# TAB_SW,mode,ch,ch_min,ch_max,timer\n");
-    shell_printf("TAB_SW,%u,%u,%u,%u,%u\n", config.tab_sw.mode,
+    shell_printf("\n# TAB_SW\n");
+    shell_printf("tabs config -m%u -c%u -l%u -h%u -t%u\n", config.tab_sw.mode,
             config.tab_sw.ch, config.tab_sw.ch_min,
             config.tab_sw.ch_max, config.tab_sw.time);
     
     /* mavlink */
-    shell_printf("\n# MAVLINK,osd_sysid,uav_sysid,osd_heartbeat\n");
-    shell_printf("MAVLINK,%u,%u,%u,%u,%u", config.mav.osd_sysid,
+    shell_printf("\n# MAVLINK\n");
+    shell_printf("mavlink config -i%u -u%u -h%u\n", config.mav.osd_sysid,
             config.mav.uav_sysid, config.mav.heartbeat);
+
+    shell_printf("\n# MAVLINK STREAM RATES\n");
     for (i = 0; i < 8; i++)
-        shell_printf(",%u", i, config.mav.streams[i]);
+        shell_printf("mavlink rates -s%u -r%u\n", i+1, config.mav.streams[i]);
     
     /* rssi */
-    shell_printf("\n\n# RSSI,mode,min,max\n");
-    shell_printf("RSSI,%u,%u,%u\n", config.rssi.mode,
-            config.rssi.min, config.rssi.max);
+    shell_printf("\n# RSSI\n");
+    shell_printf("flight rssi -s%u -u%u -l%u -h%u\n", config.rssi.mode.source,
+            config.rssi.mode.units, config.rssi.min, config.rssi.max);
     
     /* alarms */
-    shell_printf("\n# ALARM,nr,id,mode,value,timer\n");
+    shell_printf("\n# FLIGHT ALARMS\n");
+    shell_printf("flight alarms -a3\n");
     i = 0;
     while (config.flight_alarm[i].props.id != FL_ALARM_ID_END) {
-        shell_printf("ALARM,%u,%u,%.4f,%u\n", i,
-                config.flight_alarm[i].props.id,
+        shell_printf("flight alarms -a%u -i%u -v%.4f -t%u\n",
                 config.flight_alarm[i].props.mode,
+                config.flight_alarm[i].props.id,
                 config.flight_alarm[i].value,
                 config.flight_alarm[i].timer);
         i++;
     }
     
     /* default units */
-    shell_printf("UNITS,%u\n", config.default_units);
+    shell_printf("\n# DEFAULT UNITS\n");
+    shell_printf("config units %u\n", config.default_units - 1);
     
     /* widgets */
-    shell_printf("\n# WIDGET,nr,tab,id,uid,props,x,y,params[0..3]\n");
+    shell_printf("\n# WIDGETS\n");
+    shell_printf("tabs load -t0\n");
+    shell_printf("widgets rm all\n");
     i = 0;
     while (config.widgets[i].tab != TABS_END) {
-        shell_printf("WIDGET,%u,%u,%u,%u,%d,%d,%u,%u,%u,%u\n", i,
-                config.widgets[i].tab,
+        shell_printf("widgets cfg -i%u -t%u -m%u -s%u -u%u -h%u -v%u -x%d -y%d -a%u -b%u -c%u -d%u\n",
                 config.widgets[i].widget_id,
-                config.widgets[i].uid,
-                config.widgets[i].props.raw,
+                config.widgets[i].tab,
+                config.widgets[i].props.mode,
+                config.widgets[i].props.source,
+                config.widgets[i].props.units,
+                config.widgets[i].props.hjust,
+                config.widgets[i].props.vjust,
                 config.widgets[i].x,
                 config.widgets[i].y,
                 config.widgets[i].params[0],
@@ -447,8 +462,9 @@ static void shell_cmd_dumpcfg2(char *args, void *data)
                 config.widgets[i].params[3]);
         i++;
     }
+    shell_printf("tabs load -t1\n");
+    shell_printf("echo 1\n");
     
-    shell_printf("--\n");
 }
 
 static void shell_cmd_units(char *args, void *data)
