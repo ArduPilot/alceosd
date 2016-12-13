@@ -21,7 +21,7 @@
 #define PERSISTENT_BUFFER
 
 #define ROWS    (10)
-#define COLS    (60)
+#define COLS    (45)
 
 #define X_SIZE  (8*COLS)
 #define Y_SIZE  (13*ROWS)
