@@ -330,7 +330,7 @@ static void shell_cmd_alarms(char *args, void *data)
     t = shell_arg_parser(args, argval, SHELL_CMD_WARNINGS_ARGS);
 
     p = shell_get_argval(argval, 'a');
-    if ((t < 2) || (p == NULL)) {
+    if ((t < 1) || (p == NULL)) {
         shell_printf("Available alarms:\n");
         for (n = 0; n < FL_ALARM_ID_END; n++) {
             shell_printf("id=%u %-8s value_type=%s\n", n, fl_info[n].name,
@@ -353,7 +353,7 @@ static void shell_cmd_alarms(char *args, void *data)
                 shell_printf("(none)\n");
         }
         shell_printf("\nsyntax: flight alarm -a <action> [-n <nr>|-i <id>] -v <value> -t <timer>\n");
-        shell_printf("      <action> 0=remove, 1=add low limit, 2=add high limit\n");
+        shell_printf("      <action> 0=remove, 1=add low limit, 2=add high limit, 3=remove all\n");
     } else {
         action = atoi(p->val);
         switch (action) {
@@ -442,11 +442,51 @@ static void shell_cmd_alarms(char *args, void *data)
                 }
                 
                 break;
+            case 3:
+                config.flight_alarm[0].props.id = FL_ALARM_ID_END;
+                break;
+        }
+    }
+}
+
+#define SHELL_CMD_CONFIG_ARGS 4
+static void shell_cmd_rssi(char *args, void *data)
+{
+    struct rssi_config *cfg = &config.rssi;
+    struct shell_argval argval[SHELL_CMD_CONFIG_ARGS+1], *p;
+    unsigned char t, i;
+    unsigned int w;
+
+    t = shell_arg_parser(args, argval, SHELL_CMD_CONFIG_ARGS);
+    if (t < 1) {
+        shell_printf("RSSI config:\n");
+        shell_printf(" Source: %u (0-17:RC1-18; 29:ADC0; 30:ADC1; 31:Mavlink RSSI)\n", cfg->mode.source);
+        shell_printf(" Units:  %u (0:percent; 1:raw)\n", cfg->mode.units);
+        shell_printf(" Min:    %u\n", cfg->min);
+        shell_printf(" Max:    %u\n", cfg->max);
+        shell_printf("\nconfig options: -s <source> -u <units> -l <min> -h <max>\n");
+    } else {
+        p = shell_get_argval(argval, 's');
+        if (p != NULL) {
+            cfg->mode.source = atoi(p->val) & 0x1f;
+        }
+        p = shell_get_argval(argval, 'u');
+        if (p != NULL) {
+            cfg->mode.units = atoi(p->val) & 1;
+        }
+        p = shell_get_argval(argval, 'l');
+        if (p != NULL) {
+            cfg->min = atoi(p->val);
+        }
+        p = shell_get_argval(argval, 'h');
+        if (p != NULL) {
+            cfg->max = atoi(p->val);
         }
     }
 }
 
 static const struct shell_cmdmap_s flight_cmdmap[] = {
+    {"rssi", shell_cmd_rssi, "RSSI", SHELL_CMD_SIMPLE},
     {"stats", shell_cmd_stats, "Flight stats", SHELL_CMD_SIMPLE},
     {"alarms", shell_cmd_alarms, "Alarms", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
