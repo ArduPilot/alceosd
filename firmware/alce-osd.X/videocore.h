@@ -34,7 +34,7 @@ enum {
     VIDEO_STANDARD_PAL_I  = 1,
     VIDEO_STANDARD_NTSC_P = 2,
     VIDEO_STANDARD_NTSC_I = 3,
-    VIDEO_STANDARD_END    = 8,
+    VIDEO_STANDARD_END    = 4,
 };
 
 #define VIDEO_MODE_SCAN_MASK        (0x01)
@@ -133,4 +133,5 @@ void video_resume(void);
 
 void shell_cmd_video(char *args, void *data);
 
+extern const struct osd_xsize_tbl video_xsizes[];
 #endif

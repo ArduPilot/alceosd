@@ -694,7 +694,7 @@ void video_apply_config(unsigned char profile)
     }
     
     if (hw_rev == 0x04) {
-        VIN_SEL = config.video.ctrl.vref ? 0 : 1;
+        VIN_SEL = config.video.ctrl.source ? 0 : 1;
     }
 
     if (config.video.ctrl.vref > 0)
@@ -1679,6 +1679,7 @@ static void shell_cmd_config(char *args, void *data)
                 shell_printf(" -t <brightness>  brightness: 0 (max) to 1000 (min)\n");
                 break;
             case 0x03:
+            case 0x04:
                 shell_printf(" -w <white_lvl>   white voltage level: 0 to \n");
                 shell_printf(" -g <gray_lvl>    gray voltage level: 0 to \n");
                 shell_printf(" -b <black_lvl>   black voltage level: 0 to \n");
@@ -1773,6 +1774,8 @@ static void shell_cmd_config(char *args, void *data)
                     int_var = atoi(argval[i].val);
                     int_var &= 0xf;
                     config.video.ctrl.vref = int_var;
+                    if (int_var == 0)
+                        break;
                     CVR1CONbits.CVR = (unsigned int) int_var;
                     
                     int_var = CVR1CONbits.CVRR | (CVR1CONbits.CVRR1 << 1);
@@ -2003,7 +2006,8 @@ static void shell_cmd_swconfig(char *args, void *data)
         if (p != NULL) {
             w = atoi(p->val);
             w = w / 100;
-            swcfg->time = w;
+            w = max(w, 5);
+            swcfg->time = (u8) w;
         }
         p = shell_get_argval(argval, 'i');
         if (p != NULL) {
