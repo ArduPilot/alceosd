@@ -1714,6 +1714,7 @@ static void shell_cmd_config(char *args, void *data)
                         vcfg->mode &= ~VIDEO_MODE_STANDARD_MASK;
                     else
                         vcfg->mode |= VIDEO_MODE_STANDARD_MASK;
+                    break;
                 case 'm':
                     if (strcmp(argval[i].val, "p") == 0)
                         vcfg->mode &= ~VIDEO_MODE_SCAN_MASK;
