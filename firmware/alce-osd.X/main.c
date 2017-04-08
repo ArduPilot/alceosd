@@ -215,7 +215,7 @@ unsigned char hw_rev;
 
 void hw_init(void)
 {
-    volatile unsigned int i;
+    volatile unsigned long i, j;
     /* LED */
     LED_DIR = 0;
     LED = 0;
@@ -246,46 +246,66 @@ void hw_init(void)
     LED = 1;
 
     /* detect hw revision */
-    /* set RB9 internal pull down */
-    _TRISB9 = 1;
-    _CNPDB9 = 1;
-
-    /* set RA9 internal pull down */
-    _TRISA9 = 1;
-    _CNPDA9 = 1;
-
     /* set RB1 internal pull down */
     _TRISB1 = 1;
     _CNPDB1 = 1;
-    ANSELBbits.ANSB1 = 1;
-    AD1CON3bits.ADCS = 16;
-    AD1CON2bits.CHPS = 2;
-    AD1CON1bits.ADON = 1;
-    AD1CHS0bits.CH0SA = 3;
-    AD1CON1bits.SAMP = 1;
-    for (i = 0; i < 1000; i++);
-    AD1CON1bits.SAMP = 0;
-    for (i = 0; i < 10000; i++);
     
-    if (ADC1BUF0 > 400)
-        /* hw 0v4 has 1.25V vref on AN3 */
-        hw_rev = 0x04;
-    else if (_RB9 == 1)
-        /* hw 0v3 has external pull-up on RB9 */
-        hw_rev = 0x03;
-    else if (_RA9 == 1)
-        /* hw 0v2 has RB9 floating and RA9 pull-up */
-        hw_rev = 0x02;
-    else
-        /* hw 0v1 has RA9 and RB9 floating */
-        hw_rev = 0x01;
-    _CNPDB9 = 0;
-    _CNPDA9 = 0;
-    _CNPDB1 = 0;
-    AD1CON1bits.ADON = 0;
+    /* hw 0v5 has RB1 connected to RB4 */
+    _TRISB4 = 0;
+    _LATB4 = 0;
+    for (i = 0; i < 100000; i++);
+    j = (_RB1 & 1);
+    _LATB4 = 1;
+    for (i = 0; i < 100000; i++);
+    j |= ((_RB1 & 1) << 1);
+    
+    if (j == 0b10) {
+        hw_rev = 0x05;
+    } else {
+        /* set RB9 internal pull down */
+        _TRISB9 = 1;
+        _CNPDB9 = 1;
 
+        /* set RA9 internal pull down */
+        _TRISA9 = 1;
+        _CNPDA9 = 1;
+
+        ANSELBbits.ANSB1 = 1;
+        AD1CON3bits.ADCS = 16;
+        AD1CON2bits.CHPS = 2;
+        AD1CON1bits.ADON = 1;
+        AD1CHS0bits.CH0SA = 3;
+        AD1CON1bits.SAMP = 1;
+        for (i = 0; i < 1000; i++);
+        AD1CON1bits.SAMP = 0;
+        for (i = 0; i < 10000; i++);
+
+        if (ADC1BUF0 > 400)
+            /* hw 0v4 has 1.25V vref on AN3 */
+            hw_rev = 0x04;
+        else if (_RB9 == 1)
+            /* hw 0v3 has external pull-up on RB9 */
+            hw_rev = 0x03;
+        else if (_RA9 == 1)
+            /* hw 0v2 has RB9 floating and RA9 pull-up */
+            hw_rev = 0x02;
+        else
+            /* hw 0v1 has RA9 and RB9 floating */
+            hw_rev = 0x01;
+        _CNPDB9 = 0;
+        _CNPDA9 = 0;
+        AD1CON1bits.ADON = 0;
+    }
+    _CNPDB1 = 0;
+    _TRISB4 = 1;
+    
     /* weak pull up on serial port rx pins */
-    if (hw_rev >= 0x03) {
+    if (hw_rev >= 0x05) {
+        _CNPUB12 = 1;
+        _CNPUB15 = 1;
+        _CNPUC7 = 1;
+        _CNPUB7 = 1;
+    } else if (hw_rev >= 0x03) {
         _CNPUB11 = 1;
         _CNPUB6 = 1;
         _CNPUB2 = 1;
@@ -309,10 +329,10 @@ int main(void)
 {
     /* generic hw init */
     hw_init();
-    
+
     /* init uart */
     uart_init();
-    
+
     /* init shell */
     shell_init();
 
@@ -350,7 +370,7 @@ int main(void)
 
     /* init widget modules */
     widgets_init();
-    
+
     /* setup tabs */
     tabs_init();
 
@@ -359,13 +379,13 @@ int main(void)
 
     /* init home tracking */
     init_home();
-    
+
     /* init flight status tracking */
     init_flight_stats();
-    
+
     /* init uavtalk module */
     uavtalk_init();
-    
+
     /* init frsky module */
     frsky_init();
 
@@ -381,4 +401,3 @@ int main(void)
 
     return 0;
 }
-
