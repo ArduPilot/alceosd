@@ -29,12 +29,20 @@ void uart_init(void)
     /* setup all ports */
     /* and detect used port */
     
-    if (hw_rev == 0x03) {
-        _CNPUB11 = 1;
-        _CNPUB6 = 1;
-        _CNPUB2 = 1;
-        _CNPUB13 = 1;
-        
+    if (hw_rev >= 0x05) {
+        /* u1 */
+        _RP43R = 1;
+        _U1RXR = 44;
+        /* u2 */
+        _RP42R = 3;
+        _U2RXR = 47;
+        /* u3 */
+        _RP54R = 0x1b;
+        _U3RXR = 55;
+        /* u4 */
+        _RP40R = 0x1d;
+        _U4RXR = 39;
+    } else if (hw_rev >= 0x03) {
         /* u1 */
         _RP42R = 1;
         _U1RXR = 43;
@@ -48,9 +56,6 @@ void uart_init(void)
         _RP39R = 0x1d;
         _U4RXR = 45;
     } else if (hw_rev == 0x02) {
-        _CNPUB6 = 1;
-        _CNPUA4 = 1;
-
         /* u1 */
         _RP37R = 1;
         _U1RXR = 38;
@@ -58,9 +63,6 @@ void uart_init(void)
         _RP36R = 3;
         _U2RXR = 20;
     } else {
-        _CNPUB6 = 1;
-        _CNPUA4 = 1;
-
         /* u1 */
         _RP37R = 1;
         _U1RXR = 38;
