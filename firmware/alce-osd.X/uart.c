@@ -96,7 +96,7 @@ const struct baudrate_tbl baudrates[] = {
 static const struct hw_pin_map_table {
     unsigned int rx;
     unsigned int tx;
-} hw_pin_map[4][4] = {
+} hw_pin_map[5][4] = {
     /* telemetry, con2, icsp, con3 */
     /* hw0v1 */
     { { .rx = 38, .tx = 37 }, { .rx = 20, .tx = 41 }, { .rx = 0,  .tx = 0 },  { .rx = 0,  .tx = 0 } },
@@ -106,6 +106,8 @@ static const struct hw_pin_map_table {
     { { .rx = 43, .tx = 42 }, { .rx = 38, .tx = 37 }, { .rx = 34, .tx = 35 }, { .rx = 45, .tx = 39 } },
     /* hw0v4 */
     { { .rx = 43, .tx = 42 }, { .rx = 38, .tx = 37 }, { .rx = 34, .tx = 35 }, { .rx = 45, .tx = 39 } },
+    /* hw0v5 */
+    { { .rx = 44, .tx = 43 }, { .rx = 47, .tx = 42 }, { .rx = 55, .tx = 54 }, { .rx = 39, .tx = 40 } },
 };
 
 #define UART_CLIENTS_MAX 10
@@ -598,7 +600,9 @@ static void uart_set_pins(unsigned char port, unsigned char pins)
     /* setup tx pins */
     switch (pins) {
         case UART_PINS_TELEMETRY:
-            if (hw_rev >= 0x03) {
+            if (hw_rev >= 0x05) {
+                _RP43R = UARTS[port].TXRP;
+            } else if (hw_rev >= 0x03) {
                 _RP42R = UARTS[port].TXRP;
                 //*(UARTS[port].RXRP) = 43;
             } else {
@@ -607,7 +611,9 @@ static void uart_set_pins(unsigned char port, unsigned char pins)
             }
             break;
         case UART_PINS_CON2:
-            if (hw_rev >= 0x03) {
+            if (hw_rev >= 0x05) {
+                _RP42R = UARTS[port].TXRP;
+            } else if (hw_rev >= 0x03) {
                 _RP37R = UARTS[port].TXRP;
                 //*(UARTS[port].RXRP) = 38;
             } else {
@@ -623,14 +629,22 @@ static void uart_set_pins(unsigned char port, unsigned char pins)
         case UART_PINS_ICSP:
             if (hw_rev == 0x01)
                 break;
-            _RP35R = UARTS[port].TXRP;
-            //*(UARTS[port].RXRP) = 34;
+            if (hw_rev >= 0x05) {
+                _RP40R = UARTS[port].TXRP;
+            } else {
+                _RP35R = UARTS[port].TXRP;
+                //*(UARTS[port].RXRP) = 34;
+            }
             break;
         case UART_PINS_CON3:
             if (hw_rev < 0x03)
                 break;
-            _RP39R = UARTS[port].TXRP;
-            //*(UARTS[port].RXRP) = 45;
+            if (hw_rev >= 0x05) {
+                _RP54R = UARTS[port].TXRP;
+            } else {
+                _RP39R = UARTS[port].TXRP;
+                //*(UARTS[port].RXRP) = 45;
+            }
             break;
         default:
             break;
