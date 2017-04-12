@@ -47,14 +47,14 @@ struct alceosd_config config = {
   
     .video_profile = {
         {
-            .mode = VIDEO_STANDARD_PAL_P | VIDEO_MODE_SYNC_MASK,
+            .mode = VIDEO_STANDARD_PAL_P,
             .x_offset = 40,
             .y_offset = 40,
             .x_size_id = VIDEO_XSIZE_480,
             .y_size = 260,
         },
         {
-            .mode = VIDEO_STANDARD_PAL_I | VIDEO_MODE_SYNC_MASK,
+            .mode = VIDEO_STANDARD_PAL_I,
             .x_offset = 40,
             .y_offset = 40,
             .x_size_id = VIDEO_XSIZE_672,
@@ -393,10 +393,9 @@ static void shell_cmd_dumpcfg2(char *args, void *data)
             config.video_sw.ch_max, config.video_sw.time * 100);
     shell_printf("# VIDEO_PROFILES\n");
     for (i = 0; i < 2; i++) {
-        shell_printf("video config -p%u -m%c -s%c -i%u -x%u -y%u -h%u -v%u\n", i,
+        shell_printf("video config -p%u -m%c -s%c -x%u -y%u -h%u -v%u\n", i,
                 config.video_profile[i].mode & VIDEO_MODE_SCAN_MASK ? 'n' : 'p',
                 config.video_profile[i].mode & VIDEO_MODE_STANDARD_MASK ? 'i' : 'p',
-                config.video_profile[i].mode & VIDEO_MODE_SYNC_MASK ? 1 : 0,
                 video_xsizes[config.video_profile[i].x_size_id].xsize,
                 config.video_profile[i].y_size,
                 config.video_profile[i].x_offset,
