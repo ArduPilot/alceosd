@@ -71,6 +71,12 @@ typedef union {
 
 extern void console_print(char *str);
 extern int console_printf(const char *fmt, ...);
+
+extern void atomic_set16(u16 *var, u16 val);
+extern u16 atomic_get16(u16 *var);
+extern void atomic_clr16(u16 *var);
+extern void atomic_inc16(u16 *var);
+
 extern unsigned char hw_rev;
 
 #endif	/* ALCE_OSD_H */
