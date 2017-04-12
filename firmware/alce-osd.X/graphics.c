@@ -45,8 +45,48 @@ void draw_line(int x0, int y0, int x1, int y1,
         aux = x1; x1 = x0; x0 = aux;
         aux = y1; y1 = y0; y0 = aux;
     }
-
-    int dx =  abs(x1-x0);
+    
+    int yi = 1;
+    int ydiff = y1-y0;
+    if (ydiff < 0) {
+        ydiff = -ydiff;
+        yi = -1;
+    }
+    
+    int xdiff = x1-x0;
+    
+    int error_term = 0;
+    if (xdiff > ydiff) {
+        u16 i;
+        for (i = 0; i < xdiff+1; i++) {
+            set_pixel(x0, y0, v, ca);
+            x0++;
+            error_term += ydiff;
+            if (error_term > 0) {
+                error_term -= xdiff;
+                y0 += yi;
+            }
+        }
+    } else {
+        u16 i;
+        for (i = 0; i < ydiff+1; i++) {
+            set_pixel(x0, y0, v, ca);
+            y0 += yi;
+            error_term += xdiff;
+            if (error_term > 0) {
+                error_term -= ydiff;
+                x0++;
+            }
+        }
+    }
+    
+    
+    return;
+    
+    
+    
+    
+    int dx =  x1-x0;
     int dy = -abs(y1-y0), sy = y0<y1 ? 1 : -1;
     int err = dx+dy, e2;
 

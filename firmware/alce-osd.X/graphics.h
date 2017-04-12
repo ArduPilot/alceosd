@@ -26,6 +26,10 @@ struct point {
     int x, y;
 };
 
+struct point3d {
+    s32 x, y, z;
+};
+
 struct polygon {
     struct point *points;
     unsigned char len;
