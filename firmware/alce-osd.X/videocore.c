@@ -1158,18 +1158,34 @@ static void video_switch_task(struct timer *t, void *d)
 #define SYNC_REF_MIN 1000
 #define SYNC_REF_STEP 25
 
-static void sync_task(struct timer *t, void *d)
+static void syncdet_task(struct timer *t, void *d)
 {
-    static s16 step = SYNC_REF_STEP;
-    u16 scnt = atomic_get16(&int_sync_cnt);
-
-    if (scnt > CNT_INT_MODE) {
-        set_timer_period(t, 10);
-        OC4R += step;
-        if (OC4R > SYNC_REF_MAX)
-            step = -1 * SYNC_REF_STEP;
-        else if (OC4R < SYNC_REF_MIN)
-            step = SYNC_REF_STEP;
+    static s16 step;
+    if (atomic_get16(&int_sync_cnt) > CNT_INT_MODE) {
+        switch (hw_rev) {
+            default:
+                if (CVR1CONbits.CVR > 4)
+                    step = -1;
+                else if (CVR1CONbits.CVR < 3)
+                    step = 1;
+                CVR1CONbits.CVR += step;
+                break;
+            case 0x04:
+                if (CVR1CONbits.CVR > 2)
+                    step = -1;
+                else if (CVR1CONbits.CVR == 0)
+                    step = 1;
+                CVR1CONbits.CVR += step;
+                break;
+            case 0x05:
+                set_timer_period(t, 10);
+                if (OC4R > SYNC_REF_MAX)
+                    step = -1 * SYNC_REF_STEP;
+                else if (OC4R < SYNC_REF_MIN)
+                    step = SYNC_REF_STEP;
+                OC4R += step;
+                break;
+        }
     } else {
         set_timer_period(t, 100);
     }
@@ -1190,10 +1206,11 @@ void init_video(void)
         params_add(params_video0v4);
         add_timer(TIMER_ALWAYS, 100, video_switch_task, &config.video_sw);
     }
+
+    if (hw_rev >= 0x03)
+        add_timer(TIMER_ALWAYS, 100, syncdet_task, NULL);
     
     video_pid = process_add(render_process, "RENDER", 100);
-    if (hw_rev >= 0x05)
-        add_timer(TIMER_ALWAYS, 10, sync_task, NULL);
 }
 
 void video_pause(void)
@@ -1527,16 +1544,21 @@ void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
 void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
 {
     static unsigned char cnt;
+    static u16 t;
     u16 scnt = atomic_get16(&int_sync_cnt);
 
     _T4IF = 0;
 
     if (scnt < CNT_INT_MODE) {
-        /* ext sync */
         atomic_inc16(&int_sync_cnt);
     } else if (scnt < CNT_INT_MODE + 1) {
+        t = get_millis16();
+        atomic_inc16(&int_sync_cnt);
+    } else if (scnt < CNT_INT_MODE + 2) {
+        if (get_millis16() - t > 1000)
+            atomic_inc16(&int_sync_cnt);
+    } else if (scnt < CNT_INT_MODE + 3) {
         /* prepare internal sync */
-
         last_line_cnt = 312;
         line = 0;
         odd = 1;
