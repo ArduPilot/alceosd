@@ -62,8 +62,6 @@ struct alceosd_config config = {
         },
     },
     .video = {
-        .brightness = 200,
-
         .white_lvl = 0x3ff >> 4,
         .gray_lvl = 0x2d0 >> 4,
         .black_lvl = 0x190 >> 4,
@@ -384,9 +382,8 @@ static void shell_cmd_dumpcfg2(char *args, void *data)
     
     /* video */
     shell_printf("\n# VIDEO\n");
-    shell_printf("video config -t%u -w%u -g%u -b%u -r%u\n", config.video.brightness,
-            config.video.white_lvl, config.video.gray_lvl,
-            config.video.black_lvl, config.video.ctrl.vref);
+    shell_printf("video config -w%u -g%u -b%u\n", config.video.white_lvl,
+            config.video.gray_lvl, config.video.black_lvl);
     shell_printf("# VIDEO_SW\n");
     shell_printf("video sw -m%u -c%u -l%u -h%u -t%u\n", config.video_sw.mode,
             config.video_sw.ch, config.video_sw.ch_min,

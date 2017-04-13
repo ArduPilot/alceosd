@@ -90,7 +90,7 @@ const struct param_def params_video[] = {
     PARAM_END,
 };
 const struct param_def params_video0v1[] = {
-    PARAM("VIDEO_BRIGHT", MAV_PARAM_TYPE_UINT16, &config.video.brightness, video_apply_config_cbk),
+    PARAM("VIDEO_BRIGHT", MAV_PARAM_TYPE_UINT8, &config.video.white_lvl, video_apply_config_cbk),
     PARAM("VIDEO_CTRL", MAV_PARAM_TYPE_UINT8, &config.video.ctrl.raw, video_apply_config_cbk),
     PARAM_END,
 };
@@ -554,24 +554,25 @@ static void video_init_hw(void)
     IFS0bits.T2IF = 0;
     IEC0bits.T2IE = 1;
 
-    if (videocore_ctrl & CTRL_PWMBRIGHT) {
-        /* brightness */
-        /* OC1 pin */
-        TRISBbits.TRISB7 = 0;
-        _RP39R = 0x10;
-
+    if (videocore_ctrl & (CTRL_PWMBRIGHT | CTRL_3PWMBRIGHT)) {
+        /* T3 - pwm timer */
         T3CONbits.TCKPS = 0;
         T3CONbits.TCS = 0;
         T3CONbits.TGATE = 0;
         TMR3 = 0x00;
         PR3 = 0x7fff;
         T3CONbits.TON = 1;
+    }
 
+    if (videocore_ctrl & CTRL_PWMBRIGHT) {
+#define FREQ_PWM_OFFSET 40
+        /* brightness - OC1 */
+        _RP39R = 0x10;
         OC1CON1bits.OCM = 0;
         OC1CON1bits.OCTSEL = 1;
         OC1CON2bits.SYNCSEL = 0x1f;
-        OC1R = 0x100;
-        OC1RS = 0x100 + config.video.brightness;
+        OC1RS = FREQ_PWM_OFFSET + 120;
+        OC1R = FREQ_PWM_OFFSET + config.video.white_lvl;
         OC1CON1bits.OCM = 0b110;
     }
 
@@ -579,12 +580,6 @@ static void video_init_hw(void)
 #define FREQ_3PWM   5000
 #define FREQ_3PWM_MULT  40
 #define FREQ_3PWM_OFFSET 200
-        T3CONbits.TCKPS = 0;
-        T3CONbits.TCS = 0;
-        T3CONbits.TGATE = 0;
-        TMR3 = 0x00;
-        PR3 = 0x7fff;
-        T3CONbits.TON = 1;
 
         /* white - OC1 */
         _RP38R = 0x10;
@@ -769,7 +764,7 @@ void video_apply_config(unsigned char profile)
         cfg = &config.video_profile[profile];
 
     if (videocore_ctrl & CTRL_PWMBRIGHT) {
-        OC1RS = 0x100 + config.video.brightness;
+        OC1R = FREQ_PWM_OFFSET + config.video.white_lvl;
     }
 
     if (videocore_ctrl & CTRL_DACBRIGHT) {
@@ -791,13 +786,6 @@ void video_apply_config(unsigned char profile)
         }
     }
 
-    if (videocore_ctrl & CTRL_EXTVREF) {
-        if (hw_rev <= 0x04) {
-            if (config.video.ctrl.vref > 0)
-                CVR1CONbits.CVR = config.video.ctrl.vref;
-        }
-    }
-    
     /* pixel clock */
     INTCON2bits.GIE = 0;
     SPI2STATbits.SPIEN = 0;
@@ -1843,7 +1831,7 @@ static void shell_cmd_stats(char *args, void *data)
         (cfg->mode & VIDEO_MODE_STANDARD_MASK) != 0 ? "ntsc" : "pal",
         (cfg->mode & VIDEO_MODE_SCAN_MASK) != 0 ? "interlaced" : "progressive");
     if (videocore_ctrl & CTRL_PWMBRIGHT) {
-        shell_printf(" brightness=%u\n", config.video.brightness);
+        shell_printf(" brightness=%u\n", config.video.white_lvl);
     } else {
         shell_printf(" levels: white=%u gray=%u %black=%u\n",
                 config.video.white_lvl,
@@ -1904,7 +1892,7 @@ static void shell_cmd_config(char *args, void *data)
 
         switch (hw_rev) {
             default:
-                shell_printf(" -t <brightness>  brightness: 0 (max) to 1000 (min)\n");
+                shell_printf(" -w <brightness>  brightness: 0 (min) to 100 (max)\n");
                 break;
             case 0x03:
             case 0x04:
@@ -1950,10 +1938,6 @@ static void shell_cmd_config(char *args, void *data)
                     else
                         vcfg->mode |= VIDEO_MODE_SCAN_MASK;
                     break;
-                case 't':
-                    int_var = atoi(argval[i].val);
-                    config.video.brightness = (unsigned int) int_var;
-                    break;
                 case 'w':
                     int_var = atoi(argval[i].val);
                     config.video.white_lvl = (unsigned char) int_var;
@@ -1995,13 +1979,8 @@ static void shell_cmd_config(char *args, void *data)
                 case 'r':
                     int_var = atoi(argval[i].val);
                     int_var &= 0xf;
-                    config.video.ctrl.vref = int_var;
-                    if (int_var == 0)
-                        break;
                     CVR1CONbits.CVR = (unsigned int) int_var;
-
                     int_var = CVR1CONbits.CVRR | (CVR1CONbits.CVRR1 << 1);
-
                     f = (float) CVR1CONbits.CVR;
                     if (videocore_ctrl & CTRL_EXTVREF) {
                         if (hw_rev <= 0x04)

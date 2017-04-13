@@ -89,22 +89,18 @@ struct video_config_profile {
 typedef union {
     u8 raw;
     struct  {
-        unsigned vref:5;
         unsigned source:1;
-        unsigned :2;
+        unsigned :7;
     };
 } video_ctrl_t;
 
 struct video_config {
-    /* video brightness */
-    unsigned int brightness;
-
     /* video voltage levels */
     unsigned char white_lvl;
     unsigned char gray_lvl;
     unsigned char black_lvl;
     
-    /* input source and comparator reference */
+    /* input source */
     video_ctrl_t ctrl;
 };
 
