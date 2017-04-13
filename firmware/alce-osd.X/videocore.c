@@ -61,7 +61,7 @@
 #define LINE_TMR_ 3309
 static unsigned int LINE_TMR = LINE_TMR_;
 
-#define CNT_INT_MODE 3086
+#define CNT_INT_MODE 3104
 
 #define CTRL_SYNCGEN        0x01
 #define CTRL_COMPSYNC       0x02
@@ -1309,8 +1309,11 @@ static void render_line(void)
         last_line = cfg->y_size + cfg->y_offset;
 
         /* avoid sram_busy soft-locks */
-        if (last_line > last_line_cnt - 10)
-            last_line = last_line_cnt - 10;
+        if (last_line > last_line_cnt)
+            last_line = last_line_cnt;
+
+        if (last_line < cfg->y_offset + 1)
+            last_line = cfg->y_offset + 1;
 
         /* auto detect video standard */
 #if 0
@@ -1335,8 +1338,8 @@ static void render_line(void)
             }
         }
     } else if (line < cfg->y_offset) {
-        sram_exit_sqi();
         /* make sure we are in sequential mode */
+        sram_exit_sqi();
         CS_LOW;
         sram_byte_spi(SRAM_WMODE);
         sram_byte_spi(0x40);
@@ -1487,7 +1490,7 @@ void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
             }
             _T4IP = 3;
             vsync = std;
-            last_line_cnt = line+10;
+            last_line_cnt = line;
             line = 10;
             odd = 0;
             atomic_clr16(&int_sync_cnt);
