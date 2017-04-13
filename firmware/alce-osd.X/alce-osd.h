@@ -77,6 +77,11 @@ extern u16 atomic_get16(u16 *var);
 extern void atomic_clr16(u16 *var);
 extern void atomic_inc16(u16 *var);
 
+extern void atomic_set8(u8 *var, u8 val);
+extern u8 atomic_get8(u8 *var);
+extern void atomic_bset8(u8 *var, u8 bit);
+extern void atomic_bclr8(u8 *var, u8 bit);
+
 extern unsigned char hw_rev;
 
 #endif	/* ALCE_OSD_H */

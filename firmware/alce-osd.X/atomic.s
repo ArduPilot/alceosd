@@ -45,3 +45,33 @@ _atomic_inc16:
     disi #1
     inc.w   [W0], [W0]
     return
+
+.global _atomic_set8
+_atomic_set8:
+; void atomic_set8(u8 *var, u8 val)
+    disi #1
+    mov.b   W1,[W0]
+    return
+
+.global _atomic_get8
+_atomic_get8:
+; u8 atomic_get8(u8 *var)
+    disi #1
+    mov.b   [W0], W0
+    return
+
+.global _atomic_bset8
+_atomic_bset8:
+; void atomic_bset8(u8 *var, u8 bit)
+    disi #2
+    bset    SR, #0
+    bsw.c   [W0], W1
+    return
+
+.global _atomic_bclr8
+_atomic_bclr8:
+; void atomic_bclr8(u8 *var, u8 bit)
+    disi #1
+    bclr    SR, #0
+    bsw.c   [W0], W1
+    return
