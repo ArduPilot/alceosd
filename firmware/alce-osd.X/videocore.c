@@ -71,30 +71,25 @@ static unsigned int LINE_TMR = LINE_TMR_;
 #define CTRL_DUALVIN        0x20
 #define CTRL_3PWMBRIGHT     0x40
 
+#define PAL_MAX_YSIZE           260
+#define NTSC_MAX_YSIZE          210
 
 void video_apply_config_cbk(void);
 
 const struct param_def params_video[] = {
-    PARAM("VIDE0_STD", MAV_PARAM_TYPE_UINT8, &config.video_profile[0].mode, NULL),
+    PARAM("VIDE0_STD", MAV_PARAM_TYPE_UINT8, &config.video_profile[0].mode.raw, NULL),
     PARAM("VIDE0_XSIZE", MAV_PARAM_TYPE_UINT8, &config.video_profile[0].x_size_id, video_apply_config_cbk),
-    PARAM("VIDE0_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video_profile[0].y_size, NULL),
+    PARAM("VIDE0_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video_profile[0].y_boffset, NULL),
     PARAM("VIDE0_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video_profile[0].x_offset, NULL),
-    PARAM("VIDE0_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video_profile[0].y_offset, NULL),
+    PARAM("VIDE0_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video_profile[0].y_toffset, NULL),
 
-    PARAM("VIDE1_STD", MAV_PARAM_TYPE_UINT8, &config.video_profile[1].mode, NULL),
+    PARAM("VIDE1_STD", MAV_PARAM_TYPE_UINT8, &config.video_profile[1].mode.raw, NULL),
     PARAM("VIDE1_XSIZE", MAV_PARAM_TYPE_UINT8, &config.video_profile[1].x_size_id, video_apply_config_cbk),
-    PARAM("VIDE1_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video_profile[1].y_size, NULL),
+    PARAM("VIDE1_YSIZE", MAV_PARAM_TYPE_UINT16, &config.video_profile[1].y_toffset, NULL),
     PARAM("VIDE1_XOFFSET", MAV_PARAM_TYPE_UINT16, &config.video_profile[1].x_offset, NULL),
-    PARAM("VIDE1_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video_profile[1].y_offset, NULL),
+    PARAM("VIDE1_YOFFSET", MAV_PARAM_TYPE_UINT16, &config.video_profile[1].y_toffset, NULL),
 
-    PARAM_END,
-};
-const struct param_def params_video0v1[] = {
-    PARAM("VIDEO_BRIGHT", MAV_PARAM_TYPE_UINT8, &config.video.white_lvl, video_apply_config_cbk),
     PARAM("VIDEO_CTRL", MAV_PARAM_TYPE_UINT8, &config.video.ctrl.raw, video_apply_config_cbk),
-    PARAM_END,
-};
-const struct param_def params_video0v3[] = {
     PARAM("VIDEO_WHITE", MAV_PARAM_TYPE_UINT8, &config.video.white_lvl, video_apply_config_cbk),
     PARAM("VIDEO_GRAY", MAV_PARAM_TYPE_UINT8, &config.video.gray_lvl, video_apply_config_cbk),
     PARAM("VIDEO_BLACK", MAV_PARAM_TYPE_UINT8, &config.video.black_lvl, video_apply_config_cbk),
@@ -111,6 +106,7 @@ const struct param_def params_video0v4[] = {
 };
 
 static u16 int_sync_cnt = 0;
+static u8 video_status = VIDEO_STATUS_INTSYNC | VIDEO_STATUS_STD_PAL;
 volatile unsigned char sram_busy = 0;
 volatile unsigned int line, last_line_cnt = 0;
 volatile unsigned char odd = 0;
@@ -119,7 +115,7 @@ static struct canvas *rendering_canvas = NULL;
 static unsigned char videocore_ctrl = 0;
 
 unsigned long nbusy_time = 0, render_time = 0, wait_time = 0, mpw = 0, mpwt = 0;
-static int video_pid = -1;
+volatile static int video_pid = -1;
 
 static struct video_config_profile *cfg = &config.video_profile[0];
 
@@ -640,9 +636,12 @@ static void video_init_hw(void)
 
         /* timer */
         T4CON = 0x8010;
-        _T4IP = 3;
         /* period = 1 / (70000000 / 8) * 56 = 6.4us */
         PR4 = 56;
+
+        _T4IP = 3;
+        _T4IF = 0;
+        _T4IE = 1;
     }
 
     if (videocore_ctrl & CTRL_COMPSYNC) {
@@ -719,6 +718,9 @@ static void video_init_hw(void)
         _T5IP = 7;
         _T5IF = 0;
         _T5IE = 1;
+
+        _IC1IF = 0;
+        _IC1IE = 1;
     } else {
         /* external sync detector */
         /* csync, vsync, frame */
@@ -740,6 +742,7 @@ static void video_init_hw(void)
         /* priority */
         _INT1IP = 3;
         /* enable int1 */
+        _INT1IF = 0;
         _INT1IE = 1;
     }
 
@@ -754,6 +757,27 @@ static void video_init_hw(void)
         } else {
             _TRISA9 = 0;
             VIN_SEL2 = 0;
+        }
+    }
+}
+
+void video_set_input(void)
+{
+    if ((videocore_ctrl & CTRL_DUALVIN) == 0)
+        return;
+
+    u8 new_vin = config.video.ctrl.source ? 1 : 0;
+
+    if (hw_rev <= 0x04) {
+        new_vin = 1 - new_vin;
+        if (VIN_SEL != new_vin) {
+            VIN_SEL = new_vin;
+            load_tab(get_active_tab());
+        }
+    } else {
+        if (VIN_SEL2 != new_vin) {
+            VIN_SEL2 = new_vin;
+            load_tab(get_active_tab());
         }
     }
 }
@@ -777,14 +801,22 @@ void video_apply_config(unsigned char profile)
         OC2R = config.video.gray_lvl * FREQ_3PWM_MULT + FREQ_3PWM_OFFSET;
         OC3R = config.video.black_lvl * FREQ_3PWM_MULT + FREQ_3PWM_OFFSET;
     }
-    
+    /*
     if (videocore_ctrl & CTRL_DUALVIN) {
+        u8 new_vin = config.video.ctrl.source ? 1 : 0;
         if (hw_rev <= 0x04) {
-            VIN_SEL = config.video.ctrl.source ? 0 : 1;
+            new_vin = 1 - new_vin;
+            if (VIN_SEL != new_vin) {
+                VIN_SEL = new_vin;
+                load_tab(get_active_tab());
+            }
         } else {
-            VIN_SEL2 = config.video.ctrl.source ? 1 : 0;
+            if (VIN_SEL2 != new_vin) {
+                VIN_SEL2 = new_vin;
+                load_tab(get_active_tab());
+            }
         }
-    }
+    }*/
 
     /* pixel clock */
     INTCON2bits.GIE = 0;
@@ -803,8 +835,10 @@ void video_apply_config_cbk(void)
 void video_get_size(unsigned int *xsize, unsigned int *ysize)
 {
     *xsize = video_xsizes[cfg->x_size_id].xsize;
-    *ysize = cfg->y_size;
-    if (cfg->mode & VIDEO_MODE_SCAN_MASK)
+    *ysize = ((atomic_get8(&video_status) & VIDEO_STATUS_STD_MASK) ==
+            VIDEO_STATUS_STD_PAL) ? PAL_MAX_YSIZE : NTSC_MAX_YSIZE;
+    *ysize -= cfg->y_boffset;
+    if (cfg->mode.scan_mode == VIDEO_SCAN_INTERLACED)
         *ysize *= 2;
 }
 
@@ -1042,7 +1076,7 @@ static void video_switch_task(struct timer *t, void *d)
             if ((unsigned char) val != prev_val) {
                 /* change video input */
                 config.video.ctrl.source = val ? 1 : 0;
-                video_apply_config_cbk();
+                video_set_input();
                 prev_val = (unsigned char) val;
             }
             break;
@@ -1073,7 +1107,7 @@ static void video_switch_task(struct timer *t, void *d)
                         config.video.ctrl.source = 0;
                     else
                         config.video.ctrl.source = 1;
-                    video_apply_config_cbk();
+                    video_set_input();
                     tmr = VIDEO_TIMER_IDLE;
                 }
             } else {
@@ -1116,7 +1150,7 @@ static void video_switch_task(struct timer *t, void *d)
                             config.video.ctrl.source = 0;
                         else
                             config.video.ctrl.source = 1;
-                        video_apply_config_cbk();
+                        video_set_input();
                     }
                     tmr = VIDEO_TIMER_IDLE;
                 } else {
@@ -1135,7 +1169,7 @@ static void video_switch_task(struct timer *t, void *d)
                     config.video.ctrl.source = 0;
                 else
                     config.video.ctrl.source = 1;
-                video_apply_config_cbk();
+                video_set_input();
                 tmr = 0;
             }
             break;
@@ -1185,11 +1219,6 @@ void init_video(void)
     video_init_hw();
 
     params_add(params_video);
-    if (hw_rev < 0x03)
-        params_add(params_video0v1);
-    else
-        params_add(params_video0v3);
-    
     if (hw_rev >= 0x04) {
         params_add(params_video0v4);
         add_timer(TIMER_ALWAYS, 100, video_switch_task, &config.video_sw);
@@ -1198,15 +1227,20 @@ void init_video(void)
     if (hw_rev >= 0x03)
         add_timer(TIMER_ALWAYS, 100, syncdet_task, NULL);
     
-    video_pid = process_add(render_process, "RENDER", 100);
+    //video_pid = process_add(render_process, "RENDER", 100);
 }
 
 void video_pause(void)
 {
     while (sram_busy);
     
-    process_remove(video_pid);
+    if (video_pid != -1) {
+        process_remove(video_pid);
+        video_pid = -1;
+    }
 
+#if 0
+    
     if (videocore_ctrl & CTRL_SYNCGEN) {
         _T4IE = 0;
     }
@@ -1217,10 +1251,12 @@ void video_pause(void)
         _INT2IE = 0;
         _INT1IE = 0;
     }
+#endif
 }
 
 void video_resume(void)
 {
+#if 0
     if (videocore_ctrl & CTRL_COMPSYNC) {
         _IC1IF = 0;
         _IC1IE = 1;
@@ -1233,14 +1269,13 @@ void video_resume(void)
         _T4IF = 0;
         _T4IE = 1;
     }
+#endif
     video_pid = process_add(render_process, "RENDER", 100);
 }
 
 /* line timer */
 void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
 {
-    u16 scnt;
-
     /* stop timer */
     T2CONbits.TON = 0;
     _T2IF = 0;
@@ -1259,12 +1294,12 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
         PR2 = LINE_TMR;
         T2CONbits.TON = 1;
     } else {
-        scnt = atomic_get16(&int_sync_cnt);
+        u8 st = atomic_get8(&video_status);
         if (hw_rev <= 0x02) {
             OE_RAM = 1;
         } else if (hw_rev <= 0x04) {
             OE_RAM2 = 1;
-            if (scnt >= CNT_INT_MODE) {
+            if ((st & VIDEO_STATUS_SYNC_MASK) == VIDEO_STATUS_INTSYNC) {
                 _TRISA2 = 1;
                 _TRISA3 = 1;
                 _LATA2 = 1;
@@ -1276,7 +1311,7 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
                 _TRISA3 = 1;
             }
         } else {
-            if (scnt >= CNT_INT_MODE) {
+            if ((st & VIDEO_STATUS_SYNC_MASK) == VIDEO_STATUS_INTSYNC) {
                 /* black */
                 _LATA2 = 0;
                 _LATA3 = 1;
@@ -1304,45 +1339,42 @@ static void render_line(void)
     static unsigned long t = 0;
     unsigned int x_offset;
     
-    if (line < cfg->y_offset-2) {
+    if (line < cfg->y_toffset-2) {
         /* do nothing */
-    } else if (line < cfg->y_offset-1) {
+    } else if (line < cfg->y_toffset-1) {
         /* setup vars */
         osdxsize = video_xsizes[cfg->x_size_id].xsize;
-
-        /* calc last_line */
-        last_line = cfg->y_size + cfg->y_offset;
+        last_line = ((atomic_get8(&video_status) & VIDEO_STATUS_STD_MASK) ==
+            VIDEO_STATUS_STD_PAL) ? PAL_MAX_YSIZE : NTSC_MAX_YSIZE;
+        last_line = last_line - cfg->y_boffset + cfg->y_toffset;
 
         /* avoid sram_busy soft-locks */
         if (last_line > last_line_cnt)
             last_line = last_line_cnt;
 
-        if (last_line < cfg->y_offset + 1)
-            last_line = cfg->y_offset + 1;
+        if (last_line < cfg->y_toffset + 1)
+            last_line = cfg->y_toffset + 1;
 
-        /* auto detect video standard */
-#if 0
-        if (last_line_cnt < 300)
-            cfg->mode |= VIDEO_MODE_STANDARD_MASK;
-        else
-            cfg->mode &= ~VIDEO_MODE_STANDARD_MASK;
-#endif
+        if (((atomic_get8(&video_status) & 
+                    VIDEO_STATUS_SYNC_MASK) == VIDEO_STATUS_EXTSYNC) && 
+                    ((videocore_ctrl & CTRL_COMPSYNC) == 0))
+            odd = PORTBbits.RB15;
         
+        if (video_pid == -1)
+            return;
+
         sram_busy = 1;
         nbusy_time += (get_micros() - t);
         addr.l = 0;
-
-        if ((videocore_ctrl & CTRL_COMPSYNC) == 0) {
-            if (atomic_get16(&int_sync_cnt) < CNT_INT_MODE)
-                odd = PORTBbits.RB15;
-        }
             
-        if (cfg->mode & VIDEO_MODE_SCAN_MASK) {
+        if (cfg->mode.scan_mode == VIDEO_SCAN_INTERLACED) {
             if (odd == 0) {
                 addr.l += (osdxsize/4);
             }
         }
-    } else if (line < cfg->y_offset) {
+    } else if (line < cfg->y_toffset) {
+        if (video_pid == -1)
+            return;
         /* make sure we are in sequential mode */
         sram_exit_sqi();
         CS_LOW;
@@ -1355,6 +1387,8 @@ static void render_line(void)
         CS_HIGH;
         SRAM_OUT;
     } else if (line < last_line) {
+        if (video_pid == -1)
+            return;
         /* render */
         CS_LOW;
         sram_byteo_sdi(SRAM_READ);
@@ -1387,12 +1421,14 @@ static void render_line(void)
         T2CONbits.TON = 1;
 
         /* calc next address */
-        if (cfg->mode & VIDEO_MODE_SCAN_MASK) {
+        if (cfg->mode.scan_mode == VIDEO_SCAN_INTERLACED) {
             addr.l += (unsigned long) ((osdxsize/4) * 2);
         } else {
             addr.l += (unsigned long) (osdxsize/4);
         }
     } else if (line == last_line) {
+        if (video_pid == -1)
+            return;
         /* switch sram back to sqi mode */
         sram_exit_sdi();
         CS_LOW;
@@ -1408,9 +1444,25 @@ static void render_line(void)
 /* external sync */
 void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
 {
+    u8 st = atomic_get8(&video_status);
+    u8 new_st = st & ~VIDEO_STATUS_STD_MASK;
+
     last_line_cnt = line;
     line = 0;
     atomic_clr16(&int_sync_cnt);
+    atomic_bclr8(&video_status, VIDEO_STATUS_SYNC_BIT);
+
+    if (last_line_cnt < 300) {
+        new_st |= VIDEO_STATUS_STD_NTSC;
+    }
+    if (new_st != st) {
+        if ((new_st & VIDEO_STATUS_STD_MASK) == VIDEO_STATUS_STD_PAL) {
+            atomic_bclr8(&st, VIDEO_STATUS_STD_BIT);   
+        } else {
+            atomic_bset8(&st, VIDEO_STATUS_STD_BIT);
+        }
+    }
+
     _INT2IF = 0;
     _INT2IE = 1;
     _INT1IF = 0;
@@ -1429,7 +1481,8 @@ void __attribute__((__interrupt__, no_auto_psv )) _T5Interrupt()
     IC1CON1bits.ICM = 1;
     _T5IF = 0;
 }
-
+volatile u8 odd_ = 0;
+volatile u16 odd_c = 2050;
 #define IC_THR 80
 /* comparator + input capture sync */
 void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
@@ -1497,9 +1550,15 @@ void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
             vsync = std;
             last_line_cnt = line;
             line = 10;
-            odd = 0;
+            odd = odd_ - 0;
             atomic_clr16(&int_sync_cnt);
+            atomic_bclr8(&video_status, VIDEO_STATUS_SYNC_BIT);
             tp = 0xffff;
+
+            if (std == 1)
+                atomic_bclr8(&video_status, VIDEO_STATUS_STD_BIT);
+            else
+                atomic_bset8(&video_status, VIDEO_STATUS_STD_BIT);
             return;
         }
 
@@ -1521,8 +1580,9 @@ void __attribute__((__interrupt__, auto_psv )) _IC1Interrupt(void)
     } else {
         /* falling edge */
         if (vsync && (line == 10))
-            if (abs(((long) t) - 2050) < IC_THR)
-                odd = 1;
+            //if (abs(((long) t) - 2050) < IC_THR)
+            if (abs(((long) t) - odd_c) < IC_THR)
+                odd = odd_ - 1;
 
     }
 }
@@ -1546,6 +1606,7 @@ void __attribute__((__interrupt__, auto_psv )) _T4Interrupt()
         if (get_millis16() - t > 1000)
             atomic_inc16(&int_sync_cnt);
     } else if (scnt < CNT_INT_MODE + 3) {
+        atomic_bset8(&video_status, VIDEO_STATUS_SYNC_BIT);
         /* prepare internal sync */
         last_line_cnt = 312;
         line = 0;
@@ -1828,32 +1889,28 @@ static void shell_cmd_stats(char *args, void *data)
     
     shell_printf("Video config:\n");
     shell_printf(" standard=%s,%s\n",
-        (cfg->mode & VIDEO_MODE_STANDARD_MASK) != 0 ? "ntsc" : "pal",
-        (cfg->mode & VIDEO_MODE_SCAN_MASK) != 0 ? "interlaced" : "progressive");
-    if (videocore_ctrl & CTRL_PWMBRIGHT) {
-        shell_printf(" brightness=%u\n", config.video.white_lvl);
-    } else {
-        shell_printf(" levels: white=%u gray=%u %black=%u\n",
-                config.video.white_lvl,
-                config.video.gray_lvl,
-                config.video.black_lvl);
-        if (videocore_ctrl & CTRL_DACBRIGHT) {
-            shell_printf(" dac settings:\n  ");
-            if (video_read_dac(dac_status))
-                shell_printf("error reading DAC values\n");
-            for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
-                shell_printf("0x%02x ", dac_status[i]);
-                if (((i+1) % 3) == 0)
-                    shell_printf("\n  ");
-            }
-            shell_printf("\n");
+        atomic_get8(&video_status) & VIDEO_STATUS_STD_MASK ? "ntsc" : "pal",
+        cfg->mode.scan_mode == VIDEO_SCAN_INTERLACED ? "interlaced" : "progressive");
+    shell_printf(" brightness: white=%u gray=%u %black=%u\n",
+            config.video.white_lvl,
+            config.video.gray_lvl,
+            config.video.black_lvl);
+    if (videocore_ctrl & CTRL_DACBRIGHT) {
+        shell_printf(" dac settings:\n  ");
+        if (video_read_dac(dac_status))
+            shell_printf("error reading DAC values\n");
+        for (i = 0; i < VIDEO_DAC_BUF_SIZE; i++) {
+            shell_printf("0x%02x ", dac_status[i]);
+            if (((i+1) % 3) == 0)
+                shell_printf("\n  ");
         }
+        shell_printf("\n");
     }
 
     shell_printf(" offset: x=%u y=%u\n",
-            cfg->x_offset, cfg->y_offset);
+            cfg->x_offset, cfg->y_toffset);
     shell_printf(" size: x=%u y=%u\n",
-            video_xsizes[cfg->x_size_id].xsize, cfg->y_size);
+            video_xsizes[cfg->x_size_id].xsize, cfg->y_boffset);
     
     shell_printf("\nVideocore stats:\n");
     shell_printf(" scratchpad memory: A=%u/%u B=%u/%u\n",
@@ -1905,9 +1962,9 @@ static void shell_cmd_config(char *args, void *data)
         shell_printf(" -x <x_size>    horizontal video resolution:");
         for (i = 0; i < VIDEO_XSIZE_END; i++)
             shell_printf(" %d", video_xsizes[i].xsize);
-        shell_printf("\n -y <y_size>    vertical video resolution\n");
+        shell_printf("\n -y <y_boffset>   bottom vertical video offset\n");
         shell_printf(" -h <x_offset>  horizontal video offset\n");
-        shell_printf(" -v <y_offset>  vertical video offset\n");
+        shell_printf(" -v <y_toffset> top vertical video offset\n");
 
         
         shell_printf("debug:\n");
@@ -1926,17 +1983,17 @@ static void shell_cmd_config(char *args, void *data)
         
         for (i = 0; i < t; i++) {
             switch (argval[i].key) {
-                case 's':
+                /*case 's':
                     if (strcmp(argval[i].val, "p") == 0)
                         vcfg->mode &= ~VIDEO_MODE_STANDARD_MASK;
                     else
                         vcfg->mode |= VIDEO_MODE_STANDARD_MASK;
-                    break;
+                    break;*/
                 case 'm':
                     if (strcmp(argval[i].val, "p") == 0)
-                        vcfg->mode &= ~VIDEO_MODE_SCAN_MASK;
+                        vcfg->mode.scan_mode = VIDEO_SCAN_PROGRESSIVE;
                     else
-                        vcfg->mode |= VIDEO_MODE_SCAN_MASK;
+                        vcfg->mode.scan_mode = VIDEO_SCAN_INTERLACED;
                     break;
                 case 'w':
                     int_var = atoi(argval[i].val);
@@ -1961,7 +2018,7 @@ static void shell_cmd_config(char *args, void *data)
                     break;
                 case 'y':
                     int_var = atoi(argval[i].val);
-                    vcfg->y_size = (unsigned int) int_var;
+                    vcfg->y_boffset = (unsigned int) int_var;
                     break;
                 case 'h':
                     int_var = atoi(argval[i].val);
@@ -1969,7 +2026,7 @@ static void shell_cmd_config(char *args, void *data)
                     break;
                 case 'v':
                     int_var = atoi(argval[i].val);
-                    vcfg->y_offset = (unsigned int) int_var;
+                    vcfg->y_toffset = (unsigned int) int_var;
                     break;
                 case 'c':
                     int_var = atoi(argval[i].val);
@@ -2163,6 +2220,12 @@ static void shell_cmd_test(char *args, void *data)
                     else
                         remove_timers(100);
                     break;
+                case 'z':
+                    odd_ = (u8) atoi(argval[i].val);
+                    break;
+                case 'x':
+                    odd_c = (u16) atoi(argval[i].val);
+                    break;
                 default:
                     break;
             }
@@ -2224,7 +2287,7 @@ static void shell_cmd_swconfig(char *args, void *data)
         if (p != NULL) {
             w = atoi(p->val);
             config.video.ctrl.source = w ? 1 : 0;
-            video_apply_config_cbk();
+            video_set_input();
         }
     }
 }

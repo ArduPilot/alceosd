@@ -47,18 +47,18 @@ struct alceosd_config config = {
   
     .video_profile = {
         {
-            .mode = VIDEO_STANDARD_PAL_P,
+            .mode = VIDEO_SCAN_PROGRESSIVE,
             .x_offset = 40,
-            .y_offset = 40,
+            .y_toffset = 40,
             .x_size_id = VIDEO_XSIZE_480,
-            .y_size = 260,
+            .y_boffset = 0,
         },
         {
-            .mode = VIDEO_STANDARD_PAL_I,
+            .mode = VIDEO_SCAN_INTERLACED,
             .x_offset = 40,
-            .y_offset = 40,
+            .y_toffset = 40,
             .x_size_id = VIDEO_XSIZE_672,
-            .y_size = 260,
+            .y_boffset = 0,
         },
     },
     .video = {
@@ -114,6 +114,7 @@ struct alceosd_config config = {
         { 1, 0, WIDGET_COMPASS_ID,         0,   0, {JUST_BOT     | JUST_HCENTER}},
         { 1, 0, WIDGET_FLIGHT_MODE_ID,     0, -32, {JUST_BOT     | JUST_LEFT}},
         { 1, 0, WIDGET_GPS_INFO_ID,        0,   0, {JUST_BOT     | JUST_LEFT}},
+//        { 1, 0, WIDGET_ILS_ID,             0,   0, {JUST_VCENTER | JUST_HCENTER}},
         { 1, 0, WIDGET_HORIZON_ID,        16,   0, {JUST_VCENTER | JUST_HCENTER}},
         { 1, 0, WIDGET_RSSI_ID,            0,   0, {JUST_TOP     | JUST_RIGHT}, {0, 255}},
         { 1, 0, WIDGET_SPEED_ID,           0,   0, {JUST_VCENTER | JUST_LEFT}},
@@ -368,8 +369,8 @@ static void shell_cmd_dumpcfg2(char *args, void *data)
 {
     u16 i;
     
-    shell_printf("# AlceOSD config hw%dv%d fw%d.%d.%d\n==\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
-    shell_printf("echo 1\n");
+    shell_printf("# AlceOSD config hw%dv%d fw%d.%d.%d\n", hw_rev >> 4, hw_rev & 0xf, VERSION_MAJOR, VERSION_MINOR, VERSION_DEV);
+    shell_printf("echo 0\n\n");
 
     /* uart */
     shell_printf("# UART\n");
@@ -390,13 +391,13 @@ static void shell_cmd_dumpcfg2(char *args, void *data)
             config.video_sw.ch_max, config.video_sw.time * 100);
     shell_printf("# VIDEO_PROFILES\n");
     for (i = 0; i < 2; i++) {
-        shell_printf("video config -p%u -m%c -s%c -x%u -y%u -h%u -v%u\n", i,
-                config.video_profile[i].mode & VIDEO_MODE_SCAN_MASK ? 'n' : 'p',
-                config.video_profile[i].mode & VIDEO_MODE_STANDARD_MASK ? 'i' : 'p',
+        shell_printf("video config -p%u -m%c -x%u -y%u -h%u -v%u\n", i,
+                //config.video_profile[i].mode & VIDEO_MODE_SCAN_MASK ? 'n' : 'p',
+                config.video_profile[i].mode.scan_mode == VIDEO_SCAN_INTERLACED ? 'i' : 'p',
                 video_xsizes[config.video_profile[i].x_size_id].xsize,
-                config.video_profile[i].y_size,
+                config.video_profile[i].y_boffset,
                 config.video_profile[i].x_offset,
-                config.video_profile[i].y_offset);
+                config.video_profile[i].y_toffset);
     }
 
     /* tab switch */
@@ -460,6 +461,7 @@ static void shell_cmd_dumpcfg2(char *args, void *data)
     }
     shell_printf("tabs load -t1\n");
     shell_printf("echo 1\n");
+    shell_printf("# end\n");
     
 }
 

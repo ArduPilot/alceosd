@@ -29,16 +29,19 @@ enum {
     VIDEO_XSIZE_END,
 };
 
-enum {
-    VIDEO_STANDARD_PAL_P  = 0,
-    VIDEO_STANDARD_PAL_I  = 1,
-    VIDEO_STANDARD_NTSC_P = 2,
-    VIDEO_STANDARD_NTSC_I = 3,
-    VIDEO_STANDARD_END    = 4,
-};
+#define VIDEO_STATUS_SYNC_MASK 0x01
+#define VIDEO_STATUS_EXTSYNC   0x00
+#define VIDEO_STATUS_INTSYNC   0x01
+#define VIDEO_STATUS_SYNC_BIT  0
 
-#define VIDEO_MODE_SCAN_MASK        (0x01)
-#define VIDEO_MODE_STANDARD_MASK    (0x02)
+#define VIDEO_STATUS_STD_MASK  0x02
+#define VIDEO_STATUS_STD_PAL   0x00
+#define VIDEO_STATUS_STD_NTSC  0x02
+#define VIDEO_STATUS_STD_BIT   1
+
+
+#define VIDEO_SCAN_PROGRESSIVE 0
+#define VIDEO_SCAN_INTERLACED  1
 
 #define VIDEO_ACTIVE_CONFIG         0xff
 
@@ -73,17 +76,25 @@ struct canvas {
     u8 buf_nr;
 };
 
+typedef union {
+    u8 raw;
+    struct  {
+        unsigned scan_mode:1;
+        unsigned :7;
+    };
+} video_mode_t;
+
 struct video_config_profile {
-    /* video standard and scan */
-    unsigned char mode;
+    /* video scan mode */
+    video_mode_t mode;
     /* video X resolution id */
     unsigned char x_size_id;
-    /* video Y resolution */
-    unsigned int y_size;
-    /* video X resolution */
+    /* video X left offset */
     unsigned int x_offset;
-    /* video Y resolution */
-    unsigned int y_offset;
+    /* video Y top offset */
+    unsigned int y_toffset;
+    /* video Y bottom offset */
+    unsigned int y_boffset;
 };
 
 typedef union {
