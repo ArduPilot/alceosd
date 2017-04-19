@@ -323,8 +323,7 @@ namespace AlceOSD
             int i, timeout = serial_port.ReadTimeout;
             do
             {
-                byte LF = 10;
-                i = Array.IndexOf(buffer, LF);
+                i = Array.IndexOf(buffer, (byte) 10);
                 System.Threading.Thread.Sleep(1);
                 if (--timeout == 0)
                 {

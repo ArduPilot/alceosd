@@ -39,6 +39,7 @@ namespace AlceOSD_updater
         Dictionary<string, Dictionary<string, double>> widgets = new Dictionary<string, Dictionary<string, double>>();
         Dictionary<string, string> widget_name_map = new Dictionary<string, string>() {
             {"Altitude", "ALTITUD"},
+            {"Alarms", "ALARMS"},
             {"Battery", "BATTERY"},
             {"Console", "CONSOLE"},
             {"Compass", "COMPASS"},
@@ -195,12 +196,7 @@ namespace AlceOSD_updater
 
                 nud_blacklvl.Enabled = false;
                 nud_graylvl.Enabled = false;
-                nud_whitelvl.Enabled = false;
-                nud_blacklvl1.Enabled = false;
-                nud_graylvl1.Enabled = false;
-                nud_whitelvl1.Enabled = false;
-                nud_brightness.Enabled = true;
-                nud_brightness1.Enabled = true;
+                nud_whitelvl.Enabled = true;
             }
             else
             {
@@ -210,22 +206,6 @@ namespace AlceOSD_updater
                 nud_blacklvl.Enabled = true;
                 nud_graylvl.Enabled = true;
                 nud_whitelvl.Enabled = true;
-                nud_blacklvl1.Enabled = true;
-                nud_graylvl1.Enabled = true;
-                nud_whitelvl1.Enabled = true;
-                nud_brightness.Enabled = false;
-                nud_brightness1.Enabled = false;
-            }
-
-            if (rev < 2)
-            {
-                cbx_isync.Enabled = false;
-                cbx_isync1.Enabled = false;
-            }
-            else
-            {
-                cbx_isync.Enabled = true;
-                cbx_isync1.Enabled = true;
             }
 
         }
@@ -275,64 +255,71 @@ namespace AlceOSD_updater
             List<int> baudrates = new List<int> { 115200, 57600, 19200 };
             bool ready = false;
 
-            comPort.mode = Comm.COMM_MODE.Serial;
-
-            /* check if com port is alive */
-            try
+            if (!mavlink)
             {
-                comPort.WriteLine("");
-            }
-            catch
-            {
-                MessageBox.Show("Error writting to " + comPort.PortName, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                comPort.Close();
-                return false;
-            }
-            
 
-            /* check if in shell */
-            Console.WriteLine("checking if shell is active");
-            foreach (int b in baudrates)
-            {
-                comPort.BaudRate = b;
-                System.Threading.Thread.Sleep(100);
-                comPort.DiscardInBuffer();
+                comPort.mode = Comm.COMM_MODE.Serial;
 
-                comPort.WriteLine("version");
-                System.Threading.Thread.Sleep(100);
-                string line = comPort.ReadExisting();
-                if (line.Contains("version"))
+                /* check if com port is alive */
+                try
                 {
-                    Console.WriteLine("got shell");
-                    ready = true;
+                    comPort.WriteLine("");
+                }
+                catch
+                {
+                    MessageBox.Show("Error writting to " + comPort.PortName, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    comPort.Close();
+                    return false;
+                }
+
+
+                /* check if in shell */
+                Console.WriteLine("checking if shell is active");
+                foreach (int b in baudrates)
+                {
+                    comPort.BaudRate = b;
                     System.Threading.Thread.Sleep(100);
                     comPort.DiscardInBuffer();
-                    break;
+
+                    comPort.WriteLine("version");
+                    System.Threading.Thread.Sleep(100);
+                    string line = comPort.ReadExisting();
+                    if (line.Contains("version"))
+                    {
+                        Console.WriteLine("got shell");
+                        ready = true;
+                        System.Threading.Thread.Sleep(100);
+                        comPort.DiscardInBuffer();
+                        break;
+                    }
                 }
             }
-
             if (mavlink)
             {
                 Console.WriteLine("mavlink mode");
-                if (ready)
+                /*if (ready)
                 {
                     Console.WriteLine("rebooting");
                     comPort.WriteLine("reboot");
                     System.Threading.Thread.Sleep(100);
                     comPort.Write("\n");
                     System.Threading.Thread.Sleep(500);
-                }
+                }*/
                 comPort.BaudRate = settings.MavlinkBaudrate;
 
                 Console.WriteLine("mav_baudrate={0}", comPort.BaudRate);
 
                 comPort.mode = Comm.COMM_MODE.Mavlink;
                 System.Threading.Thread.Sleep(100);
-                for (int flush = 0; flush < 5; flush++)
+                for (int flush = 0; flush < 4; flush++)
+                {
                     comPort.WriteLine("");
-                System.Threading.Thread.Sleep(500);
+                    System.Threading.Thread.Sleep(100);
+                }
+                System.Threading.Thread.Sleep(100);
                 comPort.DiscardInBuffer();
                 ready = true;
+                //return true;
             }
 
             bool flash_only = false;
@@ -385,6 +372,7 @@ namespace AlceOSD_updater
                 if (!send_cmd("version"))
                     return false;
                 string ans = comPort.ReadLine();
+                Console.WriteLine("got: {0}", ans);
 
                 Match m = Regex.Match(ans, @"hw(.+)\sfw(.+)");
                 if (m.Success)
@@ -467,27 +455,23 @@ namespace AlceOSD_updater
             config.Add("VIDEO_CHMIN = " + Convert.ToDouble(nud_vswmin.Value));
             config.Add("VIDEO_CHMAX = " + Convert.ToDouble(nud_vswmax.Value));
 
-            int vidmode = cb_vidstd.SelectedIndex | ((cbx_isync.Checked ? 1 : 0) << 2);
+            config.Add("VIDEO_WHITE = " + Convert.ToDouble(nud_whitelvl.Value));
+            config.Add("VIDEO_GRAY = " + Convert.ToDouble(nud_graylvl.Value));
+            config.Add("VIDEO_BLACK = " + Convert.ToDouble(nud_blacklvl.Value));
+
+            int vidmode = cb_vidscan.SelectedIndex;
             config.Add("VIDE0_STD = " + Convert.ToDouble(vidmode));
             config.Add("VIDE0_XSIZE = " + Convert.ToDouble(cb_xsize.SelectedIndex));
             config.Add("VIDE0_YSIZE = " + Convert.ToDouble(nud_ysize.Value));
             config.Add("VIDE0_XOFFSET = " + Convert.ToDouble(nud_xoffset.Value));
             config.Add("VIDE0_YOFFSET = " + Convert.ToDouble(nud_yoffset.Value));
-            config.Add("VIDE0_BRIGHT = " + Convert.ToDouble(nud_brightness.Value));
-            config.Add("VIDE0_WHITE = " + Convert.ToDouble(nud_whitelvl.Value));
-            config.Add("VIDE0_GRAY = " + Convert.ToDouble(nud_graylvl.Value));
-            config.Add("VIDE0_BLACK = " + Convert.ToDouble(nud_blacklvl.Value));
 
-            vidmode = cb_vidstd1.SelectedIndex | ((cbx_isync1.Checked ? 1 : 0) << 2);
+            vidmode = cb_vidscan1.SelectedIndex;
             config.Add("VIDE1_STD = " + Convert.ToDouble(vidmode));
             config.Add("VIDE1_XSIZE = " + Convert.ToDouble(cb_xsize1.SelectedIndex));
             config.Add("VIDE1_YSIZE = " + Convert.ToDouble(nud_ysize1.Value));
             config.Add("VIDE1_XOFFSET = " + Convert.ToDouble(nud_xoffset1.Value));
             config.Add("VIDE1_YOFFSET = " + Convert.ToDouble(nud_yoffset1.Value));
-            config.Add("VIDE1_BRIGHT = " + Convert.ToDouble(nud_brightness1.Value));
-            config.Add("VIDE1_WHITE = " + Convert.ToDouble(nud_whitelvl1.Value));
-            config.Add("VIDE1_GRAY = " + Convert.ToDouble(nud_graylvl1.Value));
-            config.Add("VIDE1_BLACK = " + Convert.ToDouble(nud_blacklvl1.Value));
 
             /* misc */
             //config.Add("HOME_LOCKING = " + Convert.ToDouble(nud_homelock.Value));
@@ -647,17 +631,15 @@ namespace AlceOSD_updater
                 dval = Convert.ToDouble(val, CultureInfo.InvariantCulture.NumberFormat);
                 //txt_log.AppendText(key + " " + param + "=" + val + "\n");
 
-                bool isync = true;
                 int std = -1, xsize = -1, ysize = -1, xoffset = -1, yoffset = -1;
-                int bright = -1, white = -1, gray = -1, black = -1;
+                int white = -1, gray = -1, black = -1;
 
-                int chmode = -1, chtimer = -1, ch = -1, chmin = -1, chmax = -1;
+                int chmode = -1, chtimer = -1, ch = -1, chmin = -1, chmax = -1, ctrl = -1;
 
                 switch (param)
                 {
                     case "STD":
                         std = Convert.ToByte(dval) & 3;
-                        isync = (Convert.ToByte(dval) & 4) == 0 ? false : true;
                         break;
                     case "XSIZE":
                         xsize = Convert.ToByte(dval);
@@ -670,18 +652,6 @@ namespace AlceOSD_updater
                         break;
                     case "YOFFSET":
                         yoffset = Convert.ToInt16(dval);
-                        break;
-                    case "BRIGHT":
-                        bright = Convert.ToInt16(dval);
-                        break;
-                    case "WHITE":
-                        white = Convert.ToInt16(dval);
-                        break;
-                    case "GRAY":
-                        gray = Convert.ToInt16(dval);
-                        break;
-                    case "BLACK":
-                        black = Convert.ToInt16(dval);
                         break;
 
                     /* common */
@@ -701,6 +671,20 @@ namespace AlceOSD_updater
                         chmax = Convert.ToInt16(dval);
                         break;
 
+                    case "WHITE":
+                        white = Convert.ToInt16(dval);
+                        break;
+                    case "GRAY":
+                        gray = Convert.ToInt16(dval);
+                        break;
+                    case "BLACK":
+                        black = Convert.ToInt16(dval);
+                        break;
+
+                    case "CTRL":
+                        ctrl = Convert.ToInt16(dval);
+                        break;
+
                     default:
                         break;
                 }
@@ -714,35 +698,21 @@ namespace AlceOSD_updater
                         if (ch != -1) cb_vswch.SelectedIndex = ch;
                         if (chmin != -1) nud_vswmin.Value = chmin;
                         if (chmax != -1) nud_vswmax.Value = chmax;
-
-                        if (std != -1)
-                        {
-                            cb_vidstd.SelectedIndex = std;
-                            cbx_isync.Checked = isync;
-                        }
+                        if (std != -1) cb_vidscan.SelectedIndex = std;
                         if (xsize != -1) cb_xsize.SelectedIndex = xsize;
                         if (ysize != -1) nud_ysize.Value = ysize;
                         if (xoffset != -1) nud_xoffset.Value = xoffset;
                         if (yoffset != -1) nud_yoffset.Value = yoffset;
-                        if (bright != -1) nud_brightness.Value = bright;
                         if (white != -1) nud_whitelvl.Value = white;
                         if (gray != -1) nud_graylvl.Value = gray;
                         if (black != -1) nud_blacklvl.Value = black;
                         break;
                     case "VIDE1":
-                        if (std != -1)
-                        {
-                            cb_vidstd1.SelectedIndex = std;
-                            cbx_isync1.Checked = isync;
-                        }
+                        if (std != -1) cb_vidscan1.SelectedIndex = std;
                         if (xsize != -1) cb_xsize1.SelectedIndex = xsize;
                         if (ysize != -1) nud_ysize1.Value = ysize;
                         if (xoffset != -1) nud_xoffset1.Value = xoffset;
                         if (yoffset != -1) nud_yoffset1.Value = yoffset;
-                        if (bright != -1) nud_brightness1.Value = bright;
-                        if (white != -1) nud_whitelvl1.Value = white;
-                        if (gray != -1) nud_graylvl1.Value = gray;
-                        if (black != -1) nud_blacklvl1.Value = black;
                         break;
                 }
             }
@@ -1170,6 +1140,9 @@ namespace AlceOSD_updater
             /* setup display */
             switch (name)
             {
+                case "ALARMS":
+                    lbl_wname.Text = "Alarms";
+                    break;
                 case "ALTITUD":
                     lbl_wname.Text = "Altitude";
                     cb_wmode.Items.Add("Dial");
@@ -2226,12 +2199,16 @@ namespace AlceOSD_updater
                     xsize = 672;
                     break;
             }
-            ysize = (int) ((vidprf == 0) ? nud_ysize.Value : nud_ysize1.Value);
+            bool pal = true;
+            ysize = pal ? 260 : 210;
 
-            string std = (vidprf == 0) ? cb_vidstd.Text : cb_vidstd1.Text;
+            string std = (vidprf == 0) ? cb_vidscan.Text : cb_vidscan1.Text;
 
             if (std.Contains("nterlaced"))
                 ysize *= 2;
+
+            ysize -= (int) nud_ysize.Value;
+
 
             Size s = new Size();
             s.Height = ysize + 10;
@@ -2317,13 +2294,14 @@ namespace AlceOSD_updater
         private void get_config()
         {
             send_cmd("config dump");
-
+            Console.Write("dump config");
             List<string> config = new List<string> { };
             string line;
             bool started = false;
             bool finished = false;
             while (!finished)
             {
+                Console.Write(".");
                 line = comPort.ReadLine();
                 if (line.Contains("AlceOSD config"))
                 {
@@ -2336,9 +2314,12 @@ namespace AlceOSD_updater
                     if (line.StartsWith("--"))
                         finished = true;
                 }
+
             }
+            Console.WriteLine(" done");
             parse_config(config.ToArray());
         }
+        
 
         bool shell_active = false;
         bool init_done = false;
@@ -2397,6 +2378,10 @@ namespace AlceOSD_updater
                 }
 
                 shell_active = true;
+
+                System.Threading.Thread.Sleep(1000);
+                comPort.DiscardInBuffer();
+
 
                 get_widget_ids();
                 get_config();
@@ -3255,10 +3240,21 @@ namespace AlceOSD_updater
             load_lock = false;
         }
 
+        private void update_video_config()
+        {
+            string cmd = "video config ";
+
+            cmd += " -w" + nud_whitelvl.Value;
+            cmd += " -g" + nud_graylvl.Value;
+            cmd += " -b" + nud_blacklvl.Value;
+            if (init_done)
+                send_cmd(cmd);
+        }
+
         private void update_video_config0()
         {
             string cmd = "video config -p0";
-            switch (cb_vidstd.SelectedIndex)
+            switch (cb_vidscan.SelectedIndex)
             {
                 default:
                 case 0:
@@ -3274,14 +3270,6 @@ namespace AlceOSD_updater
                     cmd += " -s n -m i";
                     break;
             }
-            cmd += cbx_isync.Checked ? " -i1" : " -i0";
-
-            cmd += " -t" + nud_brightness.Value;
-
-            cmd += " -w" + nud_whitelvl.Value;
-            cmd += " -g" + nud_graylvl.Value;
-            cmd += " -b" + nud_blacklvl.Value;
-
             cmd += " -x" + cb_xsize.Text;
             cmd += " -y" + nud_ysize.Value;
             cmd += " -h" + nud_xoffset.Value;
@@ -3294,7 +3282,7 @@ namespace AlceOSD_updater
         private void update_video_config1()
         {
             string cmd = "video config -p1";
-            switch (cb_vidstd1.SelectedIndex)
+            switch (cb_vidscan1.SelectedIndex)
             {
                 default:
                 case 0:
@@ -3310,14 +3298,6 @@ namespace AlceOSD_updater
                     cmd += " -s n -m i";
                     break;
             }
-            cmd += cbx_isync1.Checked ? " -i1" : " -i0";
-
-            cmd += " -t" + nud_brightness1.Value;
-
-            cmd += " -w" + nud_whitelvl1.Value;
-            cmd += " -g" + nud_graylvl1.Value;
-            cmd += " -b" + nud_blacklvl1.Value;
-
             cmd += " -x" + cb_xsize1.Text;
             cmd += " -y" + nud_ysize1.Value;
             cmd += " -h" + nud_xoffset1.Value;
@@ -3431,6 +3411,100 @@ namespace AlceOSD_updater
         private void bt_widSaveCfg_Click(object sender, EventArgs e)
         {
             send_cmd("config save");
+        }
+
+        private void nud_brightness_ValueChanged(object sender, EventArgs e)
+        {
+            update_video_config();
+        }
+
+        private void bt_upCfg_Click(object sender, EventArgs e)
+        {
+            if (!init_done)
+                return;
+
+            DialogResult result = ofd_upCfg.ShowDialog();
+            if ((result != DialogResult.Cancel) && (ofd_upCfg.FileName != ""))
+            {
+                Console.WriteLine("sending config '{0}'", ofd_upCfg.FileName);
+                txt_log.AppendText("Sending config file: " + ofd_upCfg.FileName + "\n");
+
+                string[] config;
+                using (StreamReader sr = new StreamReader(ofd_upCfg.OpenFile()))
+                {
+                    string cfg = "";
+                    cfg = sr.ReadToEnd();
+                    config = cfg.Split('\n');
+                }
+
+                string header;
+                try
+                {
+                    foreach (string value in config)
+                    {
+                        string line = value.Trim();
+
+                        if (line.Contains(" AlceOSD config "))
+                        {
+                            header = line;
+                            continue;
+                        }
+
+                        if (line.StartsWith("#"))
+                            continue;
+
+                        comPort.WriteLine(line);
+                        System.Threading.Thread.Sleep(50);
+                        Application.DoEvents();
+                    }
+                    MessageBox.Show("Config successfully uploaded", "Config", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch
+                {
+                    MessageBox.Show("Error uploading config", "Config", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void bt_dnCfg_Click(object sender, EventArgs e)
+        {
+            if (!init_done)
+                return;
+
+            DialogResult result = ofd_dnCfg.ShowDialog();
+            if ((result != DialogResult.Cancel) && (ofd_dnCfg.FileName != ""))
+            {
+                try
+                {
+                    timer_com.Enabled = false;
+                    send_cmd("config dump2");
+                    //comPort.WriteLine("config dump2");
+                    System.Threading.Thread.Sleep(100);
+
+                    List<string> cfg = new List<string>();
+                    while (true)
+                    {
+                        string line = comPort.ReadLine();
+                        Console.WriteLine("config dump() {0}", line);
+                        if (line.Contains("# end"))
+                            break;
+                        //Application.DoEvents();
+                        cfg.Add(line);
+                    }
+                    timer_com.Enabled = true;
+
+                    using (StreamWriter sw = new StreamWriter(ofd_dnCfg.FileName))
+                    {
+                        foreach (string element in cfg)
+                            sw.WriteLine(element);
+                    }
+                    MessageBox.Show("Config successfully downloaded", "Config", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch
+                {
+                    MessageBox.Show("Error downloading config", "Config", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
 
         private void timer_submit_Tick(object sender, EventArgs e)
