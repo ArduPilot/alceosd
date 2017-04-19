@@ -710,9 +710,9 @@ void uart_set_client(unsigned char port, unsigned char client_id,
             if ((*c)->init != NULL)
                 (*c)->init(*c);
             
-            *(UARTS[port].STA) &= ~0x00c0;
-            if (client_id == UART_CLIENT_MAVLINK)
-                *(UARTS[port].STA) |= 0x00c0;
+            //*(UARTS[port].STA) &= ~0x00c0;
+            //if (client_id == UART_CLIENT_MAVLINK)
+            //    *(UARTS[port].STA) |= 0x00c0;
 
             break;
         }
