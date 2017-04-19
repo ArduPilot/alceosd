@@ -444,6 +444,7 @@ static void shell_cmd_alarms(char *args, void *data)
                 break;
             case 3:
                 config.flight_alarm[0].props.id = FL_ALARM_ID_END;
+                stats.fl_alarms[0].cfg = NULL;
                 break;
         }
     }
