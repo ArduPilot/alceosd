@@ -630,7 +630,7 @@ static void uart_set_pins(unsigned char port, unsigned char pins)
             if (hw_rev == 0x01)
                 break;
             if (hw_rev >= 0x05) {
-                _RP40R = UARTS[port].TXRP;
+                _RP54R = UARTS[port].TXRP;
             } else {
                 _RP35R = UARTS[port].TXRP;
                 //*(UARTS[port].RXRP) = 34;
@@ -640,7 +640,7 @@ static void uart_set_pins(unsigned char port, unsigned char pins)
             if (hw_rev < 0x03)
                 break;
             if (hw_rev >= 0x05) {
-                _RP54R = UARTS[port].TXRP;
+                _RP40R = UARTS[port].TXRP;
             } else {
                 _RP39R = UARTS[port].TXRP;
                 //*(UARTS[port].RXRP) = 45;
