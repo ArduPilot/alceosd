@@ -455,8 +455,7 @@ static void shell_cmd_rssi(char *args, void *data)
 {
     struct rssi_config *cfg = &config.rssi;
     struct shell_argval argval[SHELL_CMD_CONFIG_ARGS+1], *p;
-    unsigned char t, i;
-    unsigned int w;
+    unsigned char t;
 
     t = shell_arg_parser(args, argval, SHELL_CMD_CONFIG_ARGS);
     if (t < 1) {
