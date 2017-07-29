@@ -101,7 +101,9 @@ typedef union {
     u8 raw;
     struct  {
         unsigned source:1;
-        unsigned :7;
+        unsigned auto_sync:1;
+        unsigned vref:4;
+        unsigned :3;
     };
 } video_ctrl_t;
 

@@ -118,6 +118,7 @@ unsigned long nbusy_time = 0, render_time = 0, wait_time = 0, mpw = 0, mpwt = 0;
 volatile static int video_pid = -1;
 
 static struct video_config_profile *cfg = &config.video_profile[0];
+static struct timer *syncdet_tmr = NULL;
 
 const struct osd_xsize_tbl video_xsizes[] = {
     { .xsize = 420, .clk_ps = 0 } ,
@@ -782,56 +783,6 @@ void video_set_input(void)
     }
 }
 
-void video_apply_config(unsigned char profile)
-{
-    if (profile < CONFIG_MAX_VIDEO)
-        cfg = &config.video_profile[profile];
-
-    if (videocore_ctrl & CTRL_PWMBRIGHT) {
-        OC1R = FREQ_PWM_OFFSET + config.video.white_lvl;
-    }
-
-    if (videocore_ctrl & CTRL_DACBRIGHT) {
-        if (video_update_dac(&config.video))
-            shell_printf("error updating DAC values\n");
-    }
-
-    if (videocore_ctrl & CTRL_3PWMBRIGHT) {
-        OC1R = config.video.white_lvl * FREQ_3PWM_MULT + FREQ_3PWM_OFFSET;
-        OC2R = config.video.gray_lvl * FREQ_3PWM_MULT + FREQ_3PWM_OFFSET;
-        OC3R = config.video.black_lvl * FREQ_3PWM_MULT + FREQ_3PWM_OFFSET;
-    }
-    /*
-    if (videocore_ctrl & CTRL_DUALVIN) {
-        u8 new_vin = config.video.ctrl.source ? 1 : 0;
-        if (hw_rev <= 0x04) {
-            new_vin = 1 - new_vin;
-            if (VIN_SEL != new_vin) {
-                VIN_SEL = new_vin;
-                load_tab(get_active_tab());
-            }
-        } else {
-            if (VIN_SEL2 != new_vin) {
-                VIN_SEL2 = new_vin;
-                load_tab(get_active_tab());
-            }
-        }
-    }*/
-
-    /* pixel clock */
-    INTCON2bits.GIE = 0;
-    SPI2STATbits.SPIEN = 0;
-    SPI2CON1bits.SPRE = video_xsizes[cfg->x_size_id].clk_ps;
-    INTCON2bits.GIE = 1;
-}
-
-void video_apply_config_cbk(void)
-{
-    if (cfg->x_size_id >= VIDEO_XSIZE_END)
-        cfg->x_size_id = VIDEO_XSIZE_END - 1;
-    video_apply_config(VIDEO_ACTIVE_CONFIG);
-}
-
 void video_get_size(unsigned int *xsize, unsigned int *ysize)
 {
     *xsize = video_xsizes[cfg->x_size_id].xsize;
@@ -1224,9 +1175,9 @@ void init_video(void)
         add_timer(TIMER_ALWAYS, 100, video_switch_task, &config.video_sw);
     }
 
-    if (hw_rev >= 0x03)
-        add_timer(TIMER_ALWAYS, 100, syncdet_task, NULL);
-    
+    if ((hw_rev >= 0x03) && config.video.ctrl.auto_sync)
+        syncdet_tmr = add_timer(TIMER_ALWAYS, 100, syncdet_task, NULL);
+
     //video_pid = process_add(render_process, "RENDER", 100);
 }
 
@@ -1271,6 +1222,73 @@ void video_resume(void)
     }
 #endif
     video_pid = process_add(render_process, "RENDER", 100);
+}
+
+void video_apply_config(unsigned char profile)
+{
+    if (profile < CONFIG_MAX_VIDEO)
+        cfg = &config.video_profile[profile];
+
+    if (videocore_ctrl & CTRL_PWMBRIGHT) {
+        OC1R = FREQ_PWM_OFFSET + config.video.white_lvl;
+    }
+
+    if (videocore_ctrl & CTRL_DACBRIGHT) {
+        if (video_update_dac(&config.video))
+            shell_printf("error updating DAC values\n");
+    }
+
+    if (videocore_ctrl & CTRL_3PWMBRIGHT) {
+        OC1R = config.video.white_lvl * FREQ_3PWM_MULT + FREQ_3PWM_OFFSET;
+        OC2R = config.video.gray_lvl * FREQ_3PWM_MULT + FREQ_3PWM_OFFSET;
+        OC3R = config.video.black_lvl * FREQ_3PWM_MULT + FREQ_3PWM_OFFSET;
+    }
+    /*
+    if (videocore_ctrl & CTRL_DUALVIN) {
+        u8 new_vin = config.video.ctrl.source ? 1 : 0;
+        if (hw_rev <= 0x04) {
+            new_vin = 1 - new_vin;
+            if (VIN_SEL != new_vin) {
+                VIN_SEL = new_vin;
+                load_tab(get_active_tab());
+            }
+        } else {
+            if (VIN_SEL2 != new_vin) {
+                VIN_SEL2 = new_vin;
+                load_tab(get_active_tab());
+            }
+        }
+    }*/
+
+    /* pixel clock */
+    INTCON2bits.GIE = 0;
+    SPI2STATbits.SPIEN = 0;
+    SPI2CON1bits.SPRE = video_xsizes[cfg->x_size_id].clk_ps;
+    INTCON2bits.GIE = 1;
+    
+    /* vsync vref */
+    if (hw_rev >= 0x03) {
+        if (config.video.ctrl.auto_sync) {
+            if (syncdet_tmr == NULL)
+                syncdet_tmr = add_timer(TIMER_ALWAYS, 100, syncdet_task, NULL);
+        } else {
+            if (syncdet_tmr != NULL)
+                remove_timer(syncdet_tmr);
+            if (hw_rev >= 0x05) {
+                OC4R = SYNC_REF_STEP * (((s8) config.video.ctrl.vref) - 0x7) +
+                            ((SYNC_REF_MAX - SYNC_REF_MIN) / 2);
+            } else {
+                CVR1CONbits.CVR = config.video.ctrl.vref;
+            }
+        }
+    }
+}
+
+void video_apply_config_cbk(void)
+{
+    if (cfg->x_size_id >= VIDEO_XSIZE_END)
+        cfg->x_size_id = VIDEO_XSIZE_END - 1;
+    video_apply_config(VIDEO_ACTIVE_CONFIG);
 }
 
 /* line timer */
@@ -1965,10 +1983,8 @@ static void shell_cmd_config(char *args, void *data)
         shell_printf("\n -y <y_boffset>   bottom vertical video offset\n");
         shell_printf(" -h <x_offset>  horizontal video offset\n");
         shell_printf(" -v <y_toffset> top vertical video offset\n");
-
-        
-        shell_printf("debug:\n");
         shell_printf(" -r <comp_lvl>  comparator level\n");
+        shell_printf("debug:\n");
         shell_printf(" -c <comp_ref>  comparator reference\n");
         
     } else {
@@ -2035,36 +2051,48 @@ static void shell_cmd_config(char *args, void *data)
                     break;
                 case 'r':
                     int_var = atoi(argval[i].val);
-                    int_var &= 0xf;
-                    CVR1CONbits.CVR = (unsigned int) int_var;
-                    int_var = CVR1CONbits.CVRR | (CVR1CONbits.CVRR1 << 1);
-                    f = (float) CVR1CONbits.CVR;
-                    if (videocore_ctrl & CTRL_EXTVREF) {
-                        if (hw_rev <= 0x04)
-                            vref = 3.3/2.0;
-                        else
-                            vref = 1;
+                    //int_var &= 0xf;
+                    
+                    if (int_var == -1) {
+                        config.video.ctrl.auto_sync = 1;
                     } else {
-                        vref = 3.3;
+                        config.video.ctrl.auto_sync = 0;
+                        config.video.ctrl.vref = int_var & 0xf;
+                        // TODO: calc and display vref
+                        if (hw_rev >= 0x05) {
+
+                        } else {
+                            //CVR1CONbits.CVR = (unsigned int) int_var;
+                            int_var = CVR1CONbits.CVRR | (CVR1CONbits.CVRR1 << 1);
+                            f = (float) CVR1CONbits.CVR;
+                            if (videocore_ctrl & CTRL_EXTVREF) {
+                                if (hw_rev <= 0x04)
+                                    vref = 3.3/2.0;
+                                else
+                                    vref = 1;
+                            } else {
+                                vref = 3.3;
+                            }
+                            switch (int_var) {
+                                case 0:
+                                    f = f/32.0 * vref + (1/4.0) * vref;
+                                    break;
+                                case 1:
+                                    f = f /24.0 * vref;
+                                    break;
+                                case 2:
+                                    f = f/24.0 * vref + (1/3.0) * vref;
+                                    break;
+                                case 3:
+                                    f = f / 16.0 * vref;
+                                    break;
+                                default:
+                                    f = 0;
+                                    break;
+                            }
+                            shell_printf("vref=%0.3f\n", f);
+                        }
                     }
-                    switch (int_var) {
-                        case 0:
-                            f = f/32.0 * vref + (1/4.0) * vref;
-                            break;
-                        case 1:
-                            f = f /24.0 * vref;
-                            break;
-                        case 2:
-                            f = f/24.0 * vref + (1/3.0) * vref;
-                            break;
-                        case 3:
-                            f = f / 16.0 * vref;
-                            break;
-                        default:
-                            f = 0;
-                            break;
-                    }
-                    shell_printf("vref=%0.3f\n", f);
                     break;
                 case 'l':
                     int_var = atoi(argval[i].val);
