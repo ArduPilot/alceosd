@@ -1272,10 +1272,12 @@ void video_apply_config(unsigned char profile)
             if (syncdet_tmr == NULL)
                 syncdet_tmr = add_timer(TIMER_ALWAYS, 100, syncdet_task, NULL);
         } else {
-            if (syncdet_tmr != NULL)
+            if (syncdet_tmr != NULL) {
                 remove_timer(syncdet_tmr);
+                syncdet_tmr = NULL;
+            }
             if (hw_rev >= 0x05) {
-                OC4R = SYNC_REF_STEP * (((s8) config.video.ctrl.vref) - 0x7) +
+                OC4R = ((SYNC_REF_MAX - SYNC_REF_MIN) / 16) * (((s8) config.video.ctrl.vref) - 0x7) +
                             ((SYNC_REF_MAX - SYNC_REF_MIN) / 2);
             } else {
                 CVR1CONbits.CVR = config.video.ctrl.vref;
@@ -1929,6 +1931,13 @@ static void shell_cmd_stats(char *args, void *data)
             cfg->x_offset, cfg->y_toffset);
     shell_printf(" size: x=%u y=%u\n",
             video_xsizes[cfg->x_size_id].xsize, cfg->y_boffset);
+    shell_printf(" vsync auto=%u vref=%u\n",
+            config.video.ctrl.auto_sync, config.video.ctrl.vref);
+    if (hw_rev >= 0x05) {
+        shell_printf(" vsync PWM=%u\n", OC4R);
+    } else if (hw_rev >= 0x03) {
+        shell_printf(" vsync CVR=%u\n", CVR1CONbits.CVR);
+    }
     
     shell_printf("\nVideocore stats:\n");
     shell_printf(" scratchpad memory: A=%u/%u B=%u/%u\n",
@@ -2055,6 +2064,7 @@ static void shell_cmd_config(char *args, void *data)
                     
                     if (int_var == -1) {
                         config.video.ctrl.auto_sync = 1;
+                        config.video.ctrl.vref = 0;
                     } else {
                         config.video.ctrl.auto_sync = 0;
                         config.video.ctrl.vref = int_var & 0xf;
