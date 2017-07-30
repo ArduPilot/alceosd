@@ -66,8 +66,8 @@ static void render(struct widget *w)
                         priv->direction);
                 break;
             case UNITS_IMPERIAL:
-                d = (float) priv->altitude * M2FEET;
-                a = (float) priv->distance * M2FEET;
+                a = (float) priv->altitude * M2FEET;
+                d = (float) priv->distance * M2FEET;
                 sprintf(buf, "Alt %df\nDis %df\n%d",
                         (unsigned int) a,
                         (unsigned int) d,
