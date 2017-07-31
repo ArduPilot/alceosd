@@ -39,6 +39,15 @@ enum {
 #define VIDEO_STATUS_STD_NTSC  0x02
 #define VIDEO_STATUS_STD_BIT   1
 
+#define VIDEO_STATUS_SOURCE_MASK    0x04
+#define VIDEO_STATUS_SOURCE_0       0x00
+#define VIDEO_STATUS_SOURCE_1       0x04
+#define VIDEO_STATUS_SOURCE_BIT     2
+
+#define VIDEO_STATUS_VREF0_MASK    0x0f00
+#define VIDEO_STATUS_VREF1_MASK    0xf000
+#define VIDEO_STATUS_VREF0_BIT     8
+#define VIDEO_STATUS_VREF1_BIT     12
 
 #define VIDEO_SCAN_PROGRESSIVE 0
 #define VIDEO_SCAN_INTERLACED  1
@@ -100,12 +109,10 @@ struct video_config_profile {
 typedef union {
     u8 raw;
     struct  {
-        unsigned source:1;
-        unsigned auto_sync:1;
-        unsigned vref:4;
-        unsigned :3;
+        unsigned vin0:4;
+        unsigned vin1:4;
     };
-} video_ctrl_t;
+} video_vref_t;
 
 struct video_config {
     /* video voltage levels */
@@ -114,7 +121,7 @@ struct video_config {
     unsigned char black_lvl;
     
     /* input source */
-    video_ctrl_t ctrl;
+    video_vref_t vref;
 };
 
 

@@ -46,6 +46,22 @@ _atomic_inc16:
     inc.w   [W0], [W0]
     return
 
+.global _atomic_bset16
+;_atomic_bset16:
+; void atomic_bset16(u16 *var, u8 bit)
+;    disi #2
+;    bset    SR, #0
+;    bsw.c   [W0], W1
+;    return
+
+.global _atomic_bclr16
+;_atomic_bclr16:
+; void atomic_bclr16(u16 *var, u8 bit)
+;    disi #1
+;    bclr    SR, #0
+;    bsw.c   [W0], W1
+;    return
+
 .global _atomic_set8
 _atomic_set8:
 ; void atomic_set8(u8 *var, u8 val)
@@ -62,6 +78,7 @@ _atomic_get8:
 
 .global _atomic_bset8
 _atomic_bset8:
+_atomic_bset16:
 ; void atomic_bset8(u8 *var, u8 bit)
     disi #2
     bset    SR, #0
@@ -70,6 +87,7 @@ _atomic_bset8:
 
 .global _atomic_bclr8
 _atomic_bclr8:
+_atomic_bclr16:
 ; void atomic_bclr8(u8 *var, u8 bit)
     disi #1
     bclr    SR, #0

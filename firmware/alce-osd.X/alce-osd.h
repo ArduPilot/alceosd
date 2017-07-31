@@ -50,10 +50,10 @@
 
 
 #define VERSION_MAJOR   0
-#define VERSION_MINOR   12
-#define VERSION_DEV     0
+#define VERSION_MINOR   11
+#define VERSION_DEV     10
 
-#define WITH_BOOTLOADER
+//#define WITH_BOOTLOADER
 
 /* maximum line length for print function stack buffers */
 #define MAX_LINE_LENGTH 128
@@ -76,6 +76,8 @@ extern void atomic_set16(u16 *var, u16 val);
 extern u16 atomic_get16(u16 *var);
 extern void atomic_clr16(u16 *var);
 extern void atomic_inc16(u16 *var);
+extern void atomic_bset16(u16 *var, u8 bit);
+extern void atomic_bclr16(u16 *var, u8 bit);
 
 extern void atomic_set8(u8 *var, u8 val);
 extern u8 atomic_get8(u8 *var);
