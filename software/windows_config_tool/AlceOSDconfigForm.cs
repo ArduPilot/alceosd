@@ -97,7 +97,7 @@ namespace AlceOSD_updater
         {
             string version = "";
 
-            tabControl1.SelectTab(6);
+            tabControl1.SelectTab(7);
 
             setup_comport();
             if (!open_comport())
@@ -191,6 +191,8 @@ namespace AlceOSD_updater
 
             if (rev < 3)
             {
+                gb_vsync.Visible = false;
+
                 gb_uart3.Visible = false;
                 gb_uart4.Visible = false;
 
@@ -200,6 +202,8 @@ namespace AlceOSD_updater
             }
             else
             {
+                gb_vsync.Visible = true;
+
                 gb_uart3.Visible = true;
                 gb_uart4.Visible = true;
 
@@ -458,6 +462,8 @@ namespace AlceOSD_updater
             config.Add("VIDEO_WHITE = " + Convert.ToDouble(nud_whitelvl.Value));
             config.Add("VIDEO_GRAY = " + Convert.ToDouble(nud_graylvl.Value));
             config.Add("VIDEO_BLACK = " + Convert.ToDouble(nud_blacklvl.Value));
+            int vref = (int) nud_vsync0.Value | ((int) nud_vsync1.Value << 4);
+            config.Add("VIDEO_VREF = " + Convert.ToDouble(vref));
 
             int vidmode = cb_vidscan.SelectedIndex;
             config.Add("VIDE0_STD = " + Convert.ToDouble(vidmode));
@@ -634,7 +640,7 @@ namespace AlceOSD_updater
                 int std = -1, xsize = -1, ysize = -1, xoffset = -1, yoffset = -1;
                 int white = -1, gray = -1, black = -1;
 
-                int chmode = -1, chtimer = -1, ch = -1, chmin = -1, chmax = -1, ctrl = -1;
+                int chmode = -1, chtimer = -1, ch = -1, chmin = -1, chmax = -1, vref = -1;
 
                 switch (param)
                 {
@@ -681,39 +687,49 @@ namespace AlceOSD_updater
                         black = Convert.ToInt16(dval);
                         break;
 
-                    case "CTRL":
-                        ctrl = Convert.ToInt16(dval);
+                    case "VREF":
+                        vref = Convert.ToInt16(dval);
                         break;
 
                     default:
                         break;
                 }
-                switch (key)
+                try
                 {
-                    default:
-                    case "VIDEO":
-                    case "VIDE0":
-                        if (chmode != -1) cb_vswmode.SelectedIndex = chmode;
-                        if (chtimer != -1) nud_vswtimer.Value = chtimer * 100;
-                        if (ch != -1) cb_vswch.SelectedIndex = ch;
-                        if (chmin != -1) nud_vswmin.Value = chmin;
-                        if (chmax != -1) nud_vswmax.Value = chmax;
-                        if (std != -1) cb_vidscan.SelectedIndex = std;
-                        if (xsize != -1) cb_xsize.SelectedIndex = xsize;
-                        if (ysize != -1) nud_ysize.Value = ysize;
-                        if (xoffset != -1) nud_xoffset.Value = xoffset;
-                        if (yoffset != -1) nud_yoffset.Value = yoffset;
-                        if (white != -1) nud_whitelvl.Value = white;
-                        if (gray != -1) nud_graylvl.Value = gray;
-                        if (black != -1) nud_blacklvl.Value = black;
-                        break;
-                    case "VIDE1":
-                        if (std != -1) cb_vidscan1.SelectedIndex = std;
-                        if (xsize != -1) cb_xsize1.SelectedIndex = xsize;
-                        if (ysize != -1) nud_ysize1.Value = ysize;
-                        if (xoffset != -1) nud_xoffset1.Value = xoffset;
-                        if (yoffset != -1) nud_yoffset1.Value = yoffset;
-                        break;
+                    switch (key)
+                    {
+                        default:
+                        case "VIDEO":
+                        case "VIDE0":
+                            if (chmode != -1) cb_vswmode.SelectedIndex = chmode;
+                            if (chtimer != -1) nud_vswtimer.Value = chtimer * 100;
+                            if (ch != -1) cb_vswch.SelectedIndex = ch;
+                            if (chmin != -1) nud_vswmin.Value = chmin;
+                            if (chmax != -1) nud_vswmax.Value = chmax;
+                            if (std != -1) cb_vidscan.SelectedIndex = std;
+                            if (xsize != -1) cb_xsize.SelectedIndex = xsize;
+                            if (ysize != -1) nud_ysize.Value = ysize;
+                            if (xoffset != -1) nud_xoffset.Value = xoffset;
+                            if (yoffset != -1) nud_yoffset.Value = yoffset;
+                            if (white != -1) nud_whitelvl.Value = white;
+                            if (gray != -1) nud_graylvl.Value = gray;
+                            if (black != -1) nud_blacklvl.Value = black;
+                            if (vref != -1)
+                            {
+                                nud_vsync0.Value = vref & 0xf;
+                                nud_vsync1.Value = (vref >> 4) & 0xf;
+                            }
+                            break;
+                        case "VIDE1":
+                            if (std != -1) cb_vidscan1.SelectedIndex = std;
+                            if (xsize != -1) cb_xsize1.SelectedIndex = xsize;
+                            if (ysize != -1) nud_ysize1.Value = ysize;
+                            if (xoffset != -1) nud_xoffset1.Value = xoffset;
+                            if (yoffset != -1) nud_yoffset1.Value = yoffset;
+                            break;
+                    }
+                } catch {
+                    MessageBox.Show("Error parsing video config parameter " + key + "_" + param + "!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -3247,6 +3263,10 @@ namespace AlceOSD_updater
             cmd += " -w" + nud_whitelvl.Value;
             cmd += " -g" + nud_graylvl.Value;
             cmd += " -b" + nud_blacklvl.Value;
+
+            cmd += " -r" + nud_vsync0.Value;
+            cmd += " -f" + nud_vsync1.Value;
+
             if (init_done)
                 send_cmd(cmd);
         }
@@ -3505,6 +3525,16 @@ namespace AlceOSD_updater
                     MessageBox.Show("Error downloading config", "Config", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+        }
+
+        private void nud_vsync1_ValueChanged(object sender, EventArgs e)
+        {
+            update_video_config();
+        }
+
+        private void nud_vsync0_ValueChanged(object sender, EventArgs e)
+        {
+            update_video_config();
         }
 
         private void timer_submit_Tick(object sender, EventArgs e)

@@ -32,6 +32,8 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AlceOSDconfigForm));
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tab_shell = new System.Windows.Forms.TabPage();
+            this.bt_dnCfg = new System.Windows.Forms.Button();
+            this.bt_upCfg = new System.Windows.Forms.Button();
             this.tb_tlog = new System.Windows.Forms.TrackBar();
             this.bt_sendTlog = new System.Windows.Forms.Button();
             this.bt_reboot = new System.Windows.Forms.Button();
@@ -68,8 +70,8 @@
             this.label49 = new System.Windows.Forms.Label();
             this.label51 = new System.Windows.Forms.Label();
             this.label52 = new System.Windows.Forms.Label();
-            this.label53 = new System.Windows.Forms.Label();
             this.nud_ysize1 = new System.Windows.Forms.NumericUpDown();
+            this.label53 = new System.Windows.Forms.Label();
             this.nud_xoffset1 = new System.Windows.Forms.NumericUpDown();
             this.nud_yoffset1 = new System.Windows.Forms.NumericUpDown();
             this.groupBox7 = new System.Windows.Forms.GroupBox();
@@ -136,6 +138,17 @@
             this.nud_uavsysid = new System.Windows.Forms.NumericUpDown();
             this.label34 = new System.Windows.Forms.Label();
             this.label33 = new System.Windows.Forms.Label();
+            this.tab_alarms = new System.Windows.Forms.TabPage();
+            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.label54 = new System.Windows.Forms.Label();
+            this.label50 = new System.Windows.Forms.Label();
+            this.numericUpDown3 = new System.Windows.Forms.NumericUpDown();
+            this.comboBox3 = new System.Windows.Forms.ComboBox();
+            this.label48 = new System.Windows.Forms.Label();
+            this.label47 = new System.Windows.Forms.Label();
+            this.listBox2 = new System.Windows.Forms.ListBox();
+            this.label6 = new System.Windows.Forms.Label();
+            this.listBox1 = new System.Windows.Forms.ListBox();
             this.tab_misc = new System.Windows.Forms.TabPage();
             this.gb_rssi = new System.Windows.Forms.GroupBox();
             this.numericUpDown2 = new System.Windows.Forms.NumericUpDown();
@@ -222,19 +235,14 @@
             this.timer_submit = new System.Windows.Forms.Timer(this.components);
             this.timer_heartbeat = new System.Windows.Forms.Timer(this.components);
             this.ofd_tlog = new System.Windows.Forms.OpenFileDialog();
-            this.tab_alarms = new System.Windows.Forms.TabPage();
-            this.bt_upCfg = new System.Windows.Forms.Button();
             this.ofd_upCfg = new System.Windows.Forms.OpenFileDialog();
-            this.bt_dnCfg = new System.Windows.Forms.Button();
             this.ofd_dnCfg = new System.Windows.Forms.SaveFileDialog();
-            this.listBox1 = new System.Windows.Forms.ListBox();
-            this.label6 = new System.Windows.Forms.Label();
-            this.listBox2 = new System.Windows.Forms.ListBox();
-            this.label47 = new System.Windows.Forms.Label();
-            this.label48 = new System.Windows.Forms.Label();
-            this.comboBox3 = new System.Windows.Forms.ComboBox();
-            this.numericUpDown3 = new System.Windows.Forms.NumericUpDown();
-            this.label50 = new System.Windows.Forms.Label();
+            this.gb_vsync = new System.Windows.Forms.GroupBox();
+            this.label64 = new System.Windows.Forms.Label();
+            this.nud_vsync0 = new System.Windows.Forms.NumericUpDown();
+            this.label65 = new System.Windows.Forms.Label();
+            this.nud_vsync1 = new System.Windows.Forms.NumericUpDown();
+            this.label66 = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.tab_shell.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tb_tlog)).BeginInit();
@@ -272,6 +280,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_streamRawSensors)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_osdsysid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_uavsysid)).BeginInit();
+            this.tab_alarms.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).BeginInit();
             this.tab_misc.SuspendLayout();
             this.gb_rssi.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).BeginInit();
@@ -288,8 +298,9 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_seltab)).BeginInit();
             this.tab_log.SuspendLayout();
             this.menuStrip1.SuspendLayout();
-            this.tab_alarms.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).BeginInit();
+            this.gb_vsync.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_vsync0)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_vsync1)).BeginInit();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -332,6 +343,28 @@
             this.tab_shell.TabIndex = 5;
             this.tab_shell.Text = "Shell";
             this.tab_shell.UseVisualStyleBackColor = true;
+            // 
+            // bt_dnCfg
+            // 
+            this.bt_dnCfg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.bt_dnCfg.Location = new System.Drawing.Point(950, 323);
+            this.bt_dnCfg.Name = "bt_dnCfg";
+            this.bt_dnCfg.Size = new System.Drawing.Size(120, 23);
+            this.bt_dnCfg.TabIndex = 11;
+            this.bt_dnCfg.Text = "Download config...";
+            this.bt_dnCfg.UseVisualStyleBackColor = true;
+            this.bt_dnCfg.Click += new System.EventHandler(this.bt_dnCfg_Click);
+            // 
+            // bt_upCfg
+            // 
+            this.bt_upCfg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.bt_upCfg.Location = new System.Drawing.Point(950, 294);
+            this.bt_upCfg.Name = "bt_upCfg";
+            this.bt_upCfg.Size = new System.Drawing.Size(120, 23);
+            this.bt_upCfg.TabIndex = 10;
+            this.bt_upCfg.Text = "Upload config...";
+            this.bt_upCfg.UseVisualStyleBackColor = true;
+            this.bt_upCfg.Click += new System.EventHandler(this.bt_upCfg_Click);
             // 
             // tb_tlog
             // 
@@ -458,6 +491,7 @@
             // 
             // tab_video
             // 
+            this.tab_video.Controls.Add(this.gb_vsync);
             this.tab_video.Controls.Add(this.groupBox1);
             this.tab_video.Controls.Add(this.gb_vid0v4);
             this.tab_video.Controls.Add(this.groupBox8);
@@ -578,7 +612,7 @@
             this.gb_vid0v4.Controls.Add(this.label58);
             this.gb_vid0v4.Controls.Add(this.cb_vswmode);
             this.gb_vid0v4.Controls.Add(this.label59);
-            this.gb_vid0v4.Location = new System.Drawing.Point(308, 6);
+            this.gb_vid0v4.Location = new System.Drawing.Point(308, 119);
             this.gb_vid0v4.Name = "gb_vid0v4";
             this.gb_vid0v4.Size = new System.Drawing.Size(303, 164);
             this.gb_vid0v4.TabIndex = 8;
@@ -820,15 +854,6 @@
             this.label52.TabIndex = 12;
             this.label52.Text = "X left offset";
             // 
-            // label53
-            // 
-            this.label53.AutoSize = true;
-            this.label53.Location = new System.Drawing.Point(17, 105);
-            this.label53.Name = "label53";
-            this.label53.Size = new System.Drawing.Size(61, 13);
-            this.label53.TabIndex = 10;
-            this.label53.Text = "Y top offset";
-            // 
             // nud_ysize1
             // 
             this.nud_ysize1.Location = new System.Drawing.Point(153, 129);
@@ -841,6 +866,15 @@
             this.nud_ysize1.Size = new System.Drawing.Size(120, 20);
             this.nud_ysize1.TabIndex = 18;
             this.nud_ysize1.ValueChanged += new System.EventHandler(this.cb_vidstd1_SelectedIndexChanged);
+            // 
+            // label53
+            // 
+            this.label53.AutoSize = true;
+            this.label53.Location = new System.Drawing.Point(17, 105);
+            this.label53.Name = "label53";
+            this.label53.Size = new System.Drawing.Size(61, 13);
+            this.label53.TabIndex = 10;
+            this.label53.Text = "Y top offset";
             // 
             // nud_xoffset1
             // 
@@ -1735,6 +1769,126 @@
             this.label33.Size = new System.Drawing.Size(55, 13);
             this.label33.TabIndex = 7;
             this.label33.Text = "UAV sysid";
+            // 
+            // tab_alarms
+            // 
+            this.tab_alarms.Controls.Add(this.textBox1);
+            this.tab_alarms.Controls.Add(this.label54);
+            this.tab_alarms.Controls.Add(this.label50);
+            this.tab_alarms.Controls.Add(this.numericUpDown3);
+            this.tab_alarms.Controls.Add(this.comboBox3);
+            this.tab_alarms.Controls.Add(this.label48);
+            this.tab_alarms.Controls.Add(this.label47);
+            this.tab_alarms.Controls.Add(this.listBox2);
+            this.tab_alarms.Controls.Add(this.label6);
+            this.tab_alarms.Controls.Add(this.listBox1);
+            this.tab_alarms.Location = new System.Drawing.Point(4, 22);
+            this.tab_alarms.Name = "tab_alarms";
+            this.tab_alarms.Padding = new System.Windows.Forms.Padding(3);
+            this.tab_alarms.Size = new System.Drawing.Size(1073, 573);
+            this.tab_alarms.TabIndex = 7;
+            this.tab_alarms.Text = "Alarms";
+            this.tab_alarms.UseVisualStyleBackColor = true;
+            // 
+            // textBox1
+            // 
+            this.textBox1.Location = new System.Drawing.Point(357, 88);
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(120, 20);
+            this.textBox1.TabIndex = 9;
+            // 
+            // label54
+            // 
+            this.label54.AutoSize = true;
+            this.label54.Location = new System.Drawing.Point(295, 91);
+            this.label54.Name = "label54";
+            this.label54.Size = new System.Drawing.Size(34, 13);
+            this.label54.TabIndex = 8;
+            this.label54.Text = "Value";
+            // 
+            // label50
+            // 
+            this.label50.AutoSize = true;
+            this.label50.Location = new System.Drawing.Point(295, 63);
+            this.label50.Name = "label50";
+            this.label50.Size = new System.Drawing.Size(56, 13);
+            this.label50.TabIndex = 7;
+            this.label50.Text = "Delay (ms)";
+            // 
+            // numericUpDown3
+            // 
+            this.numericUpDown3.Location = new System.Drawing.Point(357, 61);
+            this.numericUpDown3.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.numericUpDown3.Name = "numericUpDown3";
+            this.numericUpDown3.Size = new System.Drawing.Size(120, 20);
+            this.numericUpDown3.TabIndex = 6;
+            // 
+            // comboBox3
+            // 
+            this.comboBox3.FormattingEnabled = true;
+            this.comboBox3.Items.AddRange(new object[] {
+            "Low",
+            "High"});
+            this.comboBox3.Location = new System.Drawing.Point(357, 33);
+            this.comboBox3.Name = "comboBox3";
+            this.comboBox3.Size = new System.Drawing.Size(121, 21);
+            this.comboBox3.TabIndex = 5;
+            // 
+            // label48
+            // 
+            this.label48.AutoSize = true;
+            this.label48.Location = new System.Drawing.Point(295, 36);
+            this.label48.Name = "label48";
+            this.label48.Size = new System.Drawing.Size(56, 13);
+            this.label48.TabIndex = 4;
+            this.label48.Text = "Alarm type";
+            // 
+            // label47
+            // 
+            this.label47.AutoSize = true;
+            this.label47.Location = new System.Drawing.Point(157, 17);
+            this.label47.Name = "label47";
+            this.label47.Size = new System.Drawing.Size(92, 13);
+            this.label47.TabIndex = 3;
+            this.label47.Text = "Configured Alarms";
+            // 
+            // listBox2
+            // 
+            this.listBox2.FormattingEnabled = true;
+            this.listBox2.Location = new System.Drawing.Point(157, 33);
+            this.listBox2.Name = "listBox2";
+            this.listBox2.Size = new System.Drawing.Size(120, 173);
+            this.listBox2.TabIndex = 2;
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(16, 17);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(84, 13);
+            this.label6.TabIndex = 1;
+            this.label6.Text = "Available Alarms";
+            // 
+            // listBox1
+            // 
+            this.listBox1.FormattingEnabled = true;
+            this.listBox1.Items.AddRange(new object[] {
+            "Battery voltage (mavlink)",
+            "Battery voltage (AN0)",
+            "Battery voltage (AN1)",
+            "RSSI (mavlink)",
+            "Home distance",
+            "Air speed",
+            "Home Altitude",
+            "GPS sattelites"});
+            this.listBox1.Location = new System.Drawing.Point(19, 33);
+            this.listBox1.Name = "listBox1";
+            this.listBox1.Size = new System.Drawing.Size(132, 173);
+            this.listBox1.TabIndex = 0;
             // 
             // tab_misc
             // 
@@ -2651,51 +2805,11 @@
             this.ofd_tlog.FileName = ".tlog";
             this.ofd_tlog.Filter = "Telemetry log files|*.tlog";
             // 
-            // tab_alarms
-            // 
-            this.tab_alarms.Controls.Add(this.label50);
-            this.tab_alarms.Controls.Add(this.numericUpDown3);
-            this.tab_alarms.Controls.Add(this.comboBox3);
-            this.tab_alarms.Controls.Add(this.label48);
-            this.tab_alarms.Controls.Add(this.label47);
-            this.tab_alarms.Controls.Add(this.listBox2);
-            this.tab_alarms.Controls.Add(this.label6);
-            this.tab_alarms.Controls.Add(this.listBox1);
-            this.tab_alarms.Location = new System.Drawing.Point(4, 22);
-            this.tab_alarms.Name = "tab_alarms";
-            this.tab_alarms.Padding = new System.Windows.Forms.Padding(3);
-            this.tab_alarms.Size = new System.Drawing.Size(1073, 573);
-            this.tab_alarms.TabIndex = 7;
-            this.tab_alarms.Text = "Alarms";
-            this.tab_alarms.UseVisualStyleBackColor = true;
-            // 
-            // bt_upCfg
-            // 
-            this.bt_upCfg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.bt_upCfg.Location = new System.Drawing.Point(950, 294);
-            this.bt_upCfg.Name = "bt_upCfg";
-            this.bt_upCfg.Size = new System.Drawing.Size(120, 23);
-            this.bt_upCfg.TabIndex = 10;
-            this.bt_upCfg.Text = "Upload config...";
-            this.bt_upCfg.UseVisualStyleBackColor = true;
-            this.bt_upCfg.Click += new System.EventHandler(this.bt_upCfg_Click);
-            // 
             // ofd_upCfg
             // 
             this.ofd_upCfg.DefaultExt = "txt";
             this.ofd_upCfg.FileName = "alceosd_config";
             this.ofd_upCfg.Filter = "Text files|*.txt|All files|*.*";
-            // 
-            // bt_dnCfg
-            // 
-            this.bt_dnCfg.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.bt_dnCfg.Location = new System.Drawing.Point(950, 323);
-            this.bt_dnCfg.Name = "bt_dnCfg";
-            this.bt_dnCfg.Size = new System.Drawing.Size(120, 23);
-            this.bt_dnCfg.TabIndex = 11;
-            this.bt_dnCfg.Text = "Download config...";
-            this.bt_dnCfg.UseVisualStyleBackColor = true;
-            this.bt_dnCfg.Click += new System.EventHandler(this.bt_dnCfg_Click);
             // 
             // ofd_dnCfg
             // 
@@ -2703,89 +2817,82 @@
             this.ofd_dnCfg.FileName = "alceosd_config";
             this.ofd_dnCfg.Filter = "Text files|*.txt|All files|*.*";
             // 
-            // listBox1
+            // gb_vsync
             // 
-            this.listBox1.FormattingEnabled = true;
-            this.listBox1.Items.AddRange(new object[] {
-            "Battery voltage (mavlink)",
-            "Battery voltage (AN0)",
-            "Battery voltage (AN1)",
-            "RSSI (mavlink)",
-            "Home distance",
-            "Air speed",
-            "Home Altitude",
-            "GPS sattelites"});
-            this.listBox1.Location = new System.Drawing.Point(19, 33);
-            this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(132, 173);
-            this.listBox1.TabIndex = 0;
+            this.gb_vsync.Controls.Add(this.label66);
+            this.gb_vsync.Controls.Add(this.nud_vsync1);
+            this.gb_vsync.Controls.Add(this.label65);
+            this.gb_vsync.Controls.Add(this.nud_vsync0);
+            this.gb_vsync.Controls.Add(this.label64);
+            this.gb_vsync.Location = new System.Drawing.Point(308, 6);
+            this.gb_vsync.Name = "gb_vsync";
+            this.gb_vsync.Size = new System.Drawing.Size(303, 107);
+            this.gb_vsync.TabIndex = 10;
+            this.gb_vsync.TabStop = false;
+            this.gb_vsync.Text = "Sync detector (hw>=0v3)";
             // 
-            // label6
+            // label64
             // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(16, 17);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(84, 13);
-            this.label6.TabIndex = 1;
-            this.label6.Text = "Available Alarms";
+            this.label64.AutoSize = true;
+            this.label64.Location = new System.Drawing.Point(9, 26);
+            this.label64.Name = "label64";
+            this.label64.Size = new System.Drawing.Size(79, 13);
+            this.label64.TabIndex = 1;
+            this.label64.Text = "Sync level (in0)";
             // 
-            // listBox2
+            // nud_vsync0
             // 
-            this.listBox2.FormattingEnabled = true;
-            this.listBox2.Location = new System.Drawing.Point(157, 33);
-            this.listBox2.Name = "listBox2";
-            this.listBox2.Size = new System.Drawing.Size(120, 173);
-            this.listBox2.TabIndex = 2;
-            // 
-            // label47
-            // 
-            this.label47.AutoSize = true;
-            this.label47.Location = new System.Drawing.Point(157, 17);
-            this.label47.Name = "label47";
-            this.label47.Size = new System.Drawing.Size(92, 13);
-            this.label47.TabIndex = 3;
-            this.label47.Text = "Configured Alarms";
-            // 
-            // label48
-            // 
-            this.label48.AutoSize = true;
-            this.label48.Location = new System.Drawing.Point(295, 36);
-            this.label48.Name = "label48";
-            this.label48.Size = new System.Drawing.Size(56, 13);
-            this.label48.TabIndex = 4;
-            this.label48.Text = "Alarm type";
-            // 
-            // comboBox3
-            // 
-            this.comboBox3.FormattingEnabled = true;
-            this.comboBox3.Items.AddRange(new object[] {
-            "Low",
-            "High"});
-            this.comboBox3.Location = new System.Drawing.Point(357, 33);
-            this.comboBox3.Name = "comboBox3";
-            this.comboBox3.Size = new System.Drawing.Size(121, 21);
-            this.comboBox3.TabIndex = 5;
-            // 
-            // numericUpDown3
-            // 
-            this.numericUpDown3.Location = new System.Drawing.Point(357, 61);
-            this.numericUpDown3.Maximum = new decimal(new int[] {
-            10000,
+            this.nud_vsync0.Location = new System.Drawing.Point(154, 24);
+            this.nud_vsync0.Maximum = new decimal(new int[] {
+            15,
             0,
             0,
             0});
-            this.numericUpDown3.Name = "numericUpDown3";
-            this.numericUpDown3.Size = new System.Drawing.Size(120, 20);
-            this.numericUpDown3.TabIndex = 6;
+            this.nud_vsync0.Name = "nud_vsync0";
+            this.nud_vsync0.Size = new System.Drawing.Size(120, 20);
+            this.nud_vsync0.TabIndex = 2;
+            this.nud_vsync0.Value = new decimal(new int[] {
+            4,
+            0,
+            0,
+            0});
+            this.nud_vsync0.ValueChanged += new System.EventHandler(this.nud_vsync0_ValueChanged);
             // 
-            // label50
+            // label65
             // 
-            this.label50.AutoSize = true;
-            this.label50.Location = new System.Drawing.Point(295, 63);
-            this.label50.Name = "label50";
-            this.label50.Size = new System.Drawing.Size(56, 13);
-            this.label50.TabIndex = 7;
-            this.label50.Text = "Delay (ms)";
+            this.label65.AutoSize = true;
+            this.label65.Location = new System.Drawing.Point(9, 52);
+            this.label65.Name = "label65";
+            this.label65.Size = new System.Drawing.Size(79, 13);
+            this.label65.TabIndex = 3;
+            this.label65.Text = "Sync level (in1)";
+            // 
+            // nud_vsync1
+            // 
+            this.nud_vsync1.Location = new System.Drawing.Point(154, 50);
+            this.nud_vsync1.Maximum = new decimal(new int[] {
+            15,
+            0,
+            0,
+            0});
+            this.nud_vsync1.Name = "nud_vsync1";
+            this.nud_vsync1.Size = new System.Drawing.Size(120, 20);
+            this.nud_vsync1.TabIndex = 4;
+            this.nud_vsync1.Value = new decimal(new int[] {
+            4,
+            0,
+            0,
+            0});
+            this.nud_vsync1.ValueChanged += new System.EventHandler(this.nud_vsync1_ValueChanged);
+            // 
+            // label66
+            // 
+            this.label66.AutoSize = true;
+            this.label66.Location = new System.Drawing.Point(9, 78);
+            this.label66.Name = "label66";
+            this.label66.Size = new System.Drawing.Size(258, 13);
+            this.label66.TabIndex = 5;
+            this.label66.Text = "Sync level 0 = auto sync (unstable for some cameras)";
             // 
             // AlceOSDconfigForm
             // 
@@ -2798,7 +2905,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "AlceOSDconfigForm";
-            this.Text = "AlceOSD 0v12";
+            this.Text = "AlceOSD 0v12RC2";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form2_FormClosing);
             this.Load += new System.EventHandler(this.AlceOSDconfigForm_Load);
             this.tabControl1.ResumeLayout(false);
@@ -2848,6 +2955,9 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_streamRawSensors)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_osdsysid)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_uavsysid)).EndInit();
+            this.tab_alarms.ResumeLayout(false);
+            this.tab_alarms.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).EndInit();
             this.tab_misc.ResumeLayout(false);
             this.gb_rssi.ResumeLayout(false);
             this.gb_rssi.PerformLayout();
@@ -2869,9 +2979,10 @@
             this.tab_log.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
-            this.tab_alarms.ResumeLayout(false);
-            this.tab_alarms.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).EndInit();
+            this.gb_vsync.ResumeLayout(false);
+            this.gb_vsync.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_vsync0)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_vsync1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -3084,5 +3195,13 @@
         private System.Windows.Forms.Label label48;
         private System.Windows.Forms.Label label47;
         private System.Windows.Forms.ListBox listBox2;
+        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.Label label54;
+        private System.Windows.Forms.GroupBox gb_vsync;
+        private System.Windows.Forms.NumericUpDown nud_vsync0;
+        private System.Windows.Forms.Label label64;
+        private System.Windows.Forms.NumericUpDown nud_vsync1;
+        private System.Windows.Forms.Label label65;
+        private System.Windows.Forms.Label label66;
     }
 }
