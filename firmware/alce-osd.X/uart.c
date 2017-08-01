@@ -69,20 +69,16 @@ const struct uart_regs {
 const struct param_def params_uart12[] = {
     PARAM("SERIAL1_MODE", MAV_PARAM_TYPE_UINT8, &config.uart[0].mode, uart_set_config_clients),
     PARAM("SERIAL1_BAUD", MAV_PARAM_TYPE_UINT8, &config.uart[0].baudrate, uart_set_config_baudrates),
-    PARAM("SERIAL1_PINS", MAV_PARAM_TYPE_UINT8, &config.uart[0].pins, uart_set_config_pins),
     PARAM("SERIAL2_MODE", MAV_PARAM_TYPE_UINT8, &config.uart[1].mode, uart_set_config_clients),
     PARAM("SERIAL2_BAUD", MAV_PARAM_TYPE_UINT8, &config.uart[1].baudrate, uart_set_config_baudrates),
-    PARAM("SERIAL2_PINS", MAV_PARAM_TYPE_UINT8, &config.uart[1].pins, uart_set_config_pins),
     PARAM_END,
 };
 
 const struct param_def params_uart34[] = {
     PARAM("SERIAL3_MODE", MAV_PARAM_TYPE_UINT8, &config.uart[2].mode, uart_set_config_clients),
     PARAM("SERIAL3_BAUD", MAV_PARAM_TYPE_UINT8, &config.uart[2].baudrate, uart_set_config_baudrates),
-    PARAM("SERIAL3_PINS", MAV_PARAM_TYPE_UINT8, &config.uart[2].pins, uart_set_config_pins),
     PARAM("SERIAL4_MODE", MAV_PARAM_TYPE_UINT8, &config.uart[3].mode, uart_set_config_clients),
     PARAM("SERIAL4_BAUD", MAV_PARAM_TYPE_UINT8, &config.uart[3].baudrate, uart_set_config_baudrates),
-    PARAM("SERIAL4_PINS", MAV_PARAM_TYPE_UINT8, &config.uart[3].pins, uart_set_config_pins),
     PARAM_END,
 };
 
@@ -103,9 +99,9 @@ static const struct hw_pin_map_table {
     /* hw0v2 */
     { { .rx = 38, .tx = 37 }, { .rx = 20, .tx = 36 }, { .rx = 34, .tx = 35 }, { .rx = 0,  .tx = 0 } },
     /* hw0v3 */
-    { { .rx = 43, .tx = 42 }, { .rx = 38, .tx = 37 }, { .rx = 34, .tx = 35 }, { .rx = 45, .tx = 39 } },
+    { { .rx = 43, .tx = 42 }, { .rx = 38, .tx = 37 }, { .rx = 45, .tx = 39 }, { .rx = 34, .tx = 35 } },
     /* hw0v4 */
-    { { .rx = 43, .tx = 42 }, { .rx = 38, .tx = 37 }, { .rx = 34, .tx = 35 }, { .rx = 45, .tx = 39 } },
+    { { .rx = 43, .tx = 42 }, { .rx = 38, .tx = 37 }, { .rx = 45, .tx = 39 }, { .rx = 34, .tx = 35 } },
     /* hw0v5 */
     { { .rx = 44, .tx = 43 }, { .rx = 47, .tx = 42 }, { .rx = 55, .tx = 54 }, { .rx = 39, .tx = 40 } },
 };
