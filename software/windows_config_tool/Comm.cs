@@ -355,7 +355,7 @@ namespace AlceOSD
             m.WaitOne();
             char c = (char)buffer[0];
             byte[] new_buf = new byte[buffer.Length - 1];
-            Array.Copy(buffer, new_buf, new_buf.Length);
+            Array.Copy(buffer, 1, new_buf, 0, new_buf.Length);
             buffer = new_buf;
             m.ReleaseMutex();
             return c;
