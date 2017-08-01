@@ -96,9 +96,9 @@ static const struct hw_pin_map_table {
 } hw_pin_map[5][4] = {
     /* telemetry, con2, icsp, con3 */
     /* hw0v1 */
-    { { .rx = 38, .tx = 37 }, { .rx = 20, .tx = 41 }, { .rx = 0,  .tx = 0 },  { .rx = 0,  .tx = 0 } },
+    { { .rx = 38, .tx = 37 }, { .rx = 20, .tx = 41 }, { .rx = 0,  .tx = 0  }, { .rx = 0,  .tx = 0  } },
     /* hw0v2 */
-    { { .rx = 38, .tx = 37 }, { .rx = 20, .tx = 36 }, { .rx = 34, .tx = 35 }, { .rx = 0,  .tx = 0 } },
+    { { .rx = 38, .tx = 37 }, { .rx = 20, .tx = 36 }, { .rx = 0,  .tx = 0  }, { .rx = 34, .tx = 35 } },
     /* hw0v3 */
     { { .rx = 43, .tx = 42 }, { .rx = 38, .tx = 37 }, { .rx = 45, .tx = 39 }, { .rx = 34, .tx = 35 } },
     /* hw0v4 */
@@ -606,10 +606,8 @@ static void uart_set_pins(unsigned char port, unsigned char pins)
                 _RP43R = UARTS[port].TXRP;
             } else if (hw_rev >= 0x03) {
                 _RP42R = UARTS[port].TXRP;
-                //*(UARTS[port].RXRP) = 43;
             } else {
                 _RP37R = UARTS[port].TXRP;
-                //*(UARTS[port].RXRP) = 38;
             }
             break;
         case UART_PINS_CON2:
@@ -617,35 +615,24 @@ static void uart_set_pins(unsigned char port, unsigned char pins)
                 _RP42R = UARTS[port].TXRP;
             } else if (hw_rev >= 0x03) {
                 _RP37R = UARTS[port].TXRP;
-                //*(UARTS[port].RXRP) = 38;
+            } else if (hw_rev >= 0x02) {
+                _RP36R = UARTS[port].TXRP;
             } else {
-                // TX
-                if (hw_rev == 0x01)
-                    _RP41R = UARTS[port].TXRP;
-                else
-                    _RP36R = UARTS[port].TXRP;
-                // RX
-                //*(UARTS[port].RXRP) = 20;
-            }
-            break;
-        case UART_PINS_ICSP:
-            if (hw_rev == 0x01)
-                break;
-            if (hw_rev >= 0x05) {
-                _RP54R = UARTS[port].TXRP;
-            } else {
-                _RP35R = UARTS[port].TXRP;
-                //*(UARTS[port].RXRP) = 34;
+                _RP41R = UARTS[port].TXRP;
             }
             break;
         case UART_PINS_CON3:
-            if (hw_rev < 0x03)
-                break;
+            if (hw_rev >= 0x05) {
+                _RP54R = UARTS[port].TXRP;
+            } else if (hw_rev >= 0x03) {
+                _RP39R = UARTS[port].TXRP;
+            }
+            break;
+        case UART_PINS_ICSP:
             if (hw_rev >= 0x05) {
                 _RP40R = UARTS[port].TXRP;
-            } else {
-                _RP39R = UARTS[port].TXRP;
-                //*(UARTS[port].RXRP) = 45;
+            } else if (hw_rev >= 0x02) {
+                _RP35R = UARTS[port].TXRP;
             }
             break;
         default:
@@ -819,38 +806,8 @@ void uart_init(void)
 
 static void shell_cmd_stats(char *args, void *data)
 {
-    unsigned char i, total = 0;
-    struct uart_client **cli;
-    
-    shell_printf("Port settings (config):\n");
-    for (i = 0; i < 4; i++) {
-        shell_printf(" port%d: %6lubps pins=%-9s client=%s\n",
-                i, baudrates[config.uart[i].baudrate].baudrate,
-                UART_PIN_NAMES[config.uart[i].pins],
-                UART_CLIENT_NAMES[config.uart[i].mode]);
-    }
-    
-    shell_printf("\nRegistered clients:\n");
-    cli = uart_client_list;
-    while (*cli != NULL) {
-        shell_printf(" %-7s : ch=%d init=%04p close=%04p read=%04p write=%04p\n",
-                UART_CLIENT_NAMES[(*cli)->id], (*cli)->ch,
-                (*cli)->init, (*cli)->close, (*cli)->read, (*cli)->write);
-        total++;
-        cli++;
-    }
-    shell_printf("total=%d max=%d\n", total, UART_CLIENTS_MAX);
+    unsigned char i;
 
-    shell_printf("\nActive clients:\n");
-    cli = port_clients;
-    for (i = 0; i < 4; i++) {
-        if (cli[i] == NULL)
-            continue;
-        shell_printf(" port%d: client=%-7s ch=%d init=%04p close=%04p read=%04p write=%04p\n",
-                cli[i]->port, UART_CLIENT_NAMES[cli[i]->id], cli[i]->ch,
-                cli[i]->init, cli[i]->close, cli[i]->read, cli[i]->write);
-    }
-    
     shell_printf("\nStats:\n");
     for (i = 0; i < 4; i++) {
         shell_printf(" port%d: tx=%lu rx=%lu", i, uart_fifo[i].tx, uart_fifo[i].rx);
@@ -868,7 +825,8 @@ static void shell_cmd_stats(char *args, void *data)
 static void shell_cmd_config(char *args, void *data)
 {
     struct shell_argval argval[SHELL_CMD_CONFIG_ARGS+1], *p, *now;
-    unsigned char t, i;
+    struct uart_client **cli;
+    unsigned char t, i, total = 0;
     int port;
     long baud;
     
@@ -876,6 +834,35 @@ static void shell_cmd_config(char *args, void *data)
     p = shell_get_argval(argval, 'p');
 
     if ((t < 2) || (p == NULL)) {
+        shell_printf("Port settings (config):\n");
+        for (i = 0; i < 4; i++) {
+            shell_printf(" port%d: %6lubps pins=%-9s client=%s\n",
+                    i, baudrates[config.uart[i].baudrate].baudrate,
+                    UART_PIN_NAMES[config.uart[i].pins],
+                    UART_CLIENT_NAMES[config.uart[i].mode]);
+        }
+
+        shell_printf("\nRegistered clients:\n");
+        cli = uart_client_list;
+        while (*cli != NULL) {
+            shell_printf(" %-7s : ch=%d init=%04p close=%04p read=%04p write=%04p\n",
+                    UART_CLIENT_NAMES[(*cli)->id], (*cli)->ch,
+                    (*cli)->init, (*cli)->close, (*cli)->read, (*cli)->write);
+            total++;
+            cli++;
+        }
+        shell_printf("total=%d max=%d\n", total, UART_CLIENTS_MAX);
+
+        shell_printf("\nActive clients:\n");
+        cli = port_clients;
+        for (i = 0; i < 4; i++) {
+            if (cli[i] == NULL)
+                continue;
+            shell_printf(" port%d: client=%-7s ch=%d init=%04p close=%04p read=%04p write=%04p\n",
+                    cli[i]->port, UART_CLIENT_NAMES[cli[i]->id], cli[i]->ch,
+                    cli[i]->init, cli[i]->close, cli[i]->read, cli[i]->write);
+        }
+
         shell_printf("syntax: -p <port> [-n] [-b <baudrate>] [-c <client>] [-i <pins>]\n");
         shell_printf(" -p <port>      uart port number: 0 to 3\n");
         shell_printf(" -n             apply changes now\n");
