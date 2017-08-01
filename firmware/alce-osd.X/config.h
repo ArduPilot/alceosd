@@ -122,7 +122,7 @@ struct alceosd_config {
     struct rssi_config rssi;
 
     /* flight alarms */
-    struct flight_alarm_config flight_alarm[FL_ALARM_ID_END];
+    struct flight_alarm_config flight_alarm[MAX_FLIGHT_ALARMS];
     
     /* widgets config */
     struct widget_config widgets[CONFIG_MAX_WIDGETS];
