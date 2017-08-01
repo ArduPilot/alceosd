@@ -172,14 +172,102 @@ namespace AlceOSD_updater
 
         private void validate_hw_options()
         {
+            double rev = 0.0;
+
+            hw_rev = cb_hwrev.SelectedItem.ToString();
+            if (hw_rev.EndsWith("b"))
+            {
+                hw_rev = hw_rev.TrimEnd('b');
+                rev = 0.1;
+            }
             if (hw_rev == "")
                 return;
 
-            
+            rev += Convert.ToInt16(hw_rev.ElementAt(hw_rev.Length - 1)) - '0';
 
-            int rev = Convert.ToInt32(hw_rev.ElementAt(hw_rev.Length - 1)) - '0';
-            Console.WriteLine("Detected hw rev {0} ({1})", hw_rev, rev);
+            /* UARTS */
+            gb_uart3.Visible = true;
+            gb_uart4.Visible = true;
+            switch (cb_hwrev.SelectedIndex)
+            {
+                case 0:
+                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v1;
+                    gb_uart1.Location = new Point(33, 237);
+                    gb_uart2.Location = new Point(334, 120);
 
+                    gb_uart3.Visible = false;
+                    gb_uart4.Visible = false;
+
+                    gb_uart1.Text = "UART1 (Telemetry/6pin)";
+                    gb_uart2.Text = "UART2 (CON2/4+1pin)";
+                    break;
+                case 1:
+                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v2;
+                    gb_uart1.Location = new Point(33, 237);
+                    gb_uart2.Location = new Point(310, 363);
+
+                    gb_uart3.Visible = false;
+                    gb_uart4.Visible = false;
+
+                    gb_uart1.Text = "UART1 (Telemetry/6pin)";
+                    gb_uart2.Text = "UART2 (CON2/3pin)";
+                    break;
+                case 2:
+                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v3;
+                    gb_uart1.Location = new Point(33, 237);
+                    gb_uart2.Location = new Point(310, 115);
+
+                    gb_uart3.Visible = false;
+                    gb_uart4.Visible = false;
+
+                    gb_uart1.Text = "UART1 (Telemetry/6pin)";
+                    gb_uart2.Text = "UART2 (CON2/3pin)";
+                    break;
+                case 3:
+                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v3b;
+                    gb_uart1.Location = new Point(51, 168);
+                    gb_uart2.Location = new Point(51, 281);
+
+                    gb_uart3.Location = new Point(318, 55);
+                    gb_uart4.Location = new Point(415, 415);
+
+                    gb_uart1.Text = "UART1 (USART1/6pin)";
+                    gb_uart2.Text = "UART2 (USART2/3pin)";
+                    gb_uart3.Text = "UART3 (USART3/DF13)";
+                    gb_uart4.Text = "UART4 (ICSP)";
+                    break;
+                case 4:
+                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v4;
+                    gb_uart1.Location = new Point(51, 168);
+                    gb_uart2.Location = new Point(51, 281);
+
+                    gb_uart3.Location = new Point(318, 55);
+                    gb_uart4.Location = new Point(415, 415);
+
+                    gb_uart1.Text = "UART1 (USART1/6pin)";
+                    gb_uart2.Text = "UART2 (USART2/3pin)";
+                    gb_uart3.Text = "UART3 (USART3/DF13)";
+                    gb_uart4.Text = "UART4 (ICSP)";
+                    break;
+                case 5:
+                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v5;
+                    gb_uart1.Location = new Point(51, 168);
+                    gb_uart2.Location = new Point(51, 281);
+
+                    gb_uart3.Location = new Point(206, 49);
+                    gb_uart4.Location = new Point(438, 49);
+
+                    gb_uart1.Text = "UART1 (USART1/6pin)";
+                    gb_uart2.Text = "UART2 (USART2/3pin)";
+                    gb_uart3.Text = "UART3 (USART3/DF13)";
+                    gb_uart4.Text = "UART4 (USB)";
+                    break;
+                default:
+                    break;
+
+            }
+
+            /* VIDEO */
             if (rev < 4)
             {
                 gb_vid0v4.Visible = false;
@@ -188,14 +276,9 @@ namespace AlceOSD_updater
             {
                 gb_vid0v4.Visible = true;
             }
-
             if (rev < 3)
             {
                 gb_vsync.Visible = false;
-
-                gb_uart3.Visible = false;
-                gb_uart4.Visible = false;
-
                 nud_blacklvl.Enabled = false;
                 nud_graylvl.Enabled = false;
                 nud_whitelvl.Enabled = true;
@@ -203,10 +286,6 @@ namespace AlceOSD_updater
             else
             {
                 gb_vsync.Visible = true;
-
-                gb_uart3.Visible = true;
-                gb_uart4.Visible = true;
-
                 nud_blacklvl.Enabled = true;
                 nud_graylvl.Enabled = true;
                 nud_whitelvl.Enabled = true;
@@ -384,7 +463,10 @@ namespace AlceOSD_updater
                     hw_rev = m.Groups[1].Value;
                     fw_version = m.Groups[2].Value;
 
-                    cb_hwrev.SelectedIndex = cb_hwrev.Items.IndexOf("hw" + hw_rev);
+                    int rev = Convert.ToInt32(hw_rev.ElementAt(hw_rev.Length - 1)) - '0';
+                    Console.WriteLine("Detected hw rev {0} ({1})", hw_rev, rev);
+
+                    cb_hwrev.SelectedText = hw_rev;
                 }
 
                 System.Threading.Thread.Sleep(100);
@@ -443,16 +525,12 @@ namespace AlceOSD_updater
             /* serial */
             config.Add("SERIAL1_MODE = " + Convert.ToDouble(cb_mode1.SelectedIndex));
             config.Add("SERIAL1_BAUD = " + Convert.ToDouble(cb_baud1.SelectedIndex));
-            config.Add("SERIAL1_PINS = " + Convert.ToDouble(cb_port1.SelectedIndex));
             config.Add("SERIAL2_MODE = " + Convert.ToDouble(cb_mode2.SelectedIndex));
             config.Add("SERIAL2_BAUD = " + Convert.ToDouble(cb_baud2.SelectedIndex));
-            config.Add("SERIAL2_PINS = " + Convert.ToDouble(cb_port2.SelectedIndex));
             config.Add("SERIAL3_MODE = " + Convert.ToDouble(cb_mode3.SelectedIndex));
             config.Add("SERIAL3_BAUD = " + Convert.ToDouble(cb_baud3.SelectedIndex));
-            config.Add("SERIAL3_PINS = " + Convert.ToDouble(cb_port3.SelectedIndex));
             config.Add("SERIAL4_MODE = " + Convert.ToDouble(cb_mode4.SelectedIndex));
             config.Add("SERIAL4_BAUD = " + Convert.ToDouble(cb_baud4.SelectedIndex));
-            config.Add("SERIAL4_PINS = " + Convert.ToDouble(cb_port4.SelectedIndex));
 
             /* video */
             config.Add("VIDEO_CHMODE = " + Convert.ToDouble(cb_vswmode.SelectedIndex));
@@ -741,7 +819,7 @@ namespace AlceOSD_updater
             string[] entry, entry2;
             string key, val, param;
             double dval;
-            int mode = -1, baud = -1, port = -1;
+            int mode = -1, baud = -1;
             foreach (string value in config)
             {
                 entry = value.Split('=');
@@ -763,9 +841,6 @@ namespace AlceOSD_updater
                     case "BAUD":
                         baud = Convert.ToByte(dval);
                         break;
-                    case "PINS":
-                        port = Convert.ToByte(dval);
-                        break;
                     default:
                         break;
                 }
@@ -775,22 +850,18 @@ namespace AlceOSD_updater
                     case "SERIAL1":
                         cb_mode1.SelectedIndex = mode;
                         cb_baud1.SelectedIndex = baud;
-                        cb_port1.SelectedIndex = port;
                         break;
                     case "SERIAL2":
                         cb_mode2.SelectedIndex = mode;
                         cb_baud2.SelectedIndex = baud;
-                        cb_port2.SelectedIndex = port;
                         break;
                     case "SERIAL3":
                         cb_mode3.SelectedIndex = mode;
                         cb_baud3.SelectedIndex = baud;
-                        cb_port3.SelectedIndex = port;
                         break;
                     case "SERIAL4":
                         cb_mode4.SelectedIndex = mode;
                         cb_baud4.SelectedIndex = baud;
-                        cb_port4.SelectedIndex = port;
                         break;
                     default:
                         break;
@@ -2992,9 +3063,7 @@ namespace AlceOSD_updater
             string cmd = "uart config -p0";
             string baudrate = cb_baud1.Text;
             string mode = cb_mode1.Text.ToLower();
-            string pins = cb_port1.Text.ToLower();
             cmd += " -b" + baudrate;
-            cmd += " -i" + pins;
             cmd += " -c" + mode;
             if (init_done)
                 send_cmd(cmd);
@@ -3004,9 +3073,7 @@ namespace AlceOSD_updater
             string cmd = "uart config -p1";
             string baudrate = cb_baud2.Text;
             string mode = cb_mode2.Text.ToLower();
-            string pins = cb_port2.Text.ToLower();
             cmd += " -b" + baudrate;
-            cmd += " -i" + pins;
             cmd += " -c" + mode;
             if (init_done)
                 send_cmd(cmd);
@@ -3016,9 +3083,7 @@ namespace AlceOSD_updater
             string cmd = "uart config -p2";
             string baudrate = cb_baud3.Text;
             string mode = cb_mode3.Text.ToLower();
-            string pins = cb_port3.Text.ToLower();
             cmd += " -b" + baudrate;
-            cmd += " -i" + pins;
             cmd += " -c" + mode;
             if (init_done)
                 send_cmd(cmd);
@@ -3028,9 +3093,7 @@ namespace AlceOSD_updater
             string cmd = "uart config -p3";
             string baudrate = cb_baud4.Text;
             string mode = cb_mode4.Text.ToLower();
-            string pins = cb_port4.Text.ToLower();
             cmd += " -b" + baudrate;
-            cmd += " -i" + pins;
             cmd += " -c" + mode;
             if (init_done)
                 send_cmd(cmd);
@@ -3544,25 +3607,7 @@ namespace AlceOSD_updater
 
         private void cb_hwrev_SelectedIndexChanged(object sender, EventArgs e)
         {
-            switch (cb_hwrev.SelectedIndex)
-            {
-                case 0:
-                case 1:
-                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v2;
-                    break;
-                case 2:
-                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v3;
-                    break;
-                case 3:
-                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v4;
-                    break;
-                case 4:
-                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v5;
-                    break;
-                default:
-                    break;
-
-            }
+            validate_hw_options();
         }
 
         private void timer_submit_Tick(object sender, EventArgs e)

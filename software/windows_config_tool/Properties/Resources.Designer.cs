@@ -63,6 +63,16 @@ namespace AlceOSD.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap alceosd_hw0v1 {
+            get {
+                object obj = ResourceManager.GetObject("alceosd_hw0v1", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap alceosd_hw0v2 {
             get {
                 object obj = ResourceManager.GetObject("alceosd_hw0v2", resourceCulture);
@@ -76,6 +86,16 @@ namespace AlceOSD.Properties {
         internal static System.Drawing.Bitmap alceosd_hw0v3 {
             get {
                 object obj = ResourceManager.GetObject("alceosd_hw0v3", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap alceosd_hw0v3b {
+            get {
+                object obj = ResourceManager.GetObject("alceosd_hw0v3b", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

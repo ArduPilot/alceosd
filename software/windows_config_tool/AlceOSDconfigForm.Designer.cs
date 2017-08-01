@@ -92,33 +92,24 @@
             this.nud_xoffset = new System.Windows.Forms.NumericUpDown();
             this.nud_yoffset = new System.Windows.Forms.NumericUpDown();
             this.tab_uarts = new System.Windows.Forms.TabPage();
-            this.pb_uarthw = new System.Windows.Forms.PictureBox();
             this.gb_uart4 = new System.Windows.Forms.GroupBox();
-            this.label22 = new System.Windows.Forms.Label();
             this.label23 = new System.Windows.Forms.Label();
             this.label24 = new System.Windows.Forms.Label();
-            this.cb_port4 = new System.Windows.Forms.ComboBox();
             this.cb_baud4 = new System.Windows.Forms.ComboBox();
             this.cb_mode4 = new System.Windows.Forms.ComboBox();
             this.gb_uart3 = new System.Windows.Forms.GroupBox();
-            this.label14 = new System.Windows.Forms.Label();
             this.label19 = new System.Windows.Forms.Label();
             this.label21 = new System.Windows.Forms.Label();
-            this.cb_port3 = new System.Windows.Forms.ComboBox();
             this.cb_baud3 = new System.Windows.Forms.ComboBox();
             this.cb_mode3 = new System.Windows.Forms.ComboBox();
             this.gb_uart2 = new System.Windows.Forms.GroupBox();
-            this.cb_port2 = new System.Windows.Forms.ComboBox();
             this.cb_baud2 = new System.Windows.Forms.ComboBox();
-            this.label11 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.cb_mode2 = new System.Windows.Forms.ComboBox();
             this.gb_uart1 = new System.Windows.Forms.GroupBox();
-            this.label10 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
-            this.cb_port1 = new System.Windows.Forms.ComboBox();
             this.cb_baud1 = new System.Windows.Forms.ComboBox();
             this.cb_mode1 = new System.Windows.Forms.ComboBox();
             this.tab_mavlink = new System.Windows.Forms.TabPage();
@@ -146,6 +137,7 @@
             this.label34 = new System.Windows.Forms.Label();
             this.label33 = new System.Windows.Forms.Label();
             this.tab_alarms = new System.Windows.Forms.TabPage();
+            this.bt_fa_savecfg = new System.Windows.Forms.Button();
             this.bt_fa_savealarm = new System.Windows.Forms.Button();
             this.bt_fa_del = new System.Windows.Forms.Button();
             this.bt_fa_add = new System.Windows.Forms.Button();
@@ -187,7 +179,6 @@
             this.label32 = new System.Windows.Forms.Label();
             this.bt_widSaveCfg = new System.Windows.Forms.Button();
             this.bt_refreshCanvas = new System.Windows.Forms.Button();
-            this.pb_osd = new System.Windows.Forms.PictureBox();
             this.tb_wp4 = new System.Windows.Forms.TextBox();
             this.tb_wp3 = new System.Windows.Forms.TextBox();
             this.tb_wp2 = new System.Windows.Forms.TextBox();
@@ -250,7 +241,8 @@
             this.ofd_tlog = new System.Windows.Forms.OpenFileDialog();
             this.ofd_upCfg = new System.Windows.Forms.OpenFileDialog();
             this.ofd_dnCfg = new System.Windows.Forms.SaveFileDialog();
-            this.bt_fa_savecfg = new System.Windows.Forms.Button();
+            this.pb_uarthw = new System.Windows.Forms.PictureBox();
+            this.pb_osd = new System.Windows.Forms.PictureBox();
             this.tabControl1.SuspendLayout();
             this.tab_shell.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tb_tlog)).BeginInit();
@@ -275,7 +267,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_xoffset)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_yoffset)).BeginInit();
             this.tab_uarts.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pb_uarthw)).BeginInit();
             this.gb_uart4.SuspendLayout();
             this.gb_uart3.SuspendLayout();
             this.gb_uart2.SuspendLayout();
@@ -303,13 +294,14 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_tabmin)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_tabtimer)).BeginInit();
             this.tab_widgets.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pb_osd)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_wypos)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_wxpos)).BeginInit();
             this.cm_widget.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_seltab)).BeginInit();
             this.tab_log.SuspendLayout();
             this.menuStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pb_uarthw)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pb_osd)).BeginInit();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -1151,11 +1143,11 @@
             // 
             // tab_uarts
             // 
-            this.tab_uarts.Controls.Add(this.pb_uarthw);
             this.tab_uarts.Controls.Add(this.gb_uart4);
             this.tab_uarts.Controls.Add(this.gb_uart3);
             this.tab_uarts.Controls.Add(this.gb_uart2);
             this.tab_uarts.Controls.Add(this.gb_uart1);
+            this.tab_uarts.Controls.Add(this.pb_uarthw);
             this.tab_uarts.Location = new System.Drawing.Point(4, 22);
             this.tab_uarts.Name = "tab_uarts";
             this.tab_uarts.Padding = new System.Windows.Forms.Padding(3);
@@ -1164,39 +1156,18 @@
             this.tab_uarts.Text = "Serial ports";
             this.tab_uarts.UseVisualStyleBackColor = true;
             // 
-            // pb_uarthw
-            // 
-            this.pb_uarthw.Image = global::AlceOSD.Properties.Resources.alceosd_hw0v2;
-            this.pb_uarthw.Location = new System.Drawing.Point(732, 34);
-            this.pb_uarthw.Name = "pb_uarthw";
-            this.pb_uarthw.Size = new System.Drawing.Size(284, 241);
-            this.pb_uarthw.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.pb_uarthw.TabIndex = 8;
-            this.pb_uarthw.TabStop = false;
-            // 
             // gb_uart4
             // 
-            this.gb_uart4.Controls.Add(this.label22);
             this.gb_uart4.Controls.Add(this.label23);
             this.gb_uart4.Controls.Add(this.label24);
-            this.gb_uart4.Controls.Add(this.cb_port4);
             this.gb_uart4.Controls.Add(this.cb_baud4);
             this.gb_uart4.Controls.Add(this.cb_mode4);
-            this.gb_uart4.Location = new System.Drawing.Point(323, 143);
+            this.gb_uart4.Location = new System.Drawing.Point(658, 6);
             this.gb_uart4.Name = "gb_uart4";
-            this.gb_uart4.Size = new System.Drawing.Size(311, 132);
+            this.gb_uart4.Size = new System.Drawing.Size(210, 94);
             this.gb_uart4.TabIndex = 7;
             this.gb_uart4.TabStop = false;
             this.gb_uart4.Text = "UART4";
-            // 
-            // label22
-            // 
-            this.label22.AutoSize = true;
-            this.label22.Location = new System.Drawing.Point(15, 85);
-            this.label22.Name = "label22";
-            this.label22.Size = new System.Drawing.Size(56, 13);
-            this.label22.TabIndex = 2;
-            this.label22.Text = "Connector";
             // 
             // label23
             // 
@@ -1216,22 +1187,6 @@
             this.label24.TabIndex = 2;
             this.label24.Text = "Mode";
             // 
-            // cb_port4
-            // 
-            this.cb_port4.FormattingEnabled = true;
-            this.cb_port4.Items.AddRange(new object[] {
-            "Telemetry",
-            "CON2",
-            "ICSP",
-            "CON3",
-            "OFF"});
-            this.cb_port4.Location = new System.Drawing.Point(153, 82);
-            this.cb_port4.Name = "cb_port4";
-            this.cb_port4.Size = new System.Drawing.Size(121, 21);
-            this.cb_port4.TabIndex = 3;
-            this.cb_port4.Text = "CON3";
-            this.cb_port4.SelectedIndexChanged += new System.EventHandler(this.cb_port4_SelectedIndexChanged);
-            // 
             // cb_baud4
             // 
             this.cb_baud4.FormattingEnabled = true;
@@ -1239,7 +1194,7 @@
             "19200",
             "57600",
             "115200"});
-            this.cb_baud4.Location = new System.Drawing.Point(153, 55);
+            this.cb_baud4.Location = new System.Drawing.Point(76, 55);
             this.cb_baud4.Name = "cb_baud4";
             this.cb_baud4.Size = new System.Drawing.Size(121, 21);
             this.cb_baud4.TabIndex = 3;
@@ -1255,7 +1210,7 @@
             "UAVTalk",
             "Shell",
             "FrSky"});
-            this.cb_mode4.Location = new System.Drawing.Point(153, 28);
+            this.cb_mode4.Location = new System.Drawing.Point(76, 28);
             this.cb_mode4.Name = "cb_mode4";
             this.cb_mode4.Size = new System.Drawing.Size(121, 21);
             this.cb_mode4.TabIndex = 3;
@@ -1264,27 +1219,16 @@
             // 
             // gb_uart3
             // 
-            this.gb_uart3.Controls.Add(this.label14);
             this.gb_uart3.Controls.Add(this.label19);
             this.gb_uart3.Controls.Add(this.label21);
-            this.gb_uart3.Controls.Add(this.cb_port3);
             this.gb_uart3.Controls.Add(this.cb_baud3);
             this.gb_uart3.Controls.Add(this.cb_mode3);
-            this.gb_uart3.Location = new System.Drawing.Point(6, 143);
+            this.gb_uart3.Location = new System.Drawing.Point(442, 6);
             this.gb_uart3.Name = "gb_uart3";
-            this.gb_uart3.Size = new System.Drawing.Size(311, 132);
+            this.gb_uart3.Size = new System.Drawing.Size(210, 94);
             this.gb_uart3.TabIndex = 6;
             this.gb_uart3.TabStop = false;
             this.gb_uart3.Text = "UART3";
-            // 
-            // label14
-            // 
-            this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(15, 85);
-            this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(56, 13);
-            this.label14.TabIndex = 2;
-            this.label14.Text = "Connector";
             // 
             // label19
             // 
@@ -1304,22 +1248,6 @@
             this.label21.TabIndex = 2;
             this.label21.Text = "Mode";
             // 
-            // cb_port3
-            // 
-            this.cb_port3.FormattingEnabled = true;
-            this.cb_port3.Items.AddRange(new object[] {
-            "Telemetry",
-            "CON2",
-            "ICSP",
-            "CON3",
-            "OFF"});
-            this.cb_port3.Location = new System.Drawing.Point(153, 82);
-            this.cb_port3.Name = "cb_port3";
-            this.cb_port3.Size = new System.Drawing.Size(121, 21);
-            this.cb_port3.TabIndex = 3;
-            this.cb_port3.Text = "ICSP";
-            this.cb_port3.SelectedIndexChanged += new System.EventHandler(this.cb_port3_SelectedIndexChanged);
-            // 
             // cb_baud3
             // 
             this.cb_baud3.FormattingEnabled = true;
@@ -1327,7 +1255,7 @@
             "19200",
             "57600",
             "115200"});
-            this.cb_baud3.Location = new System.Drawing.Point(153, 55);
+            this.cb_baud3.Location = new System.Drawing.Point(76, 55);
             this.cb_baud3.Name = "cb_baud3";
             this.cb_baud3.Size = new System.Drawing.Size(121, 21);
             this.cb_baud3.TabIndex = 3;
@@ -1343,7 +1271,7 @@
             "UAVTalk",
             "Shell",
             "FrSky"});
-            this.cb_mode3.Location = new System.Drawing.Point(153, 28);
+            this.cb_mode3.Location = new System.Drawing.Point(76, 28);
             this.cb_mode3.Name = "cb_mode3";
             this.cb_mode3.Size = new System.Drawing.Size(121, 21);
             this.cb_mode3.TabIndex = 3;
@@ -1352,34 +1280,16 @@
             // 
             // gb_uart2
             // 
-            this.gb_uart2.Controls.Add(this.cb_port2);
             this.gb_uart2.Controls.Add(this.cb_baud2);
-            this.gb_uart2.Controls.Add(this.label11);
             this.gb_uart2.Controls.Add(this.label12);
             this.gb_uart2.Controls.Add(this.label8);
             this.gb_uart2.Controls.Add(this.cb_mode2);
-            this.gb_uart2.Location = new System.Drawing.Point(323, 6);
+            this.gb_uart2.Location = new System.Drawing.Point(226, 6);
             this.gb_uart2.Name = "gb_uart2";
-            this.gb_uart2.Size = new System.Drawing.Size(311, 131);
+            this.gb_uart2.Size = new System.Drawing.Size(210, 94);
             this.gb_uart2.TabIndex = 5;
             this.gb_uart2.TabStop = false;
             this.gb_uart2.Text = "UART2";
-            // 
-            // cb_port2
-            // 
-            this.cb_port2.FormattingEnabled = true;
-            this.cb_port2.Items.AddRange(new object[] {
-            "Telemetry",
-            "CON2",
-            "ICSP",
-            "CON3",
-            "OFF"});
-            this.cb_port2.Location = new System.Drawing.Point(158, 82);
-            this.cb_port2.Name = "cb_port2";
-            this.cb_port2.Size = new System.Drawing.Size(121, 21);
-            this.cb_port2.TabIndex = 8;
-            this.cb_port2.Text = "CON2";
-            this.cb_port2.SelectedIndexChanged += new System.EventHandler(this.cb_port2_SelectedIndexChanged);
             // 
             // cb_baud2
             // 
@@ -1388,21 +1298,12 @@
             "19200",
             "57600",
             "115200"});
-            this.cb_baud2.Location = new System.Drawing.Point(158, 55);
+            this.cb_baud2.Location = new System.Drawing.Point(76, 55);
             this.cb_baud2.Name = "cb_baud2";
             this.cb_baud2.Size = new System.Drawing.Size(121, 21);
             this.cb_baud2.TabIndex = 9;
             this.cb_baud2.Text = "115200";
             this.cb_baud2.SelectedIndexChanged += new System.EventHandler(this.cb_baud2_SelectedIndexChanged);
-            // 
-            // label11
-            // 
-            this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(20, 85);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(56, 13);
-            this.label11.TabIndex = 6;
-            this.label11.Text = "Connector";
             // 
             // label12
             // 
@@ -1431,7 +1332,7 @@
             "UAVTalk",
             "Shell",
             "FrSky"});
-            this.cb_mode2.Location = new System.Drawing.Point(158, 28);
+            this.cb_mode2.Location = new System.Drawing.Point(76, 28);
             this.cb_mode2.Name = "cb_mode2";
             this.cb_mode2.Size = new System.Drawing.Size(121, 21);
             this.cb_mode2.TabIndex = 5;
@@ -1440,27 +1341,16 @@
             // 
             // gb_uart1
             // 
-            this.gb_uart1.Controls.Add(this.label10);
             this.gb_uart1.Controls.Add(this.label9);
             this.gb_uart1.Controls.Add(this.label7);
-            this.gb_uart1.Controls.Add(this.cb_port1);
             this.gb_uart1.Controls.Add(this.cb_baud1);
             this.gb_uart1.Controls.Add(this.cb_mode1);
-            this.gb_uart1.Location = new System.Drawing.Point(6, 6);
+            this.gb_uart1.Location = new System.Drawing.Point(10, 6);
             this.gb_uart1.Name = "gb_uart1";
-            this.gb_uart1.Size = new System.Drawing.Size(311, 131);
+            this.gb_uart1.Size = new System.Drawing.Size(210, 94);
             this.gb_uart1.TabIndex = 4;
             this.gb_uart1.TabStop = false;
             this.gb_uart1.Text = "UART1";
-            // 
-            // label10
-            // 
-            this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(15, 85);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(56, 13);
-            this.label10.TabIndex = 2;
-            this.label10.Text = "Connector";
             // 
             // label9
             // 
@@ -1480,22 +1370,6 @@
             this.label7.TabIndex = 2;
             this.label7.Text = "Mode";
             // 
-            // cb_port1
-            // 
-            this.cb_port1.FormattingEnabled = true;
-            this.cb_port1.Items.AddRange(new object[] {
-            "Telemetry",
-            "CON2",
-            "ICSP",
-            "CON3",
-            "OFF"});
-            this.cb_port1.Location = new System.Drawing.Point(153, 82);
-            this.cb_port1.Name = "cb_port1";
-            this.cb_port1.Size = new System.Drawing.Size(121, 21);
-            this.cb_port1.TabIndex = 3;
-            this.cb_port1.Text = "Telemetry";
-            this.cb_port1.SelectedIndexChanged += new System.EventHandler(this.cb_port1_SelectedIndexChanged);
-            // 
             // cb_baud1
             // 
             this.cb_baud1.FormattingEnabled = true;
@@ -1503,7 +1377,7 @@
             "19200",
             "57600",
             "115200"});
-            this.cb_baud1.Location = new System.Drawing.Point(153, 55);
+            this.cb_baud1.Location = new System.Drawing.Point(76, 55);
             this.cb_baud1.Name = "cb_baud1";
             this.cb_baud1.Size = new System.Drawing.Size(121, 21);
             this.cb_baud1.TabIndex = 3;
@@ -1519,7 +1393,7 @@
             "UAVTalk",
             "Shell",
             "FrSky"});
-            this.cb_mode1.Location = new System.Drawing.Point(153, 28);
+            this.cb_mode1.Location = new System.Drawing.Point(76, 28);
             this.cb_mode1.Name = "cb_mode1";
             this.cb_mode1.Size = new System.Drawing.Size(121, 21);
             this.cb_mode1.TabIndex = 3;
@@ -1892,6 +1766,16 @@
             this.tab_alarms.TabIndex = 7;
             this.tab_alarms.Text = "Alarms";
             this.tab_alarms.UseVisualStyleBackColor = true;
+            // 
+            // bt_fa_savecfg
+            // 
+            this.bt_fa_savecfg.Location = new System.Drawing.Point(22, 381);
+            this.bt_fa_savecfg.Name = "bt_fa_savecfg";
+            this.bt_fa_savecfg.Size = new System.Drawing.Size(176, 23);
+            this.bt_fa_savecfg.TabIndex = 16;
+            this.bt_fa_savecfg.Text = "Save config";
+            this.bt_fa_savecfg.UseVisualStyleBackColor = true;
+            this.bt_fa_savecfg.Click += new System.EventHandler(this.bt_fa_savecfg_Click);
             // 
             // bt_fa_savealarm
             // 
@@ -2343,7 +2227,6 @@
             this.tab_widgets.Controls.Add(this.label32);
             this.tab_widgets.Controls.Add(this.bt_widSaveCfg);
             this.tab_widgets.Controls.Add(this.bt_refreshCanvas);
-            this.tab_widgets.Controls.Add(this.pb_osd);
             this.tab_widgets.Controls.Add(this.tb_wp4);
             this.tab_widgets.Controls.Add(this.tb_wp3);
             this.tab_widgets.Controls.Add(this.tb_wp2);
@@ -2367,6 +2250,7 @@
             this.tab_widgets.Controls.Add(this.label16);
             this.tab_widgets.Controls.Add(this.label15);
             this.tab_widgets.Controls.Add(this.lbl_wname);
+            this.tab_widgets.Controls.Add(this.pb_osd);
             this.tab_widgets.Controls.Add(this.lb_widgets);
             this.tab_widgets.Controls.Add(this.nud_seltab);
             this.tab_widgets.Controls.Add(this.label13);
@@ -2419,21 +2303,6 @@
             this.bt_refreshCanvas.Text = "Reload OSD";
             this.bt_refreshCanvas.UseVisualStyleBackColor = true;
             this.bt_refreshCanvas.Click += new System.EventHandler(this.bt_refreshCanvas_Click);
-            // 
-            // pb_osd
-            // 
-            this.pb_osd.BackColor = System.Drawing.Color.DimGray;
-            this.pb_osd.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.pb_osd.Location = new System.Drawing.Point(565, 36);
-            this.pb_osd.Name = "pb_osd";
-            this.pb_osd.Size = new System.Drawing.Size(52, 43);
-            this.pb_osd.TabIndex = 7;
-            this.pb_osd.TabStop = false;
-            this.pb_osd.Paint += new System.Windows.Forms.PaintEventHandler(this.pb_osd_Paint);
-            this.pb_osd.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.pb_osd_MouseDoubleClick);
-            this.pb_osd.MouseDown += new System.Windows.Forms.MouseEventHandler(this.pb_osd_MouseDown);
-            this.pb_osd.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pb_osd_MouseMove);
-            this.pb_osd.MouseUp += new System.Windows.Forms.MouseEventHandler(this.pb_osd_MouseUp);
             // 
             // tb_wp4
             // 
@@ -2937,7 +2806,8 @@
             "hw0v1",
             "hw0v2",
             "hw0v3",
-            "hw0v4",
+            "hw0v3b",
+            "hw0v4b",
             "hw0v5"});
             this.cb_hwrev.Name = "cb_hwrev";
             this.cb_hwrev.Size = new System.Drawing.Size(121, 23);
@@ -2991,15 +2861,30 @@
             this.ofd_dnCfg.FileName = "alceosd_config";
             this.ofd_dnCfg.Filter = "Text files|*.txt|All files|*.*";
             // 
-            // bt_fa_savecfg
+            // pb_uarthw
             // 
-            this.bt_fa_savecfg.Location = new System.Drawing.Point(22, 381);
-            this.bt_fa_savecfg.Name = "bt_fa_savecfg";
-            this.bt_fa_savecfg.Size = new System.Drawing.Size(176, 23);
-            this.bt_fa_savecfg.TabIndex = 16;
-            this.bt_fa_savecfg.Text = "Save config";
-            this.bt_fa_savecfg.UseVisualStyleBackColor = true;
-            this.bt_fa_savecfg.Click += new System.EventHandler(this.bt_fa_savecfg_Click);
+            this.pb_uarthw.Image = global::AlceOSD.Properties.Resources.alceosd_hw0v1;
+            this.pb_uarthw.Location = new System.Drawing.Point(283, 168);
+            this.pb_uarthw.Name = "pb_uarthw";
+            this.pb_uarthw.Size = new System.Drawing.Size(284, 241);
+            this.pb_uarthw.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pb_uarthw.TabIndex = 8;
+            this.pb_uarthw.TabStop = false;
+            // 
+            // pb_osd
+            // 
+            this.pb_osd.BackColor = System.Drawing.Color.DimGray;
+            this.pb_osd.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.pb_osd.Location = new System.Drawing.Point(565, 36);
+            this.pb_osd.Name = "pb_osd";
+            this.pb_osd.Size = new System.Drawing.Size(52, 43);
+            this.pb_osd.TabIndex = 7;
+            this.pb_osd.TabStop = false;
+            this.pb_osd.Paint += new System.Windows.Forms.PaintEventHandler(this.pb_osd_Paint);
+            this.pb_osd.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.pb_osd_MouseDoubleClick);
+            this.pb_osd.MouseDown += new System.Windows.Forms.MouseEventHandler(this.pb_osd_MouseDown);
+            this.pb_osd.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pb_osd_MouseMove);
+            this.pb_osd.MouseUp += new System.Windows.Forms.MouseEventHandler(this.pb_osd_MouseUp);
             // 
             // AlceOSDconfigForm
             // 
@@ -3045,7 +2930,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_xoffset)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_yoffset)).EndInit();
             this.tab_uarts.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pb_uarthw)).EndInit();
             this.gb_uart4.ResumeLayout(false);
             this.gb_uart4.PerformLayout();
             this.gb_uart3.ResumeLayout(false);
@@ -3082,7 +2966,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_tabtimer)).EndInit();
             this.tab_widgets.ResumeLayout(false);
             this.tab_widgets.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pb_osd)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_wypos)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_wxpos)).EndInit();
             this.cm_widget.ResumeLayout(false);
@@ -3091,6 +2974,8 @@
             this.tab_log.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pb_uarthw)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pb_osd)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -3122,13 +3007,9 @@
         private System.Windows.Forms.ComboBox cb_mode2;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.ComboBox cb_mode1;
-        private System.Windows.Forms.Label label10;
         private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.ComboBox cb_port1;
         private System.Windows.Forms.ComboBox cb_baud1;
-        private System.Windows.Forms.ComboBox cb_port2;
         private System.Windows.Forms.ComboBox cb_baud2;
-        private System.Windows.Forms.Label label11;
         private System.Windows.Forms.Label label12;
         private System.Windows.Forms.TabPage tab_misc;
         private System.Windows.Forms.OpenFileDialog ofd_loadcfg;
@@ -3151,17 +3032,13 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
         private System.Windows.Forms.GroupBox gb_uart3;
-        private System.Windows.Forms.Label label14;
         private System.Windows.Forms.Label label19;
         private System.Windows.Forms.Label label21;
-        private System.Windows.Forms.ComboBox cb_port3;
         private System.Windows.Forms.ComboBox cb_baud3;
         private System.Windows.Forms.ComboBox cb_mode3;
         private System.Windows.Forms.GroupBox gb_uart4;
-        private System.Windows.Forms.Label label22;
         private System.Windows.Forms.Label label23;
         private System.Windows.Forms.Label label24;
-        private System.Windows.Forms.ComboBox cb_port4;
         private System.Windows.Forms.ComboBox cb_baud4;
         private System.Windows.Forms.ComboBox cb_mode4;
         private System.Windows.Forms.ToolStripMenuItem boardToolStripMenuItem;
