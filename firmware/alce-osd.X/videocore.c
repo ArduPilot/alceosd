@@ -1340,7 +1340,7 @@ void __attribute__((__interrupt__, auto_psv )) _T2Interrupt()
         PR2 = LINE_TMR;
         T2CONbits.TON = 1;
     } else {
-        u8 st = atomic_get16(&video_status);
+        u16 st = atomic_get16(&video_status);
         if (hw_rev <= 0x02) {
             OE_RAM = 1;
         } else if (hw_rev <= 0x04) {
@@ -1490,8 +1490,8 @@ static void render_line(void)
 /* external sync */
 void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
 {
-    u8 st = atomic_get16(&video_status);
-    u8 new_st = st & ~VIDEO_STATUS_STD_MASK;
+    u16 st = atomic_get16(&video_status);
+    u16 new_st = st & ~VIDEO_STATUS_STD_MASK;
 
     last_line_cnt = line;
     line = 0;
@@ -1503,9 +1503,9 @@ void __attribute__((__interrupt__, auto_psv )) _INT1Interrupt()
     }
     if (new_st != st) {
         if ((new_st & VIDEO_STATUS_STD_MASK) == VIDEO_STATUS_STD_PAL) {
-            atomic_bclr8(&st, VIDEO_STATUS_STD_BIT);   
+            atomic_bclr16(&video_status, VIDEO_STATUS_STD_BIT);   
         } else {
-            atomic_bset8(&st, VIDEO_STATUS_STD_BIT);
+            atomic_bset16(&video_status, VIDEO_STATUS_STD_BIT);
         }
     }
 

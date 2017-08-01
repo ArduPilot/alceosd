@@ -89,7 +89,7 @@ _atomic_bset16:
 _atomic_bclr8:
 _atomic_bclr16:
 ; void atomic_bclr8(u8 *var, u8 bit)
-    disi #1
+    disi #2
     bclr    SR, #0
     bsw.c   [W0], W1
     return
