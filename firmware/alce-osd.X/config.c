@@ -337,6 +337,16 @@ static void shell_cmd_stats(char *args, void *data)
             (unsigned int) CONFIG_PAGE_SIZE);
 }
 
+static void shell_cmd_defaults(char *args, void *data)
+{
+    unsigned long addr;
+    shell_printf("Restored default config... reboot to apply changes\n");
+    for (addr = CONFIG_ADDR_START; addr < CONFIG_ADDR_END; addr += CONFIG_ADDR_PAGE) {
+        //shell_printf("erasing page %4x\n", (unsigned int) addr);
+        erase_page(addr);
+    }
+}
+
 static void shell_cmd_savecfg(char *args, void *data)
 {
     shell_printf("Saving config...\n");
@@ -488,6 +498,7 @@ static const struct shell_cmdmap_s config_cmdmap[] = {
     {"save", shell_cmd_savecfg, "save", SHELL_CMD_SIMPLE},
     {"stats", shell_cmd_stats, "config statistics", SHELL_CMD_SIMPLE},
     {"units", shell_cmd_units, "Default units", SHELL_CMD_SIMPLE},
+    {"defaults", shell_cmd_defaults, "Restore default config", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
 };
 
