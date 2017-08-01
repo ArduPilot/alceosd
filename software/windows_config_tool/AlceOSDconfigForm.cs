@@ -174,6 +174,9 @@ namespace AlceOSD_updater
         {
             double rev = 0.0;
 
+            if (cb_hwrev.SelectedItem == null)
+                return;
+
             hw_rev = cb_hwrev.SelectedItem.ToString();
             if (hw_rev.EndsWith("b"))
             {
@@ -335,7 +338,7 @@ namespace AlceOSD_updater
         }
         private bool reset_board(bool flash, bool mavlink)
         {
-            List<int> baudrates = new List<int> { 115200, 57600, 19200 };
+            List<int> baudrates = new List<int> { 921600, 115200, 57600, 19200 };
             bool ready = false;
 
             if (!mavlink)
@@ -466,13 +469,11 @@ namespace AlceOSD_updater
                     int rev = Convert.ToInt32(hw_rev.ElementAt(hw_rev.Length - 1)) - '0';
                     Console.WriteLine("Detected hw rev {0} ({1})", hw_rev, rev);
 
-                    cb_hwrev.SelectedText = hw_rev;
+                    cb_hwrev.SelectedIndex = cb_hwrev.Items.IndexOf("hw" + hw_rev);
                 }
 
                 System.Threading.Thread.Sleep(100);
                 comPort.DiscardInBuffer();
-
-                validate_hw_options();
 
                 if (flash)
                 {

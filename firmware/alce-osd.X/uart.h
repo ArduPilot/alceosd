@@ -31,6 +31,7 @@ enum {
     UART_BAUD_19200,
     UART_BAUD_57600,
     UART_BAUD_115200,
+    UART_BAUD_921600,
     UART_BAUDRATES,
 };
 
@@ -67,6 +68,7 @@ enum {
 struct baudrate_tbl {
     unsigned long baudrate;
     unsigned int brg;
+    u8 brgh;
 };
 
 struct uart_config {

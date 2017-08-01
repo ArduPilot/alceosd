@@ -84,9 +84,10 @@ const struct param_def params_uart34[] = {
 
 
 const struct baudrate_tbl baudrates[] = {
-    { .baudrate = 19200,  .brg = 227 },
-    { .baudrate = 57600,  .brg = 76 },
-    { .baudrate = 115200, .brg = 37 },
+    { .baudrate = 19200,  .brg = 227, .brgh = 0 },
+    { .baudrate = 57600,  .brg = 76, .brgh = 0 },
+    { .baudrate = 115200, .brg = 37, .brgh = 0 },
+    { .baudrate = 921600, .brg = 18, .brgh = 1 },
 };
 
 static const struct hw_pin_map_table {
@@ -168,6 +169,11 @@ static inline void uart_set_baudrate(unsigned char port, unsigned char b)
 {
     if (b < UART_BAUDRATES)
         *(UARTS[port].BRG) = baudrates[b].brg;
+    
+    if (baudrates[b].brgh)
+        *(UARTS[port].MODE) |= (1 << 3);
+    else
+        *(UARTS[port].MODE) &= ~(1 << 3);
 }
 
 inline static void handle_uart_int(unsigned char port)

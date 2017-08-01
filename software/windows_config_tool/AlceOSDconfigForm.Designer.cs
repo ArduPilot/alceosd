@@ -1193,7 +1193,8 @@
             this.cb_baud4.Items.AddRange(new object[] {
             "19200",
             "57600",
-            "115200"});
+            "115200",
+            "921600"});
             this.cb_baud4.Location = new System.Drawing.Point(76, 55);
             this.cb_baud4.Name = "cb_baud4";
             this.cb_baud4.Size = new System.Drawing.Size(121, 21);
@@ -1254,7 +1255,8 @@
             this.cb_baud3.Items.AddRange(new object[] {
             "19200",
             "57600",
-            "115200"});
+            "115200",
+            "921600"});
             this.cb_baud3.Location = new System.Drawing.Point(76, 55);
             this.cb_baud3.Name = "cb_baud3";
             this.cb_baud3.Size = new System.Drawing.Size(121, 21);
@@ -1297,7 +1299,8 @@
             this.cb_baud2.Items.AddRange(new object[] {
             "19200",
             "57600",
-            "115200"});
+            "115200",
+            "921600"});
             this.cb_baud2.Location = new System.Drawing.Point(76, 55);
             this.cb_baud2.Name = "cb_baud2";
             this.cb_baud2.Size = new System.Drawing.Size(121, 21);
@@ -1376,7 +1379,8 @@
             this.cb_baud1.Items.AddRange(new object[] {
             "19200",
             "57600",
-            "115200"});
+            "115200",
+            "921600"});
             this.cb_baud1.Location = new System.Drawing.Point(76, 55);
             this.cb_baud1.Name = "cb_baud1";
             this.cb_baud1.Size = new System.Drawing.Size(121, 21);
