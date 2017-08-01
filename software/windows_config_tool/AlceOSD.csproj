@@ -147,6 +147,10 @@
   <ItemGroup>
     <Content Include="alceosd.ico" />
     <Content Include="alceosd_2.ico" />
+    <None Include="Resources\alceosd_hw0v4.png" />
+    <None Include="Resources\alceosd_hw0v3.png" />
+    <None Include="Resources\alceosd_hw0v2.png" />
+    <None Include="Resources\alceosd_hw0v5.png" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">

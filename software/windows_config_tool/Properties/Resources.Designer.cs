@@ -59,5 +59,45 @@ namespace AlceOSD.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap alceosd_hw0v2 {
+            get {
+                object obj = ResourceManager.GetObject("alceosd_hw0v2", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap alceosd_hw0v3 {
+            get {
+                object obj = ResourceManager.GetObject("alceosd_hw0v3", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap alceosd_hw0v4 {
+            get {
+                object obj = ResourceManager.GetObject("alceosd_hw0v4", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap alceosd_hw0v5 {
+            get {
+                object obj = ResourceManager.GetObject("alceosd_hw0v5", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
     }
 }
