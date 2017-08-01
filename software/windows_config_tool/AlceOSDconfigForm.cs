@@ -383,6 +383,8 @@ namespace AlceOSD_updater
                 {
                     hw_rev = m.Groups[1].Value;
                     fw_version = m.Groups[2].Value;
+
+                    cb_hwrev.SelectedIndex = cb_hwrev.Items.IndexOf("hw" + hw_rev);
                 }
 
                 System.Threading.Thread.Sleep(100);
@@ -2382,6 +2384,7 @@ namespace AlceOSD_updater
                 if (!open_comport())
                 {
                     bt_conn.Enabled = true;
+                    cbx_mavmode.Enabled = true;
                     return;
                 }
 
@@ -2390,6 +2393,7 @@ namespace AlceOSD_updater
                     MessageBox.Show("Error: no response from board", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     comPort.Close();
                     bt_conn.Enabled = true;
+                    cbx_mavmode.Enabled = true;
                     return;
                 }
 
@@ -2400,6 +2404,7 @@ namespace AlceOSD_updater
 
 
                 get_widget_ids();
+                get_flight_alarms();
                 get_config();
                 load_lb_widgets_canvas();
 
@@ -2437,7 +2442,7 @@ namespace AlceOSD_updater
             return s.ToArray();
         }
 
-        private bool send_cmd(string cmd)
+        private bool send_cmd(string cmd, bool echo = true)
         {
             bool ret = false;
             if (!comPort.IsOpen)
@@ -2463,7 +2468,7 @@ namespace AlceOSD_updater
                 else
                 {
                     string ans = comPort.ReadLine();
-                    if (init_done)
+                    if (init_done && echo)
                         txt_shell.AppendText(ans + "\n");
                     if (ans.Contains(cmd))
                         ret = true;
@@ -3537,6 +3542,29 @@ namespace AlceOSD_updater
             update_video_config();
         }
 
+        private void cb_hwrev_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (cb_hwrev.SelectedIndex)
+            {
+                case 0:
+                case 1:
+                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v2;
+                    break;
+                case 2:
+                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v3;
+                    break;
+                case 3:
+                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v4;
+                    break;
+                case 4:
+                    pb_uarthw.Image = AlceOSD.Properties.Resources.alceosd_hw0v5;
+                    break;
+                default:
+                    break;
+
+            }
+        }
+
         private void timer_submit_Tick(object sender, EventArgs e)
         {
             timer_submit.Stop();
@@ -3554,5 +3582,180 @@ namespace AlceOSD_updater
                 recalculate_pb_osd_size();
         }
 
+        Dictionary<int, string> flight_alarms = new Dictionary<int, string>();
+        private void bt_fa_add_Click(object sender, EventArgs e)
+        {
+            int id = lb_fa.SelectedIndex;
+
+            //Console.WriteLine("selected alarm: {0}", id);
+
+            if (id < 0)
+                return;
+
+            int l = cb_fa_type.SelectedIndex == 0 ? 1 : 2;
+            int timer = (int)nud_fa_timer.Value / 100;
+            double value = 0;
+            try
+            {
+                value = Convert.ToDouble(tb_fa_value.Text);
+            }
+            catch
+            {
+                tb_fa_value.Text = "0";
+                value = 0;
+            }
+
+            send_cmd("flight alarms -a" + l + " -i" + id + " -v" + value + " -t" + timer);
+            get_flight_alarms();
+        }
+
+        private int get_faid()
+        {
+            if (lb_fa_cfg.SelectedIndex == -1)
+                return -1;
+
+            string fa_name = lb_fa_cfg.Items[lb_fa_cfg.SelectedIndex].ToString();
+            Match m = Regex.Match(fa_name, @"\((.+)\/(.+)\).+");
+            if (!m.Success)
+            {
+                return -1;
+            }
+
+            int faid = Convert.ToInt16(m.Groups[1].Value);
+            return faid;
+        }
+
+        private void bt_fa_del_Click(object sender, EventArgs e)
+        {
+            int faid = get_faid();
+            send_cmd("flight alarms -a0 -n" + faid);
+            get_flight_alarms();
+        }
+
+        private void bt_fa_savealarm_Click(object sender, EventArgs e)
+        {
+            int sel = lb_fa_cfg.SelectedIndex;
+            int faid = get_faid();
+            int l = cb_fa_type.SelectedIndex == 0 ? 1 : 2;
+            int timer = (int) nud_fa_timer.Value / 100;
+            double value = 0;
+            try
+            {
+                value = Convert.ToDouble(tb_fa_value.Text);
+            } catch
+            {
+
+            }
+            send_cmd("flight alarms -a" + l + " -n" + faid + " -v" + value + " -t" + timer);
+            get_flight_alarms();
+            lb_fa_cfg.SelectedIndex = sel;
+        }
+
+        private void bt_fa_savecfg_Click(object sender, EventArgs e)
+        {
+            send_cmd("config save");
+        }
+
+        private void lb_fa_cfg_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lb_fa_cfg.SelectedIndex == -1)
+            {
+                return;
+            }
+            bt_fa_savealarm.Enabled = true;
+
+            string fa_name = lb_fa_cfg.Items[lb_fa_cfg.SelectedIndex].ToString();
+            Match m = Regex.Match(fa_name, @"\((.+)\/(.+)\).+");
+            if (!m.Success)
+            {
+                return;
+            }
+
+            int faid = Convert.ToInt16(m.Groups[1].Value);
+            int id = Convert.ToInt16(m.Groups[2].Value);
+            string[] cfg = flight_alarms[faid].Split(' ');
+
+            lbl_fa_name.Text = lb_fa.Items[id].ToString();
+
+            cb_fa_type.SelectedIndex = cfg[1] == "1" ? 0 : 1;
+            nud_fa_timer.Value = Convert.ToInt16(cfg[3]) * 100;
+            tb_fa_value.Text = cfg[2];
+        }
+
+        //Dictionary<string, int> flight_alarms_ids = new Dictionary<string, int>();
+        private void get_flight_alarms()
+        {
+            int state = 0;
+            bool done = false;
+
+            send_cmd("flight alarms", false);
+
+            flight_alarms.Clear();
+            lb_fa_cfg.Items.Clear();
+            while (!done)
+            {
+                string line = comPort.ReadLine();
+
+                switch (state)
+                {
+                    case 0:
+                    default:
+                        /* start */
+                        if (line.StartsWith("Available alarms"))
+                            state = 1;
+                        break;
+                    case 1:
+                        /* get available alarms */
+                        if (line.Trim() == "")
+                        {
+                            state = 2;
+                            break;
+                        }
+                        //string[] info = line.Split(',');
+                        //widget_ids.Add(info[2].Trim(), Convert.ToInt16(info[0]));
+
+                        //Console.WriteLine("getflightalarmsids: {0}", line);
+                        break;
+                    case 2:
+                        if (line.StartsWith("Active alarms"))
+                            state = 3;
+                        break;
+                    case 3:
+                        /* get configure alarms */
+                        if (line.Trim() == "")
+                        {
+                            state = 4;
+                            break;
+                        }
+
+                        int faid, id, mode, timer;
+                        double value;
+                        Match m = Regex.Match(line, @"nr(.+)\s\((.+)\).*mode=(.).*val=(.+)\stimer=(.+)\)");
+                        if (m.Success)
+                        {
+                            faid = Convert.ToInt16(m.Groups[1].Value);
+                            id = Convert.ToInt16(m.Groups[2].Value);
+                            mode = Convert.ToInt16(m.Groups[3].Value);
+                            value = Convert.ToDouble(m.Groups[4].Value, CultureInfo.InvariantCulture.NumberFormat);
+                            timer = Convert.ToInt16(m.Groups[5].Value);
+
+                            flight_alarms.Add(faid, id + " " + mode + " " + value + " " + timer);
+
+                            string fa_name = lb_fa.Items[id].ToString();
+
+                            lb_fa_cfg.Items.Add("(" + faid + "/" + id + ")" + fa_name);
+
+                            Console.WriteLine("configured flight alarms: {0} {1} {2} {3}", id, mode, value, timer);
+                        }
+                        break;
+                    case 4:
+                        /* done */
+                        if (line.Contains("remove all"))
+                            done = true;
+                        break;
+                }
+            }
+            bt_fa_savealarm.Enabled = false;
+        }
     }
 }

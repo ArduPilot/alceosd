@@ -45,6 +45,12 @@
             this.bt_conn = new System.Windows.Forms.Button();
             this.txt_shell = new System.Windows.Forms.TextBox();
             this.tab_video = new System.Windows.Forms.TabPage();
+            this.gb_vsync = new System.Windows.Forms.GroupBox();
+            this.label66 = new System.Windows.Forms.Label();
+            this.nud_vsync1 = new System.Windows.Forms.NumericUpDown();
+            this.label65 = new System.Windows.Forms.Label();
+            this.nud_vsync0 = new System.Windows.Forms.NumericUpDown();
+            this.label64 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.nud_whitelvl = new System.Windows.Forms.NumericUpDown();
             this.label36 = new System.Windows.Forms.Label();
@@ -86,6 +92,7 @@
             this.nud_xoffset = new System.Windows.Forms.NumericUpDown();
             this.nud_yoffset = new System.Windows.Forms.NumericUpDown();
             this.tab_uarts = new System.Windows.Forms.TabPage();
+            this.pb_uarthw = new System.Windows.Forms.PictureBox();
             this.gb_uart4 = new System.Windows.Forms.GroupBox();
             this.label22 = new System.Windows.Forms.Label();
             this.label23 = new System.Windows.Forms.Label();
@@ -139,16 +146,21 @@
             this.label34 = new System.Windows.Forms.Label();
             this.label33 = new System.Windows.Forms.Label();
             this.tab_alarms = new System.Windows.Forms.TabPage();
+            this.bt_fa_savealarm = new System.Windows.Forms.Button();
+            this.bt_fa_del = new System.Windows.Forms.Button();
+            this.bt_fa_add = new System.Windows.Forms.Button();
             this.textBox1 = new System.Windows.Forms.TextBox();
+            this.lbl_fa_name = new System.Windows.Forms.Label();
+            this.tb_fa_value = new System.Windows.Forms.TextBox();
             this.label54 = new System.Windows.Forms.Label();
             this.label50 = new System.Windows.Forms.Label();
-            this.numericUpDown3 = new System.Windows.Forms.NumericUpDown();
-            this.comboBox3 = new System.Windows.Forms.ComboBox();
+            this.nud_fa_timer = new System.Windows.Forms.NumericUpDown();
+            this.cb_fa_type = new System.Windows.Forms.ComboBox();
             this.label48 = new System.Windows.Forms.Label();
             this.label47 = new System.Windows.Forms.Label();
-            this.listBox2 = new System.Windows.Forms.ListBox();
+            this.lb_fa_cfg = new System.Windows.Forms.ListBox();
             this.label6 = new System.Windows.Forms.Label();
-            this.listBox1 = new System.Windows.Forms.ListBox();
+            this.lb_fa = new System.Windows.Forms.ListBox();
             this.tab_misc = new System.Windows.Forms.TabPage();
             this.gb_rssi = new System.Windows.Forms.GroupBox();
             this.numericUpDown2 = new System.Windows.Forms.NumericUpDown();
@@ -227,6 +239,7 @@
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.flashFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.downloadFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.cb_hwrev = new System.Windows.Forms.ToolStripComboBox();
             this.ofd_loadcfg = new System.Windows.Forms.OpenFileDialog();
             this.ofd_savecfg = new System.Windows.Forms.SaveFileDialog();
             this.ofd_fwfile = new System.Windows.Forms.OpenFileDialog();
@@ -237,16 +250,14 @@
             this.ofd_tlog = new System.Windows.Forms.OpenFileDialog();
             this.ofd_upCfg = new System.Windows.Forms.OpenFileDialog();
             this.ofd_dnCfg = new System.Windows.Forms.SaveFileDialog();
-            this.gb_vsync = new System.Windows.Forms.GroupBox();
-            this.label64 = new System.Windows.Forms.Label();
-            this.nud_vsync0 = new System.Windows.Forms.NumericUpDown();
-            this.label65 = new System.Windows.Forms.Label();
-            this.nud_vsync1 = new System.Windows.Forms.NumericUpDown();
-            this.label66 = new System.Windows.Forms.Label();
+            this.bt_fa_savecfg = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tab_shell.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tb_tlog)).BeginInit();
             this.tab_video.SuspendLayout();
+            this.gb_vsync.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_vsync1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_vsync0)).BeginInit();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_whitelvl)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_graylvl)).BeginInit();
@@ -264,6 +275,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_xoffset)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_yoffset)).BeginInit();
             this.tab_uarts.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pb_uarthw)).BeginInit();
             this.gb_uart4.SuspendLayout();
             this.gb_uart3.SuspendLayout();
             this.gb_uart2.SuspendLayout();
@@ -281,7 +293,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_osdsysid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_uavsysid)).BeginInit();
             this.tab_alarms.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_fa_timer)).BeginInit();
             this.tab_misc.SuspendLayout();
             this.gb_rssi.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).BeginInit();
@@ -298,9 +310,6 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_seltab)).BeginInit();
             this.tab_log.SuspendLayout();
             this.menuStrip1.SuspendLayout();
-            this.gb_vsync.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_vsync0)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_vsync1)).BeginInit();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -503,6 +512,83 @@
             this.tab_video.TabIndex = 0;
             this.tab_video.Text = "Video";
             this.tab_video.UseVisualStyleBackColor = true;
+            // 
+            // gb_vsync
+            // 
+            this.gb_vsync.Controls.Add(this.label66);
+            this.gb_vsync.Controls.Add(this.nud_vsync1);
+            this.gb_vsync.Controls.Add(this.label65);
+            this.gb_vsync.Controls.Add(this.nud_vsync0);
+            this.gb_vsync.Controls.Add(this.label64);
+            this.gb_vsync.Location = new System.Drawing.Point(308, 6);
+            this.gb_vsync.Name = "gb_vsync";
+            this.gb_vsync.Size = new System.Drawing.Size(303, 107);
+            this.gb_vsync.TabIndex = 10;
+            this.gb_vsync.TabStop = false;
+            this.gb_vsync.Text = "Sync detector (hw>=0v3)";
+            // 
+            // label66
+            // 
+            this.label66.AutoSize = true;
+            this.label66.Location = new System.Drawing.Point(9, 78);
+            this.label66.Name = "label66";
+            this.label66.Size = new System.Drawing.Size(258, 13);
+            this.label66.TabIndex = 5;
+            this.label66.Text = "Sync level 0 = auto sync (unstable for some cameras)";
+            // 
+            // nud_vsync1
+            // 
+            this.nud_vsync1.Location = new System.Drawing.Point(154, 50);
+            this.nud_vsync1.Maximum = new decimal(new int[] {
+            15,
+            0,
+            0,
+            0});
+            this.nud_vsync1.Name = "nud_vsync1";
+            this.nud_vsync1.Size = new System.Drawing.Size(120, 20);
+            this.nud_vsync1.TabIndex = 4;
+            this.nud_vsync1.Value = new decimal(new int[] {
+            4,
+            0,
+            0,
+            0});
+            this.nud_vsync1.ValueChanged += new System.EventHandler(this.nud_vsync1_ValueChanged);
+            // 
+            // label65
+            // 
+            this.label65.AutoSize = true;
+            this.label65.Location = new System.Drawing.Point(9, 52);
+            this.label65.Name = "label65";
+            this.label65.Size = new System.Drawing.Size(79, 13);
+            this.label65.TabIndex = 3;
+            this.label65.Text = "Sync level (in1)";
+            // 
+            // nud_vsync0
+            // 
+            this.nud_vsync0.Location = new System.Drawing.Point(154, 24);
+            this.nud_vsync0.Maximum = new decimal(new int[] {
+            15,
+            0,
+            0,
+            0});
+            this.nud_vsync0.Name = "nud_vsync0";
+            this.nud_vsync0.Size = new System.Drawing.Size(120, 20);
+            this.nud_vsync0.TabIndex = 2;
+            this.nud_vsync0.Value = new decimal(new int[] {
+            4,
+            0,
+            0,
+            0});
+            this.nud_vsync0.ValueChanged += new System.EventHandler(this.nud_vsync0_ValueChanged);
+            // 
+            // label64
+            // 
+            this.label64.AutoSize = true;
+            this.label64.Location = new System.Drawing.Point(9, 26);
+            this.label64.Name = "label64";
+            this.label64.Size = new System.Drawing.Size(79, 13);
+            this.label64.TabIndex = 1;
+            this.label64.Text = "Sync level (in0)";
             // 
             // groupBox1
             // 
@@ -1065,6 +1151,7 @@
             // 
             // tab_uarts
             // 
+            this.tab_uarts.Controls.Add(this.pb_uarthw);
             this.tab_uarts.Controls.Add(this.gb_uart4);
             this.tab_uarts.Controls.Add(this.gb_uart3);
             this.tab_uarts.Controls.Add(this.gb_uart2);
@@ -1076,6 +1163,16 @@
             this.tab_uarts.TabIndex = 1;
             this.tab_uarts.Text = "Serial ports";
             this.tab_uarts.UseVisualStyleBackColor = true;
+            // 
+            // pb_uarthw
+            // 
+            this.pb_uarthw.Image = global::AlceOSD.Properties.Resources.alceosd_hw0v2;
+            this.pb_uarthw.Location = new System.Drawing.Point(732, 34);
+            this.pb_uarthw.Name = "pb_uarthw";
+            this.pb_uarthw.Size = new System.Drawing.Size(284, 241);
+            this.pb_uarthw.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pb_uarthw.TabIndex = 8;
+            this.pb_uarthw.TabStop = false;
             // 
             // gb_uart4
             // 
@@ -1772,16 +1869,22 @@
             // 
             // tab_alarms
             // 
+            this.tab_alarms.Controls.Add(this.bt_fa_savecfg);
+            this.tab_alarms.Controls.Add(this.bt_fa_savealarm);
+            this.tab_alarms.Controls.Add(this.bt_fa_del);
+            this.tab_alarms.Controls.Add(this.bt_fa_add);
             this.tab_alarms.Controls.Add(this.textBox1);
+            this.tab_alarms.Controls.Add(this.lbl_fa_name);
+            this.tab_alarms.Controls.Add(this.tb_fa_value);
             this.tab_alarms.Controls.Add(this.label54);
             this.tab_alarms.Controls.Add(this.label50);
-            this.tab_alarms.Controls.Add(this.numericUpDown3);
-            this.tab_alarms.Controls.Add(this.comboBox3);
+            this.tab_alarms.Controls.Add(this.nud_fa_timer);
+            this.tab_alarms.Controls.Add(this.cb_fa_type);
             this.tab_alarms.Controls.Add(this.label48);
             this.tab_alarms.Controls.Add(this.label47);
-            this.tab_alarms.Controls.Add(this.listBox2);
+            this.tab_alarms.Controls.Add(this.lb_fa_cfg);
             this.tab_alarms.Controls.Add(this.label6);
-            this.tab_alarms.Controls.Add(this.listBox1);
+            this.tab_alarms.Controls.Add(this.lb_fa);
             this.tab_alarms.Location = new System.Drawing.Point(4, 22);
             this.tab_alarms.Name = "tab_alarms";
             this.tab_alarms.Padding = new System.Windows.Forms.Padding(3);
@@ -1790,17 +1893,68 @@
             this.tab_alarms.Text = "Alarms";
             this.tab_alarms.UseVisualStyleBackColor = true;
             // 
+            // bt_fa_savealarm
+            // 
+            this.bt_fa_savealarm.Location = new System.Drawing.Point(22, 352);
+            this.bt_fa_savealarm.Name = "bt_fa_savealarm";
+            this.bt_fa_savealarm.Size = new System.Drawing.Size(177, 23);
+            this.bt_fa_savealarm.TabIndex = 15;
+            this.bt_fa_savealarm.Text = "Submit changes";
+            this.bt_fa_savealarm.UseVisualStyleBackColor = true;
+            this.bt_fa_savealarm.Click += new System.EventHandler(this.bt_fa_savealarm_Click);
+            // 
+            // bt_fa_del
+            // 
+            this.bt_fa_del.Location = new System.Drawing.Point(157, 119);
+            this.bt_fa_del.Name = "bt_fa_del";
+            this.bt_fa_del.Size = new System.Drawing.Size(28, 23);
+            this.bt_fa_del.TabIndex = 14;
+            this.bt_fa_del.Text = "<";
+            this.bt_fa_del.UseVisualStyleBackColor = true;
+            this.bt_fa_del.Click += new System.EventHandler(this.bt_fa_del_Click);
+            // 
+            // bt_fa_add
+            // 
+            this.bt_fa_add.Location = new System.Drawing.Point(157, 90);
+            this.bt_fa_add.Name = "bt_fa_add";
+            this.bt_fa_add.Size = new System.Drawing.Size(28, 23);
+            this.bt_fa_add.TabIndex = 13;
+            this.bt_fa_add.Text = ">";
+            this.bt_fa_add.UseVisualStyleBackColor = true;
+            this.bt_fa_add.Click += new System.EventHandler(this.bt_fa_add_Click);
+            // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(357, 88);
+            this.textBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.textBox1.Location = new System.Drawing.Point(205, 271);
+            this.textBox1.Margin = new System.Windows.Forms.Padding(0);
+            this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(120, 20);
-            this.textBox1.TabIndex = 9;
+            this.textBox1.Size = new System.Drawing.Size(213, 151);
+            this.textBox1.TabIndex = 12;
+            this.textBox1.Text = resources.GetString("textBox1.Text");
+            // 
+            // lbl_fa_name
+            // 
+            this.lbl_fa_name.AutoSize = true;
+            this.lbl_fa_name.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lbl_fa_name.Location = new System.Drawing.Point(19, 231);
+            this.lbl_fa_name.Name = "lbl_fa_name";
+            this.lbl_fa_name.Size = new System.Drawing.Size(20, 16);
+            this.lbl_fa_name.TabIndex = 11;
+            this.lbl_fa_name.Text = "   ";
+            // 
+            // tb_fa_value
+            // 
+            this.tb_fa_value.Location = new System.Drawing.Point(78, 326);
+            this.tb_fa_value.Name = "tb_fa_value";
+            this.tb_fa_value.Size = new System.Drawing.Size(120, 20);
+            this.tb_fa_value.TabIndex = 9;
             // 
             // label54
             // 
             this.label54.AutoSize = true;
-            this.label54.Location = new System.Drawing.Point(295, 91);
+            this.label54.Location = new System.Drawing.Point(16, 329);
             this.label54.Name = "label54";
             this.label54.Size = new System.Drawing.Size(34, 13);
             this.label54.TabIndex = 8;
@@ -1809,39 +1963,44 @@
             // label50
             // 
             this.label50.AutoSize = true;
-            this.label50.Location = new System.Drawing.Point(295, 63);
+            this.label50.Location = new System.Drawing.Point(16, 301);
             this.label50.Name = "label50";
             this.label50.Size = new System.Drawing.Size(56, 13);
             this.label50.TabIndex = 7;
             this.label50.Text = "Delay (ms)";
             // 
-            // numericUpDown3
+            // nud_fa_timer
             // 
-            this.numericUpDown3.Location = new System.Drawing.Point(357, 61);
-            this.numericUpDown3.Maximum = new decimal(new int[] {
+            this.nud_fa_timer.Increment = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.nud_fa_timer.Location = new System.Drawing.Point(78, 299);
+            this.nud_fa_timer.Maximum = new decimal(new int[] {
             10000,
             0,
             0,
             0});
-            this.numericUpDown3.Name = "numericUpDown3";
-            this.numericUpDown3.Size = new System.Drawing.Size(120, 20);
-            this.numericUpDown3.TabIndex = 6;
+            this.nud_fa_timer.Name = "nud_fa_timer";
+            this.nud_fa_timer.Size = new System.Drawing.Size(120, 20);
+            this.nud_fa_timer.TabIndex = 6;
             // 
-            // comboBox3
+            // cb_fa_type
             // 
-            this.comboBox3.FormattingEnabled = true;
-            this.comboBox3.Items.AddRange(new object[] {
-            "Low",
-            "High"});
-            this.comboBox3.Location = new System.Drawing.Point(357, 33);
-            this.comboBox3.Name = "comboBox3";
-            this.comboBox3.Size = new System.Drawing.Size(121, 21);
-            this.comboBox3.TabIndex = 5;
+            this.cb_fa_type.FormattingEnabled = true;
+            this.cb_fa_type.Items.AddRange(new object[] {
+            "High",
+            "Low"});
+            this.cb_fa_type.Location = new System.Drawing.Point(78, 271);
+            this.cb_fa_type.Name = "cb_fa_type";
+            this.cb_fa_type.Size = new System.Drawing.Size(121, 21);
+            this.cb_fa_type.TabIndex = 5;
             // 
             // label48
             // 
             this.label48.AutoSize = true;
-            this.label48.Location = new System.Drawing.Point(295, 36);
+            this.label48.Location = new System.Drawing.Point(16, 274);
             this.label48.Name = "label48";
             this.label48.Size = new System.Drawing.Size(56, 13);
             this.label48.TabIndex = 4;
@@ -1850,19 +2009,20 @@
             // label47
             // 
             this.label47.AutoSize = true;
-            this.label47.Location = new System.Drawing.Point(157, 17);
+            this.label47.Location = new System.Drawing.Point(191, 17);
             this.label47.Name = "label47";
             this.label47.Size = new System.Drawing.Size(92, 13);
             this.label47.TabIndex = 3;
             this.label47.Text = "Configured Alarms";
             // 
-            // listBox2
+            // lb_fa_cfg
             // 
-            this.listBox2.FormattingEnabled = true;
-            this.listBox2.Location = new System.Drawing.Point(157, 33);
-            this.listBox2.Name = "listBox2";
-            this.listBox2.Size = new System.Drawing.Size(120, 173);
-            this.listBox2.TabIndex = 2;
+            this.lb_fa_cfg.FormattingEnabled = true;
+            this.lb_fa_cfg.Location = new System.Drawing.Point(191, 33);
+            this.lb_fa_cfg.Name = "lb_fa_cfg";
+            this.lb_fa_cfg.Size = new System.Drawing.Size(251, 173);
+            this.lb_fa_cfg.TabIndex = 2;
+            this.lb_fa_cfg.SelectedIndexChanged += new System.EventHandler(this.lb_fa_cfg_SelectedIndexChanged);
             // 
             // label6
             // 
@@ -1873,10 +2033,10 @@
             this.label6.TabIndex = 1;
             this.label6.Text = "Available Alarms";
             // 
-            // listBox1
+            // lb_fa
             // 
-            this.listBox1.FormattingEnabled = true;
-            this.listBox1.Items.AddRange(new object[] {
+            this.lb_fa.FormattingEnabled = true;
+            this.lb_fa.Items.AddRange(new object[] {
             "Battery voltage (mavlink)",
             "Battery voltage (AN0)",
             "Battery voltage (AN1)",
@@ -1885,10 +2045,10 @@
             "Air speed",
             "Home Altitude",
             "GPS sattelites"});
-            this.listBox1.Location = new System.Drawing.Point(19, 33);
-            this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(132, 173);
-            this.listBox1.TabIndex = 0;
+            this.lb_fa.Location = new System.Drawing.Point(19, 33);
+            this.lb_fa.Name = "lb_fa";
+            this.lb_fa.Size = new System.Drawing.Size(132, 173);
+            this.lb_fa.TabIndex = 0;
             // 
             // tab_misc
             // 
@@ -2618,10 +2778,11 @@
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
-            this.boardToolStripMenuItem});
+            this.boardToolStripMenuItem,
+            this.cb_hwrev});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(1105, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(1105, 27);
             this.menuStrip1.TabIndex = 1;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -2634,7 +2795,7 @@
             this.toolStripSeparator1,
             this.exitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 23);
             this.fileToolStripMenuItem.Text = "File";
             // 
             // openConfigToolStripMenuItem
@@ -2681,7 +2842,7 @@
             this.flashFirmwareToolStripMenuItem,
             this.downloadFirmwareToolStripMenuItem});
             this.boardToolStripMenuItem.Name = "boardToolStripMenuItem";
-            this.boardToolStripMenuItem.Size = new System.Drawing.Size(50, 20);
+            this.boardToolStripMenuItem.Size = new System.Drawing.Size(50, 23);
             this.boardToolStripMenuItem.Text = "Board";
             // 
             // toolStripMenuItem1
@@ -2769,6 +2930,19 @@
             this.downloadFirmwareToolStripMenuItem.Text = "Download firmware...";
             this.downloadFirmwareToolStripMenuItem.Click += new System.EventHandler(this.downloadFirmwareToolStripMenuItem_Click);
             // 
+            // cb_hwrev
+            // 
+            this.cb_hwrev.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cb_hwrev.Items.AddRange(new object[] {
+            "hw0v1",
+            "hw0v2",
+            "hw0v3",
+            "hw0v4",
+            "hw0v5"});
+            this.cb_hwrev.Name = "cb_hwrev";
+            this.cb_hwrev.Size = new System.Drawing.Size(121, 23);
+            this.cb_hwrev.SelectedIndexChanged += new System.EventHandler(this.cb_hwrev_SelectedIndexChanged);
+            // 
             // ofd_loadcfg
             // 
             this.ofd_loadcfg.Filter = "Config files|*.txt";
@@ -2817,82 +2991,15 @@
             this.ofd_dnCfg.FileName = "alceosd_config";
             this.ofd_dnCfg.Filter = "Text files|*.txt|All files|*.*";
             // 
-            // gb_vsync
+            // bt_fa_savecfg
             // 
-            this.gb_vsync.Controls.Add(this.label66);
-            this.gb_vsync.Controls.Add(this.nud_vsync1);
-            this.gb_vsync.Controls.Add(this.label65);
-            this.gb_vsync.Controls.Add(this.nud_vsync0);
-            this.gb_vsync.Controls.Add(this.label64);
-            this.gb_vsync.Location = new System.Drawing.Point(308, 6);
-            this.gb_vsync.Name = "gb_vsync";
-            this.gb_vsync.Size = new System.Drawing.Size(303, 107);
-            this.gb_vsync.TabIndex = 10;
-            this.gb_vsync.TabStop = false;
-            this.gb_vsync.Text = "Sync detector (hw>=0v3)";
-            // 
-            // label64
-            // 
-            this.label64.AutoSize = true;
-            this.label64.Location = new System.Drawing.Point(9, 26);
-            this.label64.Name = "label64";
-            this.label64.Size = new System.Drawing.Size(79, 13);
-            this.label64.TabIndex = 1;
-            this.label64.Text = "Sync level (in0)";
-            // 
-            // nud_vsync0
-            // 
-            this.nud_vsync0.Location = new System.Drawing.Point(154, 24);
-            this.nud_vsync0.Maximum = new decimal(new int[] {
-            15,
-            0,
-            0,
-            0});
-            this.nud_vsync0.Name = "nud_vsync0";
-            this.nud_vsync0.Size = new System.Drawing.Size(120, 20);
-            this.nud_vsync0.TabIndex = 2;
-            this.nud_vsync0.Value = new decimal(new int[] {
-            4,
-            0,
-            0,
-            0});
-            this.nud_vsync0.ValueChanged += new System.EventHandler(this.nud_vsync0_ValueChanged);
-            // 
-            // label65
-            // 
-            this.label65.AutoSize = true;
-            this.label65.Location = new System.Drawing.Point(9, 52);
-            this.label65.Name = "label65";
-            this.label65.Size = new System.Drawing.Size(79, 13);
-            this.label65.TabIndex = 3;
-            this.label65.Text = "Sync level (in1)";
-            // 
-            // nud_vsync1
-            // 
-            this.nud_vsync1.Location = new System.Drawing.Point(154, 50);
-            this.nud_vsync1.Maximum = new decimal(new int[] {
-            15,
-            0,
-            0,
-            0});
-            this.nud_vsync1.Name = "nud_vsync1";
-            this.nud_vsync1.Size = new System.Drawing.Size(120, 20);
-            this.nud_vsync1.TabIndex = 4;
-            this.nud_vsync1.Value = new decimal(new int[] {
-            4,
-            0,
-            0,
-            0});
-            this.nud_vsync1.ValueChanged += new System.EventHandler(this.nud_vsync1_ValueChanged);
-            // 
-            // label66
-            // 
-            this.label66.AutoSize = true;
-            this.label66.Location = new System.Drawing.Point(9, 78);
-            this.label66.Name = "label66";
-            this.label66.Size = new System.Drawing.Size(258, 13);
-            this.label66.TabIndex = 5;
-            this.label66.Text = "Sync level 0 = auto sync (unstable for some cameras)";
+            this.bt_fa_savecfg.Location = new System.Drawing.Point(22, 381);
+            this.bt_fa_savecfg.Name = "bt_fa_savecfg";
+            this.bt_fa_savecfg.Size = new System.Drawing.Size(176, 23);
+            this.bt_fa_savecfg.TabIndex = 16;
+            this.bt_fa_savecfg.Text = "Save config";
+            this.bt_fa_savecfg.UseVisualStyleBackColor = true;
+            this.bt_fa_savecfg.Click += new System.EventHandler(this.bt_fa_savecfg_Click);
             // 
             // AlceOSDconfigForm
             // 
@@ -2913,6 +3020,10 @@
             this.tab_shell.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.tb_tlog)).EndInit();
             this.tab_video.ResumeLayout(false);
+            this.gb_vsync.ResumeLayout(false);
+            this.gb_vsync.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_vsync1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_vsync0)).EndInit();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nud_whitelvl)).EndInit();
@@ -2934,6 +3045,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_xoffset)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_yoffset)).EndInit();
             this.tab_uarts.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pb_uarthw)).EndInit();
             this.gb_uart4.ResumeLayout(false);
             this.gb_uart4.PerformLayout();
             this.gb_uart3.ResumeLayout(false);
@@ -2957,7 +3069,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_uavsysid)).EndInit();
             this.tab_alarms.ResumeLayout(false);
             this.tab_alarms.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nud_fa_timer)).EndInit();
             this.tab_misc.ResumeLayout(false);
             this.gb_rssi.ResumeLayout(false);
             this.gb_rssi.PerformLayout();
@@ -2979,10 +3091,6 @@
             this.tab_log.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
-            this.gb_vsync.ResumeLayout(false);
-            this.gb_vsync.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_vsync0)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.nud_vsync1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -3188,14 +3296,14 @@
         private System.Windows.Forms.Button bt_dnCfg;
         private System.Windows.Forms.SaveFileDialog ofd_dnCfg;
         private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.ListBox listBox1;
+        private System.Windows.Forms.ListBox lb_fa;
         private System.Windows.Forms.Label label50;
-        private System.Windows.Forms.NumericUpDown numericUpDown3;
-        private System.Windows.Forms.ComboBox comboBox3;
+        private System.Windows.Forms.NumericUpDown nud_fa_timer;
+        private System.Windows.Forms.ComboBox cb_fa_type;
         private System.Windows.Forms.Label label48;
         private System.Windows.Forms.Label label47;
-        private System.Windows.Forms.ListBox listBox2;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.ListBox lb_fa_cfg;
+        private System.Windows.Forms.TextBox tb_fa_value;
         private System.Windows.Forms.Label label54;
         private System.Windows.Forms.GroupBox gb_vsync;
         private System.Windows.Forms.NumericUpDown nud_vsync0;
@@ -3203,5 +3311,13 @@
         private System.Windows.Forms.NumericUpDown nud_vsync1;
         private System.Windows.Forms.Label label65;
         private System.Windows.Forms.Label label66;
+        private System.Windows.Forms.ToolStripComboBox cb_hwrev;
+        private System.Windows.Forms.PictureBox pb_uarthw;
+        private System.Windows.Forms.Label lbl_fa_name;
+        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.Button bt_fa_del;
+        private System.Windows.Forms.Button bt_fa_add;
+        private System.Windows.Forms.Button bt_fa_savealarm;
+        private System.Windows.Forms.Button bt_fa_savecfg;
     }
 }
