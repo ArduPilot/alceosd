@@ -148,8 +148,8 @@ const char *UART_CLIENT_NAMES[] = {
 const char *UART_PIN_NAMES[] = {
     "telemetry",
     "con2",
-    "icsp",
     "con3",
+    "icsp",
     "off"
 };
 
