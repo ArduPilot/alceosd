@@ -478,17 +478,16 @@ static void shell_cmd_dumpcfg2(char *args, void *data)
 static void shell_cmd_units(char *args, void *data)
 {
     u16 v;
-    shell_printf("syntax: config units <i>\n");
-    shell_printf("        0 - metric\n");
-    shell_printf("        1 - imperial\n\n");
     if (strlen(args) > 0) {
-        v = atoi(args);
-        v = TRIM(v, 0, 1);
+        v = atoi(args) + 1;
+        v = TRIM(v, 1, 2);
         config.default_units = v;
-        shell_printf("Units: %s\n", (config.default_units == UNITS_METRIC) ? "metric" : "imperial");
     } else {
-        shell_printf("Units: %s\n", (config.default_units == UNITS_METRIC) ? "metric" : "imperial");
+        shell_printf("syntax: config units <i>\n");
+        shell_printf("        0 - metric\n");
+        shell_printf("        1 - imperial\n\n");
     }
+    shell_printf("Units: %s\n", (config.default_units == UNITS_METRIC) ? "metric" : "imperial");
 }
 
 static const struct shell_cmdmap_s config_cmdmap[] = {
