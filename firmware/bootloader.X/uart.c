@@ -84,9 +84,16 @@ void uart_init(void)
         U3MODE = 0x8000;
         U3STA = 0x0400;
 
-        U4BRG = BRGVAL;
-        U4MODE = 0x8000;
-        U4STA = 0x0400;
+        if (hw_rev >= 0x05) {
+            /* usb */
+            U4BRG = 18;
+            U4MODE = 0x8008;
+            U4STA = 0x0400;
+        } else {
+            U4BRG = BRGVAL;
+            U4MODE = 0x8000;
+            U4STA = 0x0400;
+        }
     }        
 }
 
