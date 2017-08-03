@@ -115,13 +115,7 @@ static void render(struct widget *w)
             d *= M2FEET;
             min_increment = 1000;
             scale = ((d / min_increment) + 1) * min_increment;
-            if (d > 5000) {
-                d = (d * 1000) / MILE2FEET;
-                scale /= 1000;
-                sprintf(buf, "%umi", (unsigned int) scale);
-            } else {
-                sprintf(buf, "%uf", (unsigned int) scale);
-            }
+            sprintf(buf, "%uf", (unsigned int) scale);
             break;
     }
     
