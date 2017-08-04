@@ -3195,12 +3195,11 @@ namespace AlceOSD_updater
             update_tabs_config();
         }
 
-
         private void update_mavlink_stream_rates(int stream_id, decimal rate)
         {
             if (!init_done)
                 return;
-            string cmd = "mavlink rates -i" + stream_id;
+            string cmd = "mavlink rates -s" + stream_id;
             cmd += " -r" + rate;
             send_cmd(cmd);
         }
