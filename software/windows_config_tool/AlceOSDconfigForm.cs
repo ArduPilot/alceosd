@@ -97,7 +97,7 @@ namespace AlceOSD_updater
         {
             string version = "";
 
-            tabControl1.SelectTab(7);
+            tabControl1.SelectTab(tabControl1.TabPages.IndexOfKey("tab_log"));
 
             setup_comport();
             if (!open_comport())
@@ -340,36 +340,83 @@ namespace AlceOSD_updater
         {
             List<int> baudrates = new List<int> { 921600, 115200, 57600, 19200 };
             bool ready = false;
+            bool flash_only = false;
 
-            if (!mavlink)
+            comPort.mode = Comm.COMM_MODE.Serial;
+
+            /* check if com port is alive */
+            try
             {
+                comPort.WriteLine("");
+            }
+            catch
+            {
+                MessageBox.Show("Error writting to " + comPort.PortName, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                comPort.Close();
+                return false;
+            }
 
-                comPort.mode = Comm.COMM_MODE.Serial;
-
-                /* check if com port is alive */
-                try
+            /* check shell is active */
+            Console.WriteLine("checking if shell is active");
+            Console.WriteLine("find baudrate");
+            foreach (int b in baudrates)
+            {
+                comPort.BaudRate = b;
+                System.Threading.Thread.Sleep(100);
+                for (int flush = 0; flush < 4; flush++)
                 {
                     comPort.WriteLine("");
+                    System.Threading.Thread.Sleep(100);
                 }
-                catch
+                comPort.DiscardInBuffer();
+
+                comPort.WriteLine("version");
+                System.Threading.Thread.Sleep(100);
+                string line = comPort.ReadExisting();
+                Console.WriteLine("trying " + b + "... ans=" + line);
+                if (line.Contains("version"))
                 {
-                    MessageBox.Show("Error writting to " + comPort.PortName, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    comPort.Close();
-                    return false;
+                    Console.WriteLine("got shell");
+                    ready = true;
+                    System.Threading.Thread.Sleep(100);
+                    comPort.DiscardInBuffer();
+                    break;
                 }
+            }
 
+            if (ready)
+            {
+                if (mavlink)
+                {
+                    comPort.WriteLine("reboot");
+                    System.Threading.Thread.Sleep(500);
+                    ready = false;
+                } else
+                {
+                    return true;
+                }
+            }
 
-                /* check if in shell */
-                Console.WriteLine("checking if shell is active");
+            if (mavlink)
+            {
+                comPort.mode = Comm.COMM_MODE.Mavlink;
+                System.Threading.Thread.Sleep(100);
+
+                Console.WriteLine("find mavkink baudrate");
                 foreach (int b in baudrates)
                 {
                     comPort.BaudRate = b;
                     System.Threading.Thread.Sleep(100);
+                    for (int flush = 0; flush < 4; flush++)
+                    {
+                        comPort.WriteLine("");
+                        System.Threading.Thread.Sleep(100);
+                    }
                     comPort.DiscardInBuffer();
-
                     comPort.WriteLine("version");
                     System.Threading.Thread.Sleep(100);
                     string line = comPort.ReadExisting();
+                    Console.WriteLine("trying " + b + "... ans=" + line);
                     if (line.Contains("version"))
                     {
                         Console.WriteLine("got shell");
@@ -380,38 +427,9 @@ namespace AlceOSD_updater
                     }
                 }
             }
-            if (mavlink)
+            else
             {
-                Console.WriteLine("mavlink mode");
-                /*if (ready)
-                {
-                    Console.WriteLine("rebooting");
-                    comPort.WriteLine("reboot");
-                    System.Threading.Thread.Sleep(100);
-                    comPort.Write("\n");
-                    System.Threading.Thread.Sleep(500);
-                }*/
-                comPort.BaudRate = settings.MavlinkBaudrate;
-
-                Console.WriteLine("mav_baudrate={0}", comPort.BaudRate);
-
-                comPort.mode = Comm.COMM_MODE.Mavlink;
-                System.Threading.Thread.Sleep(100);
-                for (int flush = 0; flush < 4; flush++)
-                {
-                    comPort.WriteLine("");
-                    System.Threading.Thread.Sleep(100);
-                }
-                System.Threading.Thread.Sleep(100);
-                comPort.DiscardInBuffer();
-                ready = true;
-                //return true;
-            }
-
-            bool flash_only = false;
-            /* enter setup (fw0v9+ & bootloader0v5+) */
-            if (!ready)
-            {
+                /* enter setup (fw0v9+ & bootloader0v5+) */
                 Console.WriteLine("trying to start shell");
                 foreach (int b in baudrates)
                 {
@@ -420,6 +438,7 @@ namespace AlceOSD_updater
                     comPort.Write("I want to enter AlceOSD setup");
                     System.Threading.Thread.Sleep(500);
                     string ans = comPort.ReadExisting();
+                    Console.WriteLine("trying " + b + "... ans=" + ans);
                     if (ans.Contains("AlceOSD setup starting"))
                     {
                         comPort.Write("\n");
@@ -435,7 +454,7 @@ namespace AlceOSD_updater
                 }
             }
 
-            if (ready || mavlink)
+            if (ready)
             {
                 if (flash_only)
                 {
@@ -468,8 +487,15 @@ namespace AlceOSD_updater
 
                     int rev = Convert.ToInt32(hw_rev.ElementAt(hw_rev.Length - 1)) - '0';
                     Console.WriteLine("Detected hw rev {0} ({1})", hw_rev, rev);
+                    string extra = "";
+                    if (hw_rev == "0v4")
+                        extra = "b";
 
-                    cb_hwrev.SelectedIndex = cb_hwrev.Items.IndexOf("hw" + hw_rev);
+                    /* keep manual selection of 0v3b over 0v3 */
+                    if (cb_hwrev.SelectedItem == null ||
+                        (cb_hwrev.SelectedItem != null && cb_hwrev.SelectedItem.ToString().TrimEnd('b') != hw_rev))
+                        cb_hwrev.SelectedIndex = cb_hwrev.Items.IndexOf(hw_rev + extra);
+
                 }
 
                 System.Threading.Thread.Sleep(100);
@@ -477,9 +503,13 @@ namespace AlceOSD_updater
 
                 if (flash)
                 {
-                    Console.WriteLine("starting bootloader");
+                    Console.WriteLine("starting bootloader hw" + hw_rev);
                     comPort.WriteLine("reboot");
-                    comPort.BaudRate = 115200;
+                    if (hw_rev == "0v5")
+                        comPort.BaudRate = 921600;
+                    else
+                        comPort.BaudRate = 115200;
+                    Console.WriteLine("bootloader baudrate=" + comPort.BaudRate);
                     System.Threading.Thread.Sleep(100);
                     comPort.Write("alceosd");
                 }
@@ -500,7 +530,12 @@ namespace AlceOSD_updater
 
                 if (flash)
                 {
-                    comPort.BaudRate = 115200;
+                    Console.WriteLine("starting bootloader hw" + hw_rev);
+                    if (hw_rev == "0v5")
+                        comPort.BaudRate = 921600;
+                    else
+                        comPort.BaudRate = 115200;
+                    Console.WriteLine("bootloader baudrate=" + comPort.BaudRate);
                     System.Threading.Thread.Sleep(100);
                     comPort.Write("alceosd");
                     return true;
@@ -2323,26 +2358,6 @@ namespace AlceOSD_updater
             settings = new UserSettings();
 
             cb_comport.Text = settings.ComPort;
-            switch (settings.MavlinkBaudrate)
-            {
-                case 19200:
-                    tsm_mav19200.Checked = true;
-                    tsm_mav57600.Checked = false;
-                    tsm_mav115200.Checked = false;
-                    break;
-                case 57600:
-                    tsm_mav19200.Checked = false;
-                    tsm_mav57600.Checked = true;
-                    tsm_mav115200.Checked = false;
-                    break;
-                case 115200:
-                default:
-                    tsm_mav19200.Checked = false;
-                    tsm_mav57600.Checked = false;
-                    tsm_mav115200.Checked = true;
-                    break;
-
-            }
 
             cb_vswch.Items.Clear();
             cb_tabch.Items.Clear();
@@ -3030,35 +3045,6 @@ namespace AlceOSD_updater
 
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void tsm_mav19200_Click(object sender, EventArgs e)
-        {
-            tsm_mav57600.Checked = false;
-            tsm_mav115200.Checked = false;
-            settings.MavlinkBaudrate = 19200;
-            settings.Save();
-        }
-
-        private void tsm_mav57600_Click(object sender, EventArgs e)
-        {
-            tsm_mav19200.Checked = false;
-            tsm_mav115200.Checked = false;
-            settings.MavlinkBaudrate = 57600;
-            settings.Save();
-        }
-
-        private void tsm_mav115200_Click(object sender, EventArgs e)
-        {
-            tsm_mav19200.Checked = false;
-            tsm_mav57600.Checked = false;
-            settings.MavlinkBaudrate = 115200;
-            settings.Save();
-        }
-
         private void update_uart1_settings()
         {
             string cmd = "uart config -p0";
@@ -3434,6 +3420,7 @@ namespace AlceOSD_updater
         private void cb_units_SelectedIndexChanged(object sender, EventArgs e)
         {
             string cmd = "config units " + cb_units.SelectedIndex;
+            send_cmd(cmd);
         }
 
         bool tlog_active = false;
