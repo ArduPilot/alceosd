@@ -65,31 +65,37 @@ void shell_cmd_exit(char *args, void *data)
 void shell_cmd_ports(char *args, void *data)
 {
     struct shell_argval argval[SHELL_CMD_PORTS_ARGS+1], *p;
-    unsigned char r = 0xff, b, s, t;
-    unsigned int v;
+    u8 t, r = 0xff, b = 0xff, s = 0xff;
+    u16 v;
     volatile unsigned int *regs[6] = {&LATA, &TRISA, &LATB, &TRISB, &LATC, &TRISC};
 
     t = shell_arg_parser(args, argval, SHELL_CMD_PORTS_ARGS);
-    if (t < 3) {
+    p = shell_get_argval(argval, 'r');
+    if (p != NULL) {
+        r = (u8) atoi(p->val);
+    }
+    p = shell_get_argval(argval, 'b');
+    if (p != NULL) {
+        b = (u8) atoi(p->val);
+    }
+    p = shell_get_argval(argval, 's');
+    if (p != NULL) {
+        s = (u8) atoi(p->val);
+    }
+
+    if (t < 3 || r > 5 || b > 15 || s > 1) {
+        if (r > 5)
+            shell_printf("Invalid register: %u [0..5]\n", r);
+        if (b > 15)
+            shell_printf("Invalid port bit: %u [0..15]\n", b);
+        if (s > 1)
+            shell_printf("Invalid bit state: %u [0|1]\n", s);
         shell_printf("CPU port status and control: ports -r <reg> -b <bit> -s <state>\n");
         shell_printf(" reg: 0=LATA 1=TRISA 2=LATB 3=TRISB 4=LATC 5=TRISC\n");
         shell_printf(" PORTA: %4x   LATA=%4x  TRISA=%4x\n", PORTA, LATA, TRISA);
         shell_printf(" PORTB: %4x   LATB=%4x  TRISB=%4x\n", PORTB, LATB, TRISB);
         shell_printf(" PORTC: %4x   LATC=%4x  TRISC=%4x\n", PORTC, LATC, TRISC);
     } else {
-        p = shell_get_argval(argval, 'r');
-        if (p != NULL) {
-            r = (u8) atoi(p->val);
-        }
-        p = shell_get_argval(argval, 'b');
-        if (p != NULL) {
-            b = (u8) atoi(p->val);
-        }
-        p = shell_get_argval(argval, 's');
-        if (p != NULL) {
-            s = (u8) atoi(p->val);
-        }
-
         v = *(regs[r]);
         if (s == 0)
             v = v & ~(1 << b);
