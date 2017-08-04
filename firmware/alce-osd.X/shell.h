@@ -22,6 +22,8 @@
 #include "alce-types.h"
 #define MAX_SHELL_ARGVAL_LEN    15
 
+#define SHELL_GET_EXIT  0x8000
+
 enum {
     SHELL_CMD_SIMPLE = 0,
     SHELL_CMD_SUBCMD,

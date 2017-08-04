@@ -280,7 +280,7 @@ static void write_config(void)
 }
 
 #define MAX_LINE_LEN 50
-static u8 load_config_text(unsigned char *buf, unsigned int len, void *data)
+static u16 load_config_text(unsigned char *buf, unsigned int len, void *data)
 {
     static unsigned char line[MAX_LINE_LEN];
     static unsigned char llen = 0;
@@ -292,19 +292,19 @@ static u8 load_config_text(unsigned char *buf, unsigned int len, void *data)
     while (*buf != '\n') {
         line[llen++] = *(buf++);
         if (++i == len)
-            return 0;
+            return len;
     }
     line[llen] = '\0';
     i++;
 
     if (llen == 0)
-        return 0;
+        return len;
 
     /* the end */
     if (line[0] == '.') {
         llen = 0;
         load_tab(1);
-        return 1;
+        return len | SHELL_GET_EXIT;
     }
 
     /* reset widgets config */
@@ -318,7 +318,7 @@ static u8 load_config_text(unsigned char *buf, unsigned int len, void *data)
         }
     }
     llen = 0;
-    return 0;
+    return len;
 }
 
 static void shell_cmd_stats(char *args, void *data)

@@ -55,6 +55,50 @@ static void shell_cmd_echo(char *args, void *data)
     shell_printf("Local echo: %u\n", local_echo);
 }
 
+void shell_cmd_exit(char *args, void *data)
+{
+    shell_printf("Exiting shell...\n");
+    uart_set_client(shell_uart_client.port, config.uart[shell_uart_client.port].mode, 0);
+}
+
+#define SHELL_CMD_PORTS_ARGS 3
+void shell_cmd_ports(char *args, void *data)
+{
+    struct shell_argval argval[SHELL_CMD_PORTS_ARGS+1], *p;
+    unsigned char r = 0xff, b, s, t;
+    unsigned int v;
+    volatile unsigned int *regs[6] = {&LATA, &TRISA, &LATB, &TRISB, &LATC, &TRISC};
+
+    t = shell_arg_parser(args, argval, SHELL_CMD_PORTS_ARGS);
+    if (t < 3) {
+        shell_printf("CPU port status and control: ports -r <reg> -b <bit> -s <state>\n");
+        shell_printf(" reg: 0=LATA 1=TRISA 2=LATB 3=TRISB 4=LATC 5=TRISC\n");
+        shell_printf(" PORTA: %4x   LATA=%4x  TRISA=%4x\n", PORTA, LATA, TRISA);
+        shell_printf(" PORTB: %4x   LATB=%4x  TRISB=%4x\n", PORTB, LATB, TRISB);
+        shell_printf(" PORTC: %4x   LATC=%4x  TRISC=%4x\n", PORTC, LATC, TRISC);
+    } else {
+        p = shell_get_argval(argval, 'r');
+        if (p != NULL) {
+            r = (u8) atoi(p->val);
+        }
+        p = shell_get_argval(argval, 'b');
+        if (p != NULL) {
+            b = (u8) atoi(p->val);
+        }
+        p = shell_get_argval(argval, 's');
+        if (p != NULL) {
+            s = (u8) atoi(p->val);
+        }
+
+        v = *(regs[r]);
+        if (s == 0)
+            v = v & ~(1 << b);
+        else
+            v = v | (1 << b);
+        *(regs[r]) = v;        
+    }
+}
+
 static const struct shell_cmdmap_s root_cmdmap[] = {
     {"clock", shell_cmd_clock, "Clock module", SHELL_CMD_SUBCMD},
     {"config", shell_cmd_cfg, "Config module", SHELL_CMD_SUBCMD},
@@ -71,6 +115,8 @@ static const struct shell_cmdmap_s root_cmdmap[] = {
     {"version", shell_cmd_version, "Display firmware version", SHELL_CMD_SIMPLE},
     {"video", shell_cmd_video, "Videocore module", SHELL_CMD_SUBCMD},
     {"widgets", shell_cmd_widgets, "Widgets module", SHELL_CMD_SUBCMD},
+    {"exit", shell_cmd_exit, "Exit shell client", SHELL_CMD_SIMPLE},
+    {"ports", shell_cmd_ports, "CPU port status/control", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
 };
 
@@ -168,7 +214,7 @@ int shell_printf(const char *fmt, ...)
 }
 
 static struct shell_getter_s {
-    unsigned char (*func)(unsigned char *buf, unsigned int len, unsigned long data);
+    u16 (*func)(unsigned char *buf, unsigned int len, unsigned long data);
     unsigned long data;
 } shell_getter;
 
@@ -278,10 +324,12 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
     int size;
 
     if (shell_getter.func != NULL) {
-        i = shell_getter.func(buf, len, shell_getter.data);
-        if (i)
+        size = shell_getter.func(buf, len, shell_getter.data);
+        if (size & SHELL_GET_EXIT) {
             shell_getter.func = NULL;
-        return len;
+            size &= ~SHELL_GET_EXIT;
+        }
+        return size;
     }
 
     for (i = 0; i < len; i++) {
