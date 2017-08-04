@@ -2330,7 +2330,7 @@ static void shell_cmd_swconfig(char *args, void *data)
         p = shell_get_argval(argval, 'c');
         if (p != NULL) {
             i = atoi(p->val);
-            i = TRIM(i, 1, 18);
+            i = TRIM(i, 0, 17);
             swcfg->ch = i - 1;
         }
         p = shell_get_argval(argval, 'l');
