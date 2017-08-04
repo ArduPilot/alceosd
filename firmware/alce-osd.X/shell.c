@@ -323,11 +323,10 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
     static unsigned char cmd_len = 0;
     static char cmd_line[MAX_SHELL_LINE_LEN];
     static char prev_cmd_line[MAX_SHELL_LINE_LEN];
-    unsigned char i;
     char tmp[MAX_SHELL_LINE_LEN], *p;
-    char echo_buf[MAX_SHELL_LINE_LEN], *e = echo_buf;
+    char echo_buf[len + 2], *e = echo_buf;
     struct shell_cmdmap_s *ac[20], **a, **b;
-    int size;
+    u16 size, i;
 
     if (shell_getter.func != NULL) {
         size = shell_getter.func(buf, len, shell_getter.data);
@@ -339,21 +338,23 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
     }
 
     for (i = 0; i < len; i++) {
-        //shell_printf("<%d>", buf[i]);
         switch (buf[i]) {
             case BACKSPACE:
                 if (cmd_len > 0) {
                     cmd_len--;
                     *e++ = buf[i];
-                    //shell_putc(buf[i]);
                 }
                 continue;
             case CTRL_R:
+                if (!local_echo)
+                    continue;
                 strcpy(cmd_line, prev_cmd_line);
                 cmd_len = strlen(cmd_line);
                 shell_printf("\n> %s", cmd_line);
                 continue;
             case TAB:
+                if (!local_echo)
+                    continue;
                 cmd_line[cmd_len] = '\0';
                 strcpy(tmp, cmd_line);
                 p = strrchr(tmp, ' ');
@@ -364,9 +365,6 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
                     strcpy(p, " help");
                     p++;
                 }
-                *e = '\0';
-                shell_puts(echo_buf);
-                e = echo_buf;
                 shell_exec(tmp, root_cmdmap, ac);
                 strcpy(tmp, cmd_line);
                 size = strlen(p);
@@ -399,7 +397,6 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
             case CR:
             case LF:
                 *e++ = LF;
-                //shell_putc(LF);
                 if (cmd_len > 0) {
                     cmd_line[cmd_len] = '\0';
                     *e = '\0';
@@ -414,14 +411,12 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
                 }
                 *e++ = '>';
                 *e++ = ' ';
-                //shell_puts("> ");
                 break;
             default:
                 cmd_line[cmd_len] = buf[i];
                 if (cmd_len < MAX_SHELL_LINE_LEN-1)
                     cmd_len++;
                 *e++ = buf[i];
-                //shell_putc(buf[i]);
                 break;
         }
 
