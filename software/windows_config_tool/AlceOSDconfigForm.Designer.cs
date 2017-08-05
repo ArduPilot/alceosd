@@ -58,7 +58,6 @@
             this.readConfigToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.writeConfigToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-            this.flashFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.downloadFirmwareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ofd_loadcfg = new System.Windows.Forms.OpenFileDialog();
             this.ofd_savecfg = new System.Windows.Forms.SaveFileDialog();
@@ -240,6 +239,7 @@
             this.nud_yoffset = new System.Windows.Forms.NumericUpDown();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.timer_submit_cfg = new System.Windows.Forms.Timer(this.components);
+            this.bt_flash_fw = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.tb_tlog)).BeginInit();
             this.cm_widget.SuspendLayout();
             this.menuStrip1.SuspendLayout();
@@ -547,7 +547,6 @@
             this.readConfigToolStripMenuItem,
             this.writeConfigToolStripMenuItem,
             this.toolStripSeparator2,
-            this.flashFirmwareToolStripMenuItem,
             this.downloadFirmwareToolStripMenuItem});
             this.boardToolStripMenuItem.Name = "boardToolStripMenuItem";
             this.boardToolStripMenuItem.Size = new System.Drawing.Size(50, 20);
@@ -571,13 +570,6 @@
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
             this.toolStripSeparator2.Size = new System.Drawing.Size(190, 6);
-            // 
-            // flashFirmwareToolStripMenuItem
-            // 
-            this.flashFirmwareToolStripMenuItem.Name = "flashFirmwareToolStripMenuItem";
-            this.flashFirmwareToolStripMenuItem.Size = new System.Drawing.Size(193, 22);
-            this.flashFirmwareToolStripMenuItem.Text = "Flash firmware";
-            this.flashFirmwareToolStripMenuItem.Click += new System.EventHandler(this.flashFirmwareToolStripMenuItem_Click);
             // 
             // downloadFirmwareToolStripMenuItem
             // 
@@ -640,6 +632,7 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gb_shell.BackColor = System.Drawing.SystemColors.Window;
+            this.gb_shell.Controls.Add(this.bt_flash_fw);
             this.gb_shell.Controls.Add(this.button1);
             this.gb_shell.Controls.Add(this.label10);
             this.gb_shell.Controls.Add(this.cb_hwrev);
@@ -2880,6 +2873,16 @@
             this.timer_submit_cfg.Interval = 500;
             this.timer_submit_cfg.Tick += new System.EventHandler(this.timer_submit_cfg_Tick);
             // 
+            // bt_flash_fw
+            // 
+            this.bt_flash_fw.Location = new System.Drawing.Point(774, 19);
+            this.bt_flash_fw.Name = "bt_flash_fw";
+            this.bt_flash_fw.Size = new System.Drawing.Size(96, 23);
+            this.bt_flash_fw.TabIndex = 16;
+            this.bt_flash_fw.Text = "Flash firmware...";
+            this.bt_flash_fw.UseVisualStyleBackColor = true;
+            this.bt_flash_fw.Click += new System.EventHandler(this.bt_flash_fw_Click);
+            // 
             // AlceOSDconfigForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -2994,7 +2997,6 @@
         private System.Windows.Forms.ToolStripMenuItem readConfigToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem writeConfigToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
-        private System.Windows.Forms.ToolStripMenuItem flashFirmwareToolStripMenuItem;
         private System.Windows.Forms.OpenFileDialog ofd_fwfile;
         private System.Windows.Forms.ProgressBar pb;
         private System.Windows.Forms.ToolStripMenuItem downloadFirmwareToolStripMenuItem;
@@ -3187,5 +3189,6 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.ToolStripMenuItem importOldConfigToolStripMenuItem;
         private System.Windows.Forms.Timer timer_submit_cfg;
+        private System.Windows.Forms.Button bt_flash_fw;
     }
 }

@@ -98,74 +98,6 @@ namespace AlceOSD_updater
             pages[page][index] = value;
         }
 
-        private void flashFirmwareToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            string version = "";
-
-            tabControl1.SelectTab(tabControl1.TabPages.IndexOfKey("tab_log"));
-
-            setup_comport();
-            if (!open_comport())
-                return;
-            if (!reset_board(true, false))
-            {
-                MessageBox.Show("Error waiting for bootloader", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-
-            bool ready = false;
-            string ans = "";
-            string ans2;
-            int timeout = 0;
-
-            while (!ready)
-            {
-                while (comPort.BytesToRead < 1)
-                {
-                    System.Threading.Thread.Sleep(10);
-                    if (++timeout > 100)
-                    {
-                        MessageBox.Show("Error waiting for bootloader", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        comPort.Close();
-                        return;
-                    }
-                }
-
-                ans += comPort.ReadExisting();
-
-                if (ans.EndsWith("..."))
-                    ready = true;
-
-                ans2 = ans.TrimEnd();
-                if (ans2.EndsWith("BIN"))
-                    ready = true;
-                if (ans2.EndsWith("IHEX"))
-                    ready = true;
-            }
-
-            int v0 = ans.IndexOf('v') + 1;
-            version = ans.Substring(v0, 3);
-
-            txt_log.AppendText("AlceOSD bootloader version " + version + "\n");
-
-            System.Threading.Thread.Sleep(500);
-            comPort.DiscardInBuffer();
-
-            DialogResult result = ofd_fwfile.ShowDialog();
-            if ((result != DialogResult.Cancel) && (ofd_fwfile.FileName != ""))
-            {
-                txt_log.AppendText("Will flash file " + ofd_fwfile.FileName + "\n");
-                do_flash(version);
-            } else
-            {
-                byte[] abort = new byte[] { 0xff, 0xff, 0xff };
-                txt_log.AppendText("Exiting bootloader...\n");
-                comPort.Write(abort, 0, 3);
-            }
-            comPort.Close();
-        }
-
         private void do_flash(string version)
         {
             if ((version == "0.1") || (version == "0.2"))
@@ -2620,7 +2552,7 @@ namespace AlceOSD_updater
             bt_conn.Text = "Connect";
             readConfigToolStripMenuItem.Enabled = true;
             writeConfigToolStripMenuItem.Enabled = true;
-            flashFirmwareToolStripMenuItem.Enabled = true;
+            bt_flash_fw.Enabled = true;
             cbx_mavmode.Enabled = true;
             bt_conn.Enabled = true;
         }
@@ -2675,7 +2607,7 @@ namespace AlceOSD_updater
                 bt_conn.Text = "Disconnect";
                 readConfigToolStripMenuItem.Enabled = false;
                 writeConfigToolStripMenuItem.Enabled = false;
-                flashFirmwareToolStripMenuItem.Enabled = false;
+                bt_flash_fw.Enabled = false;
 
                 bt_submitCfg.Enabled = true;
 
@@ -3962,6 +3894,75 @@ namespace AlceOSD_updater
         private void cb_hwrev_SelectedIndexChanged(object sender, EventArgs e)
         {
             validate_hw_options();
+        }
+
+        private void bt_flash_fw_Click(object sender, EventArgs e)
+        {
+            string version = "";
+
+            tabControl1.SelectTab(tabControl1.TabPages.IndexOfKey("tab_log"));
+
+            setup_comport();
+            if (!open_comport())
+                return;
+            if (!reset_board(true, false))
+            {
+                MessageBox.Show("Error waiting for bootloader", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+
+            bool ready = false;
+            string ans = "";
+            string ans2;
+            int timeout = 0;
+
+            while (!ready)
+            {
+                while (comPort.BytesToRead < 1)
+                {
+                    System.Threading.Thread.Sleep(10);
+                    if (++timeout > 100)
+                    {
+                        MessageBox.Show("Error waiting for bootloader", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        comPort.Close();
+                        return;
+                    }
+                }
+
+                ans += comPort.ReadExisting();
+
+                if (ans.EndsWith("..."))
+                    ready = true;
+
+                ans2 = ans.TrimEnd();
+                if (ans2.EndsWith("BIN"))
+                    ready = true;
+                if (ans2.EndsWith("IHEX"))
+                    ready = true;
+            }
+
+            int v0 = ans.IndexOf('v') + 1;
+            version = ans.Substring(v0, 3);
+
+            txt_log.AppendText("AlceOSD bootloader version " + version + "\n");
+
+            System.Threading.Thread.Sleep(500);
+            comPort.DiscardInBuffer();
+
+            DialogResult result = ofd_fwfile.ShowDialog();
+            if ((result != DialogResult.Cancel) && (ofd_fwfile.FileName != ""))
+            {
+                txt_log.AppendText("Will flash file " + ofd_fwfile.FileName + "\n");
+                do_flash(version);
+            }
+            else
+            {
+                byte[] abort = new byte[] { 0xff, 0xff, 0xff };
+                txt_log.AppendText("Exiting bootloader...\n");
+                comPort.Write(abort, 0, 3);
+            }
+            comPort.Close();
         }
 
         private void timer_submit_Tick(object sender, EventArgs e)

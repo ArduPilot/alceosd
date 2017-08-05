@@ -195,8 +195,6 @@ namespace AlceOSD
                 {
                     avail = 0;
                 }
-                
-
 
                 if ( avail > 0)
                 {
