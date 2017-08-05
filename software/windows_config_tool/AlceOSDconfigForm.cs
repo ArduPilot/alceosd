@@ -3196,82 +3196,6 @@ namespace AlceOSD_updater
 
         }
 
-
-
-        private void update_mavlink_stream_rates(int stream_id, decimal rate)
-        {
-            if (!init_done)
-                return;
-            string cmd = "mavlink rates -s" + stream_id;
-            cmd += " -r" + rate;
-            send_cmd(cmd);
-        }
-
-        private void nud_streamRawSensors_ValueChanged(object sender, EventArgs e)
-        {
-            update_mavlink_stream_rates(1, nud_streamRawSensors.Value);
-        }
-
-        private void nud_streamExtStatus_ValueChanged(object sender, EventArgs e)
-        {
-            update_mavlink_stream_rates(2, nud_streamExtStatus.Value);
-        }
-
-        private void nud_streamRcChannels_ValueChanged(object sender, EventArgs e)
-        {
-            update_mavlink_stream_rates(3, nud_streamRcChannels.Value);
-        }
-
-        private void nud_streamRawCtrl_ValueChanged(object sender, EventArgs e)
-        {
-            update_mavlink_stream_rates(4, nud_streamRawCtrl.Value);
-        }
-
-        private void nud_streamPosition_ValueChanged(object sender, EventArgs e)
-        {
-            update_mavlink_stream_rates(5, nud_streamPosition.Value);
-        }
-
-        private void nud_streamExtra1_ValueChanged(object sender, EventArgs e)
-        {
-            update_mavlink_stream_rates(6, nud_streamExtra1.Value);
-        }
-
-        private void nud_streamExtra2_ValueChanged(object sender, EventArgs e)
-        {
-            update_mavlink_stream_rates(7, nud_streamExtra2.Value);
-        }
-
-        private void nud_streamExtra3_ValueChanged(object sender, EventArgs e)
-        {
-            update_mavlink_stream_rates(8, nud_streamExtra3.Value);
-        }
-
-        private void update_mavlink_config()
-        {
-            if (!init_done)
-                return;
-            string cmd = "mavlink config -i" + nud_osdsysid.Value;
-            cmd += " -u" + nud_uavsysid.Value;
-            cmd += " -h" + (cbx_mavhb.Checked ? "1" : "0");
-            send_cmd(cmd);
-        }
-
-        private void nud_uavsysid_ValueChanged(object sender, EventArgs e)
-        {
-            update_mavlink_config();
-        }
-
-        private void nud_osdsysid_ValueChanged(object sender, EventArgs e)
-        {
-            update_mavlink_config();
-        }
-
-        private void cbx_mavhb_CheckedChanged(object sender, EventArgs e)
-        {
-            update_mavlink_config();
-        }
-
         private void bt_refreshCanvas_Click(object sender, EventArgs e)
         {
             if (load_lock)
@@ -3516,11 +3440,282 @@ namespace AlceOSD_updater
             timer_submit_cfg_tag("rssi");
         }
 
+        /* ********************************************************************************* */
+        /* ********************************************************************************* */
+        /* mavlink callback stuff */
+
+        private void update_mavlink_stream_rates(int stream_id, decimal rate)
+        {
+            if (!init_done)
+                return;
+            string cmd = "mavlink rates -s" + stream_id;
+            cmd += " -r" + rate;
+            send_cmd(cmd);
+        }
+
+        private void nud_streamRawSensors_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(1, nud_streamRawSensors.Value);
+        }
+
+        private void nud_streamExtStatus_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(2, nud_streamExtStatus.Value);
+        }
+
+        private void nud_streamRcChannels_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(3, nud_streamRcChannels.Value);
+        }
+
+        private void nud_streamRawCtrl_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(4, nud_streamRawCtrl.Value);
+        }
+
+        private void nud_streamPosition_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(5, nud_streamPosition.Value);
+        }
+
+        private void nud_streamExtra1_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(6, nud_streamExtra1.Value);
+        }
+
+        private void nud_streamExtra2_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(7, nud_streamExtra2.Value);
+        }
+
+        private void nud_streamExtra3_ValueChanged(object sender, EventArgs e)
+        {
+            update_mavlink_stream_rates(8, nud_streamExtra3.Value);
+        }
+
+        private void update_mavlink_config()
+        {
+            string cmd = "mavlink config -i" + nud_osdsysid.Value;
+            cmd += " -u" + nud_uavsysid.Value;
+            cmd += " -h" + (cbx_mavhb.Checked ? "1" : "0");
+            send_cmd(cmd);
+        }
+
+        private void mavlink_config_changed(object sender, EventArgs e)
+        {
+            timer_submit_cfg_tag("mavlink");
+        }
+
+        /* ********************************************************************************* */
+        /* ********************************************************************************* */
+        /* alarms update callback stuff */
+
+        Dictionary<int, string> flight_alarms = new Dictionary<int, string>();
+        private void bt_fa_add_Click(object sender, EventArgs e)
+        {
+            int id = lb_fa.SelectedIndex;
+
+            //Console.WriteLine("selected alarm: {0}", id);
+
+            if (id < 0)
+                return;
+
+            int l = cb_fa_type.SelectedIndex == 0 ? 1 : 2;
+            int timer = (int)nud_fa_timer.Value / 100;
+            double value = 0;
+            try
+            {
+                value = Convert.ToDouble(tb_fa_value.Text);
+            }
+            catch
+            {
+                tb_fa_value.Text = "0";
+                value = 0;
+            }
+
+            send_cmd("flight alarms -a" + l + " -i" + id + " -v" + value + " -t" + timer);
+            get_flight_alarms();
+        }
+
+        private int get_faid()
+        {
+            if (lb_fa_cfg.SelectedIndex == -1)
+                return -1;
+
+            string fa_name = lb_fa_cfg.Items[lb_fa_cfg.SelectedIndex].ToString();
+            Match m = Regex.Match(fa_name, @"\((.+)\/(.+)\).+");
+            if (!m.Success)
+            {
+                return -1;
+            }
+
+            int faid = Convert.ToInt16(m.Groups[1].Value);
+            return faid;
+        }
+
+        private void bt_fa_del_Click(object sender, EventArgs e)
+        {
+            int faid = get_faid();
+            send_cmd("flight alarms -a0 -n" + faid);
+            get_flight_alarms();
+        }
+
+        private void bt_fa_savealarm_Click(object sender, EventArgs e)
+        {
+            int sel = lb_fa_cfg.SelectedIndex;
+            int faid = get_faid();
+            int l = cb_fa_type.SelectedIndex == 0 ? 1 : 2;
+            int timer = (int)nud_fa_timer.Value / 100;
+            double value = 0;
+            try
+            {
+                value = Convert.ToDouble(tb_fa_value.Text);
+            }
+            catch
+            {
+
+            }
+            send_cmd("flight alarms -a" + l + " -n" + faid + " -v" + value + " -t" + timer);
+            get_flight_alarms();
+            lb_fa_cfg.SelectedIndex = sel;
+        }
+
+        private void bt_fa_savecfg_Click(object sender, EventArgs e)
+        {
+            send_cmd("config save");
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            get_config2();
+        }
+
+        private void importOldConfigToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string[] config;
+            ofd_loadcfg.FileName = def_filename;
+            if (ofd_loadcfg.ShowDialog() == DialogResult.OK)
+            {
+                def_filename = ofd_loadcfg.FileName;
+                file_opened = true;
+
+                this.Text = "AlceOSD Config Editor - " + Path.GetFileName(def_filename);
+
+                using (StreamReader sr = new StreamReader(ofd_loadcfg.OpenFile()))
+                {
+                    string fw = "";
+                    fw = sr.ReadToEnd();
+                    config = fw.Split('\n');
+                }
+                parse_config(config);
+            }
+        }
+
+        private void lb_fa_cfg_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lb_fa_cfg.SelectedIndex == -1)
+            {
+                return;
+            }
+            bt_fa_savealarm.Enabled = true;
+
+            string fa_name = lb_fa_cfg.Items[lb_fa_cfg.SelectedIndex].ToString();
+            Match m = Regex.Match(fa_name, @"\((.+)\/(.+)\).+");
+            if (!m.Success)
+            {
+                return;
+            }
+
+            int faid = Convert.ToInt16(m.Groups[1].Value);
+            int id = Convert.ToInt16(m.Groups[2].Value);
+            string[] cfg = flight_alarms[faid].Split(' ');
+
+            lbl_fa_name.Text = lb_fa.Items[id].ToString();
+
+            cb_fa_type.SelectedIndex = cfg[1] == "1" ? 0 : 1;
+            nud_fa_timer.Value = Convert.ToInt16(cfg[3]) * 100;
+            tb_fa_value.Text = cfg[2];
+        }
+
+        //Dictionary<string, int> flight_alarms_ids = new Dictionary<string, int>();
+        private void get_flight_alarms()
+        {
+            int state = 0;
+            bool done = false;
+
+            send_cmd("flight alarms", false);
+
+            flight_alarms.Clear();
+            lb_fa_cfg.Items.Clear();
+            while (!done)
+            {
+                string line = comPort.ReadLine();
+
+                switch (state)
+                {
+                    case 0:
+                    default:
+                        /* start */
+                        if (line.StartsWith("Available alarms"))
+                            state = 1;
+                        break;
+                    case 1:
+                        /* get available alarms */
+                        if (line.Trim() == "")
+                        {
+                            state = 2;
+                            break;
+                        }
+                        //string[] info = line.Split(',');
+                        //widget_ids.Add(info[2].Trim(), Convert.ToInt16(info[0]));
+
+                        //Console.WriteLine("getflightalarmsids: {0}", line);
+                        break;
+                    case 2:
+                        if (line.StartsWith("Active alarms"))
+                            state = 3;
+                        break;
+                    case 3:
+                        /* get configure alarms */
+                        if (line.Trim() == "")
+                        {
+                            state = 4;
+                            break;
+                        }
+
+                        int faid, id, mode, timer;
+                        double value;
+                        Match m = Regex.Match(line, @"nr(.+)\s\((.+)\).*mode=(.).*val=(.+)\stimer=(.+)\)");
+                        if (m.Success)
+                        {
+                            faid = Convert.ToInt16(m.Groups[1].Value);
+                            id = Convert.ToInt16(m.Groups[2].Value);
+                            mode = Convert.ToInt16(m.Groups[3].Value);
+                            value = Convert.ToDouble(m.Groups[4].Value, CultureInfo.InvariantCulture.NumberFormat);
+                            timer = Convert.ToInt16(m.Groups[5].Value);
+
+                            flight_alarms.Add(faid, id + " " + mode + " " + value + " " + timer);
+
+                            string fa_name = lb_fa.Items[id].ToString();
+
+                            lb_fa_cfg.Items.Add("(" + faid + "/" + id + ")" + fa_name);
+
+                            Console.WriteLine("configured flight alarms: {0} {1} {2} {3}", id, mode, value, timer);
+                        }
+                        break;
+                    case 4:
+                        /* done */
+                        if (line.Contains("remove all"))
+                            done = true;
+                        break;
+                }
+            }
+            bt_fa_savealarm.Enabled = false;
+        }
 
         /* ********************************************************************************* */
         /* ********************************************************************************* */
         /* update callback stuff */
-
 
         private void timer_submit_cfg_tag(string tag)
         {
@@ -3586,6 +3781,10 @@ namespace AlceOSD_updater
                         break;
                     case "rssi":
                         update_rssi_config();
+                        break;
+
+                    case "mavlink":
+                        update_mavlink_config();
                         break;
                     default:
                         break;
@@ -3782,206 +3981,5 @@ namespace AlceOSD_updater
                 recalculate_pb_osd_size();
         }
 
-        Dictionary<int, string> flight_alarms = new Dictionary<int, string>();
-        private void bt_fa_add_Click(object sender, EventArgs e)
-        {
-            int id = lb_fa.SelectedIndex;
-
-            //Console.WriteLine("selected alarm: {0}", id);
-
-            if (id < 0)
-                return;
-
-            int l = cb_fa_type.SelectedIndex == 0 ? 1 : 2;
-            int timer = (int)nud_fa_timer.Value / 100;
-            double value = 0;
-            try
-            {
-                value = Convert.ToDouble(tb_fa_value.Text);
-            }
-            catch
-            {
-                tb_fa_value.Text = "0";
-                value = 0;
-            }
-
-            send_cmd("flight alarms -a" + l + " -i" + id + " -v" + value + " -t" + timer);
-            get_flight_alarms();
-        }
-
-        private int get_faid()
-        {
-            if (lb_fa_cfg.SelectedIndex == -1)
-                return -1;
-
-            string fa_name = lb_fa_cfg.Items[lb_fa_cfg.SelectedIndex].ToString();
-            Match m = Regex.Match(fa_name, @"\((.+)\/(.+)\).+");
-            if (!m.Success)
-            {
-                return -1;
-            }
-
-            int faid = Convert.ToInt16(m.Groups[1].Value);
-            return faid;
-        }
-
-        private void bt_fa_del_Click(object sender, EventArgs e)
-        {
-            int faid = get_faid();
-            send_cmd("flight alarms -a0 -n" + faid);
-            get_flight_alarms();
-        }
-
-        private void bt_fa_savealarm_Click(object sender, EventArgs e)
-        {
-            int sel = lb_fa_cfg.SelectedIndex;
-            int faid = get_faid();
-            int l = cb_fa_type.SelectedIndex == 0 ? 1 : 2;
-            int timer = (int) nud_fa_timer.Value / 100;
-            double value = 0;
-            try
-            {
-                value = Convert.ToDouble(tb_fa_value.Text);
-            } catch
-            {
-
-            }
-            send_cmd("flight alarms -a" + l + " -n" + faid + " -v" + value + " -t" + timer);
-            get_flight_alarms();
-            lb_fa_cfg.SelectedIndex = sel;
-        }
-
-        private void bt_fa_savecfg_Click(object sender, EventArgs e)
-        {
-            send_cmd("config save");
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            get_config2();
-        }
-
-        private void importOldConfigToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            string[] config;
-            ofd_loadcfg.FileName = def_filename;
-            if (ofd_loadcfg.ShowDialog() == DialogResult.OK)
-            {
-                def_filename = ofd_loadcfg.FileName;
-                file_opened = true;
-
-                this.Text = "AlceOSD Config Editor - " + Path.GetFileName(def_filename);
-
-                using (StreamReader sr = new StreamReader(ofd_loadcfg.OpenFile()))
-                {
-                    string fw = "";
-                    fw = sr.ReadToEnd();
-                    config = fw.Split('\n');
-                }
-                parse_config(config);
-            }
-        }
-
-        private void lb_fa_cfg_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (lb_fa_cfg.SelectedIndex == -1)
-            {
-                return;
-            }
-            bt_fa_savealarm.Enabled = true;
-
-            string fa_name = lb_fa_cfg.Items[lb_fa_cfg.SelectedIndex].ToString();
-            Match m = Regex.Match(fa_name, @"\((.+)\/(.+)\).+");
-            if (!m.Success)
-            {
-                return;
-            }
-
-            int faid = Convert.ToInt16(m.Groups[1].Value);
-            int id = Convert.ToInt16(m.Groups[2].Value);
-            string[] cfg = flight_alarms[faid].Split(' ');
-
-            lbl_fa_name.Text = lb_fa.Items[id].ToString();
-
-            cb_fa_type.SelectedIndex = cfg[1] == "1" ? 0 : 1;
-            nud_fa_timer.Value = Convert.ToInt16(cfg[3]) * 100;
-            tb_fa_value.Text = cfg[2];
-        }
-
-        //Dictionary<string, int> flight_alarms_ids = new Dictionary<string, int>();
-        private void get_flight_alarms()
-        {
-            int state = 0;
-            bool done = false;
-
-            send_cmd("flight alarms", false);
-
-            flight_alarms.Clear();
-            lb_fa_cfg.Items.Clear();
-            while (!done)
-            {
-                string line = comPort.ReadLine();
-
-                switch (state)
-                {
-                    case 0:
-                    default:
-                        /* start */
-                        if (line.StartsWith("Available alarms"))
-                            state = 1;
-                        break;
-                    case 1:
-                        /* get available alarms */
-                        if (line.Trim() == "")
-                        {
-                            state = 2;
-                            break;
-                        }
-                        //string[] info = line.Split(',');
-                        //widget_ids.Add(info[2].Trim(), Convert.ToInt16(info[0]));
-
-                        //Console.WriteLine("getflightalarmsids: {0}", line);
-                        break;
-                    case 2:
-                        if (line.StartsWith("Active alarms"))
-                            state = 3;
-                        break;
-                    case 3:
-                        /* get configure alarms */
-                        if (line.Trim() == "")
-                        {
-                            state = 4;
-                            break;
-                        }
-
-                        int faid, id, mode, timer;
-                        double value;
-                        Match m = Regex.Match(line, @"nr(.+)\s\((.+)\).*mode=(.).*val=(.+)\stimer=(.+)\)");
-                        if (m.Success)
-                        {
-                            faid = Convert.ToInt16(m.Groups[1].Value);
-                            id = Convert.ToInt16(m.Groups[2].Value);
-                            mode = Convert.ToInt16(m.Groups[3].Value);
-                            value = Convert.ToDouble(m.Groups[4].Value, CultureInfo.InvariantCulture.NumberFormat);
-                            timer = Convert.ToInt16(m.Groups[5].Value);
-
-                            flight_alarms.Add(faid, id + " " + mode + " " + value + " " + timer);
-
-                            string fa_name = lb_fa.Items[id].ToString();
-
-                            lb_fa_cfg.Items.Add("(" + faid + "/" + id + ")" + fa_name);
-
-                            Console.WriteLine("configured flight alarms: {0} {1} {2} {3}", id, mode, value, timer);
-                        }
-                        break;
-                    case 4:
-                        /* done */
-                        if (line.Contains("remove all"))
-                            done = true;
-                        break;
-                }
-            }
-            bt_fa_savealarm.Enabled = false;
-        }
     }
 }

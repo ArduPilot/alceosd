@@ -1647,7 +1647,7 @@
             this.cbx_mavhb.TabIndex = 9;
             this.cbx_mavhb.Text = "OSD Mavlink Heartbeat";
             this.cbx_mavhb.UseVisualStyleBackColor = true;
-            this.cbx_mavhb.CheckedChanged += new System.EventHandler(this.cbx_mavhb_CheckedChanged);
+            this.cbx_mavhb.CheckedChanged += new System.EventHandler(this.mavlink_config_changed);
             // 
             // label45
             // 
@@ -1895,7 +1895,7 @@
             0,
             0,
             0});
-            this.nud_osdsysid.ValueChanged += new System.EventHandler(this.nud_osdsysid_ValueChanged);
+            this.nud_osdsysid.ValueChanged += new System.EventHandler(this.mavlink_config_changed);
             // 
             // nud_uavsysid
             // 
@@ -1913,7 +1913,7 @@
             0,
             0,
             0});
-            this.nud_uavsysid.ValueChanged += new System.EventHandler(this.nud_uavsysid_ValueChanged);
+            this.nud_uavsysid.ValueChanged += new System.EventHandler(this.mavlink_config_changed);
             // 
             // label34
             // 
