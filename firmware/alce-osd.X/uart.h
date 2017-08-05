@@ -111,6 +111,8 @@ void uart_set_config_baudrates(void);
 void uart_set_config_pins(void);
 void uart_set_props(unsigned char port, unsigned int props);
 void uart_set_direction(unsigned char port, unsigned char direction);
+void uart_set_client(unsigned char port, unsigned char client_id,
+                        unsigned char force);
 
 void shell_cmd_uart(char *args, void *data);
 
