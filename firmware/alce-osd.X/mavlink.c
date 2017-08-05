@@ -914,6 +914,7 @@ static void shell_cmd_config(char *args, void *data)
         shell_printf(" -i <osd_sysid>  AlceOSD mavlink system ID\n");
         shell_printf(" -u <uav_sysid>  UAV mavlink system ID (0 = auto-detect)\n");
         shell_printf(" -h <heartbeat>  Enable of disable AlceOSD mavlink heartbeat (0 or 1)\n");
+        shell_printf(" -r <ms_rate>    Mavlink shell message max rate (100ms steps)\n");
     } else {
         for (i = 0; i < t; i++) {
             val = atoi(argval[i].val);
@@ -932,6 +933,11 @@ static void shell_cmd_config(char *args, void *data)
                     val = TRIM(val, 0, 1);
                     config.mav.heartbeat = (u8) val;
                     shell_printf("AlceOSD mavlink heartbeat = %u\n", val);
+                    break;
+                case 'r':
+                    config.mav.shell_rate = (u8) (val / 100);
+                    shell_printf("Mavlink shell message max rate = %ums\n",
+                            config.mav.shell_rate * 100);
                     break;
                 default:
                     break;
