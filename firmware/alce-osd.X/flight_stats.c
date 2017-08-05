@@ -382,6 +382,7 @@ static void shell_cmd_alarms(char *args, void *data)
                     fa[t].cfg--;
                 
                 fa[nr_alarms-1].cfg = NULL;
+                fa[nr_alarms-1].ctrl &= ~FL_ALARM_ACTIVE;
                 fac[nr_alarms-1].props.id = FL_ALARM_ID_END;
                 
                 break;

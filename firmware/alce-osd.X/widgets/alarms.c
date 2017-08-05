@@ -34,6 +34,7 @@ struct widget_priv {
 #define REFRESH_RATE        50 /* milliseconds */
 #define MIN_DISPLAY_TIME    2  /* seconds */
 #define SCROLL_STEP         3
+#define END_STOP_TIME       10
 
 #define DISPLAY_TIME        (MIN_DISPLAY_TIME * 1000 / REFRESH_RATE)
 #define BLINK_CNT           (BLINK_RATE / REFRESH_RATE)
@@ -120,33 +121,27 @@ static void render(struct widget *w)
         if (ptr > 0)
             buf[ptr-2] = '\0';
 
-                
         z = (int) get_str_width(buf, get_font(1));
         if (z > X_SIZE) {
             draw_str(buf, priv->x, 2, ca, 1);
             
             /* scroll logic */
             if (priv->x > 0) {
-                if (++priv->wait > 5) {
+                if (++priv->wait > END_STOP_TIME) {
                     priv->i = -SCROLL_STEP;
                     priv->wait = 0;
                 } else {
                     priv->i = 0;
                 }
             } else if (priv->x < (X_SIZE - z)) {
-                if (priv->x < (X_SIZE - z) - SCROLL_STEP - 1) {
-                    priv->x = (X_SIZE - z - 1);
-                }
-                if (++priv->wait > 5) {
+                if (++priv->wait > END_STOP_TIME) {
                     priv->i = SCROLL_STEP;
                     priv->wait = 0;
                 } else {
                     priv->i = 0;
                 }
             }
-
-            if (z > X_SIZE)
-                priv->x += priv->i;
+            priv->x += priv->i;
         } else {
             draw_jstr(buf, X_SIZE/2, 2, JUST_HCENTER | JUST_TOP, ca, 1);
         }
@@ -160,7 +155,7 @@ static void render(struct widget *w)
 }
 
 const struct widget_ops alarms_widget_ops = {
-    .name = "Alarms",
+    .name = "Flight Alarms",
     .mavname = "ALARMS",
     .id = WIDGET_ALARMS_ID,
     .init = NULL,
