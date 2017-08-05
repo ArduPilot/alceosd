@@ -310,8 +310,8 @@ static void shell_cmd_config(char *args, void *data)
         }
         p = shell_get_argval(argval, 'c');
         if (p != NULL) {
-            i = atoi(p->val) - 1;
-            i = min(i, 18);
+            i = atoi(p->val);
+            i = TRIM(i, 0, 17);
             cfg->ch = i;
         }
         p = shell_get_argval(argval, 'l');
