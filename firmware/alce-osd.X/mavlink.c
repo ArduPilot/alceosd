@@ -321,6 +321,18 @@ static void mavlink_set_active_channels(struct uart_client *cli)
 }
 static void mavlink_unset_active_channels(struct uart_client *cli)
 {
+    u8 i = 0;
+    /* remove channel from routing table */
+    while (i < total_routes) {
+        if (routes[i].ch == cli->ch) {
+            total_routes--;
+            if (total_routes > 0)
+                memcpy(&routes[i], &routes[i+1],
+                        sizeof(struct mavlink_route_entry) * (total_routes - i));
+        } else {
+            i++;
+        }
+    }
     active_channel_mask &= ~(1 << (cli->ch));
 }
 
