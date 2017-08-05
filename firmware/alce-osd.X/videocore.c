@@ -2331,7 +2331,7 @@ static void shell_cmd_swconfig(char *args, void *data)
         if (p != NULL) {
             i = atoi(p->val);
             i = TRIM(i, 0, 17);
-            swcfg->ch = i - 1;
+            swcfg->ch = i;
         }
         p = shell_get_argval(argval, 'l');
         if (p != NULL) {
