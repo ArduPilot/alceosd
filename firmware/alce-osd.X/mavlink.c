@@ -396,6 +396,8 @@ static unsigned char mavlink_get_route(unsigned char ch, mavlink_message_t *msg)
             route |= 1 << routes[i].ch;
         }
     }
+    /* mask out inactive channels */
+    route &= active_channel_mask;
     if (route)
         return route;
 
@@ -406,7 +408,7 @@ static unsigned char mavlink_get_route(unsigned char ch, mavlink_message_t *msg)
             route |= 1 << routes[i].ch;
         }
     }
-    return route;
+    return route & active_channel_mask;
 }
 
 void mavlink_send_msg(mavlink_message_t *msg)
