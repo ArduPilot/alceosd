@@ -1576,20 +1576,12 @@ namespace AlceOSD_updater
             }
         }
         
-        private int pos2canvas(Widget w, char dir)
+        private void pos2canvas(Widget w)
         {
             if (w == null)
-                return 0;
-
-            int pos = (dir == 'H') ? w.x : w.y;
-            int div = (dir == 'H') ? w.h : w.v;
-            int osd_size = (dir == 'H') ? xsize : ysize;
-            int wid_size = (dir == 'H') ? w.canvas.width * 4 : w.canvas.height;
-
-            if (div > 0)
-                pos += (osd_size - wid_size) / div;
-
-            return pos;
+                return;
+            w.canvas.x0 = w.x + (w.h > 0 ? (xsize - w.canvas.width * 4) / (w.h > 1 ? 2 : 1) : 0);
+            w.canvas.y0 = w.y + (w.v > 0 ? (ysize - w.canvas.height) / (w.v > 1 ? 2 : 1) : 0);
         }
 
         private void flag_submit(string type)
@@ -1603,12 +1595,9 @@ namespace AlceOSD_updater
             {
                 Widget w = widget_cfg.get_widget(name_uid);
                 timer_submit.Tag += "P";
-                if (w.canvas.loaded) // ca.ContainsKey(name_uid))
+                if (w.canvas.loaded)
                 {
-                    //Canvas c = ca[name_uid];
-                    w.canvas.x0 = pos2canvas(w, 'H');
-                    w.canvas.y0 = pos2canvas(w, 'V');
-                    //ca[name_uid] = c;
+                    pos2canvas(w);
                     pb_osd.Invalidate();
                 }
             }
@@ -1795,10 +1784,7 @@ namespace AlceOSD_updater
             pb_osd.Size = s;
             
             foreach (Widget w in widget_cfg.get_widget_list((int)nud_seltab.Value))
-            {
-                w.canvas.x0 = pos2canvas(w, 'H');
-                w.canvas.y0 = pos2canvas(w, 'V');
-            }
+                pos2canvas(w);
         }
 
         private void get_widget_ids()
@@ -1893,57 +1879,6 @@ namespace AlceOSD_updater
             return true;
         }
 
-        private void get_widget_bitmap(Widget w)
-        {
-            String line;
-            w.canvas.width = 0; w.canvas.height = 0;
-            w.canvas.loaded = false;
-
-            timer_com.Enabled = false;
-            send_cmd("widgets bitmap " + w.get_iduid());
-            try
-            {
-                do
-                {
-                    Match m;
-                    line = comPort.ReadLine();
-
-                    m = Regex.Match(line, @"^w:(\d+)");
-                    if (m.Success)
-                    {
-                        w.canvas.width = Convert.ToInt16(m.Groups[1].Value);
-                        continue;
-                    }
-
-                    m = Regex.Match(line, @"^h:(\d+)");
-                    if (m.Success)
-                    {
-                        w.canvas.height = Convert.ToInt16(m.Groups[1].Value);
-                    }
-
-                } while (!line.StartsWith("h:"));
-                int size = w.canvas.width * w.canvas.height;
-                Console.WriteLine("w:{0} h:{1} s:{2}", w.canvas.width, w.canvas.height, size);
-                if (size > 0)
-                {
-                    int left = size;
-                    byte[] data = new byte[size];
-                    comPort.Read(data, 0, size);
-                    w.canvas.bitmap = data;
-                    w.canvas.loaded = true;
-                }
-            }
-            catch
-            {
-                w.canvas.width = 0; w.canvas.height = 0;
-                MessageBox.Show("Error loading widget bitmap", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            System.Threading.Thread.Sleep(10);
-            comPort.DiscardInBuffer();
-
-            timer_com.Enabled = true;
-        }
-
         private void pb_osd_Paint(object sender, PaintEventArgs e)
         {
             //Graphics g = pb_osd.CreateGraphics();
@@ -2009,14 +1944,51 @@ namespace AlceOSD_updater
 
         private void get_widget_canvas(Widget w)
         {
-            Console.WriteLine("get_widget_canvas() iduid={0} {1}", w.get_iduid(), w.name + w.uid);
-
-            get_widget_bitmap(w);
-            if (w.canvas.loaded)
+            string line;
+            //Console.WriteLine("get_widget_canvas() iduid={0} {1}", w.get_iduid(), w.name + w.uid);
+            w.canvas.width = 0;
+            w.canvas.height = 0;
+            w.canvas.loaded = false;
+            timer_com.Enabled = false;
+            send_cmd("widgets bitmap " + w.get_iduid());
+            try
             {
-                w.canvas.x0 = pos2canvas(w, 'H');
-                w.canvas.y0 = pos2canvas(w, 'V');
+                do
+                {
+                    Match m;
+                    line = comPort.ReadLine();
+                    m = Regex.Match(line, @"^w:(\d+)");
+                    if (m.Success)
+                    {
+                        w.canvas.width = Convert.ToInt16(m.Groups[1].Value);
+                        continue;
+                    }
+                    m = Regex.Match(line, @"^h:(\d+)");
+                    if (m.Success)
+                    {
+                        w.canvas.height = Convert.ToInt16(m.Groups[1].Value);
+                    }
+                } while (!line.StartsWith("h:"));
+                int size = w.canvas.width * w.canvas.height;
+                //Console.WriteLine("w:{0} h:{1} s:{2}", w.canvas.width, w.canvas.height, size);
+                if (size > 0)
+                {
+                    byte[] data = new byte[size];
+                    comPort.Read(data, 0, size);
+                    w.canvas.bitmap = data;
+                    w.canvas.loaded = true;
+                }
             }
+            catch
+            {
+                w.canvas.width = 0;
+                w.canvas.height = 0;
+                MessageBox.Show("Error loading widget " + w.name + w.uid + " bitmap", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            System.Threading.Thread.Sleep(10);
+            comPort.DiscardInBuffer();
+
+            timer_com.Enabled = true;
         }
 
         bool load_lock = false;
@@ -2043,11 +2015,10 @@ namespace AlceOSD_updater
             foreach (Widget w in ws)
             {
                 string name_uid = w.name + w.uid;
-                w.canvas.x0 = pos2canvas(w, 'H');
-                w.canvas.y0 = pos2canvas(w, 'V');
-
                 if (!w.canvas.loaded)
                     get_widget_canvas(w);
+
+                pos2canvas(w);
 
                 total++;
                 int progress = (total * 100) / size;
@@ -2074,10 +2045,8 @@ namespace AlceOSD_updater
                 string name_uid = get_selected_widget();
                 _startPt = e.Location;
                 Widget w = widget_cfg.get_widget(name_uid);
-                //if (ca.ContainsKey(name_uid))
                 if (w != null && w.canvas.loaded)
                 {
-                    //Canvas c = ca[name_uid];
                     if ((_startPt.X >= w.canvas.x0) && (_startPt.X <= (w.canvas.x0 + w.canvas.width * 4)) &&
                          (_startPt.Y >= w.canvas.y0) && (_startPt.Y <= (w.canvas.y0 + w.canvas.height)))
                     {
@@ -2087,17 +2056,15 @@ namespace AlceOSD_updater
 
                 if (!_tracking)
                 {
-                    //foreach (KeyValuePair<String, Canvas> pair in ca)
                     foreach (Widget w2 in widget_cfg.get_widget_list((int)nud_seltab.Value))
                     {
-                        //Canvas c = pair.Value;
                         if (!w2.canvas.loaded)
                             continue;
 
                         if ((_startPt.X >= w2.canvas.x0) && (_startPt.X <= (w2.canvas.x0 + w2.canvas.width * 4)) &&
                             (_startPt.Y >= w2.canvas.y0) && (_startPt.Y <= (w2.canvas.y0 + w2.canvas.height)))
                         {
-                            lb_widgets.SelectedItem = w2.name + w2.uid; //pair.Key;
+                            lb_widgets.SelectedItem = w2.name + w2.uid;
                             _tracking = true;
                             pb_osd.Invalidate();
                             break;
@@ -2145,18 +2112,13 @@ namespace AlceOSD_updater
                 return;
             load_lock = true;
 
-            string[] lst = new string[lb_widgets.Items.Count];
-            lb_widgets.Items.CopyTo(lst, 0);
-
+            Widget[] lst = widget_cfg.get_widget_list((int)nud_seltab.Value);
             int total = 0, size = lst.Length;
             pb.Value = 0;
-            foreach (string name_uid in lst)
+            foreach (Widget w in lst)
             {
-                //Canvas c;
-                Widget w = widget_cfg.get_widget(name_uid);
                 get_widget_canvas(w);
-                //if (w.canvas.width > 0)
-                //    w.canvas.shown = true;
+                pos2canvas(w);
 
                 total++;
                 int progress = (total * 100) / size;
@@ -2165,7 +2127,6 @@ namespace AlceOSD_updater
                     pb.Value = progress;
                     Application.DoEvents();
                 }
-
             }
             pb_osd.Invalidate();
             load_lock = false;
@@ -2178,8 +2139,6 @@ namespace AlceOSD_updater
             string name_uid = lb_widgets.Text;
             Widget w = widget_cfg.get_widget(name_uid);
             get_widget_canvas(w);
-            //if (w.canvas.width > 0)
-            //    w.canvas.shown = true;
             pb_osd.Invalidate();
         }
 
