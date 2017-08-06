@@ -35,45 +35,17 @@ namespace AlceOSD_updater
 
             public bool shown;
         }
-
         Dictionary<string, Canvas> ca = new Dictionary<string,Canvas>();
-        Dictionary<string, int> widget_ids = new Dictionary<string, int>();
-
         int xsize = 0, ysize = 0;
-
-        Dictionary<string, Dictionary<string, double>> widgets = new Dictionary<string, Dictionary<string, double>>();
-        Dictionary<string, string> widget_name_map = new Dictionary<string, string>() {
-            {"Altitude", "ALTITUD"},
-            {"Alarms", "ALARMS"},
-            {"Battery", "BATTERY"},
-            {"Console", "CONSOLE"},
-            {"Compass", "COMPASS"},
-            {"Flight Info", "FLTINFO"},
-            {"Flight Mode", "FLTMODE"},
-            {"StOrM32 gimbal", "GIMBAL"},
-            {"GPS info", "GPSINFO"},
-            {"Home info", "HOMEINF"},
-            {"Artificial Horizon", "HORIZON"},
-            {"Radar", "RADAR"},
-            {"RC Channels", "RCCHAN"},
-            {"RSSI", "RSSI"},
-            {"Sonar", "SONAR"},
-            {"Speed", "SPEED"},
-            {"Temperature", "TEMPER"},
-            {"Throttle", "THROTTL"},
-            {"Variometer", "VARIO"},
-            {"Video levels", "VIDLVL"},
-            {"Video profile", "VIDPRF"},
-            {"Wind info", "WINDINF"},
-        };
 
         string def_filename = "alceosd_config.txt";
         bool file_opened = false;
 
         string hw_rev = "";
         string fw_version = "";
-        
+
         Comm comPort = new Comm();
+        Widgets widget_cfg = new Widgets();
 
         UserSettings settings;
 
@@ -567,7 +539,7 @@ namespace AlceOSD_updater
                 for (int flush = 0; flush < 4; flush++)
                 {
                     comPort.WriteLine("");
-                    System.Threading.Thread.Sleep(100);
+                    System.Threading.Thread.Sleep(10);
                 }
                 comPort.DiscardInBuffer();
 
@@ -795,12 +767,20 @@ namespace AlceOSD_updater
             config.Add("MAV_EXTRA2 = " + Convert.ToDouble(nud_streamExtra2.Value));
             config.Add("MAV_EXTRA3 = " + Convert.ToDouble(nud_streamExtra3.Value));
             /* widgets */
-            foreach (KeyValuePair<string, Dictionary<string, double>> pair in widgets)
+            foreach (Widget w in widget_cfg.get_widget_list())
             {
-                foreach (KeyValuePair<string, double> pair2 in pair.Value)
-                {
-                    config.Add(pair.Key + "_" + pair2.Key + " = " + Convert.ToString(pair2.Value, CultureInfo.InvariantCulture.NumberFormat));
-                }
+                config.Add(w.name + w.uid + "_TAB = " + Convert.ToString(w.tab, CultureInfo.InvariantCulture.NumberFormat));
+                config.Add(w.name + w.uid + "_X = " + Convert.ToString(w.x, CultureInfo.InvariantCulture.NumberFormat));
+                config.Add(w.name + w.uid + "_Y = " + Convert.ToString(w.y, CultureInfo.InvariantCulture.NumberFormat));
+                config.Add(w.name + w.uid + "_HJUST = " + Convert.ToString(w.h, CultureInfo.InvariantCulture.NumberFormat));
+                config.Add(w.name + w.uid + "_VJUST = " + Convert.ToString(w.v, CultureInfo.InvariantCulture.NumberFormat));
+                config.Add(w.name + w.uid + "_MODE = " + Convert.ToString(w.mode, CultureInfo.InvariantCulture.NumberFormat));
+                config.Add(w.name + w.uid + "_SOURCE = " + Convert.ToString(w.source, CultureInfo.InvariantCulture.NumberFormat));
+                config.Add(w.name + w.uid + "_UNITS = " + Convert.ToString(w.units, CultureInfo.InvariantCulture.NumberFormat));
+                config.Add(w.name + w.uid + "_PARAM1 = " + Convert.ToString(w.param[0], CultureInfo.InvariantCulture.NumberFormat));
+                config.Add(w.name + w.uid + "_PARAM2 = " + Convert.ToString(w.param[1], CultureInfo.InvariantCulture.NumberFormat));
+                config.Add(w.name + w.uid + "_PARAM3 = " + Convert.ToString(w.param[2], CultureInfo.InvariantCulture.NumberFormat));
+                config.Add(w.name + w.uid + "_PARAM4 = " + Convert.ToString(w.param[3], CultureInfo.InvariantCulture.NumberFormat));
             }
             config.Add("--");
             config.Add("");
@@ -1171,70 +1151,32 @@ namespace AlceOSD_updater
         /* ********************************************************************************* */
         /* widgets stuff */
 
-        private string get_widget_name(string name_uid)
-        {
-            return name_uid.Substring(0, name_uid.Length - 1);
-        }
-        private int get_widget_uid(string name_uid)
-        {
-            return (int)name_uid.ElementAt(name_uid.Length - 1) - '0';
-        }
-        private int get_widget_id(string name_uid)
-        {
-            string name = get_widget_name(name_uid);
-            int id = -1;
-            if (widget_ids.ContainsKey(name))
-            {
-                id = widget_ids[name];
-            }
-            Console.WriteLine("get_widget_id() nuid={0} id={1}", name_uid, id);
-            return id;
-        }
-        private string get_widget_iduid(string name_uid)
-        {
-            return get_widget_id(name_uid) + "+" + get_widget_uid(name_uid);
-        }
-
         private void submit_widget_config_pos(string name_uid)
         {
             if (!shell_active)
                 return;
-
-            if (!widgets.ContainsKey(name_uid))
-                return;
-
-            Dictionary<string, double> w = widgets[name_uid];
-
-            string iduid = get_widget_iduid(name_uid);
-            string cmd = "widgets cfg -i " + iduid;
-            cmd += " -x " + w["X"];
-            cmd += " -y " + w["Y"];
-            cmd += " -h " + w["HJUST"];
-            cmd += " -v " + w["VJUST"];
+            Widget w = widget_cfg.get_widget(name_uid);
+            string cmd = "widgets cfg -i " + w.get_id() + "+" + w.uid;
+            cmd += " -x " + w.x;
+            cmd += " -y " + w.y;
+            cmd += " -h " + w.h;
+            cmd += " -v " + w.v;
             send_cmd(cmd);
         }
-
-
 
         private void submit_widget_config_other(string name_uid)
         {
             if (!shell_active)
                 return;
-
-            if (!widgets.ContainsKey(name_uid))
-                return;
-
-            Dictionary<string, double> w = widgets[name_uid];
-            string iduid = get_widget_iduid(name_uid);
-
-            string cmd = "widgets cfg -i " + iduid;
-            cmd += " -m " + w["MODE"];
-            cmd += " -s " + w["SOURCE"];
-            cmd += " -u " + w["UNITS"];
-            cmd += " -a " + w["PARAM1"];
-            cmd += " -b " + w["PARAM2"];
-            cmd += " -c " + w["PARAM3"];
-            cmd += " -d " + w["PARAM4"];
+            Widget w = widget_cfg.get_widget(name_uid);
+            string cmd = "widgets cfg -i " + w.get_id() + "+" + w.uid;
+            cmd += " -m " + w.mode;
+            cmd += " -s " + w.source;
+            cmd += " -u " + w.units;
+            cmd += " -a " + w.param[0];
+            cmd += " -b " + w.param[1];
+            cmd += " -c " + w.param[2];
+            cmd += " -d " + w.param[3];
             send_cmd(cmd);
             System.Threading.Thread.Sleep(100);
             comPort.DiscardInBuffer();
@@ -1244,74 +1186,21 @@ namespace AlceOSD_updater
             ca[name_uid] = c;
             pb_osd.Invalidate();
         }
-
-
-
+        
         private void populateWidgetsConfig(List<string> config)
         {
-
-            widgets.Clear();
-
-            string[] entry, entry2;
-            string key, val, param;
-            double dval;
             foreach (string value in config)
-            {
-                entry = value.Split('=');
-                if (entry.Count() < 2)
-                    continue;
-                key = entry.ElementAt(0).Trim();
-
-                entry2 = key.Split('_');
-
-                key = entry2.ElementAt(0).Trim();
-                param = entry2.ElementAt(1).Trim();
-
-                val = entry.ElementAt(1).Trim();
-                dval = Convert.ToDouble(val, CultureInfo.InvariantCulture.NumberFormat);
-                //tb_log.AppendText(key + "=" + val + "\n");
-
-                if (!widgets.ContainsKey(key))
-                    widgets[key] = new Dictionary<string, double>();
-
-                widgets[key][param] = dval;
-            }
-
+                widget_cfg.parse_mavcfg(value);
             update_lb_widgets();
-
-            /*
-            foreach (KeyValuePair<string, Dictionary<string, double>> pair in widgets)
-            {
-
-                txt_log.AppendText(pair.Key + ": ");
-                foreach (KeyValuePair<string, double> pair2 in pair.Value)
-                    txt_log.AppendText(pair2.Key + "=" + pair2.Value + "; ");
-                txt_log.AppendText("\n");
-            }
-            */
         }
-
 
         private void update_lb_widgets()
         {
             lb_widgets.Items.Clear();
-            foreach (KeyValuePair<string, Dictionary<string, double>> pair in widgets)
-            {
-                if (pair.Value["TAB"] == (double) nud_seltab.Value)
-                {
-                    lb_widgets.Items.Add(pair.Key);
-                }
-            }
+            foreach (Widget w in widget_cfg.get_widget_list((int)nud_seltab.Value))
+                lb_widgets.Items.Add(w.name + w.uid);
             load_lb_widgets_canvas();
         }
-
-
-
-
-
-
-
-
 
         private void nud_seltab_ValueChanged(object sender, EventArgs e)
         {
@@ -1329,28 +1218,26 @@ namespace AlceOSD_updater
             lbl[idx - 1].Text = text;
         }
 
-
-
         private void refresh_widget_config(string name_uid)
         {
-            Dictionary<string, double> wcfg = widgets[name_uid];
-            nud_wxpos.Value = Convert.ToDecimal(wcfg["X"]);
-            nud_wypos.Value = Convert.ToDecimal(wcfg["Y"]);
-            cb_wvjust.SelectedIndex = Convert.ToByte(wcfg["VJUST"]);
-            cb_whjust.SelectedIndex = Convert.ToByte(wcfg["HJUST"]);
-            cb_wunits.SelectedIndex = Convert.ToByte(wcfg["UNITS"]);
+            Widget w = widget_cfg.get_widget(name_uid);
 
-            tb_wp1.Text = wcfg["PARAM1"].ToString();
-            tb_wp2.Text = wcfg["PARAM2"].ToString();
-            tb_wp3.Text = wcfg["PARAM3"].ToString();
-            tb_wp4.Text = wcfg["PARAM4"].ToString();
+            nud_wxpos.Value = w.x;
+            nud_wypos.Value = w.y;
+            cb_wvjust.SelectedIndex = w.v;
+            cb_whjust.SelectedIndex = w.h;
+            cb_wunits.SelectedIndex = w.units;
+
+            tb_wp1.Text = w.param[0].ToString();
+            tb_wp2.Text = w.param[1].ToString();
+            tb_wp3.Text = w.param[2].ToString();
+            tb_wp4.Text = w.param[3].ToString();
 
             if (cb_wmode.Items.Count > 0)
-                cb_wmode.SelectedIndex = Convert.ToByte(wcfg["MODE"]);
+                cb_wmode.SelectedIndex = w.mode;
             if (cb_wsource.Items.Count > 0)
-                cb_wsource.SelectedIndex = Convert.ToByte(wcfg["SOURCE"]);
+                cb_wsource.SelectedIndex = w.source;
         }
-
 
         private string get_selected_widget()
         {
@@ -1359,11 +1246,8 @@ namespace AlceOSD_updater
                 ret = lb_widgets.SelectedItem.ToString();
             else
                 ret = "";
-
             return ret;
         }
-
-
 
         bool timer_submit_allowed = true;
 
@@ -1373,13 +1257,15 @@ namespace AlceOSD_updater
                 return;
 
             string name_uid = lb_widgets.SelectedItem.ToString();
-            string name = name_uid.Substring(0, name_uid.Length - 1);
+            Widget w = widget_cfg.get_widget(name_uid);
 
             //get_widget_config(name_uid);
 
             timer_submit_allowed = false;
 
             pb_osd.Invalidate();
+
+            lbl_wname.Text = w.get_title();
 
             lbl_wp1.Visible = false;
             lbl_wp2.Visible = false;
@@ -1407,13 +1293,21 @@ namespace AlceOSD_updater
             cb_wunits.Items.Add("Imperial");
 
             /* setup display */
-            switch (name)
+            switch (w.name)
             {
                 case "ALARMS":
-                    lbl_wname.Text = "Alarms";
+                case "TEMPER":
+                case "THROTTL":
+                case "VARIO":
+                case "VIDLVL":
+                case "COMPASS":
+                case "CONSOLE":
+                case "FLTINFO":
+                case "HOMEINF":
+                case "SONAR":
+                case "GIMBAL":
                     break;
                 case "ALTITUD":
-                    lbl_wname.Text = "Altitude";
                     cb_wmode.Items.Add("Dial");
                     cb_wmode.Items.Add("Text");
                     cb_wmode.Visible = true;
@@ -1426,7 +1320,6 @@ namespace AlceOSD_updater
                     lbl_wsource.Visible = true;
                     break;
                 case "BATTERY":
-                    lbl_wname.Text = "Battery, voltage and current";
                     cb_wmode.Items.Add("Mavlink voltage+current");
                     cb_wmode.Items.Add("ADC CH0");
                     cb_wmode.Items.Add("ADC CH1");
@@ -1437,17 +1330,7 @@ namespace AlceOSD_updater
                     set_param(1, "ADC0 cal");
                     set_param(2, "ADC1 cal");
                     break;
-                case "COMPASS":
-                    lbl_wname.Text = "Compass";
-                    break;
-                case "CONSOLE":
-                    lbl_wname.Text = "Console";
-                    break;
-                case "FLTINFO":
-                    lbl_wname.Text = "Flight information";
-                    break;
                 case "FLTMODE":
-                    lbl_wname.Text = "Flight mode";
                     lbl_wmode.Text = "Font";
                     lbl_wmode.Visible = true;
                     cb_wmode.Visible = true;
@@ -1455,11 +1338,7 @@ namespace AlceOSD_updater
                     cb_wmode.Items.Add("Medium");
                     cb_wmode.Items.Add("Large");
                     break;
-                case "GIMBAL":
-                    lbl_wname.Text = "Storm32 gimbal";
-                    break;
                 case "GPSINFO":
-                    lbl_wname.Text = "GPS coords/status";
                     lbl_wmode.Text = "Font";
                     lbl_wmode.Visible = true;
                     lbl_wsource.Text = "Source";
@@ -1472,18 +1351,13 @@ namespace AlceOSD_updater
                     cb_wsource.Items.Add("GPS1");
                     cb_wsource.Items.Add("GPS2");
                     break;
-                case "HOMEINF":
-                    lbl_wname.Text = "Home information (distance, altitude, direction)";
-                    break;
                 case "HORIZON":
-                    lbl_wname.Text = "Artificial horizon";
                     lbl_wmode.Visible = true;
                     cb_wmode.Visible = true;
                     cb_wmode.Items.Add("Default");
                     cb_wmode.Items.Add("Compass");
                     break;
                 case "RADAR":
-                    lbl_wname.Text = "Radar";
                     lbl_wmode.Visible = true;
                     cb_wmode.Visible = true;
                     cb_wmode.Items.Add("UAV point of view (small)");
@@ -1496,7 +1370,6 @@ namespace AlceOSD_updater
                     cb_wmode.Items.Add("Waypoints, pilot point of view, north up (large)");
                     break;
                 case "RCCHAN":
-                    lbl_wname.Text = "RC Channel monitor";
                     lbl_wmode.Visible = true;
                     cb_wmode.Visible = true;
                     cb_wmode.Items.Add("Numbers and Bars");
@@ -1504,7 +1377,6 @@ namespace AlceOSD_updater
                     cb_wmode.Items.Add("Bars only");
                     break;
                 case "RSSI":
-                    lbl_wname.Text = "RSSI monitor";
                     lbl_wsource.Visible = true;
                     cb_wsource.Visible = true;
                     cb_wsource.Items.Add("Mavlink RSSI");
@@ -1514,11 +1386,7 @@ namespace AlceOSD_updater
                     set_param(2, "Max value");
                     set_param(3, "RC(0-17=CH1-18)/ADC");
                     break;
-                case "SONAR":
-                    lbl_wname.Text = "Sonar";
-                    break;
                 case "SPEED":
-                    lbl_wname.Text = "Speed";
                     lbl_wsource.Visible = true;
                     cb_wsource.Visible = true;
                     cb_wsource.Items.Add("Air speed");
@@ -1536,27 +1404,13 @@ namespace AlceOSD_updater
                     cb_wunits.Items.Add("f/s");
                     cb_wunits.Items.Add("kn");
                     break;
-                case "TEMPER":
-                    lbl_wname.Text = "Temperature";
-                    break;
-                case "THROTTL":
-                    lbl_wname.Text = "Throttle bar";
-                    break;
-                case "VARIO":
-                    lbl_wname.Text = "Variometer chart / vertical speed";
-                    break;
-                case "VIDLVL":
-                    lbl_wname.Text = "Video levels (for debug)";
-                    break;
                 case "VIDPRF":
-                    lbl_wname.Text = "Video profile";
                     lbl_wmode.Visible = true;
                     cb_wmode.Visible = true;
                     cb_wmode.Items.Add("Profile 0 (default)");
                     cb_wmode.Items.Add("Profile 1");
                     break;
                 case "WINDINF":
-                    lbl_wname.Text = "Wind speed";
                     cb_wunits.Items.Clear();
                     cb_wunits.Items.Add("Default");
                     cb_wunits.Items.Add("km/h");
@@ -1566,15 +1420,25 @@ namespace AlceOSD_updater
                     cb_wunits.Items.Add("kn");
                     break;
                 default:
+                    lbl_wmode.Visible = true;
+                    cb_wmode.Visible = true;
+                    for (int i = 0; i < 16; i++)
+                        cb_wmode.Items.Add(i.ToString());
+                    lbl_wsource.Visible = true;
+                    cb_wsource.Visible = true;
+                    for (int i = 0; i < 8; i++)
+                        cb_wsource.Items.Add(i.ToString());
+                    set_param(1, "Param1");
+                    set_param(2, "Param2");
+                    set_param(3, "Param3");
+                    set_param(4, "Param4");
                     break;
             }
 
             refresh_widget_config(name_uid);
             timer_submit_allowed = true;
         }
-
-
-
+        
         public static string ShowMoveToTabDialog()
         {
             Form prompt = new Form();
@@ -1597,15 +1461,17 @@ namespace AlceOSD_updater
 
             return prompt.ShowDialog() == DialogResult.OK ? nud.Value.ToString() : "";
         }
-
-
+        
         private void moveToTabToolStripMenuItem_Click(object sender, EventArgs e)
         {
             string new_tab = ShowMoveToTabDialog();
             if (new_tab == "")
                 return;
-            string w = lb_widgets.SelectedItem.ToString();
-            widgets[w]["TAB"] = Convert.ToDouble(new_tab);
+
+            string mavname_uid = lb_widgets.SelectedItem.ToString();
+            Widget w = widget_cfg.get_widget(mavname_uid);
+            w.tab = Convert.ToInt16(new_tab);
+
             update_lb_widgets();
         }
 
@@ -1621,17 +1487,16 @@ namespace AlceOSD_updater
                 cm_widget.Items[0].Enabled = true;
                 cm_widget.Items[2].Enabled = true;
             }
-
         }
-
-
-
-
-
-
-
+        
         private string AddNewWidgetDialog()
         {
+            if (widget_cfg.name_map.Count == 0)
+            {
+                MessageBox.Show("Please connect to the board to retrieve available widgets list.",
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return "";
+            }
             Form prompt = new Form();
             prompt.Width = 300;
             prompt.Height = 150;
@@ -1650,83 +1515,56 @@ namespace AlceOSD_updater
             prompt.Controls.Add(textLabel);
             prompt.AcceptButton = confirmation;
 
-            foreach (KeyValuePair<string, string> pair in widget_name_map)
+            foreach (KeyValuePair<string, string> pair in widget_cfg.name_map)
             {
-                cb.Items.Add(pair.Key);
+                cb.Items.Add(pair.Value);
             }
 
             cb.SelectedIndex = 0;
-
-            string r;
+            string r = "";
             if (prompt.ShowDialog() == DialogResult.OK)
             {
                 try
                 {
                     r = cb.SelectedItem.ToString();
+                    foreach (KeyValuePair<string, string> pair in widget_cfg.name_map)
+                    {
+                        if (pair.Value == r)
+                        {
+                            r = pair.Key;
+                            break;
+                        }
+                    }
                 }
                 catch
                 {
                     r = "";
                 }
             }
-            else
-            {
-                r = "";
-            }
             return r;
         }
 
         private void addWidgetToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string w = AddNewWidgetDialog();
-
-            if (w == "")
+            string mavname = AddNewWidgetDialog();
+            if (mavname == "")
                 return;
 
-            string wid = widget_name_map[w];
-
-            List<string> all_wids = new List<string>();
-
-            all_wids = widgets.Keys.ToList<string>();
-
-            int i;
-            for (i = 0; i < 10; i++) {
-                if (!widgets.Keys.Contains(wid + i.ToString()))
-                    break;
-            }
-
-            if (i == 10)
+            Widget w = widget_cfg.add_widget(mavname);
+            if (w == null)
             {
-                MessageBox.Show("Maximum number of " + wid + " widgets reached.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Maximum number of " + mavname + " widgets reached.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-
-            string name_uid = wid + i.ToString();
-
-            Dictionary<string, double> new_wid_d = new Dictionary<string, double>() {
-                {"TAB", Convert.ToDouble(nud_seltab.Value) },
-                {"X", 0.0 },
-                {"Y", 0.0 },
-                {"HJUST", 2.0 },
-                {"VJUST", 2.0 },
-                {"MODE", 0.0 },
-                {"SOURCE", 0.0 },
-                {"UNITS", 0.0 },
-                {"PARAM1", 0.0 },
-                {"PARAM2", 0.0 },
-                {"PARAM3", 0.0 },
-                {"PARAM4", 0.0 },
-            };
-            widgets[name_uid] = new_wid_d;
-
+            w.tab = (int)nud_seltab.Value;
+            w.h = 2;
+            w.v = 2;
+            
             if (shell_active)
             {
-                int id = get_widget_id(name_uid);
-                send_cmd("widgets add -i " + id + " -t " + ((int)nud_seltab.Value));
+                send_cmd("widgets add -i " + w.get_id() + " -t " + w.tab);
                 System.Threading.Thread.Sleep(100);
-
             }
-
             update_lb_widgets();
         }
 
@@ -1738,39 +1576,25 @@ namespace AlceOSD_updater
                 MessageBoxButtons.YesNo);
             if (result == DialogResult.Yes)
             {
-                widgets.Remove(name_uid);
                 if (shell_active)
                 {
-                    int id = get_widget_id(name_uid);
-                    int uid = get_widget_uid(name_uid);
-                    send_cmd("widgets rm " + id + "+" + uid);
+                    Widget w = widget_cfg.get_widget(name_uid);
+                    send_cmd("widgets rm " + w.get_id() + "+" + w.uid);
                     System.Threading.Thread.Sleep(100);
-
                 }
+                widget_cfg.remove_widget(name_uid);
                 update_lb_widgets();
             }
         }
-
-
-        private void save_cfg(string filename)
-        {
-            using (StreamWriter sw = new StreamWriter(filename))
-            {
-                string[] config = dump_config();
-
-                foreach (string element in config)
-                    sw.WriteLine(element);
-            }
-        }
-
-
+        
         private int pos2canvas(string name, Canvas c, char dir)
         {
-            if (!widgets.ContainsKey(name))
+            Widget w = widget_cfg.get_widget(name);
+            if (w == null)
                 return 0;
-            Dictionary<string, double> w = widgets[name];
-            int pos = (int) ((dir == 'H') ? w["X"] : w["Y"]);
-            int div = (int) w[dir + "JUST"];
+
+            int pos = (dir == 'H') ? w.x : w.y;
+            int div = (dir == 'H') ? w.h : w.v;
             int osd_size = (dir == 'H') ? xsize : ysize;
             int wid_size = (dir == 'H') ? c.width * 4 : c.height;
 
@@ -1779,8 +1603,6 @@ namespace AlceOSD_updater
 
             return pos;
         }
-
-
 
         private void flag_submit(string type)
         {
@@ -1810,6 +1632,621 @@ namespace AlceOSD_updater
             timer_submit.Start();
         }
 
+        private void nud_wxpos_ValueChanged(object sender, EventArgs e)
+        {
+            if (lb_widgets.SelectedItems.Count == 0)
+                return;
+            Widget w = widget_cfg.get_widget(lb_widgets.SelectedItem.ToString());
+            w.x = (int)nud_wxpos.Value;
+            flag_submit("P");
+        }
+
+        private void nud_wypos_ValueChanged(object sender, EventArgs e)
+        {
+            if (lb_widgets.SelectedItems.Count == 0)
+                return;
+            Widget w = widget_cfg.get_widget(lb_widgets.SelectedItem.ToString());
+            w.y = (int)nud_wypos.Value;
+            flag_submit("P");
+        }
+
+        private void cb_whjust_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lb_widgets.SelectedItems.Count == 0)
+                return;
+            Widget w = widget_cfg.get_widget(lb_widgets.SelectedItem.ToString());
+            w.h = cb_whjust.SelectedIndex;
+            flag_submit("P");
+        }
+
+        private void cb_wvjust_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lb_widgets.SelectedItems.Count == 0)
+                return;
+            Widget w = widget_cfg.get_widget(lb_widgets.SelectedItem.ToString());
+            w.v = cb_wvjust.SelectedIndex;
+            flag_submit("P");
+        }
+
+        private void cb_wmode_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lb_widgets.SelectedItems.Count == 0)
+                return;
+            Widget w = widget_cfg.get_widget(lb_widgets.SelectedItem.ToString());
+            w.mode = cb_wmode.SelectedIndex;
+            flag_submit("O");
+        }
+
+        private void cb_wunits_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lb_widgets.SelectedItems.Count == 0)
+                return;
+            Widget w = widget_cfg.get_widget(lb_widgets.SelectedItem.ToString());
+            w.units = cb_wunits.SelectedIndex;
+            flag_submit("O");
+        }
+
+        private void cb_wsource_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lb_widgets.SelectedItems.Count == 0)
+                return;
+            Widget w = widget_cfg.get_widget(lb_widgets.SelectedItem.ToString());
+            w.source = cb_wsource.SelectedIndex;
+            flag_submit("O");
+        }
+
+        private void tb_wp1_TextChanged(object sender, EventArgs e)
+        {
+            if (lb_widgets.SelectedItems.Count == 0)
+                return;
+            Widget w = widget_cfg.get_widget(lb_widgets.SelectedItem.ToString());
+            try
+            {
+                w.param[0] = Convert.ToInt16(tb_wp1.Text);
+            }
+            catch
+            {
+                w.param[0] = 0;
+            }
+            flag_submit("O");
+        }
+
+        private void tb_wp2_TextChanged(object sender, EventArgs e)
+        {
+            if (lb_widgets.SelectedItems.Count == 0)
+                return;
+            Widget w = widget_cfg.get_widget(lb_widgets.SelectedItem.ToString());
+            try
+            {
+                w.param[1] = Convert.ToInt16(tb_wp2.Text);
+            }
+            catch
+            {
+                w.param[1] = 0;
+            }
+            flag_submit("O");
+        }
+
+        private void tb_wp3_TextChanged(object sender, EventArgs e)
+        {
+            if (lb_widgets.SelectedItems.Count == 0)
+                return;
+            Widget w = widget_cfg.get_widget(lb_widgets.SelectedItem.ToString());
+            try
+            {
+                w.param[2] = Convert.ToInt16(tb_wp3.Text);
+            }
+            catch
+            {
+                w.param[2] = 0;
+            }
+            flag_submit("O");
+        }
+
+        private void tb_wp4_TextChanged(object sender, EventArgs e)
+        {
+            if (lb_widgets.SelectedItems.Count == 0)
+                return;
+            Widget w = widget_cfg.get_widget(lb_widgets.SelectedItem.ToString());
+            try
+            {
+                w.param[3] = Convert.ToInt16(tb_wp4.Text);
+            }
+            catch
+            {
+                w.param[3] = 0;
+            }
+            flag_submit("O");
+        }
+
+        private void recalculate_pb_osd_size()
+        {
+            int vidprf = 0;
+            string[] lst = new string[lb_widgets.Items.Count];
+            lb_widgets.Items.CopyTo(lst, 0);
+            foreach (string name_uid in lst)
+            {
+                if (name_uid.Contains("VIDPRF"))
+                {
+                    vidprf = widget_cfg.get_widget(name_uid).mode;
+                    break;
+                }
+            }
+
+            int cb_xsize_idx = (vidprf == 0) ? cb_xsize.SelectedIndex : cb_xsize1.SelectedIndex;
+            switch (cb_xsize_idx)
+            {
+                case 0:
+                default:
+                    xsize = 480;
+                    break;
+                case 1:
+                    xsize = 480;
+                    break;
+                case 2:
+                    xsize = 560;
+                    break;
+                case 3:
+                    xsize = 672;
+                    break;
+            }
+            bool pal = true;
+            ysize = pal ? 260 : 210;
+
+            string std = (vidprf == 0) ? cb_vidscan.Text : cb_vidscan1.Text;
+
+            if (std.Contains("nterlaced"))
+                ysize *= 2;
+
+            ysize -= (int)nud_ysize.Value;
+            
+            Size s = new Size();
+            s.Height = ysize + 10;
+            s.Width = xsize + 10;
+            pb_osd.Size = s;
+            
+            string[] keys = ca.Keys.ToArray();
+            foreach (string name_uid in keys)
+            {
+                Canvas c = ca[name_uid];
+                c.x0 = pos2canvas(name_uid, c, 'H');
+                c.y0 = pos2canvas(name_uid, c, 'V');
+                c.shown = lb_widgets.Items.Contains(name_uid);
+                ca[name_uid] = c;
+            }
+        }
+
+        private void get_widget_ids()
+        {
+            send_cmd("widgets available 1");
+
+            while (true)
+            {
+                string line = comPort.ReadLine();
+                Console.WriteLine("get_widget_ids() {0}", line);
+                if (line == "--")
+                    break;
+                string[] info = line.Split(',');
+
+                widget_cfg.add_id_map(info[2], Convert.ToInt16(info[0]));
+                widget_cfg.add_name_map(info[2], info[1]);
+            }
+        }
+
+        private bool get_widget_config(string name_uid)
+        {
+            timer_com.Enabled = false;
+            Widget w = widget_cfg.get_widget(name_uid);
+            send_cmd("widgets cfg -i " + w.get_iduid());
+            System.Threading.Thread.Sleep(100);
+
+            string line;
+            do
+            {
+                line = comPort.ReadLine();
+                if (line.Contains("Widget not found"))
+                {
+                    timer_com.Enabled = true;
+                    return false;
+                }
+            } while (!line.StartsWith("t:"));
+
+            MatchCollection mc;
+            mc = Regex.Matches(line, @"(.):([-]?\d+)");
+            foreach (Match m in mc)
+            {
+                if (m.Success)
+                {
+                    Console.WriteLine("{0} = {1}", m.Groups[1].Value, m.Groups[2].Value); //Convert.ToInt16(g.Value));
+                    string param = m.Groups[1].Value;
+                    int value = Convert.ToInt16(m.Groups[2].Value);
+                    switch (param)
+                    {
+                        case "t":
+                            w.tab = value;
+                            break;
+                        case "x":
+                            w.x = value;
+                            break;
+                        case "y":
+                            w.y = value;
+                            break;
+                        case "h":
+                            w.h = value;
+                            break;
+                        case "v":
+                            w.v = value;
+                            break;
+                        case "m":
+                            w.mode = value;
+                            break;
+                        case "s":
+                            w.source = value;
+                            break;
+                        case "u":
+                            w.units = value;
+                            break;
+                        case "a":
+                            w.param[0] = value;
+                            break;
+                        case "b":
+                            w.param[1] = value;
+                            break;
+                        case "c":
+                            w.param[2] = value;
+                            break;
+                        case "d":
+                            w.param[3] = value;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            timer_com.Enabled = true;
+            return true;
+        }
+
+        private Canvas get_widget_bitmap(string id)
+        {
+            Canvas c = new Canvas();
+            String line;
+            c.width = 0; c.height = 0;
+
+            timer_com.Enabled = false;
+            send_cmd("widgets bitmap " + id);
+            try
+            {
+                do
+                {
+                    Match m;
+                    line = comPort.ReadLine();
+
+                    m = Regex.Match(line, @"^w:(\d+)");
+                    if (m.Success)
+                    {
+                        c.width = Convert.ToInt16(m.Groups[1].Value);
+                        continue;
+                    }
+
+                    m = Regex.Match(line, @"^h:(\d+)");
+                    if (m.Success)
+                    {
+                        c.height = Convert.ToInt16(m.Groups[1].Value);
+                    }
+
+                } while (!line.StartsWith("h:"));
+                int size = c.width * c.height;
+                Console.WriteLine("w:{0} h:{1} s:{2}", c.width, c.height, size);
+                if (size > 0)
+                {
+                    int left = size;
+                    byte[] data = new byte[size];
+                    comPort.Read(data, 0, size);
+                    c.bitmap = data;
+                }
+            }
+            catch
+            {
+                c.width = 0; c.height = 0;
+                MessageBox.Show("Error loading widget bitmap", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            System.Threading.Thread.Sleep(10);
+            comPort.DiscardInBuffer();
+
+            timer_com.Enabled = true;
+            return c;
+        }
+
+        private void pb_osd_Paint(object sender, PaintEventArgs e)
+        {
+            //Graphics g = pb_osd.CreateGraphics();
+            //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+            //g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            //g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.None;
+
+            IntPtr hdc = e.Graphics.GetHdc();
+            int x, y, b, v, d;
+            uint bgr;
+
+            foreach (KeyValuePair<string, Canvas> _c in ca)
+            {
+                Canvas c = _c.Value;
+                if (!c.shown)
+                    continue;
+
+                //c.bitmap.ToList().ForEach(_b => Console.Write(" {0:X}", _b));
+                //Console.WriteLine("");
+
+                //txt_log.AppendText("canvas w" + c.width + "\n");
+                for (y = 0; y < c.height; y++)
+                {
+                    for (x = 0; x < c.width; x++)
+                    {
+                        if (y * c.width + x >= c.bitmap.Length)
+                            continue;
+
+                        v = c.bitmap[y * c.width + x];
+                        for (b = 0; b < 4; b++)
+                        {
+                            d = (v >> (6 - (2 * b))) & 3;
+                            bgr = 0;
+                            switch (d)
+                            {
+                                case 1:
+                                    bgr = 0xffffff;
+                                    break;
+                                case 2:
+                                    bgr = 0x808080;
+                                    break;
+                                case 3:
+                                    bgr = 0x000000;
+                                    break;
+                                default:
+                                    break;
+                            }
+                            if (d > 0)
+                                GDI.SetPixel(hdc, c.x0 + x * 4 + b, c.y0 + y, bgr);
+                        }
+                    }
+                }
+            }
+
+            e.Graphics.ReleaseHdc(hdc);
+
+            string name_uid = get_selected_widget();
+            if (ca.ContainsKey(name_uid))
+            {
+                Canvas c = ca[name_uid];
+                Rectangle ee = new Rectangle(c.x0, c.y0, c.width * 4, c.height);
+                using (Pen pen = new Pen(Color.Red, 2)) { e.Graphics.DrawRectangle(pen, ee); }
+            }
+        }
+
+        private Canvas get_widget_canvas(string name_uid)
+        {
+            Widget w = widget_cfg.get_widget(name_uid);
+            string iduid = w.get_iduid();
+            Console.WriteLine("get_widget_canvas() iduid={0} {1}", iduid, name_uid);
+            Canvas c = get_widget_bitmap(iduid);
+            if (c.width > 0)
+            {
+                c.x0 = pos2canvas(name_uid, c, 'H');
+                c.y0 = pos2canvas(name_uid, c, 'V');
+            }
+            return c;
+        }
+
+        bool load_lock = false;
+        private void load_lb_widgets_canvas()
+        {
+            if (!shell_active)
+                return;
+
+            if (load_lock)
+                return;
+            load_lock = true;
+
+            recalculate_pb_osd_size();
+
+            int tab = (int)nud_seltab.Value;
+
+            send_cmd("tabs load -t " + tab);
+            System.Threading.Thread.Sleep(200);
+            comPort.DiscardInBuffer();
+
+            string[] keys = ca.Keys.ToArray();
+            foreach (string name_uid in keys)
+            {
+                Canvas c = ca[name_uid];
+                c.x0 = pos2canvas(name_uid, c, 'H');
+                c.y0 = pos2canvas(name_uid, c, 'V');
+                c.shown = lb_widgets.Items.Contains(name_uid);
+                ca[name_uid] = c;
+            }
+
+            string[] lst = new string[lb_widgets.Items.Count];
+            lb_widgets.Items.CopyTo(lst, 0);
+
+            int total = 0, size = lst.Length;
+            foreach (string name_uid in lst)
+            {
+                if (!ca.ContainsKey(name_uid))
+                {
+                    Canvas c = get_widget_canvas(name_uid);
+                    if (c.width > 0)
+                    {
+                        c.shown = true;
+                        ca[name_uid] = c;
+                    }
+                }
+
+                total++;
+                int progress = (total * 100) / size;
+                if (progress != pb.Value)
+                {
+                    pb.Value = progress;
+                    Application.DoEvents();
+                }
+
+            }
+            pb_osd.Invalidate();
+            load_lock = false;
+        }
+
+
+        Point _startPt = new Point();
+        bool _tracking = false;
+        decimal nud_x0, nud_y0;
+
+        private void pb_osd_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == System.Windows.Forms.MouseButtons.Left)
+            {
+                string name_uid = get_selected_widget();
+                _startPt = e.Location;
+                if (ca.ContainsKey(name_uid))
+                {
+                    Canvas c = ca[name_uid];
+                    if ((_startPt.X >= c.x0) && (_startPt.X <= (c.x0 + c.width * 4)) &&
+                         (_startPt.Y >= c.y0) && (_startPt.Y <= (c.y0 + c.height)))
+                    {
+                        _tracking = true;
+                    }
+                }
+
+                if (!_tracking)
+                {
+                    foreach (KeyValuePair<String, Canvas> pair in ca)
+                    {
+                        Canvas c = pair.Value;
+                        if (!c.shown)
+                            continue;
+
+                        if ((_startPt.X >= c.x0) && (_startPt.X <= (c.x0 + c.width * 4)) &&
+                            (_startPt.Y >= c.y0) && (_startPt.Y <= (c.y0 + c.height)))
+                        {
+                            lb_widgets.SelectedItem = pair.Key;
+                            _tracking = true;
+                            pb_osd.Invalidate();
+                            break;
+                        }
+                    }
+                }
+
+                if (_tracking)
+                {
+                    nud_x0 = nud_wxpos.Value;
+                    nud_y0 = nud_wypos.Value;
+                }
+            }
+        }
+
+        private void pb_osd_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (_tracking)
+            {
+                int dx = (e.X - _startPt.X);
+                int dy = (e.Y - _startPt.Y);
+                nud_wxpos.Value = (int)(nud_x0 + dx) & ~3;
+                nud_wypos.Value = nud_y0 + dy;
+            }
+        }
+
+        private void pb_osd_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (_tracking)
+                _tracking = false;
+        }
+
+        private void lb_history_DoubleClick(object sender, EventArgs e)
+        {
+            if (lb_history.SelectedIndex < 0)
+                return;
+
+            string cmd = lb_history.SelectedItem.ToString();
+            send_cmd(cmd);
+        }
+
+        private void bt_refreshCanvas_Click(object sender, EventArgs e)
+        {
+            if (load_lock)
+                return;
+            load_lock = true;
+
+            string[] lst = new string[lb_widgets.Items.Count];
+            lb_widgets.Items.CopyTo(lst, 0);
+
+            int total = 0, size = lst.Length;
+            pb.Value = 0;
+            foreach (string name_uid in lst)
+            {
+                Canvas c;
+                c = get_widget_canvas(name_uid);
+                if (c.width > 0)
+                {
+                    c.shown = true;
+                    ca[name_uid] = c;
+                }
+
+                total++;
+                int progress = (total * 100) / size;
+                if (progress != pb.Value)
+                {
+                    pb.Value = progress;
+                    Application.DoEvents();
+                }
+
+            }
+            pb_osd.Invalidate();
+            load_lock = false;
+        }
+
+        void refresh_selected_widget()
+        {
+            if (lb_widgets.SelectedIndex == -1)
+                return;
+            string name_uid = lb_widgets.Text;
+            Canvas c = get_widget_canvas(name_uid);
+            if (c.width > 0)
+            {
+                c.shown = true;
+                ca[name_uid] = c;
+            }
+            pb_osd.Invalidate();
+        }
+
+        private void pb_osd_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            refresh_selected_widget();
+        }
+
+        private void lb_widgets_DoubleClick(object sender, EventArgs e)
+        {
+            refresh_selected_widget();
+        }
+
+        private void tc_main_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (tc_main.SelectedIndex == tc_main.TabPages.IndexOfKey("tab_widgets"))
+                recalculate_pb_osd_size();
+        }
+
+        /* ********************************************************************************* */
+        /* ********************************************************************************* */
+        /* load/save config menu callback stuff */
+
+        private void save_cfg(string filename)
+        {
+            using (StreamWriter sw = new StreamWriter(filename))
+            {
+                string[] config = dump_config();
+
+                foreach (string element in config)
+                    sw.WriteLine(element);
+            }
+        }
 
         private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -1838,158 +2275,6 @@ namespace AlceOSD_updater
 
             save_cfg(def_filename);
             this.Text = "AlceOSD Config Editor - " + Path.GetFileName(def_filename);
-        }
-
-
-
-        private void nud_wxpos_ValueChanged(object sender, EventArgs e)
-        {
-            if (lb_widgets.SelectedItems.Count == 0)
-                return;
-            string w = lb_widgets.SelectedItem.ToString();
-            widgets[w]["X"] = Convert.ToDouble(nud_wxpos.Value);
-            flag_submit("P");
-        }
-
-        private void nud_wypos_ValueChanged(object sender, EventArgs e)
-        {
-            if (lb_widgets.SelectedItems.Count == 0)
-                return;
-            string w = lb_widgets.SelectedItem.ToString();
-            widgets[w]["Y"] = Convert.ToDouble(nud_wypos.Value);
-            flag_submit("P");
-        }
-
-        private void cb_whjust_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (lb_widgets.SelectedItems.Count == 0)
-                return;
-            string w = lb_widgets.SelectedItem.ToString();
-            widgets[w]["HJUST"] = Convert.ToDouble(cb_whjust.SelectedIndex);
-            flag_submit("P");
-        }
-
-        private void cb_wvjust_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (lb_widgets.SelectedItems.Count == 0)
-                return;
-            string w = lb_widgets.SelectedItem.ToString();
-            widgets[w]["VJUST"] = Convert.ToDouble(cb_wvjust.SelectedIndex);
-            flag_submit("P");
-        }
-
-        private void cb_wmode_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (lb_widgets.SelectedItems.Count == 0)
-                return;
-            string w = lb_widgets.SelectedItem.ToString();
-            widgets[w]["MODE"] = Convert.ToDouble(cb_wmode.SelectedIndex);
-            flag_submit("O");
-        }
-
-        private void cb_wunits_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (lb_widgets.SelectedItems.Count == 0)
-                return;
-            string w = lb_widgets.SelectedItem.ToString();
-            widgets[w]["UNITS"] = Convert.ToDouble(cb_wunits.SelectedIndex);
-            flag_submit("O");
-        }
-
-        private void cb_wsource_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (lb_widgets.SelectedItems.Count == 0)
-                return;
-            string w = lb_widgets.SelectedItem.ToString();
-            widgets[w]["SOURCE"] = Convert.ToDouble(cb_wsource.SelectedIndex);
-            flag_submit("O");
-        }
-
-        private void tb_wp1_TextChanged(object sender, EventArgs e)
-        {
-            if (lb_widgets.SelectedItems.Count == 0)
-                return;
-            string w = lb_widgets.SelectedItem.ToString();
-            try
-            {
-                widgets[w]["PARAM1"] = Convert.ToDouble(tb_wp1.Text, CultureInfo.InvariantCulture.NumberFormat);
-            }
-            catch
-            {
-                widgets[w]["PARAM1"] = 0.0;
-            }
-            flag_submit("O");
-        }
-
-        private void tb_wp2_TextChanged(object sender, EventArgs e)
-        {
-            if (lb_widgets.SelectedItems.Count == 0)
-                return;
-            string w = lb_widgets.SelectedItem.ToString();
-
-            try
-            {
-                widgets[w]["PARAM2"] = Convert.ToDouble(tb_wp2.Text, CultureInfo.InvariantCulture.NumberFormat);
-            }
-            catch
-            {
-                widgets[w]["PARAM2"] = 0.0;
-            }
-            flag_submit("O");
-        }
-
-        private void tb_wp3_TextChanged(object sender, EventArgs e)
-        {
-            if (lb_widgets.SelectedItems.Count == 0)
-                return;
-            string w = lb_widgets.SelectedItem.ToString();
-            try
-            {
-                widgets[w]["PARAM3"] = Convert.ToDouble(tb_wp3.Text, CultureInfo.InvariantCulture.NumberFormat);
-            }
-            catch
-            {
-                widgets[w]["PARAM3"] = 0.0;
-            }
-            flag_submit("O");
-        }
-
-        private void tb_wp4_TextChanged(object sender, EventArgs e)
-        {
-            if (lb_widgets.SelectedItems.Count == 0)
-                return;
-            string w = lb_widgets.SelectedItem.ToString();
-            try
-            {
-                widgets[w]["PARAM4"] = Convert.ToDouble(tb_wp4.Text, CultureInfo.InvariantCulture.NumberFormat);
-            }
-            catch
-            {
-                widgets[w]["PARAM4"] = 0.0;
-            }
-            flag_submit("O");
-        }
-
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-
-        private void Form2_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            DialogResult result = MessageBox.Show(
-                "Save config?", "Exiting...",
-                MessageBoxButtons.YesNo);
-            if (result == DialogResult.Yes)
-            {
-                ofd_savecfg.FileName = def_filename;
-                if (ofd_savecfg.ShowDialog() != DialogResult.OK)
-                    return;
-                save_cfg(ofd_savecfg.FileName);
-            }
-
-            settings.Save();
-            comPort.Close();
         }
 
         private void readConfigToolStripMenuItem_Click(object sender, EventArgs e)
@@ -2066,9 +2351,6 @@ namespace AlceOSD_updater
                 parse_config(config);
             }
 
-
-
-
             setup_comport();
             if (!open_comport())
                 return;
@@ -2125,71 +2407,32 @@ namespace AlceOSD_updater
             MessageBox.Show("Config successfully uploaded, rebooting", "Config", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void Form2_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            DialogResult result = MessageBox.Show(
+                "Save config?", "Exiting...",
+                MessageBoxButtons.YesNo);
+            if (result == DialogResult.Yes)
+            {
+                ofd_savecfg.FileName = def_filename;
+                if (ofd_savecfg.ShowDialog() != DialogResult.OK)
+                    return;
+                save_cfg(ofd_savecfg.FileName);
+            }
+
+            settings.Save();
+            comPort.Close();
+        }
+
         private void downloadFirmwareToolStripMenuItem_Click(object sender, EventArgs e)
         {
             System.Diagnostics.Process.Start("https://github.com/ArduPilot/alceosd/releases");
         }
-
-
-        private void recalculate_pb_osd_size()
-        {
-            int vidprf = 0;
-            string[] lst = new string[lb_widgets.Items.Count];
-            lb_widgets.Items.CopyTo(lst, 0);
-            foreach (string name_uid in lst)
-            {
-                if (name_uid.Contains("VIDPRF"))
-                {
-                    vidprf = (int)widgets[name_uid]["MODE"];
-                    break;
-                }
-            }
-
-            int cb_xsize_idx = (vidprf == 0) ? cb_xsize.SelectedIndex : cb_xsize1.SelectedIndex;
-            switch (cb_xsize_idx)
-            {
-                case 0:
-                default:
-                    xsize = 480;
-                    break;
-                case 1:
-                    xsize = 480;
-                    break;
-                case 2:
-                    xsize = 560;
-                    break;
-                case 3:
-                    xsize = 672;
-                    break;
-            }
-            bool pal = true;
-            ysize = pal ? 260 : 210;
-
-            string std = (vidprf == 0) ? cb_vidscan.Text : cb_vidscan1.Text;
-
-            if (std.Contains("nterlaced"))
-                ysize *= 2;
-
-            ysize -= (int) nud_ysize.Value;
-
-
-            Size s = new Size();
-            s.Height = ysize + 10;
-            s.Width = xsize + 10;
-            pb_osd.Size = s;
-
-
-            string[] keys = ca.Keys.ToArray();
-            foreach (string name_uid in keys)
-            {
-                Canvas c = ca[name_uid];
-                c.x0 = pos2canvas(name_uid, c, 'H');
-                c.y0 = pos2canvas(name_uid, c, 'V');
-                c.shown = lb_widgets.Items.Contains(name_uid);
-                ca[name_uid] = c;
-            }
-        }
-
 
         private void AlceOSDconfigForm_Load(object sender, EventArgs e)
         {
@@ -2213,22 +2456,6 @@ namespace AlceOSD_updater
             settings.Save();
         }
         
-
-        private void get_widget_ids()
-        {
-            send_cmd("widgets available 1");
-
-            widget_ids.Clear();
-            while (true) {
-                string line = comPort.ReadLine();
-                Console.WriteLine("get_widget_ids() {0}", line);
-                if (line == "--")
-                    break;
-                string[] info = line.Split(',');
-                widget_ids.Add(info[2].Trim(), Convert.ToInt16(info[0]));
-            }
-        }
-
         private Dictionary<string, string> get_cmd_switches(string cmd)
         {
             Dictionary<string, string> result = new Dictionary<string, string> { };
@@ -2246,21 +2473,6 @@ namespace AlceOSD_updater
             }
             return result;
         }
-        /*
-        private string get_cmd_switchval(string cmd, string sw)
-        {
-            Match m = Regex.Match(cmd, @".+\s\-" + sw + @"\s*(.+?)(\s.+|$)");
-            if (m.Success)
-            {
-                return m.Groups[1].Value;
-                //Console.WriteLine("get_cmd_switchval: switch=-{0} value={1}", sw, m.Groups[1].Value);
-            }
-            else
-                return "";
-        }*/
-
-
-        
 
         private void parse_shell_config(List<string> config)
         {
@@ -2271,8 +2483,7 @@ namespace AlceOSD_updater
                 /* comment */
                 if (cmd.StartsWith("#") || cmd == "")
                     continue;
-
-
+                
                 Dictionary<string, string> sw = get_cmd_switches(cmd);
                 string mod = cmd.Split(' ')[0];
 
@@ -2575,14 +2786,18 @@ namespace AlceOSD_updater
             Console.WriteLine(" done");
             parse_config(config.ToArray());
         }
-        
+
+
+
+        /* ********************************************************************************* */
+        /* ********************************************************************************* */
+        /* connect / disconnect stuff */
 
         bool shell_active = false;
         bool init_done = false;
 
         int his_idx = 0;
         List<string> cmd_history = new List<string> { };
-
 
         void disconnect()
         {
@@ -2605,11 +2820,7 @@ namespace AlceOSD_updater
             cbx_mavmode.Enabled = true;
             bt_conn.Enabled = true;
         }
-
-
-
-
-
+        
         private void bt_conn_Click(object sender, EventArgs e)
         {
             if (shell_active)
@@ -2646,7 +2857,7 @@ namespace AlceOSD_updater
                 get_widget_ids();
                 get_flight_alarms();
                 get_config();
-                load_lb_widgets_canvas();
+                //load_lb_widgets_canvas();
 
                 timer_com.Enabled = true;
                 init_done = true;
@@ -2822,323 +3033,6 @@ namespace AlceOSD_updater
 
         }
 
-
-        private bool get_widget_config(string name_uid)
-        {
-            string wid = name_uid.Substring(0, name_uid.Length - 1);
-            if (!widget_ids.ContainsKey(wid))
-                return false;
-
-            timer_com.Enabled = false;
-
-            char uid = name_uid.ElementAt(name_uid.Length - 1);
-            string req = widget_ids[wid].ToString() + "+" + uid.ToString();
-
-            send_cmd("widgets cfg -i " + req);
-            System.Threading.Thread.Sleep(100);
-
-            string line;
-            do
-            {
-                line = comPort.ReadLine();
-                if (line.Contains("Widget not found"))
-                {
-                    timer_com.Enabled = true;
-                    return false;
-                }
-
-            } while (!line.StartsWith("t:"));
-
-
-            Dictionary<string, string> maptable = new Dictionary<string, string>
-            {
-                {"t", "TAB" },
-                {"x", "X" },
-                {"y", "Y" },
-                {"h", "HJUST" },
-                {"v", "VJUST" },
-                {"m", "MODE" },
-                {"s", "SOURCE" },
-                {"u", "UNITS" },
-                {"a", "PARAM1" },
-                {"b", "PARAM2" },
-                {"c", "PARAM3" },
-                {"d", "PARAM4" },
-            };
-
-            MatchCollection mc;
-            mc = Regex.Matches(line, @"(.):([-]?\d+)");
-            foreach (Match m in mc)
-            {
-                if (m.Success)
-                {
-                    Console.WriteLine("{0} = {1}", m.Groups[1].Value, m.Groups[2].Value); //Convert.ToInt16(g.Value));
-                    string param = m.Groups[1].Value;
-                    double value = Convert.ToDouble(m.Groups[2].Value);
-                    widgets[name_uid][maptable[param]] = value;
-                }
-            }
-
-            timer_com.Enabled = true;
-            return true;
-        }
-
-
-
-        private Canvas get_widget_bitmap(string id)
-        {
-            Canvas c = new Canvas();
-            String line;
-            c.width = 0; c.height = 0;
-
-            timer_com.Enabled = false;
-            send_cmd("widgets bitmap " + id);
-
-            do
-            {
-                Match m;
-                line = comPort.ReadLine();
-
-                m = Regex.Match(line, @"^w:(\d+)");
-                if (m.Success)
-                {
-                    c.width = Convert.ToInt16(m.Groups[1].Value);
-                    continue;
-                }
-
-                m = Regex.Match(line, @"^h:(\d+)");
-                if (m.Success)
-                {
-                    c.height = Convert.ToInt16(m.Groups[1].Value);
-                }
-
-            } while (!line.StartsWith("h:"));
-            int size = c.width * c.height;
-            Console.WriteLine("w:{0} h:{1} s:{2}", c.width, c.height, size);
-            if (size > 0)
-            {
-                int left = size;
-                byte[] data = new byte[size];
-                comPort.Read(data, 0, size);
-                c.bitmap = data;
-            }
-
-            System.Threading.Thread.Sleep(100);
-            comPort.DiscardInBuffer();
-
-            timer_com.Enabled = true;
-            return c;
-        }
-
-        private void pb_osd_Paint(object sender, PaintEventArgs e)
-        {
-            //Graphics g = pb_osd.CreateGraphics();
-            //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
-            //g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-            //g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.None;
-
-            IntPtr hdc = e.Graphics.GetHdc();
-            int x, y, b, v, d;
-            uint bgr;
-
-            foreach (KeyValuePair<string, Canvas> _c in ca)
-            {
-                Canvas c = _c.Value;
-                if (!c.shown)
-                    continue;
-
-                //c.bitmap.ToList().ForEach(_b => Console.Write(" {0:X}", _b));
-                //Console.WriteLine("");
-
-                //txt_log.AppendText("canvas w" + c.width + "\n");
-                for (y = 0; y < c.height; y++)
-                {
-                    for (x = 0; x < c.width; x++)
-                    {
-                        if (y * c.width + x >= c.bitmap.Length)
-                            continue;
-
-                        v = c.bitmap[y * c.width + x];
-                        for (b = 0; b < 4; b++)
-                        {
-                            d = (v >> (6 - (2 * b))) & 3;
-                            bgr = 0;
-                            switch (d)
-                            {
-                                case 1:
-                                    bgr = 0xffffff;
-                                    break;
-                                case 2:
-                                    bgr = 0x808080;
-                                    break;
-                                case 3:
-                                    bgr = 0x000000;
-                                    break;
-                                default:
-                                    break;
-                            }
-                            if (d > 0)
-                                GDI.SetPixel(hdc, c.x0 + x * 4 + b, c.y0 + y, bgr);
-                        }
-                    }
-                }
-            }
-
-            e.Graphics.ReleaseHdc(hdc);
-
-            string name_uid = get_selected_widget();
-            if (ca.ContainsKey(name_uid))
-            {
-                Canvas c = ca[name_uid];
-                Rectangle ee = new Rectangle(c.x0, c.y0, c.width * 4, c.height);
-                using (Pen pen = new Pen(Color.Red, 2)) { e.Graphics.DrawRectangle(pen, ee); }
-            }
-        }
-
-        private Canvas get_widget_canvas(string name_uid)
-        {
-            string iduid = get_widget_iduid(name_uid);
-            Console.WriteLine("get_widget_canvas() iduid={0} {1}", iduid, name_uid);
-            Canvas c = get_widget_bitmap(iduid);
-            if (c.width > 0)
-            {
-                c.x0 = pos2canvas(name_uid, c, 'H');
-                c.y0 = pos2canvas(name_uid, c, 'V');
-            }
-            return c;
-        }
-
-        bool load_lock = false;
-        private void load_lb_widgets_canvas()
-        {
-            if (!shell_active)
-                return;
-
-            if (load_lock)
-                return;
-            load_lock = true;
-
-            recalculate_pb_osd_size();
-
-            int tab = (int) nud_seltab.Value;
-
-            send_cmd("tabs load -t " + tab);
-            System.Threading.Thread.Sleep(200);
-            comPort.DiscardInBuffer();
-
-            string[] keys = ca.Keys.ToArray();
-            foreach (string name_uid in keys)
-            {
-                Canvas c = ca[name_uid];
-                c.x0 = pos2canvas(name_uid, c, 'H');
-                c.y0 = pos2canvas(name_uid, c, 'V');
-                c.shown = lb_widgets.Items.Contains(name_uid);
-                ca[name_uid] = c;
-            }
-
-            string[] lst = new string[lb_widgets.Items.Count];
-            lb_widgets.Items.CopyTo(lst, 0);
-
-            int total = 0, size = lst.Length;
-            foreach (string name_uid in lst)
-            {
-                if (!ca.ContainsKey(name_uid))
-                {
-                    Canvas c = get_widget_canvas(name_uid);
-                    if (c.width > 0)
-                    {
-                        c.shown = true;
-                        ca[name_uid] = c;
-                    }
-                }
-
-                total++;
-                int progress = (total * 100) / size;
-                if (progress != pb.Value)
-                {
-                    pb.Value = progress;
-                    Application.DoEvents();
-                }
-
-            }
-            pb_osd.Invalidate();
-            load_lock = false;
-        }
-
-
-        Point _startPt = new Point();
-        bool _tracking = false;
-        decimal nud_x0, nud_y0;
-
-        private void pb_osd_MouseDown(object sender, MouseEventArgs e)
-        {
-            if (e.Button == System.Windows.Forms.MouseButtons.Left)
-            {
-                string name_uid = get_selected_widget();
-                _startPt = e.Location;
-                if (ca.ContainsKey(name_uid))
-                {
-                    Canvas c = ca[name_uid];
-                    if ( (_startPt.X >= c.x0) && (_startPt.X <= (c.x0 + c.width*4)) &&
-                         (_startPt.Y >= c.y0) && (_startPt.Y <= (c.y0 + c.height)))
-                    {
-                        _tracking = true;
-                    }
-                }
-
-                if (! _tracking)
-                {
-                    foreach(KeyValuePair<String,Canvas> pair in ca)
-                    {
-                        Canvas c = pair.Value;
-                        if (!c.shown)
-                            continue;
-
-                        if ((_startPt.X >= c.x0) && (_startPt.X <= (c.x0 + c.width * 4)) &&
-                            (_startPt.Y >= c.y0) && (_startPt.Y <= (c.y0 + c.height)))
-                        {
-                            lb_widgets.SelectedItem = pair.Key;
-                            _tracking = true;
-                            pb_osd.Invalidate();
-                            break;
-                        }
-                    }
-                }
-
-                if (_tracking)
-                {
-                    nud_x0 = nud_wxpos.Value;
-                    nud_y0 = nud_wypos.Value;
-                }
-            }
-        }
-
-        private void pb_osd_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (_tracking)
-            {
-                int dx = (e.X - _startPt.X);
-                int dy = (e.Y - _startPt.Y);
-                nud_wxpos.Value = (int) (nud_x0 + dx) & ~3;
-                nud_wypos.Value = nud_y0 + dy;
-            }
-        }
-
-        private void pb_osd_MouseUp(object sender, MouseEventArgs e)
-        {
-            if (_tracking)
-                _tracking = false;
-        }
-
-        private void lb_history_DoubleClick(object sender, EventArgs e)
-        {
-            if (lb_history.SelectedIndex < 0)
-                return;
-
-            string cmd = lb_history.SelectedItem.ToString();
-            send_cmd(cmd);
-        }
-
         private void bt_submitCfg_Click(object sender, EventArgs e)
         {
             send_cmd("config save");
@@ -3175,47 +3069,12 @@ namespace AlceOSD_updater
 
             tb_tlog.Value = comPort.progress;
 
-        }
-
-        private void bt_refreshCanvas_Click(object sender, EventArgs e)
-        {
-            if (load_lock)
-                return;
-            load_lock = true;
-
-            string[] lst = new string[lb_widgets.Items.Count];
-            lb_widgets.Items.CopyTo(lst, 0);
-
-            int total = 0, size = lst.Length;
-            pb.Value = 0;
-            foreach (string name_uid in lst)
+            /*Dictionary<string, MavlinkPacket> msgs = comPort.mavmsg;
+            foreach (KeyValuePair<string, MavlinkPacket> entry in msgs)
             {
-                Canvas c;
-                try
-                {
-                    c = get_widget_canvas(name_uid);
-                    if (c.width > 0)
-                    {
-                        c.shown = true;
-                        ca[name_uid] = c;
-                    }
-                }
-                catch
-                {
-                    MessageBox.Show("Error loading bitmap for " + name_uid, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-
-                total++;
-                int progress = (total * 100) / size;
-                if (progress != pb.Value)
-                {
-                    pb.Value = progress;
-                    Application.DoEvents();
-                }
-
-            }
-            pb_osd.Invalidate();
-            load_lock = false;
+                if (!lb_mavmsg.Items.Contains(entry.Key))
+                    lb_mavmsg.Items.Add(entry.Key);
+            }*/
         }
 
         /* ********************************************************************************* */
@@ -3743,6 +3602,17 @@ namespace AlceOSD_updater
             timer_submit_cfg.Tag = null;
         }
 
+        private void timer_submit_Tick(object sender, EventArgs e)
+        {
+            timer_submit.Stop();
+            string name_uid = get_selected_widget();
+            if (timer_submit.Tag.ToString().Contains(("P")))
+                submit_widget_config_pos(name_uid);
+            if (timer_submit.Tag.ToString().Contains(("O")))
+                submit_widget_config_other(name_uid);
+            timer_submit.Tag = "";
+        }
+
         /* ********************************************************************************* */
         /* ********************************************************************************* */
         /* ... stuff */
@@ -3821,33 +3691,7 @@ namespace AlceOSD_updater
         {
             comPort.seek = tb_tlog.Value;
         }
-
-
-        void refresh_selected_widget()
-        {
-            if (lb_widgets.SelectedIndex == -1)
-                return;
-            string name_uid = lb_widgets.Text;
-            Canvas c = get_widget_canvas(name_uid);
-            if (c.width > 0)
-            {
-                c.shown = true;
-                ca[name_uid] = c;
-            }
-            pb_osd.Invalidate();
-        }
-
-        private void pb_osd_MouseDoubleClick(object sender, MouseEventArgs e)
-        {
-            refresh_selected_widget();
-        }
-
-        private void lb_widgets_DoubleClick(object sender, EventArgs e)
-        {
-            refresh_selected_widget();
-        }
-
-
+        
         private void bt_upCfg_Click(object sender, EventArgs e)
         {
             if (!init_done)
@@ -3946,7 +3790,7 @@ namespace AlceOSD_updater
         {
             string version = "";
 
-            tabControl1.SelectTab(tabControl1.TabPages.IndexOfKey("tab_log"));
+            tc_main.SelectTab(tc_main.TabPages.IndexOfKey("tab_log"));
 
             setup_comport();
             if (!open_comport())
@@ -4011,22 +3855,51 @@ namespace AlceOSD_updater
             comPort.Close();
         }
 
-        private void timer_submit_Tick(object sender, EventArgs e)
+        private void lb_mavmsg_SelectedIndexChanged(object sender, EventArgs e)
         {
-            timer_submit.Stop();
-            string name_uid = get_selected_widget();
-            if (timer_submit.Tag.ToString().Contains(("P")))
-                submit_widget_config_pos(name_uid);
-            if (timer_submit.Tag.ToString().Contains(("O")))
-                submit_widget_config_other(name_uid);
-            timer_submit.Tag = "";
+            string sel = lb_mavmsg.Items[lb_mavmsg.SelectedIndex].ToString();
+            MavlinkPacket p = comPort.mavmsg[sel];
+            MavlinkMessage m = p.Message;
+
+            tb_mavmsg.Clear();
+            if (m.GetType() == typeof(MavLink.Msg_heartbeat))
+            {
+                Msg_heartbeat hb = m as Msg_heartbeat;
+                tb_mavmsg.AppendText("source sysid=" + p.SystemId +
+                                   "\r\nsource compid=" + p.ComponentId +
+                                   "\r\ntype=" + hb.type +
+                                   "\r\nsystem_status=" + hb.system_status +
+                                   "\r\nmavlink_version=" + hb.mavlink_version +
+                                   "\r\ncustom_mode=" + hb.custom_mode +
+                                   "\r\nbase_mode=" + hb.base_mode +
+                                   "\r\nautopilot=" + hb.autopilot);
+            }
+            else if (m.GetType() == typeof(MavLink.Msg_system_time))
+            {
+                Msg_system_time _m = m as Msg_system_time;
+                tb_mavmsg.AppendText("source sysid=" + p.SystemId +
+                                   "\r\nsource compid=" + p.ComponentId +
+                                   "\r\ntime_boot_ms=" + _m.time_boot_ms +
+                                   "\r\ntime_unix_usec=" + _m.time_unix_usec);
+            }
+            else if (m.GetType() == typeof(MavLink.Msg_global_position_int))
+            {
+                Msg_global_position_int _m = m as Msg_global_position_int;
+                tb_mavmsg.AppendText("source sysid=" + p.SystemId +
+                                   "\r\nsource compid=" + p.ComponentId +
+                                   "\r\ntime_boot_ms=" + _m.time_boot_ms +
+                                   "\r\nrelative_alt=" + _m.relative_alt +
+                                   "\r\nalt=" + _m.alt +
+                                   "\r\nhdg=" + _m.hdg +
+                                   "\r\nlat=" + _m.lat +
+                                   "\r\nlon=" + _m.lon +
+                                   "\r\nvx=" + _m.vx +
+                                   "\r\nvy=" + _m.vy +
+                                   "\r\nvz=" + _m.vz);
+            }
         }
 
-        private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (tabControl1.SelectedIndex == tabControl1.TabPages.IndexOfKey("tab_widgets"))
-                recalculate_pb_osd_size();
-        }
+
 
     }
 }

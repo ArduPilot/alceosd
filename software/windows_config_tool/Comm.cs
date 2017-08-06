@@ -52,10 +52,18 @@ namespace AlceOSD
         }
 
 
+        public Dictionary<string, MavlinkPacket> mavmsg = new Dictionary<string, MavlinkPacket>() { };
+
         private void Mav_PacketReceived(object sender, MavlinkPacket e)
         {
             //Console.WriteLine("-- incomming packet type {0} --", e.Message.GetType());
             MavlinkMessage m = e.Message;
+            string k = e.Message.GetType().ToString();
+            if (mavmsg.ContainsKey(k))
+                mavmsg[k] = e;
+            else
+                mavmsg.Add(k, e);
+
 
             if (e.Message.GetType() == typeof(MavLink.Msg_heartbeat))
             {

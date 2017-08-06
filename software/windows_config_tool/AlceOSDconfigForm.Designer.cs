@@ -70,6 +70,7 @@
             this.ofd_upCfg = new System.Windows.Forms.OpenFileDialog();
             this.ofd_dnCfg = new System.Windows.Forms.SaveFileDialog();
             this.gb_shell = new System.Windows.Forms.GroupBox();
+            this.bt_flash_fw = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.label10 = new System.Windows.Forms.Label();
             this.cb_hwrev = new System.Windows.Forms.ComboBox();
@@ -146,6 +147,8 @@
             this.lb_fa = new System.Windows.Forms.ListBox();
             this.tab_mavlink = new System.Windows.Forms.TabPage();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.tb_mavmsg = new System.Windows.Forms.TextBox();
+            this.lb_mavmsg = new System.Windows.Forms.ListBox();
             this.cbx_mavhb = new System.Windows.Forms.CheckBox();
             this.label45 = new System.Windows.Forms.Label();
             this.nud_streamExtra3 = new System.Windows.Forms.NumericUpDown();
@@ -237,9 +240,8 @@
             this.nud_ysize = new System.Windows.Forms.NumericUpDown();
             this.nud_xoffset = new System.Windows.Forms.NumericUpDown();
             this.nud_yoffset = new System.Windows.Forms.NumericUpDown();
-            this.tabControl1 = new System.Windows.Forms.TabControl();
+            this.tc_main = new System.Windows.Forms.TabControl();
             this.timer_submit_cfg = new System.Windows.Forms.Timer(this.components);
-            this.bt_flash_fw = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.tb_tlog)).BeginInit();
             this.cm_widget.SuspendLayout();
             this.menuStrip1.SuspendLayout();
@@ -298,7 +300,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_ysize)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_xoffset)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_yoffset)).BeginInit();
-            this.tabControl1.SuspendLayout();
+            this.tc_main.SuspendLayout();
             this.SuspendLayout();
             // 
             // bt_dnCfg
@@ -395,7 +397,7 @@
             this.lb_history.FormattingEnabled = true;
             this.lb_history.Location = new System.Drawing.Point(1005, 32);
             this.lb_history.Name = "lb_history";
-            this.lb_history.Size = new System.Drawing.Size(162, 251);
+            this.lb_history.Size = new System.Drawing.Size(162, 212);
             this.lb_history.TabIndex = 3;
             this.lb_history.TabStop = false;
             this.lb_history.DoubleClick += new System.EventHandler(this.lb_history_DoubleClick);
@@ -409,7 +411,7 @@
             this.tb_cmdLine.BackColor = System.Drawing.SystemColors.Window;
             this.tb_cmdLine.Font = new System.Drawing.Font("Consolas", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tb_cmdLine.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.tb_cmdLine.Location = new System.Drawing.Point(6, 294);
+            this.tb_cmdLine.Location = new System.Drawing.Point(6, 266);
             this.tb_cmdLine.Multiline = true;
             this.tb_cmdLine.Name = "tb_cmdLine";
             this.tb_cmdLine.Size = new System.Drawing.Size(1161, 28);
@@ -440,7 +442,7 @@
             this.txt_shell.Name = "txt_shell";
             this.txt_shell.ReadOnly = true;
             this.txt_shell.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txt_shell.Size = new System.Drawing.Size(993, 214);
+            this.txt_shell.Size = new System.Drawing.Size(993, 186);
             this.txt_shell.TabIndex = 0;
             this.txt_shell.VisibleChanged += new System.EventHandler(this.txt_shell_VisibleChanged);
             // 
@@ -590,7 +592,7 @@
             // 
             this.pb.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.pb.Location = new System.Drawing.Point(12, 866);
+            this.pb.Location = new System.Drawing.Point(12, 838);
             this.pb.Name = "pb";
             this.pb.Size = new System.Drawing.Size(1173, 23);
             this.pb.TabIndex = 5;
@@ -651,10 +653,20 @@
             this.gb_shell.Controls.Add(this.bt_submitCfg);
             this.gb_shell.Location = new System.Drawing.Point(12, 532);
             this.gb_shell.Name = "gb_shell";
-            this.gb_shell.Size = new System.Drawing.Size(1173, 328);
+            this.gb_shell.Size = new System.Drawing.Size(1173, 300);
             this.gb_shell.TabIndex = 7;
             this.gb_shell.TabStop = false;
             this.gb_shell.Text = "Console";
+            // 
+            // bt_flash_fw
+            // 
+            this.bt_flash_fw.Location = new System.Drawing.Point(774, 19);
+            this.bt_flash_fw.Name = "bt_flash_fw";
+            this.bt_flash_fw.Size = new System.Drawing.Size(96, 23);
+            this.bt_flash_fw.TabIndex = 16;
+            this.bt_flash_fw.Text = "Flash firmware...";
+            this.bt_flash_fw.UseVisualStyleBackColor = true;
+            this.bt_flash_fw.Click += new System.EventHandler(this.bt_flash_fw_Click);
             // 
             // button1
             // 
@@ -1600,6 +1612,8 @@
             this.groupBox4.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox4.Controls.Add(this.tb_mavmsg);
+            this.groupBox4.Controls.Add(this.lb_mavmsg);
             this.groupBox4.Controls.Add(this.cbx_mavhb);
             this.groupBox4.Controls.Add(this.label45);
             this.groupBox4.Controls.Add(this.nud_streamExtra3);
@@ -1628,6 +1642,24 @@
             this.groupBox4.TabIndex = 9;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Mavlink";
+            // 
+            // tb_mavmsg
+            // 
+            this.tb_mavmsg.Location = new System.Drawing.Point(497, 266);
+            this.tb_mavmsg.Multiline = true;
+            this.tb_mavmsg.Name = "tb_mavmsg";
+            this.tb_mavmsg.Size = new System.Drawing.Size(383, 155);
+            this.tb_mavmsg.TabIndex = 29;
+            // 
+            // lb_mavmsg
+            // 
+            this.lb_mavmsg.FormattingEnabled = true;
+            this.lb_mavmsg.HorizontalScrollbar = true;
+            this.lb_mavmsg.Location = new System.Drawing.Point(497, 32);
+            this.lb_mavmsg.Name = "lb_mavmsg";
+            this.lb_mavmsg.Size = new System.Drawing.Size(384, 212);
+            this.lb_mavmsg.TabIndex = 28;
+            this.lb_mavmsg.SelectedIndexChanged += new System.EventHandler(this.lb_mavmsg_SelectedIndexChanged);
             // 
             // cbx_mavhb
             // 
@@ -2850,47 +2882,37 @@
             0});
             this.nud_yoffset.ValueChanged += new System.EventHandler(this.video0_config_changed);
             // 
-            // tabControl1
+            // tc_main
             // 
-            this.tabControl1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.tc_main.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tabControl1.Controls.Add(this.tab_video);
-            this.tabControl1.Controls.Add(this.tab_uarts);
-            this.tabControl1.Controls.Add(this.tab_mavlink);
-            this.tabControl1.Controls.Add(this.tab_alarms);
-            this.tabControl1.Controls.Add(this.tab_misc);
-            this.tabControl1.Controls.Add(this.tab_widgets);
-            this.tabControl1.Controls.Add(this.tab_log);
-            this.tabControl1.Location = new System.Drawing.Point(12, 27);
-            this.tabControl1.Name = "tabControl1";
-            this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(1173, 503);
-            this.tabControl1.TabIndex = 0;
-            this.tabControl1.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
+            this.tc_main.Controls.Add(this.tab_video);
+            this.tc_main.Controls.Add(this.tab_uarts);
+            this.tc_main.Controls.Add(this.tab_mavlink);
+            this.tc_main.Controls.Add(this.tab_alarms);
+            this.tc_main.Controls.Add(this.tab_misc);
+            this.tc_main.Controls.Add(this.tab_widgets);
+            this.tc_main.Controls.Add(this.tab_log);
+            this.tc_main.Location = new System.Drawing.Point(12, 27);
+            this.tc_main.Name = "tc_main";
+            this.tc_main.SelectedIndex = 0;
+            this.tc_main.Size = new System.Drawing.Size(1173, 503);
+            this.tc_main.TabIndex = 0;
+            this.tc_main.SelectedIndexChanged += new System.EventHandler(this.tc_main_SelectedIndexChanged);
             // 
             // timer_submit_cfg
             // 
             this.timer_submit_cfg.Interval = 500;
             this.timer_submit_cfg.Tick += new System.EventHandler(this.timer_submit_cfg_Tick);
             // 
-            // bt_flash_fw
-            // 
-            this.bt_flash_fw.Location = new System.Drawing.Point(774, 19);
-            this.bt_flash_fw.Name = "bt_flash_fw";
-            this.bt_flash_fw.Size = new System.Drawing.Size(96, 23);
-            this.bt_flash_fw.TabIndex = 16;
-            this.bt_flash_fw.Text = "Flash firmware...";
-            this.bt_flash_fw.UseVisualStyleBackColor = true;
-            this.bt_flash_fw.Click += new System.EventHandler(this.bt_flash_fw_Click);
-            // 
             // AlceOSDconfigForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1197, 901);
+            this.ClientSize = new System.Drawing.Size(1197, 873);
             this.Controls.Add(this.gb_shell);
             this.Controls.Add(this.pb);
-            this.Controls.Add(this.tabControl1);
+            this.Controls.Add(this.tc_main);
             this.Controls.Add(this.menuStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
@@ -2973,7 +2995,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.nud_ysize)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_xoffset)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nud_yoffset)).EndInit();
-            this.tabControl1.ResumeLayout(false);
+            this.tc_main.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -3183,12 +3205,14 @@
         private System.Windows.Forms.NumericUpDown nud_ysize;
         private System.Windows.Forms.NumericUpDown nud_xoffset;
         private System.Windows.Forms.NumericUpDown nud_yoffset;
-        private System.Windows.Forms.TabControl tabControl1;
+        private System.Windows.Forms.TabControl tc_main;
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.ComboBox cb_hwrev;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.ToolStripMenuItem importOldConfigToolStripMenuItem;
         private System.Windows.Forms.Timer timer_submit_cfg;
         private System.Windows.Forms.Button bt_flash_fw;
+        private System.Windows.Forms.ListBox lb_mavmsg;
+        private System.Windows.Forms.TextBox tb_mavmsg;
     }
 }

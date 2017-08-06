@@ -109,6 +109,7 @@
       <DependentUpon>AlceOSDconfigForm.cs</DependentUpon>
     </Compile>
     <Compile Include="ByteArrayUtil.cs" />
+    <Compile Include="Widgets.cs" />
     <Compile Include="Comm.cs" />
     <Compile Include="FrameworkBitConverter.cs" />
     <Compile Include="mav.generated.cs" />
