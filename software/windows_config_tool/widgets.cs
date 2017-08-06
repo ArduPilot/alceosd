@@ -224,6 +224,7 @@ namespace AlceOSD
             this.parent = parent;
             this.name = mavname;
             this.uid = uid;
+            canvas.loaded = false;
         }
         ~Widget()
         {
@@ -262,10 +263,7 @@ namespace AlceOSD
             return get_id() + "+" + this.uid;
         }
 
-        /*
-        Canvas canvas;
-
-        private struct Canvas
+        public struct Canvas
         {
             public byte[] bitmap;
             public int width;
@@ -273,9 +271,10 @@ namespace AlceOSD
             public int x0;
             public int y0;
 
-            public bool shown;
+            public bool loaded;
         }
-        */
+
+        public Canvas canvas;
 
     }
 }
