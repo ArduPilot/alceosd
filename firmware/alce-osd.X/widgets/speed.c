@@ -71,7 +71,7 @@ static int open(struct widget *w)
             w->ca.height = Y_SIZE;
             break;
         case 1:
-            w->ca.width = 48;
+            w->ca.width = 18 * 4;
             w->ca.height = 20;
             break;
     }

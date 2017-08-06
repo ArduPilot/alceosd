@@ -96,7 +96,7 @@ static void render(struct widget *w)
     snprintf(buf, 50, "%d %s\n%2.1f HDP",
                 priv->gps_nrsats, buf2,
                 (double) priv->gps_eph);
-    draw_jstr(buf, ca->width, 0, JUST_RIGHT, ca, priv->font_id);
+    draw_jstr(buf, ca->width - 1, 0, JUST_RIGHT, ca, priv->font_id);
 }
 
 
