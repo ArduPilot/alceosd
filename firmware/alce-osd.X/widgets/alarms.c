@@ -89,7 +89,7 @@ static void render(struct widget *w)
     char buf[MAX_WARN_LINE_SIZE];
     int ptr = 0;
     u8 id;
-    u16 z;
+    s16 z;
 
     if (priv->active_alarms != 0) {
         if (priv->blink < BLINK_CNT) {
