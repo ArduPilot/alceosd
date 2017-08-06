@@ -20,6 +20,7 @@
 
 
 #define X_SIZE  40
+#define X_SIZE_TEXT  (18*4)
 #define Y_SIZE  100
 #define X_CENTER    (X_SIZE/2) + 12
 #define Y_CENTER    (Y_SIZE/2) - 1
@@ -71,7 +72,7 @@ static int open(struct widget *w)
             w->ca.height = Y_SIZE;
             break;
         case 1:
-            w->ca.width = 18 * 4;
+            w->ca.width = X_SIZE_TEXT;
             w->ca.height = 20;
             break;
     }
@@ -161,7 +162,7 @@ static void render(struct widget *w)
             break;
         case 1:
             snprintf(buf, 10, "%d%s", speed_i, text);
-            draw_jstr(buf, 47, 10, JUST_RIGHT | JUST_VCENTER, ca, 1);
+            draw_jstr(buf, X_SIZE_TEXT - 1, 10, JUST_RIGHT | JUST_VCENTER, ca, 1);
             break;
     }
 }
