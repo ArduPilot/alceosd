@@ -60,6 +60,7 @@
         <itemPath>widgets/temperature.c</itemPath>
         <itemPath>widgets/alarms.c</itemPath>
         <itemPath>widgets/ils.c</itemPath>
+        <itemPath>widgets/clock.c</itemPath>
       </logicalFolder>
       <itemPath>uart.c</itemPath>
       <itemPath>main.c</itemPath>
