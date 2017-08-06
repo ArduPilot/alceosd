@@ -25,6 +25,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdarg.h>
+#include <time.h>
 
 #include "graphics.h"
 #include "config.h"

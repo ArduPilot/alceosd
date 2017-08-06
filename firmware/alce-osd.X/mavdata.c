@@ -49,6 +49,7 @@ MAVDATA_INFO(MISSION_CURRENT, mission_current);
 MAVDATA_INFO(RANGEFINDER, rangefinder);
 MAVDATA_INFO(WIND, wind);
 MAVDATA_INFO(SCALED_PRESSURE, scaled_pressure);
+MAVDATA_INFO(SYSTEM_TIME, system_time);
 
 void mavdata_init(void)
 {
@@ -75,6 +76,7 @@ void mavdata_init(void)
     MAVDATA_DEF(RANGEFINDER, rangefinder);
     MAVDATA_DEF(WIND, wind);
     MAVDATA_DEF(SCALED_PRESSURE, scaled_pressure);
+    MAVDATA_DEF(SYSTEM_TIME, system_time);
 }
 
 void mavdata_store(mavlink_message_t *msg)
