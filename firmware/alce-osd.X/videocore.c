@@ -1964,7 +1964,7 @@ static void shell_cmd_config(char *args, void *data)
     if (t < 1) {
         shell_printf("arguments:\n");
         shell_printf(" -p <profile>     video profile: 0 or 1 (default is active profile)\n");
-        shell_printf(" -s <standard>    video standard: [p]al or [n]tsc\n");
+        //shell_printf(" -s <standard>    video standard: [p]al or [n]tsc\n");
         shell_printf(" -m <scan_mode>   video scan mode: [p]rogressive or [i]nterlaced\n");
 
         switch (hw_rev) {
