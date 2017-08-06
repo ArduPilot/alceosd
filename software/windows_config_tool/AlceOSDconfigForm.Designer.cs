@@ -503,41 +503,41 @@
             // 
             this.openConfigToolStripMenuItem.Name = "openConfigToolStripMenuItem";
             this.openConfigToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.openConfigToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
-            this.openConfigToolStripMenuItem.Text = "Open...";
+            this.openConfigToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.openConfigToolStripMenuItem.Text = "Open config...";
             this.openConfigToolStripMenuItem.Click += new System.EventHandler(this.openConfigToolStripMenuItem_Click);
             // 
             // saveConfigToolStripMenuItem
             // 
             this.saveConfigToolStripMenuItem.Name = "saveConfigToolStripMenuItem";
             this.saveConfigToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.saveConfigToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
-            this.saveConfigToolStripMenuItem.Text = "Save";
+            this.saveConfigToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.saveConfigToolStripMenuItem.Text = "Save config";
             this.saveConfigToolStripMenuItem.Click += new System.EventHandler(this.saveConfigToolStripMenuItem_Click);
             // 
             // saveAsToolStripMenuItem
             // 
             this.saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
-            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
-            this.saveAsToolStripMenuItem.Text = "Save as...";
+            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
+            this.saveAsToolStripMenuItem.Text = "Save config as...";
             this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.saveAsToolStripMenuItem_Click);
             // 
             // importOldConfigToolStripMenuItem
             // 
             this.importOldConfigToolStripMenuItem.Name = "importOldConfigToolStripMenuItem";
-            this.importOldConfigToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
+            this.importOldConfigToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.importOldConfigToolStripMenuItem.Text = "Import old config...";
             this.importOldConfigToolStripMenuItem.Click += new System.EventHandler(this.importOldConfigToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(173, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(189, 6);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -1465,7 +1465,7 @@
             this.textBox1.Margin = new System.Windows.Forms.Padding(0);
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(213, 151);
+            this.textBox1.Size = new System.Drawing.Size(251, 151);
             this.textBox1.TabIndex = 12;
             this.textBox1.Text = resources.GetString("textBox1.Text");
             // 

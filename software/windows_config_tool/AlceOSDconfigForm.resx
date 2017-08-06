@@ -151,7 +151,8 @@
     <value>1153, 17</value>
   </metadata>
   <data name="textBox1.Text" xml:space="preserve">
-    <value>High: Source normally above &lt;value&gt;. When source drops below &lt;value&gt; for more than &lt;delay&gt; ms, the alarm triggers.
+    <value>Alarm type:
+High: Source normally above &lt;value&gt;. When source drops below &lt;value&gt; for more than &lt;delay&gt; ms, the alarm triggers.
 
 Low: Source normally below &lt;value&gt;. When source goes above the &lt;value&gt; for more than &lt;delay&gt; ms, the alarm triggers.</value>
   </data>
