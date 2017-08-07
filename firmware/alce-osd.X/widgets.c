@@ -93,8 +93,10 @@ struct widget_fifo {
     .wr = 0,
 };
 
+extern struct alceosd_config config;
 static struct widget *active_widgets[MAX_ACTIVE_WIDGETS];
 static unsigned char total_active_widgets = 0;
+static struct widget *selected_widget = NULL;
 
 /* custom memory allocator for widgets */
 void* widget_malloc(unsigned int size)
@@ -179,7 +181,7 @@ static inline void render_widget(struct widget *w)
     if (init_canvas(&w->ca) == 0) {
         w->ops->render(w);
         if (selected_widget == w)
-            draw_rect(0, 0, w->ca.width-1, w->ca.height-1, 3, &w->ca);
+            draw_rect(0, 0, w->ca.width-1, w->ca.height-1, ((get_millis16()/500) & 1) ? 3 : 1, &w->ca);
         schedule_canvas(&w->ca);
     }
     w->status = 0;
@@ -221,6 +223,22 @@ void reconfig_widget(struct widget *w)
     }
 }
 
+static void blink_selected_widget_timer(struct timer *t, void *d)
+{
+    if (selected_widget == NULL)
+        remove_timer(t);
+    else
+        schedule_widget(d);
+}
+
+void select_widget(struct widget *w)
+{
+    if (selected_widget != NULL)
+        schedule_widget(selected_widget);
+    selected_widget = w;
+    add_timer(TIMER_ALWAYS, 500, blink_selected_widget_timer, w);
+}
+
 void widgets_reset(void)
 {
     /* close active widgets */
@@ -237,6 +255,8 @@ void widgets_reset(void)
     free_mem();
     /* clear display */
     clear_sram();
+    
+    selected_widget = NULL;
 }
 
 extern struct alceosd_config config;
@@ -325,7 +345,6 @@ static void get_widget_param(unsigned int pidx,
         default:
             break;
     }
-
 }
 
 static int set_widget_param(struct widget_config *wcfg, struct param_def *p, char *pname)
@@ -379,7 +398,6 @@ static int set_widget_param(struct widget_config *wcfg, struct param_def *p, cha
             wcfg->params[i - WID_PARAM_PARAM1] = (unsigned int) v; //pv->param_uint16;
             break;
     }
-
     return (int) i;
 }
 
@@ -391,7 +409,6 @@ static unsigned int widgets_total_params(void)
     while ((wcfg++)->tab != TABS_END) {
         total++;
     }
-
     return WID_PARAM_END * total;
 }
 
@@ -466,11 +483,10 @@ static int widgets_set_params(struct param_def *p)
         ret = set_widget_param(wcfg, p, pname);
         (wcfg+1)->tab = TABS_END;
     }
-
     return idx * ret;
 }
 
-unsigned char widget_get_uid(unsigned char wid)
+unsigned char widget_get_uid(unsigned char id)
 {
     struct widget_config *wcfg;
     unsigned char uid = 0, busy;
@@ -479,7 +495,7 @@ unsigned char widget_get_uid(unsigned char wid)
         wcfg = config.widgets;
         busy = 0;
         while (wcfg->tab != TABS_END) {
-            if ((wid == wcfg->widget_id) && (uid == wcfg->uid))
+            if ((id == wcfg->widget_id) && (uid == wcfg->uid))
                 busy = 1;
             wcfg++;
         }
@@ -534,9 +550,6 @@ static void shell_cmd_loaded(char *args, void *data)
             w->cfg->props.hjust, w->cfg->props.vjust);
     }
 }
-
-
-extern struct alceosd_config config;
 
 static void shell_cmd_list(char *args, void *data)
 {
@@ -789,6 +802,7 @@ static void shell_cmd_config(char *args, void *data)
         shell_printf("syntax: widgets cfg -i <id+uid> <options...>\n");
         shell_printf("      -i <id+uid>     widget global id + unique id\n");
         shell_printf("    Options:\n");
+        shell_printf("      -w              select widget (blink boundary)\n");
         shell_printf("      -t <tab id>     tab id number (1-254)\n");
         shell_printf("      -x <x pos>      x position\n");
         shell_printf("      -y <y pos>      y position\n");
@@ -850,7 +864,7 @@ static void shell_cmd_config(char *args, void *data)
         } else {
             shell_printf("Changed widget: %02u+%02u\n", id, uid);
         }
-        
+
         for (i = 0; i < t; i++) {
             //shell_printf("\nkey=%c val=%s", argval[i].key, argval[i].val);
             val = atoi(argval[i].val);
@@ -906,8 +920,15 @@ static void shell_cmd_config(char *args, void *data)
         }
         if (i == total_active_widgets)
             return;
-        
-        reconfig_widget(w);
+
+        p = shell_get_argval(argval, 'w');
+        if (p != NULL) {
+            val = atoi(p->val);
+            if (val)
+                select_widget(w);
+        } else {
+            reconfig_widget(w);
+        }
     }
 }
 
