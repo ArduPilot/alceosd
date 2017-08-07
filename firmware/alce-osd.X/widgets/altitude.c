@@ -61,6 +61,16 @@ static void pre_render(struct timer *t, void *d)
             altitude = terrain->current_height;
             break;
         }
+        case 4: {
+            mavlink_global_position_int_t *gp = mavdata_get(MAVLINK_MSG_ID_GLOBAL_POSITION_INT);
+            altitude = gp->alt / 1000.0;
+            break;
+        }
+        case 5: {
+            mavlink_global_position_int_t *gp = mavdata_get(MAVLINK_MSG_ID_GLOBAL_POSITION_INT);
+            altitude = gp->relative_alt / 1000.0;
+            break;
+        }
     }
     
     if (get_units(w->cfg) == UNITS_IMPERIAL)
