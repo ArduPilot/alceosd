@@ -178,6 +178,8 @@ static inline void render_widget(struct widget *w)
 {
     if (init_canvas(&w->ca) == 0) {
         w->ops->render(w);
+        if (selected_widget == w)
+            draw_rect(0, 0, w->ca.width-1, w->ca.height-1, 3, &w->ca);
         schedule_canvas(&w->ca);
     }
     w->status = 0;
@@ -820,6 +822,19 @@ static void shell_cmd_config(char *args, void *data)
             w_cfg++;
         }
 
+        if (found && (t == 1)) {
+            /* dump widget config */
+            shell_printf("t:%u x:%d y:%d h:%u v:%u ",
+                    w_cfg->tab, w_cfg->x, w_cfg->y,
+                    w_cfg->props.hjust, w_cfg->props.vjust);
+            shell_printf("m:%u s:%u u:%u ", w_cfg->props.mode,
+                    w_cfg->props.source, w_cfg->props.units);
+            shell_printf("a:%u b:%u c:%u d:%u\n",
+                    w_cfg->params[0], w_cfg->params[1],
+                    w_cfg->params[2], w_cfg->params[3]);
+            return;
+        }
+        
         if (!found) {
             if (t == 13) {
                 /* create new if all parameters are provided */
@@ -834,19 +849,6 @@ static void shell_cmd_config(char *args, void *data)
             }
         } else {
             shell_printf("Changed widget: %02u+%02u\n", id, uid);
-        }
-        
-        if (t == 1) {
-            /* dump widget config */
-            shell_printf("t:%u x:%d y:%d h:%u v:%u ",
-                    w_cfg->tab, w_cfg->x, w_cfg->y,
-                    w_cfg->props.hjust, w_cfg->props.vjust);
-            shell_printf("m:%u s:%u u:%u ", w_cfg->props.mode,
-                    w_cfg->props.source, w_cfg->props.units);
-            shell_printf("a:%u b:%u c:%u d:%u\n",
-                    w_cfg->params[0], w_cfg->params[1],
-                    w_cfg->params[2], w_cfg->params[3]);
-            return;
         }
         
         for (i = 0; i < t; i++) {
@@ -874,7 +876,7 @@ static void shell_cmd_config(char *args, void *data)
                     w_cfg->props.mode = (val & 0xf);
                     break;
                 case 's':
-                    w_cfg->props.source = (val & 3);
+                    w_cfg->props.source = (val & 7);
                     break;
                 case 'u':
                     w_cfg->props.units = (val & 3);
@@ -896,16 +898,16 @@ static void shell_cmd_config(char *args, void *data)
             }
         }
         
-        if (found) {
-            /* check if loaded and reconfig */
-            for (i = 0; i < total_active_widgets; i++) {
-                w = active_widgets[i];
-                if ((w->cfg->uid == uid) && (w->cfg->widget_id == id)) {
-                    reconfig_widget(w);
-                    return;
-                }
-            }
+        /* check if loaded and reconfig */
+        for (i = 0; i < total_active_widgets; i++) {
+            w = active_widgets[i];
+            if ((w->cfg->uid == uid) && (w->cfg->widget_id == id))
+                break;
         }
+        if (i == total_active_widgets)
+            return;
+        
+        reconfig_widget(w);
     }
 }
 
