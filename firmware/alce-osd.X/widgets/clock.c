@@ -20,7 +20,8 @@
 
 
 struct widget_priv {
-    char buf[80];
+    char buf[50];
+    u8 h, m;
 };
 
 static void pre_render(struct timer *t, void *d)
@@ -28,12 +29,39 @@ static void pre_render(struct timer *t, void *d)
     struct widget *w = d;
     struct widget_priv *priv = w->priv;
     struct tm ts;
+    u8 fmt = get_units(w->cfg);
 
     mavlink_system_time_t *utime = mavdata_get(MAVLINK_MSG_ID_SYSTEM_TIME);
     time_t now = utime->time_unix_usec / 1000000;
 
     ts = *localtime(&now);
-    strftime(priv->buf, sizeof(priv->buf), "%a %Y-%m-%d %H:%M:%S %Z", &ts);
+    
+    switch (w->cfg->props.mode) {
+        default:
+        case 0:
+            /* date & time */
+            if (fmt == UNITS_METRIC)
+                strftime(priv->buf, sizeof(priv->buf), "%a %Y-%m-%d %H:%M:%S", &ts);
+            else
+                strftime(priv->buf, sizeof(priv->buf), "%a %Y-%m-%d %I:%M:%S %p", &ts);
+            break;
+        case 1:
+            /* date */
+            strftime(priv->buf, sizeof(priv->buf), "%a %d %b %Y", &ts);
+            break;
+        case 2:
+            /* time */
+            if (fmt == UNITS_METRIC)
+                strftime(priv->buf, sizeof(priv->buf), "%H:%M:%S", &ts);
+            else
+                strftime(priv->buf, sizeof(priv->buf), "%I:%M:%S %p", &ts);
+            break;
+        case 15:
+            /* analog clock */
+            priv->h = ts.tm_hour;
+            priv->m = ts.tm_min;
+            break;
+    }
     
     schedule_widget(w);
 }
@@ -47,8 +75,13 @@ static int open(struct widget *w)
         return -1;
     w->priv = priv;
 
-    w->ca.height = 20;
-    w->ca.width = 200;
+    if (w->cfg->props.mode < 15) {
+        w->ca.height = 20;
+        w->ca.width = 200;
+    } else {
+        w->ca.height = 50;
+        w->ca.width = 50;
+    }
     
     add_timer(TIMER_WIDGET, 1000, pre_render, w);
     return 0;
@@ -59,8 +92,27 @@ static void render(struct widget *w)
 {
     struct widget_priv *priv = w->priv;
     struct canvas *ca = &w->ca;
+    int xc = ca->width / 2;
+    int yc = ca->height / 2;
 
-    draw_jstr(priv->buf, ca->width / 2, 0, JUST_HCENTER, ca, w->cfg->props.mode);
+    
+    if (w->cfg->props.mode == 15) {
+        float ah, am;
+        ah = (float)priv->h / 12.0 * 2 * PI;
+        am = (float)priv->m / 60.0 * 2 * PI;
+        
+        draw_circle(xc, yc, 22, 1, ca);
+        draw_circle(xc, yc, 23, 3, ca);
+
+        draw_line(xc-1, yc-1, xc + 15 * sin(ah) - 1, yc - 15*cos(ah), 3, ca);
+        draw_line(xc, yc, xc + 15 * sin(ah), yc - 15*cos(ah) - 1, 1, ca);
+
+        draw_line(xc-1, yc-1, xc + 21 * sin(am) - 1, yc - 15*cos(am) -1, 3, ca);
+        draw_line(xc, yc, xc + 21 * sin(am), yc - 15*cos(am), 1, ca);
+    } else {
+        draw_jstr(priv->buf, xc, yc,
+                JUST_HCENTER | JUST_VCENTER, ca, w->cfg->params[0]);
+    }
 }
 
 
