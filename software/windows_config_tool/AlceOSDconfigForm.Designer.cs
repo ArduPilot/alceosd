@@ -142,13 +142,10 @@
             this.cb_fa_type = new System.Windows.Forms.ComboBox();
             this.label48 = new System.Windows.Forms.Label();
             this.label47 = new System.Windows.Forms.Label();
-            this.lb_fa_cfg = new System.Windows.Forms.ListBox();
             this.label6 = new System.Windows.Forms.Label();
             this.lb_fa = new System.Windows.Forms.ListBox();
             this.tab_mavlink = new System.Windows.Forms.TabPage();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.tb_mavmsg = new System.Windows.Forms.TextBox();
-            this.lb_mavmsg = new System.Windows.Forms.ListBox();
             this.cbx_mavhb = new System.Windows.Forms.CheckBox();
             this.label45 = new System.Windows.Forms.Label();
             this.nud_streamExtra3 = new System.Windows.Forms.NumericUpDown();
@@ -242,6 +239,13 @@
             this.nud_yoffset = new System.Windows.Forms.NumericUpDown();
             this.tc_main = new System.Windows.Forms.TabControl();
             this.timer_submit_cfg = new System.Windows.Forms.Timer(this.components);
+            this.lv_fa_cfg = new System.Windows.Forms.ListView();
+            this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeader6 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             ((System.ComponentModel.ISupportInitialize)(this.tb_tlog)).BeginInit();
             this.cm_widget.SuspendLayout();
             this.menuStrip1.SuspendLayout();
@@ -1417,6 +1421,7 @@
             // 
             // tab_alarms
             // 
+            this.tab_alarms.Controls.Add(this.lv_fa_cfg);
             this.tab_alarms.Controls.Add(this.bt_fa_savealarm);
             this.tab_alarms.Controls.Add(this.bt_fa_del);
             this.tab_alarms.Controls.Add(this.bt_fa_add);
@@ -1429,7 +1434,6 @@
             this.tab_alarms.Controls.Add(this.cb_fa_type);
             this.tab_alarms.Controls.Add(this.label48);
             this.tab_alarms.Controls.Add(this.label47);
-            this.tab_alarms.Controls.Add(this.lb_fa_cfg);
             this.tab_alarms.Controls.Add(this.label6);
             this.tab_alarms.Controls.Add(this.lb_fa);
             this.tab_alarms.Location = new System.Drawing.Point(4, 22);
@@ -1562,15 +1566,6 @@
             this.label47.TabIndex = 3;
             this.label47.Text = "Configured Alarms";
             // 
-            // lb_fa_cfg
-            // 
-            this.lb_fa_cfg.FormattingEnabled = true;
-            this.lb_fa_cfg.Location = new System.Drawing.Point(191, 33);
-            this.lb_fa_cfg.Name = "lb_fa_cfg";
-            this.lb_fa_cfg.Size = new System.Drawing.Size(251, 173);
-            this.lb_fa_cfg.TabIndex = 2;
-            this.lb_fa_cfg.SelectedIndexChanged += new System.EventHandler(this.lb_fa_cfg_SelectedIndexChanged);
-            // 
             // label6
             // 
             this.label6.AutoSize = true;
@@ -1612,8 +1607,6 @@
             this.groupBox4.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupBox4.Controls.Add(this.tb_mavmsg);
-            this.groupBox4.Controls.Add(this.lb_mavmsg);
             this.groupBox4.Controls.Add(this.cbx_mavhb);
             this.groupBox4.Controls.Add(this.label45);
             this.groupBox4.Controls.Add(this.nud_streamExtra3);
@@ -1642,24 +1635,6 @@
             this.groupBox4.TabIndex = 9;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Mavlink";
-            // 
-            // tb_mavmsg
-            // 
-            this.tb_mavmsg.Location = new System.Drawing.Point(497, 266);
-            this.tb_mavmsg.Multiline = true;
-            this.tb_mavmsg.Name = "tb_mavmsg";
-            this.tb_mavmsg.Size = new System.Drawing.Size(383, 155);
-            this.tb_mavmsg.TabIndex = 29;
-            // 
-            // lb_mavmsg
-            // 
-            this.lb_mavmsg.FormattingEnabled = true;
-            this.lb_mavmsg.HorizontalScrollbar = true;
-            this.lb_mavmsg.Location = new System.Drawing.Point(497, 32);
-            this.lb_mavmsg.Name = "lb_mavmsg";
-            this.lb_mavmsg.Size = new System.Drawing.Size(384, 212);
-            this.lb_mavmsg.TabIndex = 28;
-            this.lb_mavmsg.SelectedIndexChanged += new System.EventHandler(this.lb_mavmsg_SelectedIndexChanged);
             // 
             // cbx_mavhb
             // 
@@ -2905,6 +2880,55 @@
             this.timer_submit_cfg.Interval = 500;
             this.timer_submit_cfg.Tick += new System.EventHandler(this.timer_submit_cfg_Tick);
             // 
+            // lv_fa_cfg
+            // 
+            this.lv_fa_cfg.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.columnHeader1,
+            this.columnHeader2,
+            this.columnHeader3,
+            this.columnHeader4,
+            this.columnHeader5,
+            this.columnHeader6});
+            this.lv_fa_cfg.FullRowSelect = true;
+            this.lv_fa_cfg.GridLines = true;
+            this.lv_fa_cfg.Location = new System.Drawing.Point(191, 33);
+            this.lv_fa_cfg.Name = "lv_fa_cfg";
+            this.lv_fa_cfg.Size = new System.Drawing.Size(391, 173);
+            this.lv_fa_cfg.TabIndex = 16;
+            this.lv_fa_cfg.UseCompatibleStateImageBehavior = false;
+            this.lv_fa_cfg.View = System.Windows.Forms.View.Details;
+            this.lv_fa_cfg.SelectedIndexChanged += new System.EventHandler(this.lv_fa_cfg_SelectedIndexChanged);
+            // 
+            // columnHeader1
+            // 
+            this.columnHeader1.Text = "nr";
+            this.columnHeader1.Width = 25;
+            // 
+            // columnHeader2
+            // 
+            this.columnHeader2.Text = "id";
+            this.columnHeader2.Width = 25;
+            // 
+            // columnHeader3
+            // 
+            this.columnHeader3.Text = "Name";
+            this.columnHeader3.Width = 140;
+            // 
+            // columnHeader4
+            // 
+            this.columnHeader4.Text = "Type";
+            this.columnHeader4.Width = 51;
+            // 
+            // columnHeader5
+            // 
+            this.columnHeader5.Text = "Value";
+            this.columnHeader5.Width = 67;
+            // 
+            // columnHeader6
+            // 
+            this.columnHeader6.Text = "Delay";
+            this.columnHeader6.Width = 67;
+            // 
             // AlceOSDconfigForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -3109,7 +3133,6 @@
         private System.Windows.Forms.ComboBox cb_fa_type;
         private System.Windows.Forms.Label label48;
         private System.Windows.Forms.Label label47;
-        private System.Windows.Forms.ListBox lb_fa_cfg;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.ListBox lb_fa;
         private System.Windows.Forms.TabPage tab_mavlink;
@@ -3212,7 +3235,12 @@
         private System.Windows.Forms.ToolStripMenuItem importOldConfigToolStripMenuItem;
         private System.Windows.Forms.Timer timer_submit_cfg;
         private System.Windows.Forms.Button bt_flash_fw;
-        private System.Windows.Forms.ListBox lb_mavmsg;
-        private System.Windows.Forms.TextBox tb_mavmsg;
+        private System.Windows.Forms.ListView lv_fa_cfg;
+        private System.Windows.Forms.ColumnHeader columnHeader1;
+        private System.Windows.Forms.ColumnHeader columnHeader2;
+        private System.Windows.Forms.ColumnHeader columnHeader3;
+        private System.Windows.Forms.ColumnHeader columnHeader4;
+        private System.Windows.Forms.ColumnHeader columnHeader5;
+        private System.Windows.Forms.ColumnHeader columnHeader6;
     }
 }

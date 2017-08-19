@@ -327,6 +327,75 @@ namespace AlceOSD_updater
             }
         }
 
+        private void bt_flash_fw_Click(object sender, EventArgs e)
+        {
+            string version = "";
+
+            tc_main.SelectTab(tc_main.TabPages.IndexOfKey("tab_log"));
+
+            setup_comport();
+            if (!open_comport())
+                return;
+            if (!reset_board(true, false))
+            {
+                MessageBox.Show("Error waiting for bootloader", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+
+            bool ready = false;
+            string ans = "";
+            string ans2;
+            int timeout = 0;
+
+            while (!ready)
+            {
+                while (comPort.BytesToRead < 1)
+                {
+                    System.Threading.Thread.Sleep(10);
+                    if (++timeout > 100)
+                    {
+                        MessageBox.Show("Error waiting for bootloader", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        comPort.Close();
+                        return;
+                    }
+                }
+
+                ans += comPort.ReadExisting();
+
+                if (ans.EndsWith("..."))
+                    ready = true;
+
+                ans2 = ans.TrimEnd();
+                if (ans2.EndsWith("BIN"))
+                    ready = true;
+                if (ans2.EndsWith("IHEX"))
+                    ready = true;
+            }
+
+            int v0 = ans.IndexOf('v') + 1;
+            version = ans.Substring(v0, 3);
+
+            txt_log.AppendText("AlceOSD bootloader version " + version + "\n");
+
+            System.Threading.Thread.Sleep(500);
+            comPort.DiscardInBuffer();
+
+            DialogResult result = ofd_fwfile.ShowDialog();
+            if ((result != DialogResult.Cancel) && (ofd_fwfile.FileName != ""))
+            {
+                txt_log.AppendText("Will flash file " + ofd_fwfile.FileName + "\n");
+                do_flash(version);
+            }
+            else
+            {
+                byte[] abort = new byte[] { 0xff, 0xff, 0xff };
+                txt_log.AppendText("Exiting bootloader...\n");
+                comPort.Write(abort, 0, 3);
+            }
+            comPort.Close();
+        }
+
         /* ********************************************************************************* */
         /* ********************************************************************************* */
         /* HW stuff */
@@ -428,7 +497,6 @@ namespace AlceOSD_updater
                     break;
                 default:
                     break;
-
             }
 
             /* VIDEO */
@@ -454,14 +522,12 @@ namespace AlceOSD_updater
                 nud_graylvl.Enabled = true;
                 nud_whitelvl.Enabled = true;
             }
-
         }
 
         private string[] get_com_ports()
         {
             string[] ports = SerialPort.GetPortNames();
             return ports;
-
         }
 
         private void cb_comport_Click(object sender, EventArgs e)
@@ -692,6 +758,10 @@ namespace AlceOSD_updater
             return true;
         }
 
+        private void cb_hwrev_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            validate_hw_options();
+        }
 
         /* ********************************************************************************* */
         /* ********************************************************************************* */
@@ -1171,8 +1241,7 @@ namespace AlceOSD_updater
             comPort.DiscardInBuffer();
 
             get_widget_canvas(w);
-//            w.canvas.shown = true;
-            //ca[name_uid] = c;
+            pos2canvas(w);
             pb_osd.Invalidate();
         }
         
@@ -1248,6 +1317,9 @@ namespace AlceOSD_updater
             string name_uid = lb_widgets.SelectedItem.ToString();
             Widget w = widget_cfg.get_widget(name_uid);
 
+            if (shell_active)
+                send_cmd("widgets cfg -i" + w.get_iduid() + " -w1");
+
             //get_widget_config(name_uid);
 
             timer_submit_allowed = false;
@@ -1286,7 +1358,6 @@ namespace AlceOSD_updater
             {
                 case "ALARMS":
                 case "TEMPER":
-                case "THROTTL":
                 case "VARIO":
                 case "VIDLVL":
                 case "COMPASS":
@@ -1305,6 +1376,8 @@ namespace AlceOSD_updater
                     cb_wsource.Items.Add("Home altitude");
                     cb_wsource.Items.Add("GPS2 (M.S.L.)");
                     cb_wsource.Items.Add("Terrain altitude");
+                    cb_wsource.Items.Add("Altitude (Global Position msg)");
+                    cb_wsource.Items.Add("Home Altitude (Global Position msg)");
                     cb_wsource.Visible = true;
                     lbl_wsource.Visible = true;
                     break;
@@ -1407,6 +1480,23 @@ namespace AlceOSD_updater
                     cb_wunits.Items.Add("m/s");
                     cb_wunits.Items.Add("f/s");
                     cb_wunits.Items.Add("kn");
+                    break;
+                case "THROTTL":
+                    lbl_wmode.Visible = true;
+                    cb_wmode.Visible = true;
+                    cb_wmode.Items.Add("Vertical Bar");
+                    cb_wmode.Items.Add("Horizontal Bar");
+                    cb_wmode.Items.Add("Text");
+                    lbl_wsource.Visible = true;
+                    cb_wsource.Visible = true;
+                    cb_wsource.Items.Add("Throttle output");
+                    cb_wsource.Items.Add("RC Channel");
+                    cb_wunits.Items.Clear();
+                    cb_wunits.Items.Add("Scaled");
+                    cb_wunits.Items.Add("Raw");
+                    set_param(1, "RC Channel (1-18)");
+                    set_param(3, "Min");
+                    set_param(4, "Max");
                     break;
                 default:
                     lbl_wmode.Visible = true;
@@ -1898,7 +1988,6 @@ namespace AlceOSD_updater
                 //c.bitmap.ToList().ForEach(_b => Console.Write(" {0:X}", _b));
                 //Console.WriteLine("");
 
-                //txt_log.AppendText("canvas w" + c.width + "\n");
                 for (y = 0; y < w.canvas.height; y++)
                 {
                     for (x = 0; x < w.canvas.width; x++)
@@ -2608,15 +2697,21 @@ namespace AlceOSD_updater
                                 {
                                     case "3":
                                         /* remove all */
-                                        lb_fa_cfg.Items.Clear();
+                                        lv_fa_cfg.Items.Clear();
                                         break;
                                     case "1":
                                     case "2":
-                                        int faid = lb_fa_cfg.Items.Count;
+                                        int faid = lv_fa_cfg.Items.Count;
                                         int id = Convert.ToInt16(sw["i"]);
                                         string fa_name = lb_fa.Items[faid].ToString();
-                                        lb_fa_cfg.Items.Add("(" + faid + "/" + id + ")" + fa_name);
-                                        flight_alarms.Add(faid, id + " " + sw["a"] + " " + sw["v"] + " " + sw["t"]);
+                                        ListViewItem lvi = new ListViewItem();
+                                        lvi.Text = faid.ToString();
+                                        lvi.SubItems.Add(id.ToString());
+                                        lvi.SubItems.Add(fa_name);
+                                        lvi.SubItems.Add(sw["a"] == "1" ? "High" : "Low");
+                                        lvi.SubItems.Add(sw["v"]);
+                                        lvi.SubItems.Add((Convert.ToInt16(sw["t"]) * 100).ToString());
+                                        lv_fa_cfg.Items.Add(lvi);
                                         break;
                                     default:
                                         break;
@@ -2663,7 +2758,7 @@ namespace AlceOSD_updater
         }
 
 
-        private void get_config2()
+        private void get_shell_config()
         {
             send_cmd("config dump2");
 
@@ -2676,11 +2771,7 @@ namespace AlceOSD_updater
                 config.Add(line);
 
             } while (!line.StartsWith("# end"));
-
-
-
             parse_shell_config(config);
-
         }
 
         private void get_config()
@@ -2751,9 +2842,11 @@ namespace AlceOSD_updater
             if (shell_active)
             {
                 disconnect();
+                init_done = false;
             }
             else
             {
+                init_done = false;
                 bt_conn.Enabled = false;
                 cbx_mavmode.Enabled = false;
                 setup_comport();
@@ -2781,7 +2874,8 @@ namespace AlceOSD_updater
 
                 get_widget_ids();
                 get_flight_alarms();
-                get_config();
+                //get_config();
+                get_shell_config();
                 //load_lb_widgets_canvas();
 
                 timer_com.Enabled = true;
@@ -3275,7 +3369,6 @@ namespace AlceOSD_updater
         /* ********************************************************************************* */
         /* alarms update callback stuff */
 
-        Dictionary<int, string> flight_alarms = new Dictionary<int, string>();
         private void bt_fa_add_Click(object sender, EventArgs e)
         {
             int id = lb_fa.SelectedIndex;
@@ -3304,22 +3397,18 @@ namespace AlceOSD_updater
 
         private int get_faid()
         {
-            if (lb_fa_cfg.SelectedIndex == -1)
+            if (lv_fa_cfg.SelectedIndices.Count != 1)
                 return -1;
-
-            string fa_name = lb_fa_cfg.Items[lb_fa_cfg.SelectedIndex].ToString();
-            Match m = Regex.Match(fa_name, @"\((.+)\/(.+)\).+");
-            if (!m.Success)
-            {
-                return -1;
-            }
-
-            int faid = Convert.ToInt16(m.Groups[1].Value);
+            ListViewItem lvi = lv_fa_cfg.SelectedItems[0];
+            int faid = Convert.ToInt16(lvi.SubItems[0].Text);
             return faid;
         }
 
         private void bt_fa_del_Click(object sender, EventArgs e)
         {
+            if (!shell_active)
+                return;
+
             int faid = get_faid();
             send_cmd("flight alarms -a0 -n" + faid);
             get_flight_alarms();
@@ -3327,8 +3416,14 @@ namespace AlceOSD_updater
 
         private void bt_fa_savealarm_Click(object sender, EventArgs e)
         {
-            int sel = lb_fa_cfg.SelectedIndex;
-            int faid = get_faid();
+            if (!shell_active)
+                return;
+
+            ListViewItem lvi = lv_fa_cfg.SelectedItems[0];
+            int faid = Convert.ToInt16(lvi.SubItems[0].Text);
+
+            //int sel = lb_fa_cfg.SelectedIndex;
+            //int faid = get_faid();
             int l = cb_fa_type.SelectedIndex == 0 ? 1 : 2;
             int timer = (int)nud_fa_timer.Value / 100;
             double value = 0;
@@ -3342,33 +3437,28 @@ namespace AlceOSD_updater
             }
             send_cmd("flight alarms -a" + l + " -n" + faid + " -v" + value + " -t" + timer);
             get_flight_alarms();
-            lb_fa_cfg.SelectedIndex = sel;
+            //lv_fa_cfg.SelectedIndices. = sel;
         }
 
-        private void lb_fa_cfg_SelectedIndexChanged(object sender, EventArgs e)
+        private void lv_fa_cfg_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (lb_fa_cfg.SelectedIndex == -1)
+            if (lv_fa_cfg.SelectedIndices.Count != 1)
             {
+                bt_fa_savealarm.Enabled = false;
                 return;
             }
-            bt_fa_savealarm.Enabled = true;
-
-            string fa_name = lb_fa_cfg.Items[lb_fa_cfg.SelectedIndex].ToString();
-            Match m = Regex.Match(fa_name, @"\((.+)\/(.+)\).+");
-            if (!m.Success)
+            else
             {
-                return;
+                bt_fa_savealarm.Enabled = true;
             }
 
-            int faid = Convert.ToInt16(m.Groups[1].Value);
-            int id = Convert.ToInt16(m.Groups[2].Value);
-            string[] cfg = flight_alarms[faid].Split(' ');
-
-            lbl_fa_name.Text = lb_fa.Items[id].ToString();
-
-            cb_fa_type.SelectedIndex = cfg[1] == "1" ? 0 : 1;
-            nud_fa_timer.Value = Convert.ToInt16(cfg[3]) * 100;
-            tb_fa_value.Text = cfg[2];
+            ListViewItem lvi = lv_fa_cfg.SelectedItems[0];
+            int faid = Convert.ToInt16(lvi.SubItems[0].Text);
+            int id = Convert.ToInt16(lvi.SubItems[1].Text);
+            lbl_fa_name.Text = lvi.SubItems[2].Text;
+            cb_fa_type.SelectedIndex = lvi.SubItems[3].Text == "High" ? 0 : 1;
+            tb_fa_value.Text = lvi.SubItems[4].Text;
+            nud_fa_timer.Value = Convert.ToInt16(lvi.SubItems[5].Text);
         }
 
         //Dictionary<string, int> flight_alarms_ids = new Dictionary<string, int>();
@@ -3377,10 +3467,10 @@ namespace AlceOSD_updater
             int state = 0;
             bool done = false;
 
+            if (!shell_active)
+                return;
             send_cmd("flight alarms", false);
-
-            flight_alarms.Clear();
-            lb_fa_cfg.Items.Clear();
+            lv_fa_cfg.Items.Clear();
             while (!done)
             {
                 string line = comPort.ReadLine();
@@ -3427,13 +3517,15 @@ namespace AlceOSD_updater
                             mode = Convert.ToInt16(m.Groups[3].Value);
                             value = Convert.ToDouble(m.Groups[4].Value, CultureInfo.InvariantCulture.NumberFormat);
                             timer = Convert.ToInt16(m.Groups[5].Value);
-
-                            flight_alarms.Add(faid, id + " " + mode + " " + value + " " + timer);
-
                             string fa_name = lb_fa.Items[id].ToString();
-
-                            lb_fa_cfg.Items.Add("(" + faid + "/" + id + ")" + fa_name);
-
+                            ListViewItem lvi = new ListViewItem();
+                            lvi.Text = faid.ToString();
+                            lvi.SubItems.Add(id.ToString());
+                            lvi.SubItems.Add(fa_name);
+                            lvi.SubItems.Add(mode == 1 ? "High" : "Low");
+                            lvi.SubItems.Add(value.ToString());
+                            lvi.SubItems.Add((timer*100).ToString());
+                            lv_fa_cfg.Items.Add(lvi);
                             Console.WriteLine("configured flight alarms: {0} {1} {2} {3}", id, mode, value, timer);
                         }
                         break;
@@ -3454,6 +3546,9 @@ namespace AlceOSD_updater
         private void timer_submit_cfg_tag(string tag)
         {
             timer_submit_cfg.Stop();
+
+            if (!init_done)
+                return;
 
             List<string> cfg = (List<string>)timer_submit_cfg.Tag;
             if (cfg == null)
@@ -3545,7 +3640,7 @@ namespace AlceOSD_updater
 
         private void button1_Click(object sender, EventArgs e)
         {
-            get_config2();
+            get_shell_config();
         }
 
         private void importOldConfigToolStripMenuItem_Click(object sender, EventArgs e)
@@ -3705,126 +3800,6 @@ namespace AlceOSD_updater
                 }
             }
         }
-
-        private void cb_hwrev_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            validate_hw_options();
-        }
-
-        private void bt_flash_fw_Click(object sender, EventArgs e)
-        {
-            string version = "";
-
-            tc_main.SelectTab(tc_main.TabPages.IndexOfKey("tab_log"));
-
-            setup_comport();
-            if (!open_comport())
-                return;
-            if (!reset_board(true, false))
-            {
-                MessageBox.Show("Error waiting for bootloader", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-
-            bool ready = false;
-            string ans = "";
-            string ans2;
-            int timeout = 0;
-
-            while (!ready)
-            {
-                while (comPort.BytesToRead < 1)
-                {
-                    System.Threading.Thread.Sleep(10);
-                    if (++timeout > 100)
-                    {
-                        MessageBox.Show("Error waiting for bootloader", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        comPort.Close();
-                        return;
-                    }
-                }
-
-                ans += comPort.ReadExisting();
-
-                if (ans.EndsWith("..."))
-                    ready = true;
-
-                ans2 = ans.TrimEnd();
-                if (ans2.EndsWith("BIN"))
-                    ready = true;
-                if (ans2.EndsWith("IHEX"))
-                    ready = true;
-            }
-
-            int v0 = ans.IndexOf('v') + 1;
-            version = ans.Substring(v0, 3);
-
-            txt_log.AppendText("AlceOSD bootloader version " + version + "\n");
-
-            System.Threading.Thread.Sleep(500);
-            comPort.DiscardInBuffer();
-
-            DialogResult result = ofd_fwfile.ShowDialog();
-            if ((result != DialogResult.Cancel) && (ofd_fwfile.FileName != ""))
-            {
-                txt_log.AppendText("Will flash file " + ofd_fwfile.FileName + "\n");
-                do_flash(version);
-            }
-            else
-            {
-                byte[] abort = new byte[] { 0xff, 0xff, 0xff };
-                txt_log.AppendText("Exiting bootloader...\n");
-                comPort.Write(abort, 0, 3);
-            }
-            comPort.Close();
-        }
-
-        private void lb_mavmsg_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            string sel = lb_mavmsg.Items[lb_mavmsg.SelectedIndex].ToString();
-            MavlinkPacket p = comPort.mavmsg[sel];
-            MavlinkMessage m = p.Message;
-
-            tb_mavmsg.Clear();
-            if (m.GetType() == typeof(MavLink.Msg_heartbeat))
-            {
-                Msg_heartbeat hb = m as Msg_heartbeat;
-                tb_mavmsg.AppendText("source sysid=" + p.SystemId +
-                                   "\r\nsource compid=" + p.ComponentId +
-                                   "\r\ntype=" + hb.type +
-                                   "\r\nsystem_status=" + hb.system_status +
-                                   "\r\nmavlink_version=" + hb.mavlink_version +
-                                   "\r\ncustom_mode=" + hb.custom_mode +
-                                   "\r\nbase_mode=" + hb.base_mode +
-                                   "\r\nautopilot=" + hb.autopilot);
-            }
-            else if (m.GetType() == typeof(MavLink.Msg_system_time))
-            {
-                Msg_system_time _m = m as Msg_system_time;
-                tb_mavmsg.AppendText("source sysid=" + p.SystemId +
-                                   "\r\nsource compid=" + p.ComponentId +
-                                   "\r\ntime_boot_ms=" + _m.time_boot_ms +
-                                   "\r\ntime_unix_usec=" + _m.time_unix_usec);
-            }
-            else if (m.GetType() == typeof(MavLink.Msg_global_position_int))
-            {
-                Msg_global_position_int _m = m as Msg_global_position_int;
-                tb_mavmsg.AppendText("source sysid=" + p.SystemId +
-                                   "\r\nsource compid=" + p.ComponentId +
-                                   "\r\ntime_boot_ms=" + _m.time_boot_ms +
-                                   "\r\nrelative_alt=" + _m.relative_alt +
-                                   "\r\nalt=" + _m.alt +
-                                   "\r\nhdg=" + _m.hdg +
-                                   "\r\nlat=" + _m.lat +
-                                   "\r\nlon=" + _m.lon +
-                                   "\r\nvx=" + _m.vx +
-                                   "\r\nvy=" + _m.vy +
-                                   "\r\nvz=" + _m.vz);
-            }
-        }
-
-
 
     }
 }
