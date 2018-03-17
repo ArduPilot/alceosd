@@ -211,7 +211,6 @@ inline static void handle_uart_int(unsigned char port)
         
         if (port_clients[port] == NULL)
             return;
-
         
         if (n_wr != uart_fifo[port].rd) {
             uart_fifo[port].buf[uart_fifo[port].wr] = ch;
@@ -374,6 +373,22 @@ static void uart_init_(unsigned char port)
     *(UARTS[port].STA)  = 0x0400;
 }
 
+#if 1
+static void uart_read(unsigned char port, unsigned char *buf, u16 len)
+{
+    u8 *rdbuf = &uart_fifo[port].buf[uart_fifo[port].rd];
+    u16 half = UART_FIFO_MASK + 1 - uart_fifo[port].rd;
+    
+    if (len > half) {
+        //shell_printf("\n\nHALF: wr=%u rd=%u len=%u half=%u\n\n", uart_fifo[port].wr, uart_fifo[port].rd, half, len);
+        memcpy(buf, rdbuf, half);
+        buf += half;
+        len -= half;
+        rdbuf = uart_fifo[port].buf;
+    }
+    memcpy(buf, rdbuf, len);
+}
+#else
 static unsigned int uart_read(unsigned char port, unsigned char **buf)
 {
     unsigned int wr = uart_fifo[port].wr;
@@ -386,7 +401,7 @@ static unsigned int uart_read(unsigned char port, unsigned char **buf)
     }
     return ret;
 }
-
+#endif
 static inline unsigned int uart_count(unsigned char port)
 {
     return (uart_fifo[port].wr - uart_fifo[port].rd) & UART_FIFO_MASK;
@@ -519,6 +534,27 @@ int __attribute__((__weak__, __section__(".libc"))) write(int handle, void *buf,
 }
 #endif
 
+#if 1
+inline static void uart_process(unsigned char port)
+{
+    //unsigned char *b;
+    u16 avail, len;
+    static u8 buf[UART_FIFO_MASK+1];
+
+    if (port_clients[port] == NULL)
+        return;
+    
+    //avail = uart_read(port, &b);
+    avail = uart_count(port);
+    if (avail == 0)
+        return;
+
+    uart_read(port, buf, avail);
+    
+    len = port_clients[port]->read(port_clients[port], buf, avail);
+    uart_discard(port, len);
+}
+#else
 inline static void uart_process(unsigned char port)
 {
     unsigned char *b;
@@ -534,6 +570,7 @@ inline static void uart_process(unsigned char port)
     len = port_clients[port]->read(port_clients[port], b, avail);
     uart_discard(port, len);
 }
+#endif
 
 static void uart1_process(void)
 {
