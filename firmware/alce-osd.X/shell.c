@@ -61,6 +61,57 @@ void shell_cmd_exit(char *args, void *data)
     uart_set_client(shell_uart_client.port, config.uart[shell_uart_client.port].mode, 0);
 }
 
+#define SHELL_CMD_STACK_ARGS 2
+void shell_cmd_stack(char *args, void *data)
+{
+    struct shell_argval argval[SHELL_CMD_STACK_ARGS+1], *p;
+    u8 r, t;
+    u16 i;
+    unsigned int *bot, *top;
+    unsigned char *c;
+    unsigned int *stack_pos;
+    asm volatile("mov.w #__SP_init,%0" : "=r"(bot));
+    asm volatile("mov.w #__SPLIM_init,%0" : "=r"(top));
+    asm volatile("mov.w W15,%0" : "=r"(stack_pos));
+
+    t = shell_arg_parser(args, argval, SHELL_CMD_STACK_ARGS);
+
+    p = shell_get_argval(argval, 'f');
+    if (p != NULL) {
+        /* fill stack to top with arg*/
+        r = (u8) atoi(p->val);
+
+        c = (u8*) stack_pos;
+        while ((u16)c < (u16)top)
+            *c++ = r;
+    }
+    
+    p = shell_get_argval(argval, 'd');
+    if (p != NULL) {
+        /* dump stack */
+        shell_printf("\n\nStack dump :: [0x%4p--->0x%4p   0x%4p]\n\n", bot, stack_pos, top);
+        i = 0;
+        c = (unsigned char*) bot;
+        shell_printf("0x%4p | ", bot);
+        while (bot < top) {
+            shell_printf("%04x ", *bot++);
+            if (i++ == 7) {
+                for (i = 0; i < 16; i++) {
+                    if ((*c > 31) && (*c < 127))
+                        shell_printf("%c", *c);
+                    else
+                        shell_printf(".");
+                    c++;
+                }
+                shell_printf("\n0x%4p | ", bot);
+                i = 0;
+            }
+        }
+        shell_printf("\n");
+    }
+}
+
+
 #define SHELL_CMD_PORTS_ARGS 3
 void shell_cmd_ports(char *args, void *data)
 {
@@ -123,6 +174,7 @@ static const struct shell_cmdmap_s root_cmdmap[] = {
     {"widgets", shell_cmd_widgets, "Widgets module", SHELL_CMD_SUBCMD},
     {"exit", shell_cmd_exit, "Exit shell client", SHELL_CMD_SIMPLE},
     {"ports", shell_cmd_ports, "CPU port status/control", SHELL_CMD_SIMPLE},
+    {"stack", shell_cmd_stack, "Display stack info", SHELL_CMD_SIMPLE},
     {"", NULL, ""},
 };
 
@@ -306,12 +358,9 @@ void shell_exec(char *cmd_line, const struct shell_cmdmap_s *c, void *data)
         }
         return;
     }
-    if (ac != NULL)
-        *ac = NULL;
     while (c->handler != NULL) {
         if (strcmp(cmd, c->cmd) == 0) {
-            if ((ac == NULL) || (c->type == SHELL_CMD_SUBCMD))
-                c->handler(args, data);
+            c->handler(args, data);
             break;
         }
         c++;
@@ -323,7 +372,7 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
     static unsigned char cmd_len = 0;
     static char cmd_line[MAX_SHELL_LINE_LEN];
     static char prev_cmd_line[MAX_SHELL_LINE_LEN];
-    char tmp[MAX_SHELL_LINE_LEN], *p;
+    char *p, *tmp;
     char echo_buf[len + 2], *e = echo_buf;
     struct shell_cmdmap_s *ac[20], **a, **b;
     u16 size, i;
@@ -355,7 +404,8 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
             case TAB:
                 if (!local_echo)
                     continue;
-                cmd_line[cmd_len] = '\0';
+                tmp = &cmd_line[cmd_len];
+                *(tmp++) = '\0';
                 strcpy(tmp, cmd_line);
                 p = strrchr(tmp, ' ');
                 if (p == NULL) {
