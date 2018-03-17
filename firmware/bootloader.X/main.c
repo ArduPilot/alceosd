@@ -152,7 +152,6 @@ int main(void)
     }
     _CNPDB1 = 0;
     _TRISB4 = 1;
-    hw_rev = 0x05;
     
     /* weak pull up on serial port rx pins */
     if (hw_rev >= 0x05) {
