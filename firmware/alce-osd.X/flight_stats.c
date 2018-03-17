@@ -213,7 +213,6 @@ void *get_flight_alarm_source(u8 id)
     mavlink_sys_status_t *s = mavdata_get(MAVLINK_MSG_ID_SYS_STATUS);
     mavlink_gps_raw_int_t *gps = mavdata_get(MAVLINK_MSG_ID_GPS_RAW_INT);
     mavlink_vfr_hud_t *vfr = mavdata_get(MAVLINK_MSG_ID_VFR_HUD);
-    mavlink_global_position_int_t *gp = mavdata_get(MAVLINK_MSG_ID_GLOBAL_POSITION_INT);
     struct home_data *home = get_home_data();
     void *ret = NULL;
 
@@ -233,7 +232,7 @@ void *get_flight_alarm_source(u8 id)
             ret = &vfr->airspeed;
             break;
         case FL_ALARM_ID_ALT:
-            ret = &gp->relative_alt;
+            ret = &home->altitude;
             break;
         case FL_ALARM_ID_DIST:
             ret = &home->distance;
@@ -310,6 +309,19 @@ void init_flight_stats(void)
 static void shell_cmd_stats(char *args, void *data)
 {
     shell_printf("Flight stats:\n");
+    shell_printf(" Launch heading: %d\n", stats.launch_heading);
+    shell_printf(" Total distance: %.2f\n", stats.total_distance);
+    shell_printf(" Max home distance: %u\n", stats.max_home_distance);
+    shell_printf(" Max altitude (abs/rel): %d/%d\n", stats.max_altitude,
+                        stats.max_home_altitude);
+    shell_printf(" Max speed (ground/air): %u/%u\n", stats.max_gnd_speed,
+                        stats.max_air_speed);
+    shell_printf(" Max battery current: %u\n", stats.max_bat_current);
+    shell_printf(" Battery consumption (flight/total): %.2f/%.2f\n",
+                        stats.total_flight_mah, stats.total_mah);
+    shell_printf(" Flight duration: %lu\n",
+                        stats.flight_end - stats.flight_start);
+    shell_printf(" RSSI: %u\n", stats.rssi);
 }
 
 #define SHELL_CMD_WARNINGS_ARGS 5
