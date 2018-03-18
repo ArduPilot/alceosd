@@ -151,34 +151,59 @@ static void shell_cmd_stats(char *args, void *data)
             "IRQS", total, t);
 }
 
-static void shell_cmd_stack(char *args, void *data)
+#define SHELL_CMD_STACK_ARGS 2
+void shell_cmd_stack(char *args, void *data)
 {
-    unsigned char i;
-    unsigned int *stack_pos;
-    unsigned int *p, *t;
+    struct shell_argval argval[SHELL_CMD_STACK_ARGS+1], *p;
+    u8 r, t;
+    u16 i;
+    unsigned int *bot, *top;
     unsigned char *c;
-    
-    asm volatile("mov.w #__SP_init,%0" : "=r"(p));
-    asm volatile("mov.w #__SPLIM_init,%0" : "=r"(t));
+    unsigned int *stack_pos;
+    asm volatile("mov.w #__SP_init,%0" : "=r"(bot));
+    asm volatile("mov.w #__SPLIM_init,%0" : "=r"(top));
     asm volatile("mov.w W15,%0" : "=r"(stack_pos));
-    
-    c = (unsigned char*) p;
-    
-    shell_printf("Stack dump :: [0x%04p--->0x%04p   0x%04p]\n\n", p, stack_pos, t);
-    i = 0;
-    shell_printf("0x%4p | ", p);
-    while (p < stack_pos) {
-        shell_printf("%04x ", *p++);
 
-        if (i++ == 7) {
-            for (i = 0; i < 16; i++) {
-                if ((*c) > 20)
-                    shell_printf("%c", *c);
-                c++;
+    t = shell_arg_parser(args, argval, SHELL_CMD_STACK_ARGS);
+    if (t == 0) {
+        shell_printf("\nsyntax:\n");
+        shell_printf(" -f <val>   fill stack with value <val>\n");
+        shell_printf(" -d         dump stack");
+        return;
+    }
+
+    p = shell_get_argval(argval, 'f');
+    if (p != NULL) {
+        /* fill stack to top with arg*/
+        r = (u8) atoi(p->val);
+
+        c = (u8*) stack_pos;
+        while ((u16)c < (u16)top)
+            *c++ = r;
+    }
+    
+    p = shell_get_argval(argval, 'd');
+    if (p != NULL) {
+        /* dump stack */
+        shell_printf("\n\nStack dump :: [0x%4p--->0x%4p   0x%4p]\n\n", bot, stack_pos, top);
+        i = 0;
+        c = (unsigned char*) bot;
+        shell_printf("0x%4p | ", bot);
+        while (bot < top) {
+            shell_printf("%04x ", *bot++);
+            if (i++ == 7) {
+                for (i = 0; i < 16; i++) {
+                    if ((*c > 31) && (*c < 127))
+                        shell_printf("%c", *c);
+                    else
+                        shell_printf(".");
+                    c++;
+                }
+                shell_printf("\n0x%4p | ", bot);
+                i = 0;
             }
-            shell_printf("\n0x%4p : ", p);
-            i = 0;
         }
+        shell_printf("\n");
     }
 }
 
