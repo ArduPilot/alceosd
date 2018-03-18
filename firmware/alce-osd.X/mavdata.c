@@ -227,7 +227,7 @@ static void shell_cmd_display(char *args, void *data)
     p = shell_get_argval(argval, 'i');
     if ((t < 1) || (p == NULL)) {
         shell_printf("display mavlink data: [-i <msgid>]\n");
-        shell_printf(" -i <msgid>  mavlink msgid (0=ALL)\n");
+        shell_printf(" -i <msgid>  mavlink msgid\n");
     } else {
         i = atoi(p->val);
         if (m[i].decode == NULL) {
