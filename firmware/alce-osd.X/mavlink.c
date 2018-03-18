@@ -315,28 +315,6 @@ static void mavlink_send_msg_to_channels(unsigned char ch_mask, mavlink_message_
     }
 }
 
-static void mavlink_set_active_channels(struct uart_client *cli)
-{
-    active_channel_mask |= 1 << (cli->ch);
-}
-static void mavlink_unset_active_channels(struct uart_client *cli)
-{
-    u8 i = 0;
-    /* remove channel from routing table */
-    while (i < total_routes) {
-        if (routes[i].ch == cli->ch) {
-            total_routes--;
-            if (total_routes > 0)
-                memcpy(&routes[i], &routes[i+1],
-                        sizeof(struct mavlink_route_entry) * (total_routes - i));
-        } else {
-            i++;
-        }
-    }
-    active_channel_mask &= ~(1 << (cli->ch));
-}
-
-
 static void mavlink_learn_route(unsigned char ch, mavlink_message_t *msg)
 {
     unsigned char i;
@@ -465,6 +443,59 @@ static unsigned int mavlink_receive(struct uart_client *cli, unsigned char *buf,
         }
     }
     return len;
+}
+
+void mavlink_process_ch(u8 ch)
+{
+    u16 len = mavlink_uart_clients[ch].avail();
+    u8 buf[len];
+    
+    if (len > 0) {
+        mavlink_uart_clients[ch].read(buf, len);
+        mavlink_receive(&mavlink_uart_clients[ch], buf, len);
+    }
+}
+
+void mavlink_process_ch0(void) { mavlink_process_ch(0); }
+void mavlink_process_ch1(void) { mavlink_process_ch(1); }
+void mavlink_process_ch2(void) { mavlink_process_ch(2); }
+void mavlink_process_ch3(void) { mavlink_process_ch(3); }
+
+const struct mavlink_processe_s {
+    void (*proc)(void);
+    const char name[12];
+} mavlink_processes[4] = {
+    { .proc = &mavlink_process_ch0, .name = "MAVLINK_CH1" },
+    { .proc = &mavlink_process_ch1, .name = "MAVLINK_CH2" },
+    { .proc = &mavlink_process_ch2, .name = "MAVLINK_CH3" },
+    { .proc = &mavlink_process_ch3, .name = "MAVLINK_CH4" },
+};
+
+static int pids[4] = {-1, -1, -1, -1};
+
+static void mavlink_set_active_channels(struct uart_client *cli)
+{
+    active_channel_mask |= 1 << (cli->ch);
+    pids[cli->ch] = process_add(mavlink_processes[cli->ch].proc, (const char *) &mavlink_processes[cli->ch].name, 5);
+}
+
+static void mavlink_unset_active_channels(struct uart_client *cli)
+{
+    u8 i = 0;
+    /* remove channel from routing table */
+    while (i < total_routes) {
+        if (routes[i].ch == cli->ch) {
+            total_routes--;
+            if (total_routes > 0)
+                memcpy(&routes[i], &routes[i+1],
+                        sizeof(struct mavlink_route_entry) * (total_routes - i));
+        } else {
+            i++;
+        }
+    }
+    active_channel_mask &= ~(1 << (cli->ch));
+    
+    process_remove(pids[cli->ch]);
 }
 
 struct mavlink_callback* add_mavlink_callback_sysid(unsigned char sysid, unsigned char msgid,
@@ -707,9 +738,8 @@ void mavlink_init(void)
         memset(&mavlink_uart_clients[i], 0, sizeof(struct uart_client));
         mavlink_uart_clients[i].id = UART_CLIENT_MAVLINK;
         mavlink_uart_clients[i].ch = i;
-        mavlink_uart_clients[i].init = mavlink_set_active_channels;
+        mavlink_uart_clients[i].open = mavlink_set_active_channels;
         mavlink_uart_clients[i].close = mavlink_unset_active_channels;
-        mavlink_uart_clients[i].read = mavlink_receive;
         uart_add_client(&mavlink_uart_clients[i]);
     }
     

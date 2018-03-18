@@ -320,18 +320,9 @@ static unsigned int shell_parser(struct uart_client *cli, unsigned char *buf, un
     static char cmd_line[MAX_SHELL_LINE_LEN];
     static char prev_cmd_line[MAX_SHELL_LINE_LEN];
     char *p, *tmp;
-    char echo_buf[len + 2], *e = echo_buf;
-    struct shell_cmdmap_s *ac[20], **a, **b;
+    char echo_buf[len + 3], *e = echo_buf;
+    struct shell_cmdmap_s *ac[30], **a, **b;
     u16 size, i;
-
-    if (shell_getter.func != NULL) {
-        size = shell_getter.func(buf, len, shell_getter.data);
-        if (size & SHELL_GET_EXIT) {
-            shell_getter.func = NULL;
-            size &= ~SHELL_GET_EXIT;
-        }
-        return size;
-    }
 
     for (i = 0; i < len; i++) {
         switch (buf[i]) {
@@ -444,13 +435,36 @@ void mavlink_serial_cmd(mavlink_message_t *msg, void *data)
     shell_parser(NULL, buf, len);
 }
 
+void shell_process()
+{
+    u16 len = shell_uart_client.avail();
+    u8 buf[len];
+
+    if (len > 0) {
+        shell_uart_client.read(buf, len);
+        
+        if (shell_getter.func != NULL) {
+            len = shell_getter.func(buf, len, shell_getter.data);
+            if (len & SHELL_GET_EXIT)
+                shell_getter.func = NULL;
+        } else {
+            shell_parser(NULL, buf, len);
+        }
+    }
+}
+
+void shell_process_open(struct uart_client *c)
+{
+    process_add(shell_process, "SHELL", 10);
+}
+
 void shell_init(void)
 {
     add_mavlink_callback_sysid(MAV_SYS_ID_ANY, MAVLINK_MSG_ID_SERIAL_CONTROL, mavlink_serial_cmd, CALLBACK_PERSISTENT, NULL);
     
     memset(&shell_uart_client, 0, sizeof(struct uart_client));
-    shell_uart_client.read = shell_parser;
     shell_uart_client.id = UART_CLIENT_SHELL;
+    shell_uart_client.open = shell_process_open;
     uart_add_client(&shell_uart_client);
     
     /* early shell_printf */

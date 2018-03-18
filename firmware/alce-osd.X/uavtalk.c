@@ -230,24 +230,38 @@ static void uavtalk_handle_msg(struct uavtalk_message *msg)
     }
 }
 
-static unsigned int uavtalk_receive(struct uart_client *cli, unsigned char *buf, unsigned int len)
+static struct uart_client uavtalk_uart_client;
+static int pid = -1;
+
+static void uavtalk_process(void)
 {
     static struct uavtalk_message msg;
-    unsigned int i = len;
-    while (i--) {
-        if (uavtalk_parse_byte(*(buf++), &msg)) {
+    u16 len = uavtalk_uart_client.avail();
+    u8 buf[len], *b = buf;
+    
+    uavtalk_uart_client.read(buf, len);
+    while (len--) {
+        if (uavtalk_parse_byte(*(b++), &msg)) {
             uavtalk_handle_msg(&msg);
         }
     }
-    return len;
 }
 
-struct uart_client uavtalk_uart_client;
+void uavtalk_open(struct uart_client *cli)
+{
+    pid = process_add(uavtalk_process, "UAVTALK", 5);
+}
+
+void uavtalk_close(struct uart_client *cli)
+{
+    process_remove(pid);
+}
 
 void uavtalk_init(void)
 {
     memset(&uavtalk_uart_client, 0, sizeof(struct uart_client));
     uavtalk_uart_client.id = UART_CLIENT_UAVTALK;
-    uavtalk_uart_client.read = uavtalk_receive;
+    uavtalk_uart_client.open = uavtalk_open;
+    uavtalk_uart_client.close = uavtalk_close;
     uart_add_client(&uavtalk_uart_client);
 }

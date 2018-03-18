@@ -88,17 +88,15 @@ struct uart_client {
     unsigned char port;
     
     /* called when client is set */
-    void (*init)(struct uart_client *cli);
+    void (*open)(struct uart_client *cli);
     
     /* called when client is removed */
     void (*close)(struct uart_client *cli);
 
-    /* received data is fed to this function */
-    unsigned int (*read)(struct uart_client *cli, unsigned char *buf, unsigned int len);
-
-    /* modules should use this function to send data */
-    /* pointer is set by client request function */
+    /* modules should use these functions to send and receive data */
     int (*write)(unsigned char *buf, unsigned int len);
+    unsigned int (*read)(unsigned char *buf, unsigned int len);
+    unsigned int (*avail)();
 };
 
 void uart_init(void);

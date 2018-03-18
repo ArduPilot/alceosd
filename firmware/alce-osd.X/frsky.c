@@ -43,7 +43,9 @@ struct frsky_sport_data {
 static struct frsky_sport_data fifo[FRSKY_FIFO_MASK+1];
 static unsigned char fifo_rd = 0, fifo_wr = 0;
 
-struct uart_client frsky_uart_client;
+static struct uart_client frsky_uart_client;
+static struct timer *tmr = NULL;
+static int pid = -1;
 
 
 static int frsky_sport_queue_data(unsigned int id, unsigned long data)
@@ -111,27 +113,6 @@ static void frsky_sport_send(struct frsky_sport_data *d)
     } while (ret != 0);
 }
 
-static unsigned int frsky_receive(struct uart_client *cli, unsigned char *buf, unsigned int len)
-{
-    static unsigned char last_ch;
-    unsigned char ch = buf[len-1];
-
-    if (last_ch == FRSKY_START_STOP) {
-        /* send packet */
-        if (fifo_rd != fifo_wr) {
-            uart_set_direction(cli->port, UART_DIR_TX);
-            frsky_sport_send(&fifo[fifo_rd++]);
-            fifo_rd &= FRSKY_FIFO_MASK;
-            uart_set_direction(cli->port, UART_DIR_RX);
-        } else {
-            /* do we need to send a dummy packet? */
-        }
-    }
-    last_ch = ch;
-    return len;
-}
-
-
 /* GPS */
 static void send_frsky_data(struct timer *t, void *d)
 {
@@ -158,6 +139,29 @@ static void send_frsky_data(struct timer *t, void *d)
     frsky_sport_queue_data(GPS_ALT_DATA_ID, gps->alt / 10);
 }
 
+static unsigned int frsky_process(void)
+{
+    u16 len = frsky_uart_client.avail();
+    u8 buf[len], ch;
+    static u8 last_ch;
+
+    frsky_uart_client.read(buf, len);
+    
+    ch = buf[len-1];
+    if (last_ch == FRSKY_START_STOP) {
+        /* send packet */
+        if (fifo_rd != fifo_wr) {
+            uart_set_direction(frsky_uart_client.port, UART_DIR_TX);
+            frsky_sport_send(&fifo[fifo_rd++]);
+            fifo_rd &= FRSKY_FIFO_MASK;
+            uart_set_direction(frsky_uart_client.port, UART_DIR_RX);
+        } else {
+            /* do we need to send a dummy packet? */
+        }
+    }
+    last_ch = ch;
+    return len;
+}
 
 static void frsky_init_client(struct uart_client *cli)
 {
@@ -167,15 +171,21 @@ static void frsky_init_client(struct uart_client *cli)
             UART_PROP_HALF_DUPLEX);
 
     /* send GPS data */
-    add_timer(TIMER_ALWAYS, 1000, send_frsky_data, NULL);
+    tmr = add_timer(TIMER_ALWAYS, 1000, send_frsky_data, NULL);
+    pid = process_add(frsky_process, "FRSKY", 5);
 }
 
+void frsky_close(struct uart_client *cli)
+{
+    process_remove(pid);
+    remove_timer(tmr);
+}
 
 void frsky_init(void)
 {
     frsky_uart_client.id = UART_CLIENT_FRSKY;
-    frsky_uart_client.init = frsky_init_client;
-    frsky_uart_client.read = frsky_receive;
+    frsky_uart_client.open = frsky_init_client;
+    frsky_uart_client.close = frsky_close;
     
     uart_add_client(&frsky_uart_client);
 }

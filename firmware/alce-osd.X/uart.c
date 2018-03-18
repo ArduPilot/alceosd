@@ -110,7 +110,6 @@ static const struct hw_pin_map_table {
 #define UART_CLIENTS_MAX 10
 static struct uart_client *uart_client_list[UART_CLIENTS_MAX] = { NULL };
 static struct uart_client *port_clients[4] = {NULL, NULL, NULL, NULL};
-static int uart_pid[4] = {-1, -1, -1, -1};
 
 struct uart_fifo_s {
     unsigned char buf[UART_FIFO_MASK+1];
@@ -373,11 +372,26 @@ static void uart_init_(unsigned char port)
     *(UARTS[port].STA)  = 0x0400;
 }
 
-#if 1
-static void uart_read(unsigned char port, unsigned char *buf, u16 len)
+static inline unsigned int uart_count(unsigned char port)
+{
+    return (uart_fifo[port].wr - uart_fifo[port].rd) & UART_FIFO_MASK;
+}
+
+static inline void uart_discard(unsigned char port, unsigned int count)
+{
+    uart_fifo[port].rd = (uart_fifo[port].rd + count) & UART_FIFO_MASK;
+}
+
+static unsigned int uart_read(u8 port, u8 *buf, u16 len)
 {
     u8 *rdbuf = &uart_fifo[port].buf[uart_fifo[port].rd];
     u16 half = UART_FIFO_MASK + 1 - uart_fifo[port].rd;
+    u16 size;
+
+    if (len == 0)
+        size = uart_count(port);
+    else
+        size = len;
     
     if (len > half) {
         //shell_printf("\n\nHALF: wr=%u rd=%u len=%u half=%u\n\n", uart_fifo[port].wr, uart_fifo[port].rd, half, len);
@@ -387,31 +401,32 @@ static void uart_read(unsigned char port, unsigned char *buf, u16 len)
         rdbuf = uart_fifo[port].buf;
     }
     memcpy(buf, rdbuf, len);
-}
-#else
-static unsigned int uart_read(unsigned char port, unsigned char **buf)
-{
-    unsigned int wr = uart_fifo[port].wr;
-    unsigned int ret = (wr - uart_fifo[port].rd) & UART_FIFO_MASK;
-    if (ret) {
-        *buf = &uart_fifo[port].buf[uart_fifo[port].rd];
-        if (uart_fifo[port].rd > wr) {
-            ret = UART_FIFO_MASK + 1 - uart_fifo[port].rd;
-        }
-    }
-    return ret;
-}
-#endif
-static inline unsigned int uart_count(unsigned char port)
-{
-    return (uart_fifo[port].wr - uart_fifo[port].rd) & UART_FIFO_MASK;
+    
+    uart_discard(port, size);
+    return size;
 }
 
-static inline void uart_discard(unsigned char port, unsigned int count)
+static inline unsigned int uart1_read(unsigned char *buf, unsigned int len)
 {
-    uart_fifo[port].rd += count;
-    uart_fifo[port].rd &= UART_FIFO_MASK;
+    return uart_read(0, buf, len);
 }
+static inline unsigned int uart2_read(unsigned char *buf, unsigned int len)
+{
+    return uart_read(1, buf, len);
+}
+static inline unsigned int uart3_read(unsigned char *buf, unsigned int len)
+{
+    return uart_read(2, buf, len);
+}
+static inline unsigned int uart4_read(unsigned char *buf, unsigned int len)
+{
+    return uart_read(3, buf, len);
+}
+
+static inline unsigned int uart1_avail() { return uart_count(0); }
+static inline unsigned int uart2_avail() { return uart_count(1); }
+static inline unsigned int uart3_avail() { return uart_count(2); }
+static inline unsigned int uart4_avail() { return uart_count(3); }
 
 static int uart1_write(unsigned char *buf, unsigned int len)
 {
@@ -534,72 +549,14 @@ int __attribute__((__weak__, __section__(".libc"))) write(int handle, void *buf,
 }
 #endif
 
-#if 1
-inline static void uart_process(unsigned char port)
-{
-    //unsigned char *b;
-    u16 avail, len;
-    static u8 buf[UART_FIFO_MASK+1];
-
-    if (port_clients[port] == NULL)
-        return;
-    
-    //avail = uart_read(port, &b);
-    avail = uart_count(port);
-    if (avail == 0)
-        return;
-
-    uart_read(port, buf, avail);
-    
-    len = port_clients[port]->read(port_clients[port], buf, avail);
-    uart_discard(port, len);
-}
-#else
-inline static void uart_process(unsigned char port)
-{
-    unsigned char *b;
-    u16 avail, len;
-
-    if (port_clients[port] == NULL)
-        return;
-    
-    avail = uart_read(port, &b);
-    if (avail == 0)
-        return;
-
-    len = port_clients[port]->read(port_clients[port], b, avail);
-    uart_discard(port, len);
-}
-#endif
-
-static void uart1_process(void)
-{
-    uart_process(UART_PORT1);
-}
-static void uart2_process(void)
-{
-    uart_process(UART_PORT2);
-}
-static void uart3_process(void)
-{
-    uart_process(UART_PORT3);
-}
-static void uart4_process(void)
-{
-    uart_process(UART_PORT4);
-}
-
 static void uart_set_pins(unsigned char port, unsigned char pins)
 {
     unsigned char i;
-    int pid;
     
     if (((hw_rev < 0x03) && (port > 1)) || (pins >= UART_PINS))
         return;
     
     if (pins == UART_PINS_OFF) {
-        /* kill process */
-        process_remove(uart_pid[port]);
         /* disable rx pins*/
         *(UARTS[port].RXRP) = 0;
     } else {
@@ -609,31 +566,8 @@ static void uart_set_pins(unsigned char port, unsigned char pins)
                 return;
             }
         }
-
         /* setup rx pins */
         *(UARTS[port].RXRP) = hw_pin_map[hw_rev-1][pins].rx;
-
-        /* start uart process */
-        if (uart_pid[port] != -1)
-            process_remove(uart_pid[port]);
-        switch (port) {
-            case UART_PORT1:
-                pid = process_add(uart1_process, "UART1", UART_PROCESS_PRIO);
-                break;
-            case UART_PORT2:
-                pid = process_add(uart2_process, "UART2", UART_PROCESS_PRIO);
-                break;
-            case UART_PORT3:
-                pid = process_add(uart3_process, "UART3", UART_PROCESS_PRIO);
-                break;
-            case UART_PORT4:
-                pid = process_add(uart4_process, "UART4", UART_PROCESS_PRIO);
-                break;
-            default:
-                pid = -1;
-                break;
-        }
-        uart_pid[port] = pid;
     }
     
     /* setup tx pins */
@@ -696,7 +630,7 @@ void uart_set_client(unsigned char port, unsigned char client_id,
             (*c)->close(*c);
         (*c)->write = NULL;
     }
-
+    
     if (client_id == UART_CLIENT_NONE)
         return;
     
@@ -719,22 +653,31 @@ void uart_set_client(unsigned char port, unsigned char client_id,
             switch (port) {
                 case UART_PORT1:
                     (*c)->write = uart1_write;
+                    (*c)->read = uart1_read;
+                    (*c)->avail = uart1_avail;
                     break;
                 case UART_PORT2:
                     (*c)->write = uart2_write;
+                    (*c)->read = uart2_read;
+                    (*c)->avail = uart2_avail;
                     break;
                 case UART_PORT3:
                     (*c)->write = uart3_write;
+                    (*c)->read = uart3_read;
+                    (*c)->avail = uart3_avail;
                     break;
                 case UART_PORT4:
                     (*c)->write = uart4_write;
+                    (*c)->read = uart4_read;
+                    (*c)->avail = uart4_avail;
                     break;
                 default:
                     break;
             }
+
             (*c)->port = port;
-            if ((*c)->init != NULL)
-                (*c)->init(*c);
+            if ((*c)->open != NULL)
+                (*c)->open(*c);
             
             //*(UARTS[port].STA) &= ~0x00c0;
             //if (client_id == UART_CLIENT_MAVLINK)
@@ -837,7 +780,6 @@ void uart_init(void)
         uart_init_(3);
         params_add(params_uart34);
     }
-    //process_add(uart_process, "UART", 50);
 }
 
 
@@ -884,7 +826,7 @@ static void shell_cmd_config(char *args, void *data)
         while (*cli != NULL) {
             shell_printf(" %-7s : ch=%d init=%04p close=%04p read=%04p write=%04p\n",
                     UART_CLIENT_NAMES[(*cli)->id], (*cli)->ch,
-                    (*cli)->init, (*cli)->close, (*cli)->read, (*cli)->write);
+                    (*cli)->open, (*cli)->close, (*cli)->read, (*cli)->write);
             total++;
             cli++;
         }
@@ -897,7 +839,7 @@ static void shell_cmd_config(char *args, void *data)
                 continue;
             shell_printf(" port%d: client=%-7s ch=%d init=%04p close=%04p read=%04p write=%04p\n",
                     cli[i]->port, UART_CLIENT_NAMES[cli[i]->id], cli[i]->ch,
-                    cli[i]->init, cli[i]->close, cli[i]->read, cli[i]->write);
+                    cli[i]->open, cli[i]->close, cli[i]->read, cli[i]->write);
         }
 
         shell_printf("syntax: -p <port> [-n] [-b <baudrate>] [-c <client>] [-i <pins>]\n");
