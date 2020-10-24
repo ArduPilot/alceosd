@@ -8,5 +8,4 @@
 
 ## Check the [wiki](https://github.com/diydrones/alceosd/wiki) for more info
 
-## [Forum](http://www.satxo.com/forum)
 
